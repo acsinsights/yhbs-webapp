@@ -90,6 +90,11 @@
                         <x-menu-item title="All Rooms" icon="o-home-modern" link="{{ route('admin.index') }}" />
                         <x-menu-item title="Add Room" icon="o-plus-circle" link="{{ route('admin.index') }}" />
                     </x-menu-sub>
+ 
+                    <x-menu-sub title="Categories" icon="o-list-bullet">
+                        <x-menu-item title="All Categories" icon="o-list-bullet" link="{{ route('admin.index') }}" />
+                        {{-- <x-menu-item title="Add Category" icon="o-plus-circle" link="{{ route('admin.index') }}" /> --}}
+                    </x-menu-sub>
 
                     <div class="divider divider-start my-1">
                         <small class="hidden-when-collapsed">Reports</small>
