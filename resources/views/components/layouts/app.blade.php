@@ -58,65 +58,60 @@
                     <img src="{{ asset('default/app_logo.png') }}" height="100" width="100" alt="logo" />
                 </div>
             </a>
+
             @php
-                $rolesEnum = App\Enums\RolesEnum::class;
+                $userRole = auth()->user()->role ?? null;
             @endphp
 
             <x-menu activate-by-route>
                 <x-menu-item title="Dashboard" icon="o-presentation-chart-bar" link="{{ route('admin.index') }}" />
 
-                @role($rolesEnum::SUPERADMIN->value)
+                @if ($userRole === \App\Enums\RolesEnum::ADMIN || $userRole === \App\Enums\RolesEnum::RECEPTION)
                     <div class="divider divider-start my-1">
-                        <small class="hidden-when-collapsed">Setup</small>
+                        <small class="hidden-when-collapsed">Bookings</small>
                     </div>
 
-                    <x-menu-sub title="Master" icon="o-cog">
-                        <x-menu-item title="Voter Masters" icon="o-identification"
-                            link="{{ route('admin.voter-masters.index') }}" />
-                        <x-menu-item title="Candidates" icon="o-user-group" link="{{ route('admin.candidates.index') }}" />
-                        <x-menu-item title="Elections" icon="o-flag" link="{{ route('admin.elections.index') }}" />
-                        <x-menu-item title="Karyakartas" icon="o-users" link="{{ route('admin.karyakartas.index') }}" />
+                    <x-menu-item title="Yacht Bookings" icon="o-sparkles" link="{{ route('admin.index') }}" />
+                    <x-menu-item title="Hotel Bookings" icon="o-building-office" link="{{ route('admin.index') }}" />
+                    <x-menu-item title="Hotel Enquiries" icon="o-envelope" link="{{ route('admin.index') }}" />
+                @endif
+
+                @if ($userRole === \App\Enums\RolesEnum::ADMIN)
+                    <div class="divider divider-start my-1">
+                        <small class="hidden-when-collapsed">Management</small>
+                    </div>
+
+                    <x-menu-sub title="Yachts" icon="o-sparkles">
+                        <x-menu-item title="All Yachts" icon="o-list-bullet" link="{{ route('admin.index') }}" />
+                        <x-menu-item title="Add Yacht" icon="o-plus-circle" link="{{ route('admin.index') }}" />
                     </x-menu-sub>
-                @endrole
 
-                @role($rolesEnum::ADMIN->value)
-                    <div class="divider divider-start my-1">
-                        <small class="hidden-when-collapsed">Campaigns</small>
-                    </div>
+                    <x-menu-sub title="Hotels" icon="o-building-office">
+                        <x-menu-item title="All Rooms" icon="o-home-modern" link="{{ route('admin.index') }}" />
+                        <x-menu-item title="Add Room" icon="o-plus-circle" link="{{ route('admin.index') }}" />
+                    </x-menu-sub>
 
-                    <x-menu-item title="Karyakartas" icon="o-users" link="{{ route('admin.karyakartas.index') }}" />
-                @endrole
-
-                @role($rolesEnum::SUPERADMIN->value)
-                    <div class="divider divider-start my-1">
-                        <small class="hidden-when-collapsed">Transactions</small>
-                    </div>
-
-                    <x-menu-item title="Session Entry" icon="o-clipboard-document-list"
-                        link="{{ route('admin.sessions.index') }}" />
-                @endrole
-
-                @role($rolesEnum::ADMIN->value)
                     <div class="divider divider-start my-1">
                         <small class="hidden-when-collapsed">Reports</small>
                     </div>
 
-                    <x-menu-item title="Analytics" icon="o-clipboard-document-list"
-                        link="{{ route('admin.analytics.index') }}" />
-                    <x-menu-item title="Election Reports" icon="o-chart-pie"
-                        link="{{ route('admin.analytics.election-reports') }}" />
-                @endrole
+                    <x-menu-item title="Booking Reports" icon="o-chart-bar" link="{{ route('admin.index') }}" />
+                    <x-menu-item title="Revenue Reports" icon="o-currency-dollar" link="{{ route('admin.index') }}" />
+                @endif
+
+                @if ($userRole === \App\Enums\RolesEnum::RECEPTION)
+                    <div class="divider divider-start my-1">
+                        <small class="hidden-when-collapsed">Quick Actions</small>
+                    </div>
+
+                    <x-menu-item title="New Yacht Booking" icon="o-plus-circle" link="{{ route('admin.index') }}" />
+                    <x-menu-item title="New Hotel Booking" icon="o-plus-circle" link="{{ route('admin.index') }}" />
+                @endif
 
                 <div class="divider divider-start my-1">
                     <small class="hidden-when-collapsed">Settings</small>
                 </div>
                 <x-menu-item title="Profile" icon="o-user-circle" link="{{ route('admin.profile') }}" />
-                @role($rolesEnum::SUPERADMIN->value)
-                    <x-menu-item title="Banner PDF" icon="o-document-arrow-down"
-                        link="{{ route('admin.banner-pdf.index') }}" />
-                    <x-menu-item title="App Release" icon="o-device-phone-mobile"
-                        link="{{ route('admin.app-release.index') }}" />
-                @endrole
             </x-menu>
         </x-slot:sidebar>
         {{-- The `$slot` goes here --}}
