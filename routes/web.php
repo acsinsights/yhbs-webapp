@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 Volt::route('/', 'users.index')->name('users.index');
 
 Route::name('admin.')->group(function () {
-    Volt::route('/admin', 'login')->name('login');
+    Volt::route('/login', 'login')->name('login');
 
     Route::group(['middleware' => ['admin.auth']], function () {
         Volt::route('/admin/dashboard', 'dashboard.index')->name('index');
