@@ -40,14 +40,14 @@ new class extends Component {
 
 <div>
     <x-header title="Reception Dashboard" subtitle="Welcome, {{ $user->name }}" separator progress-indicator>
-        <x-slot:middle class="!justify-end">
+        <x-slot:middle class="justify-end">
             <x-badge value="{{ date('M d, Y') }}" class="badge-lg" />
         </x-slot:middle>
     </x-header>
 
     <!-- Statistics Cards -->
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-        <x-card class="bg-gradient-to-br from-primary to-primary/80 text-primary-content shadow-lg">
+        <x-card class="text-primary-content shadow-lg">
             <div class="flex items-center justify-between">
                 <div>
                     <div class="text-primary-content/70 text-sm font-medium">Today's Entries</div>
@@ -57,7 +57,7 @@ new class extends Component {
             </div>
         </x-card>
 
-        <x-card class="bg-gradient-to-br from-warning to-warning/80 text-warning-content shadow-lg">
+        <x-card class="text-warning-content shadow-lg">
             <div class="flex items-center justify-between">
                 <div>
                     <div class="text-warning-content/70 text-sm font-medium">Pending Tasks</div>
@@ -67,7 +67,7 @@ new class extends Component {
             </div>
         </x-card>
 
-        <x-card class="bg-gradient-to-br from-success to-success/80 text-success-content shadow-lg">
+        <x-card class="text-success-content shadow-lg">
             <div class="flex items-center justify-between">
                 <div>
                     <div class="text-success-content/70 text-sm font-medium">Total Customers</div>
@@ -77,7 +77,7 @@ new class extends Component {
             </div>
         </x-card>
 
-        <x-card class="bg-gradient-to-br from-info to-info/80 text-info-content shadow-lg">
+        <x-card class="text-info-content shadow-lg">
             <div class="flex items-center justify-between">
                 <div>
                     <div class="text-info-content/70 text-sm font-medium">Recent Activity</div>
