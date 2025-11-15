@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug')->unique();
             $table->text('icon')->nullable();
+            $table->string('type')->default('room');
 
             $table->timestamps();
         });

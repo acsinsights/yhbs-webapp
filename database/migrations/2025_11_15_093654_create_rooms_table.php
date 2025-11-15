@@ -21,6 +21,8 @@ return new class extends Migration
             $table->decimal('price', 10, 2)->nullable();
             $table->decimal('discount_price', 10, 2)->nullable();
             $table->json('library')->nullable();
+            $table->string('meta_description')->nullable();
+            $table->string('meta_keywords')->nullable();
 
             $table->timestamps();
         });
