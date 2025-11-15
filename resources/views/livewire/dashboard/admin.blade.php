@@ -63,30 +63,30 @@ new class extends Component {
         <x-card class="text-success-content shadow-lg">
             <div class="flex items-center justify-between">
                 <div>
-                    <div class="text-success-content text-sm font-medium">Admin Users</div>
-                    <div class="text-3xl font-bold mt-1">{{ $stats['admin_users'] }}</div>
+                    <div class="text-success text-sm font-medium">Admin Users</div>
+                    <div class="text-3xl font-bold mt-1 text-success">{{ $stats['admin_users'] }}</div>
                 </div>
-                <x-icon name="o-shield-check" class="w-12 h-12 text-success-content/50" />
+                <x-icon name="o-shield-check" class="w-12 h-12 text-success" />
             </div>
         </x-card>
 
         <x-card class="text-warning-content shadow-lg">
             <div class="flex items-center justify-between">
                 <div>
-                    <div class="text-warning-content/70 text-sm font-medium">Reception Users</div>
-                    <div class="text-3xl font-bold mt-1">{{ $stats['reception_users'] }}</div>
+                    <div class="text-warning text-sm font-medium">Reception Users</div>
+                    <div class="text-3xl font-bold mt-1 text-warning">{{ $stats['reception_users'] }}</div>
                 </div>
-                <x-icon name="o-user-group" class="w-12 h-12 text-warning-content/50" />
+                <x-icon name="o-user-group" class="w-12 h-12 text-warning" />
             </div>
         </x-card>
 
         <x-card class="text-info-content shadow-lg">
             <div class="flex items-center justify-between">
                 <div>
-                    <div class="text-info-content/70 text-sm font-medium">Active Sessions</div>
-                    <div class="text-3xl font-bold mt-1">{{ $stats['active_sessions'] }}</div>
+                    <div class="text-info text-sm font-medium">Active Sessions</div>
+                    <div class="text-3xl font-bold mt-1 text-info">{{ $stats['active_sessions'] }}</div>
                 </div>
-                <x-icon name="o-signal" class="w-12 h-12 text-info-content/50" />
+                <x-icon name="o-signal" class="w-12 h-12 text-info" />
             </div>
         </x-card>
     </div>
@@ -96,7 +96,7 @@ new class extends Component {
         <x-card shadow class="border-l-4 border-l-primary">
             <div class="flex items-center gap-4">
                 <div class="avatar placeholder">
-                    <div class="bg-primary text-primary-content rounded-full w-16">
+                    <div class="bg-primary text-primary-content rounded-full w-16 flex items-center justify-center">
                         <x-icon name="o-user" class="w-8 h-8" />
                     </div>
                 </div>
@@ -110,7 +110,7 @@ new class extends Component {
         <x-card shadow class="border-l-4 border-l-success">
             <div class="flex items-center gap-4">
                 <div class="avatar placeholder">
-                    <div class="bg-success text-success-content rounded-full w-16">
+                    <div class="bg-success text-success-content rounded-full w-16 flex items-center justify-center">
                         <x-icon name="o-chart-bar" class="w-8 h-8" />
                     </div>
                 </div>
@@ -124,7 +124,7 @@ new class extends Component {
         <x-card shadow class="border-l-4 border-l-warning">
             <div class="flex items-center gap-4">
                 <div class="avatar placeholder">
-                    <div class="bg-warning text-warning-content rounded-full w-16">
+                    <div class="bg-warning text-warning-content rounded-full w-16 flex items-center justify-center">
                         <x-icon name="o-clock" class="w-8 h-8" />
                     </div>
                 </div>
