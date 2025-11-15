@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
 
-Volt::route('/', 'users.index')->name('users.index');
+Route::redirect('/', '/admin/dashboard');
 
 Route::name('admin.')->group(function () {
     Volt::route('/login', 'login')->name('login');

@@ -141,7 +141,7 @@ new class extends Component {
         <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
             <x-button label="Dashboard" icon="o-presentation-chart-bar" link="{{ route('admin.index') }}"
                 class="btn-outline" />
-            <x-button label="Users" icon="o-users" link="{{ route('users.index') }}" class="btn-outline" />
+            <x-button label="Users" icon="o-users" link="###" class="btn-outline" />
             <x-button label="Profile" icon="o-user-circle" link="{{ route('admin.index') }}" class="btn-outline" />
             <x-button label="Settings" icon="o-cog-6-tooth" link="{{ route('admin.index') }}" class="btn-outline" />
         </div>
