@@ -59,7 +59,10 @@ new class extends Component {
         $this->success('Yacht created successfully!', redirectTo: route('admin.yatch.index'));
     }
 }; ?>
-
+@section('cdn')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+@endsection
 <div>
     <!-- Header Section -->
     <div class="mb-6">

@@ -21,12 +21,12 @@ Route::name('admin.')->group(function () {
             Volt::route('/{room}/edit', 'rooms.edit')->name('rooms.edit');
         });
 
-        // Yachts routes
-        Route::group(['prefix' => 'yachts'], function () {
-            Volt::route('/', 'yachts.index')->name('yachts.index');
-            Volt::route('/create', 'yachts.create')->name('yachts.create');
-            Volt::route('/{yatch}/edit', 'yachts.edit')->name('yachts.edit');
-            Volt::route('/{yatch}/show', 'yachts.show')->name('yachts.show');
+        // Yatch routes
+        Route::group(['prefix' => 'yatches'], function () {
+            Volt::route('/', 'yatch.index')->name('yatch.index');
+            Volt::route('/create', 'yatch.create')->name('yatch.create');
+            Volt::route('/{yatch}/show', 'yatch.show')->name('yatch.show');
+            Volt::route('/{yatch}/edit', 'yatch.edit')->name('yatch.edit');
         });
 
         // Hotels routes

@@ -10,9 +10,9 @@ new class extends Component {
 
     public Yatch $yatch;
 
-    public function mount($id): void
+    public function mount($yatch): void
     {
-        $this->yatch = Yatch::findOrFail($id);
+        $this->yatch = $yatch instanceof Yatch ? $yatch : Yatch::findOrFail($yatch);
     }
 
     public function delete(): void
@@ -44,7 +44,7 @@ new class extends Component {
                 </div>
             </div>
             <div class="flex gap-2">
-                <x-button label="Edit" link="{{ route('admin.yatch.edit', $yatch->id) }}" icon="o-pencil"
+                <x-button label="Edit" link="{{ route('admin.yatch.edit', $yatch) }}" icon="o-pencil"
                     class="btn-warning shadow-lg hover:shadow-xl transition-all duration-300" />
                 <x-button label="Back" link="{{ route('admin.yatch.index') }}" icon="o-arrow-left"
                     class="btn-ghost hover:btn-primary transition-all duration-300" />
@@ -152,7 +152,7 @@ new class extends Component {
                     </h2>
                 </div>
                 <div class="p-4 space-y-3">
-                    <x-button label="Edit Yacht" link="{{ route('admin.yatch.edit', $yatch->id) }}" icon="o-pencil"
+                    <x-button label="Edit Yacht" link="{{ route('admin.yatch.edit', $yatch) }}" icon="o-pencil"
                         class="btn-warning w-full shadow-lg hover:shadow-xl transition-all duration-300" />
                     <x-button label="Delete Yacht" wire:click="delete"
                         wire:confirm="Are you sure you want to delete this yacht? This action cannot be undone."

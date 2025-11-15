@@ -23,9 +23,9 @@ new class extends Component {
     public array $library = [];
     public $config = ['aspectRatio' => 16 / 9];
 
-    public function mount($id): void
+    public function mount($yatch): void
     {
-        $this->yatch = Yatch::findOrFail($id);
+        $this->yatch = $yatch instanceof Yatch ? $yatch : Yatch::findOrFail($yatch);
         $this->name = $this->yatch->name;
         $this->slug = $this->yatch->slug;
         $this->description = $this->yatch->description;
@@ -76,7 +76,10 @@ new class extends Component {
         $this->success('Yacht updated successfully!', redirectTo: route('admin.yatch.index'));
     }
 }; ?>
-
+@section('cdn')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+@endsection
 <div>
     <!-- Header Section -->
     <div class="mb-6">
@@ -100,7 +103,7 @@ new class extends Component {
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('admin.yatch.show', $yatch->id) }}" wire:navigate
+                    <a href="{{ route('admin.yatch.show', $yatch) }}" wire:navigate
                         class="hover:text-primary transition-colors">
                         {{ $yatch->name }}
                     </a>
@@ -247,7 +250,7 @@ new class extends Component {
 
             <x-slot:actions>
                 <div class="flex justify-between w-full items-center">
-                    <x-button label="Cancel" link="{{ route('admin.yatch.show', $yatch->id) }}"
+                    <x-button label="Cancel" link="{{ route('admin.yatch.show', $yatch) }}"
                         class="btn-ghost hover:btn-error transition-all duration-300" icon="o-x-mark" />
                     <x-button label="Update Yacht"
                         class="btn-warning btn-lg shadow-lg hover:shadow-xl transition-all duration-300"
