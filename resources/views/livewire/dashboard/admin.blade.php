@@ -23,9 +23,9 @@ new class extends Component {
     {
         $this->stats = [
             'total_users' => User::count(),
-            'admin_users' => User::where('role', RolesEnum::ADMIN->value)->count(),
-            'reception_users' => User::where('role', RolesEnum::RECEPTION->value)->count(),
-            'customer_users' => User::where('role', RolesEnum::CUSTOMER->value)->count(),
+            'admin_users' => User::role(RolesEnum::ADMIN->value)->count(),
+            'reception_users' => User::role(RolesEnum::RECEPTION->value)->count(),
+            'customer_users' => User::role(RolesEnum::CUSTOMER->value)->count(),
             'active_sessions' => DB::table('sessions')
                 ->where('last_activity', '>', now()->subHours(24)->timestamp)
                 ->count(),

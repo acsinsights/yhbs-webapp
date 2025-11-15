@@ -17,18 +17,18 @@ new class extends Component {
 
     public function rendering(View $view)
     {
-        $roleName = $this->user->role?->label() ?? 'User';
+        $roleName = $this->user->roles->first()->name;
         $view->title('Dashboard - ' . $roleName);
     }
 };
 
 ?>
 <div>
-    @if ($user->role === RolesEnum::ADMIN)
+    @role('admin|superadmin')
         <livewire:dashboard.admin />
-    @endif
+    @endrole
 
-    @if ($user->role === RolesEnum::RECEPTION)
+    @role('reception')
         <livewire:dashboard.reception />
-    @endif
+    @endrole
 </div>

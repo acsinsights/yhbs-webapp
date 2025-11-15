@@ -59,14 +59,10 @@
                 </div>
             </a>
 
-            @php
-                $userRole = auth()->user()->role ?? null;
-            @endphp
-
             <x-menu activate-by-route>
                 <x-menu-item title="Dashboard" icon="o-presentation-chart-bar" link="{{ route('admin.index') }}" />
 
-                @if ($userRole === \App\Enums\RolesEnum::ADMIN || $userRole === \App\Enums\RolesEnum::RECEPTION)
+                @role('reception|admin|superadmin')
                     <div class="divider divider-start my-1">
                         <small class="hidden-when-collapsed">Bookings</small>
                     </div>
@@ -74,9 +70,9 @@
                     <x-menu-item title="Yacht Bookings" icon="o-sparkles" link="{{ route('admin.index') }}" />
                     <x-menu-item title="Hotel Bookings" icon="o-building-office" link="{{ route('admin.index') }}" />
                     <x-menu-item title="Hotel Enquiries" icon="o-envelope" link="{{ route('admin.index') }}" />
-                @endif
+                @endrole
 
-                @if ($userRole === \App\Enums\RolesEnum::ADMIN)
+                @role('admin|superadmin')
                     <div class="divider divider-start my-1">
                         <small class="hidden-when-collapsed">Management</small>
                     </div>
@@ -90,7 +86,7 @@
                         <x-menu-item title="All Rooms" icon="o-home-modern" link="{{ route('admin.index') }}" />
                         <x-menu-item title="Add Room" icon="o-plus-circle" link="{{ route('admin.index') }}" />
                     </x-menu-sub>
- 
+
                     <x-menu-sub title="Categories" icon="o-list-bullet">
                         <x-menu-item title="All Categories" icon="o-list-bullet" link="{{ route('admin.index') }}" />
                         {{-- <x-menu-item title="Add Category" icon="o-plus-circle" link="{{ route('admin.index') }}" /> --}}
@@ -102,20 +98,23 @@
 
                     <x-menu-item title="Booking Reports" icon="o-chart-bar" link="{{ route('admin.index') }}" />
                     <x-menu-item title="Revenue Reports" icon="o-currency-dollar" link="{{ route('admin.index') }}" />
-                @endif
+                @endrole
 
-                @if ($userRole === \App\Enums\RolesEnum::RECEPTION)
+                @role('reception|superadmin|admin')
                     <div class="divider divider-start my-1">
                         <small class="hidden-when-collapsed">Quick Actions</small>
                     </div>
 
                     <x-menu-item title="New Yacht Booking" icon="o-plus-circle" link="{{ route('admin.index') }}" />
                     <x-menu-item title="New Hotel Booking" icon="o-plus-circle" link="{{ route('admin.index') }}" />
-                @endif
+                @endrole
 
-                <div class="divider divider-start my-1">
-                    <small class="hidden-when-collapsed">Settings</small>
-                </div>
+                @role('admin|superadmin')
+                    <div class="divider divider-start my-1">
+                        <small class="hidden-when-collapsed">Settings</small>
+                    </div>
+                @endrole
+
                 <x-menu-item title="Profile" icon="o-user-circle" link="{{ route('admin.profile') }}" />
             </x-menu>
         </x-slot:sidebar>

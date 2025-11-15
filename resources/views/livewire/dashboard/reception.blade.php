@@ -24,7 +24,7 @@ new class extends Component {
         $this->stats = [
             'today_entries' => 0, // You can add actual logic here
             'pending_tasks' => 0, // You can add actual logic here
-            'total_customers' => User::where('role', RolesEnum::CUSTOMER->value)->count(),
+            'total_customers' => User::role(RolesEnum::CUSTOMER->value)->count(),
             'recent_activity' => 0, // You can add actual logic here
         ];
     }

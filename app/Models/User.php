@@ -55,7 +55,7 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        return $this->role === RolesEnum::ADMIN;
+        return $this->hasRole(RolesEnum::ADMIN->value);
     }
 
     /**
@@ -63,7 +63,7 @@ class User extends Authenticatable
      */
     public function isReception(): bool
     {
-        return $this->role === RolesEnum::RECEPTION;
+        return $this->hasRole(RolesEnum::RECEPTION->value);
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\RolesEnum;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,14 +22,6 @@ class AdminAuthMiddleware
             session()->put('url.intended', url()->current());
             // Redirect to custom login page if not authenticated
             return redirect()->route('admin.login');
-        }
-
-        // Check if user has admin or reception role
-        $user = Auth::user();
-        if (!$user->isAdminOrReception()) {
-            Auth::logout();
-            return redirect()->route('admin.login')
-                ->with('error', 'Access denied. Only Admin and Reception can access this area.');
         }
 
         return $next($request);

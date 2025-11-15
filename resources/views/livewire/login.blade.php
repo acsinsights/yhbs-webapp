@@ -34,13 +34,6 @@ new class extends Component {
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
 
-            // Check if user has admin or reception role
-            if (!$user->isAdminOrReception()) {
-                Auth::logout();
-                $this->addError('email', 'Access denied. Only Admin and Reception can login.');
-                return;
-            }
-
             request()->session()->regenerate();
             $intended = session('url.intended', route('admin.index'));
             $this->success('You are logged in.', redirectTo: $intended);
