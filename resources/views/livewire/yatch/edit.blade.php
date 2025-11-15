@@ -3,15 +3,23 @@
 use App\Models\Yatch;
 use Livewire\Volt\Component;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Rule;
 use Livewire\WithFileUploads;
+use Illuminate\Support\Collection;
+use Mary\Traits\WithMediaSync;
 use Mary\Traits\Toast;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 
 new class extends Component {
-    use WithFileUploads, Toast;
+    use WithFileUploads, Toast, WithMediaSync;
 
     #[Title('Edit Yacht')]
+    #[Rule(['files.*' => 'image|max:1024'])]
+    public array $files = [];
+
+    public Collection $library;
+
     public Yatch $yatch;
     public string $name = '';
     public string $slug = '';
@@ -20,7 +28,6 @@ new class extends Component {
     public ?int $sku = null;
     public ?float $price = null;
     public ?float $discount_price = null;
-    public array $library = [];
     public $config = [
         'aspectRatio' => 16 / 9,
         'viewMode' => 1,
@@ -44,12 +51,44 @@ new class extends Component {
         $this->sku = $this->yatch->sku;
         $this->price = $this->yatch->price;
         $this->discount_price = $this->yatch->discount_price;
-        $this->library = $this->yatch->library ?? [];
+
+        // Convert library to Collection (model casts JSON to array automatically)
+        // Ensure we always have a Collection, even if library is null or not an array
+        $libraryData = $this->yatch->library;
+        if (empty($libraryData)) {
+            $this->library = Collection::make([]);
+        } elseif (is_array($libraryData)) {
+            $this->library = Collection::make($libraryData);
+        } elseif ($libraryData instanceof Collection) {
+            $this->library = $libraryData;
+        } else {
+            $this->library = Collection::make([]);
+        }
     }
 
     public function updatedName($value)
     {
         $this->slug = Str::slug($value);
+    }
+
+    // Ensure library is always a Collection after Livewire hydration
+    public function hydrate(): void
+    {
+        $this->ensureLibraryIsCollection();
+    }
+
+    // Ensure library is always a Collection after any property update
+    public function updated($propertyName): void
+    {
+        $this->ensureLibraryIsCollection();
+    }
+
+    // Helper method to ensure library is always a Collection
+    private function ensureLibraryIsCollection(): void
+    {
+        if (!($this->library instanceof Collection)) {
+            $this->library = is_array($this->library) ? Collection::make($this->library) : Collection::make([]);
+        }
     }
 
     public function save(): void
@@ -62,8 +101,12 @@ new class extends Component {
             'sku' => 'nullable|integer',
             'price' => 'nullable|numeric|min:0',
             'discount_price' => 'nullable|numeric|min:0|lt:price',
-            'library' => 'nullable|array',
         ]);
+
+        // Ensure library is a Collection before calling syncMedia (trait expects Collection)
+        $this->ensureLibraryIsCollection();
+
+        $this->syncMedia(model: $this->yatch, library: 'library', files: 'files', storage_subpath: '/yatches/library', model_field: 'library', visibility: 'public', disk: 'public');
 
         $this->yatch->name = $validated['name'];
         $this->yatch->slug = $validated['slug'];
@@ -71,7 +114,6 @@ new class extends Component {
         $this->yatch->sku = $validated['sku'];
         $this->yatch->price = $validated['price'];
         $this->yatch->discount_price = $validated['discount_price'];
-        $this->yatch->library = !empty($validated['library']) ? $validated['library'] : null;
 
         if ($this->image) {
             // Delete old image if exists
@@ -92,6 +134,8 @@ new class extends Component {
     {{-- Cropper.js --}}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+    {{-- Sortable.js --}}
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.1/Sortable.min.js"></script>
 @endsection
 <div>
     <!-- Header Section -->
@@ -195,6 +239,24 @@ new class extends Component {
                                     </p>
                                 </div>
                             </x-file>
+                        </div>
+                    </div>
+
+                    <div
+                        class="card bg-gradient-to-br from-warning/5 via-warning/10 to-orange-500/5 border-2 border-warning/30 shadow-lg hover:shadow-xl transition-all duration-300">
+                        <div class="card-body p-6">
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="p-2 rounded-lg bg-warning/20">
+                                    <x-icon name="o-photo" class="w-6 h-6 text-warning" />
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-lg">Yacht Images</h3>
+                                    <p class="text-xs text-base-content/60">Add multiple images to your yacht gallery
+                                    </p>
+                                </div>
+                            </div>
+                            <x-image-library wire:model="files" wire:library="library" :preview="$library"
+                                label="Yacht Images" hint="Max 1MB" />
                         </div>
                     </div>
                 </div>

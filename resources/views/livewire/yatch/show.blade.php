@@ -67,13 +67,13 @@ new class extends Component {
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <!-- Main Content -->
         <div class="lg:col-span-2 space-y-6">
-            <!-- Image Section -->
+            <!-- Cover Image Section -->
             <x-card shadow class="border-2 border-primary/20 overflow-hidden">
                 <div
                     class="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 border-b border-primary/20">
                     <h2 class="text-xl font-bold flex items-center gap-2">
                         <x-icon name="o-photo" class="w-6 h-6 text-primary" />
-                        Main Image
+                        Cover Image
                     </h2>
                 </div>
                 <div class="p-4">
@@ -95,6 +95,87 @@ new class extends Component {
                 </div>
             </x-card>
 
+            <!-- Library Images Gallery -->
+            @php
+                $libraryImages = [];
+                if ($yatch->library && is_array($yatch->library)) {
+                    // Library is already cast to array by the model
+                    // Filter to ensure all items are strings (preg_match requires string)
+                    foreach ($yatch->library as $item) {
+                        if (is_string($item) && !empty($item)) {
+                            $libraryImages[] = $item;
+                        }
+                    }
+                }
+            @endphp
+
+            @if (!empty($libraryImages))
+                <x-card shadow class="border-2 border-primary/20 overflow-hidden">
+                    <div
+                        class="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 border-b border-primary/20">
+                        <h2 class="text-xl font-bold flex items-center gap-2">
+                            <x-icon name="o-photo" class="w-6 h-6 text-primary" />
+                            Gallery Images
+                            <span class="badge badge-primary badge-lg ml-2">{{ count($libraryImages) }}</span>
+                        </h2>
+                    </div>
+                    <div class="p-4">
+                        @if (count($libraryImages) > 1)
+                            <!-- DaisyUI Carousel for multiple images -->
+                            <div class="carousel w-full bg-base-200 rounded-xl p-4">
+                                @foreach ($libraryImages as $index => $libraryImage)
+                                    <div id="slide{{ $index }}" class="carousel-item relative w-full">
+                                        <div class="relative group overflow-hidden rounded-xl w-full">
+                                            <img src="{{ asset($libraryImage) }}"
+                                                alt="Gallery Image {{ $index + 1 }}"
+                                                class="w-full h-[500px] object-cover rounded-xl shadow-lg border-2 border-primary/20 transition-transform duration-300 group-hover:scale-105">
+                                            <div
+                                                class="absolute inset-0 bg-gradient-to-t from-base-content/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl">
+                                            </div>
+                                            <div
+                                                class="absolute bottom-4 left-4 right-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                <div class="badge badge-primary badge-lg">Image {{ $index + 1 }} of
+                                                    {{ count($libraryImages) }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <!-- Carousel Navigation -->
+                            @php
+                                $totalImages = count($libraryImages);
+                                $lastIndex = $totalImages - 1;
+                            @endphp
+                            <div class="flex justify-center items-center gap-4 mt-4">
+                                <a href="#slide{{ $lastIndex }}" class="btn btn-circle btn-primary">
+                                    <x-icon name="o-chevron-left" class="w-6 h-6" />
+                                </a>
+                                <div class="flex gap-2">
+                                    @foreach ($libraryImages as $index => $libraryImage)
+                                        <a href="#slide{{ $index }}"
+                                            class="btn btn-xs btn-circle {{ $index === 0 ? 'btn-active' : '' }}">
+                                            {{ $index + 1 }}
+                                        </a>
+                                    @endforeach
+                                </div>
+                                <a href="#slide1" class="btn btn-circle btn-primary">
+                                    <x-icon name="o-chevron-right" class="w-6 h-6" />
+                                </a>
+                            </div>
+                        @else
+                            <!-- Single image display -->
+                            <div class="relative group overflow-hidden rounded-xl">
+                                <img src="{{ asset($libraryImages[0]) }}" alt="Gallery Image"
+                                    class="w-full h-[500px] object-cover rounded-xl shadow-2xl border-2 border-primary/20 transition-transform duration-500 group-hover:scale-105">
+                                <div
+                                    class="absolute inset-0 bg-gradient-to-t from-base-content/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl">
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </x-card>
+            @endif
+
             <!-- Description Section -->
             @if ($yatch->description)
                 <x-card shadow class="border-2 border-base-300/50">
@@ -111,33 +192,6 @@ new class extends Component {
                 </x-card>
             @endif
 
-            <!-- Library Images -->
-            @if ($yatch->library && is_array($yatch->library) && count($yatch->library) > 0)
-                <x-card shadow class="border-2 border-base-300/50">
-                    <div
-                        class="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 border-b border-primary/20">
-                        <h2 class="text-xl font-bold flex items-center gap-2">
-                            <x-icon name="o-photo" class="w-6 h-6 text-primary" />
-                            Gallery
-                        </h2>
-                    </div>
-                    <div class="p-4">
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            @foreach ($yatch->library as $libraryImage)
-                                @if (is_string($libraryImage))
-                                    <div class="relative group overflow-hidden rounded-xl">
-                                        <img src="{{ asset($libraryImage) }}" alt="Gallery Image"
-                                            class="w-full h-48 object-cover rounded-xl shadow-lg border-2 border-base-300 transition-transform duration-300 group-hover:scale-110">
-                                        <div
-                                            class="absolute inset-0 bg-primary/0 group-hover:bg-primary/20 rounded-xl transition-all duration-300">
-                                        </div>
-                                    </div>
-                                @endif
-                            @endforeach
-                        </div>
-                    </div>
-                </x-card>
-            @endif
         </div>
 
         <!-- Sidebar -->
@@ -188,7 +242,8 @@ new class extends Component {
 
                     <div
                         class="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary/20">
-                        <div class="text-xs font-semibold text-base-content/60 mb-2 uppercase tracking-wide">Price</div>
+                        <div class="text-xs font-semibold text-base-content/60 mb-2 uppercase tracking-wide">Price
+                        </div>
                         @if ($yatch->price)
                             <div class="text-3xl font-bold text-primary mb-2">
                                 ${{ number_format($yatch->price, 2) }}

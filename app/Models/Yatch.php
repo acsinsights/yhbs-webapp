@@ -14,6 +14,10 @@ class Yatch extends Model
         'sku',
         'price',
         'discount_price',
-        'library', 
+        'library',
+    ];
+
+    protected $casts = [
+        'library' => 'array',
     ];
 }

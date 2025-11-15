@@ -3,15 +3,23 @@
 use App\Models\Yatch;
 use Livewire\Volt\Component;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Rule;
 use Livewire\WithFileUploads;
+use Illuminate\Support\Collection;
+use Mary\Traits\WithMediaSync;
 use Mary\Traits\Toast;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 
 new class extends Component {
-    use WithFileUploads, Toast;
+    use WithFileUploads, Toast, WithMediaSync;
 
     #[Title('Create Yacht')]
+    #[Rule(['files.*' => 'image|max:1024'])]
+    public array $files = [];
+
+    public Collection $library;
+
     public string $name = '';
     public string $slug = '';
     public $image = null;
@@ -19,12 +27,36 @@ new class extends Component {
     public ?int $sku = null;
     public ?float $price = null;
     public ?float $discount_price = null;
-    public array $library = [];
     public $config = ['aspectRatio' => 16 / 9];
+
+    public function mount(): void
+    {
+        $this->library = Collection::make([]);
+    }
 
     public function updatedName($value)
     {
         $this->slug = Str::slug($value);
+    }
+
+    // Ensure library is always a Collection after Livewire hydration
+    public function hydrate(): void
+    {
+        $this->ensureLibraryIsCollection();
+    }
+
+    // Ensure library is always a Collection after any property update
+    public function updated($propertyName): void
+    {
+        $this->ensureLibraryIsCollection();
+    }
+
+    // Helper method to ensure library is always a Collection
+    private function ensureLibraryIsCollection(): void
+    {
+        if (!($this->library instanceof Collection)) {
+            $this->library = is_array($this->library) ? Collection::make($this->library) : Collection::make([]);
+        }
     }
 
     public function save(): void
@@ -37,7 +69,6 @@ new class extends Component {
             'sku' => 'nullable|integer',
             'price' => 'nullable|numeric|min:0',
             'discount_price' => 'nullable|numeric|min:0|lt:price',
-            'library' => 'nullable|array',
         ]);
 
         $yatch = new Yatch();
@@ -47,14 +78,18 @@ new class extends Component {
         $yatch->sku = $validated['sku'];
         $yatch->price = $validated['price'];
         $yatch->discount_price = $validated['discount_price'];
-        $yatch->library = !empty($validated['library']) ? $validated['library'] : null;
+        $yatch->save();
+
+        // Ensure library is a Collection before calling syncMedia (trait expects Collection)
+        $this->ensureLibraryIsCollection();
+
+        $this->syncMedia(model: $yatch, library: 'library', files: 'files', storage_subpath: '/yatches/library', model_field: 'library', visibility: 'public', disk: 'public');
 
         if ($this->image) {
             $url = $this->image->store('yatches', 'public');
             $yatch->image = "/storage/$url";
+            $yatch->save();
         }
-
-        $yatch->save();
 
         $this->success('Yacht created successfully!', redirectTo: route('admin.yatch.index'));
     }
@@ -162,6 +197,24 @@ new class extends Component {
                             </x-file>
                         </div>
                     </div>
+
+                    <div
+                        class="card bg-gradient-to-br from-primary/5 via-primary/10 to-secondary/5 border-2 border-primary/30 shadow-lg hover:shadow-xl transition-all duration-300">
+                        <div class="card-body p-6">
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="p-2 rounded-lg bg-primary/20">
+                                    <x-icon name="o-photo" class="w-6 h-6 text-primary" />
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-lg">Yacht Images</h3>
+                                    <p class="text-xs text-base-content/60">Add multiple images to your yacht gallery
+                                    </p>
+                                </div>
+                            </div>
+                            <x-image-library wire:model="files" wire:library="library" :preview="$library"
+                                label="Yacht Images" hint="Max 1MB" />
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Right Column -->
@@ -196,15 +249,6 @@ new class extends Component {
                     @endif
 
                     <div class="divider">Additional Information</div>
-
-                    <div class="alert alert-info shadow-lg border-2 border-info/30">
-                        <x-icon name="o-information-circle" class="w-6 h-6" />
-                        <div>
-                            <h3 class="font-bold">Library Images</h3>
-                            <div class="text-xs">You can add multiple images to the gallery after creating the yacht.
-                            </div>
-                        </div>
-                    </div>
 
                     <div class="card bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20">
                         <div class="card-body p-4">
