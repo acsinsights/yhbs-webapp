@@ -17,6 +17,8 @@ new class extends Component {
     #[Rule('required')]
     public string $password = '';
 
+    public bool $remember = false;
+
     public function mount()
     {
         // It is logged in
@@ -31,7 +33,7 @@ new class extends Component {
             'password' => 'required',
         ]);
 
-        if (Auth::attempt($credentials)) {
+        if (Auth::attempt($credentials, $this->remember)) {
             $user = Auth::user();
 
             request()->session()->regenerate();
@@ -86,6 +88,8 @@ new class extends Component {
 
                             <x-password label="Password" wire:model="password" icon="o-lock-closed" right
                                 class="input-lg" placeholder="Enter your password" />
+
+                            <x-checkbox label="Remember me" wire:model="remember" class="checkbox-primary" />
                         </div>
 
                         <x-slot:actions>
