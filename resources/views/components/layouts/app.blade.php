@@ -184,6 +184,7 @@
         </x-slot:content>
     </x-main>
     <x-toast />
+    @stack('scripts')
 </body>
 
 </html>

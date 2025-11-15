@@ -21,7 +21,19 @@ new class extends Component {
     public ?float $price = null;
     public ?float $discount_price = null;
     public array $library = [];
-    public $config = ['aspectRatio' => 16 / 9];
+    public $config = [
+        'aspectRatio' => 16 / 9,
+        'viewMode' => 1,
+        'dragMode' => 'move',
+        'autoCropArea' => 0.8,
+        'restore' => false,
+        'guides' => true,
+        'center' => true,
+        'highlight' => false,
+        'cropBoxMovable' => true,
+        'cropBoxResizable' => true,
+        'toggleDragModeOnDblclick' => false,
+    ];
 
     public function mount($yatch): void
     {
@@ -77,8 +89,9 @@ new class extends Component {
     }
 }; ?>
 @section('cdn')
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+    {{-- Cropper.js --}}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
 @endsection
 <div>
     <!-- Header Section -->
@@ -97,7 +110,8 @@ new class extends Component {
         <div class="breadcrumbs text-sm">
             <ul>
                 <li>
-                    <a href="{{ route('admin.yatch.index') }}" wire:navigate class="hover:text-primary transition-colors">
+                    <a href="{{ route('admin.yatch.index') }}" wire:navigate
+                        class="hover:text-primary transition-colors">
                         <x-icon name="o-sparkles" class="w-4 h-4 inline mr-1" />
                         Yachts
                     </a>
@@ -146,46 +160,39 @@ new class extends Component {
                     <x-textarea label="Description" wire:model="description" placeholder="Enter yacht description"
                         rows="6" class="textarea-bordered" />
 
-                    <div class="card bg-base-200/50 border-2 border-dashed border-base-300">
-                        <div class="card-body p-4">
-                            <x-file label="Main Image" wire:model="image" accept="image" crop-after-change
+                    <div
+                        class="card bg-gradient-to-br from-warning/5 via-warning/10 to-orange-500/5 border-2 border-warning/30 shadow-lg hover:shadow-xl transition-all duration-300">
+                        <div class="card-body p-6">
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="p-2 rounded-lg bg-warning/20">
+                                    <x-icon name="o-photo" class="w-6 h-6 text-warning" />
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-lg">Cover Image</h3>
+                                    <p class="text-xs text-base-content/60">Update the cover image for your yacht</p>
+                                </div>
+                            </div>
+                            <x-file label="" wire:model="image" accept="image" crop-after-change
                                 :crop-config="$config">
-                                <div class="mt-3">
-                                    @if ($image)
-                                        <div class="relative group">
-                                            <img src="{{ $image->temporaryUrl() }}"
-                                                class="h-64 w-full object-cover rounded-xl shadow-lg border-2 border-warning/30"
-                                                alt="Preview">
-                                            <div
-                                                class="absolute inset-0 bg-warning/0 group-hover:bg-warning/10 rounded-xl transition-all duration-300 flex items-center justify-center">
-                                                <span
-                                                    class="opacity-0 group-hover:opacity-100 transition-opacity text-warning font-semibold">
-                                                    Click to change
-                                                </span>
-                                            </div>
-                                        </div>
-                                    @elseif($yatch->image)
-                                        <div class="relative group">
-                                            <img src="{{ asset($yatch->image) }}"
-                                                class="h-64 w-full object-cover rounded-xl shadow-lg border-2 border-base-300"
-                                                alt="Current Image">
-                                            <div
-                                                class="absolute inset-0 bg-base-content/0 group-hover:bg-base-content/10 rounded-xl transition-all duration-300 flex items-center justify-center">
-                                                <span
-                                                    class="opacity-0 group-hover:opacity-100 transition-opacity font-semibold">
-                                                    Click to change image
-                                                </span>
-                                            </div>
-                                        </div>
-                                    @else
+                                <div class="mt-4">
+                                    <div class="relative group">
                                         <div
-                                            class="h-64 w-full bg-gradient-to-br from-base-300 to-base-200 rounded-xl flex flex-col items-center justify-center border-2 border-dashed border-base-400 shadow-inner">
-                                            <x-icon name="o-photo" class="w-16 h-16 text-base-content/30 mb-3" />
-                                            <p class="text-sm text-base-content/60 font-medium">Upload yacht image</p>
-                                            <p class="text-xs text-base-content/40 mt-1">Click to select or drag & drop
-                                            </p>
+                                            class="absolute inset-0 bg-gradient-to-br from-warning/20 to-orange-500/20 rounded-xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                         </div>
-                                    @endif
+                                        <img src="{{ $yatch->image ?: 'https://placehold.co/800x400?text=Cover+Image' }}"
+                                            id="imagePreview" alt="Yacht Cover Image"
+                                            class="relative w-full h-48 object-cover rounded-xl border-2 border-warning/20 shadow-md group-hover:border-warning/40 transition-all duration-300">
+                                        <div
+                                            class="absolute inset-0 flex items-center justify-center bg-base-100/80 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                            <div class="text-center">
+                                                <x-icon name="o-camera" class="w-8 h-8 text-warning mx-auto mb-2" />
+                                                <p class="text-sm font-semibold text-warning">Click to update</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-center text-base-content/50 mt-2">
+                                        Recommended: 16:9 aspect ratio, min 800x400px
+                                    </p>
                                 </div>
                             </x-file>
                         </div>
