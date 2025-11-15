@@ -45,10 +45,17 @@ new class extends Component {
             'meta_description' => 'nullable|string|max:150',
         ]);
 
+        // Handle single image upload
+        $imagePath = null;
+        if ($this->image) {
+            $url = $this->image->store('rooms', 'public');
+            $imagePath = "/storage/$url";
+        }
+
         $room = Room::create([
             'hotel_id' => $this->hotel_id,
             'room_number' => $this->room_number,
-            'image' => $this->image,
+            'image' => $imagePath,
             'description' => $this->description,
             'price' => $this->price,
             'discount_price' => $this->discount_price,
@@ -123,12 +130,16 @@ new class extends Component {
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.1/Sortable.min.js"></script>
 @endsection
 <div class="pb-4">
     <x-header title="Create Room" subtitle="Add a new hotel room" separator>
         <x-slot:actions>
-            <x-button icon="o-arrow-left" label="Back to Rooms" link="{{ route('admin.rooms.index') }}" class="btn-ghost"
-                responsive />
+            <x-button icon="o-arrow-left" label="Back to Rooms" link="{{ route('admin.rooms.index') }}"
+                class="btn-primary btn-soft" responsive />
         </x-slot:actions>
     </x-header>
 
@@ -148,12 +159,12 @@ new class extends Component {
                         icon="o-hashtag" hint="Unique room identifier" />
                 </div>
 
-                {{-- Image Upload - Full Width --}}
+                {{-- Single Image Upload --}}
                 <div class="md:col-span-2">
                     <x-file wire:model="image" label="Room Image" placeholder="Upload room image" crop-after-change
                         :crop-config="$config2" hint="Max: 5MB">
                         <img src="https://placehold.co/600x400" alt="Room Image"
-                            class="rounded-md object-cover w-full h-40 md:h-64" />
+                            class="rounded-md object-cover w-full h-35 md:h-40" />
                     </x-file>
                 </div>
 
@@ -213,11 +224,9 @@ new class extends Component {
 
             {{-- Form Actions --}}
             <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-6 md:mt-8 pt-4 md:pt-6 border-t">
-                <x-button icon="o-arrow-left" label="Back to Rooms" link="{{ route('admin.rooms.index') }}"
-                    class="btn-ghost w-full sm:w-auto order-2 sm:order-1" responsive />
                 <x-button icon="o-x-mark" label="Cancel" link="{{ route('admin.rooms.index') }}"
-                    class="btn-ghost w-full sm:w-auto order-1 sm:order-2" responsive />
-                <x-button icon="o-check" label="Create Room" type="submit" class="btn-primary w-full sm:w-auto order-3"
+                    class="btn-warning btn-soft" responsive />
+                <x-button icon="o-check" label="Add" type="submit" class="btn-primary w-full sm:w-auto order-3"
                     spinner="save" responsive />
             </div>
         </x-form>

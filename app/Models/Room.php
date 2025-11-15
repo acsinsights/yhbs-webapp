@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -17,6 +18,11 @@ class Room extends Model
         'discount_price',
         'library',
     ];
+
+    protected $casts = [
+        'library' => AsCollection::class,
+    ];
+
     /**
      * Get the hotel that owns the room.
      */

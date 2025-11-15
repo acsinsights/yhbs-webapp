@@ -40,8 +40,8 @@ new class extends Component {
     <x-header title="Rooms" subtitle="Manage all hotel rooms" separator>
         <x-slot:actions>
             <x-input icon="o-magnifying-glass" placeholder="Search..." wire:model.live.debounce="search" clearable />
+            <x-button icon="o-plus" class="btn-primary" tooltip="Add Room" link="{{ route('admin.rooms.create') }}" />
             <x-button icon="o-funnel" label="Filters" responsive />
-            <x-button icon="o-plus" class="btn-primary" label="Add Room" link="{{ route('admin.rooms.create') }}" />
         </x-slot:actions>
     </x-header>
 
@@ -50,13 +50,6 @@ new class extends Component {
             :per-page-values="[10, 25, 50, 100]">
             @scope('cell_room_number', $room)
                 <x-badge :value="$room->room_number" class="badge-soft badge-primary" />
-            @endscope
-
-            @scope('cell_hotel.name', $room)
-                <div class="flex items-center gap-2">
-                    <i class="o-building-office-2 w-4 h-4"></i>
-                    <span>{{ $room->hotel->name ?? 'N/A' }}</span>
-                </div>
             @endscope
 
             @scope('cell_price', $room)
