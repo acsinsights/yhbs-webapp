@@ -43,7 +43,7 @@ new class extends Component {
 
 <div>
     <x-header title="Admin Dashboard" subtitle="Welcome back, {{ $user->name }}" separator progress-indicator>
-        <x-slot:middle class="!justify-end">
+        <x-slot:middle class="justify-end">
             <x-badge value="{{ date('M d, Y') }}" class="badge-lg" />
         </x-slot:middle>
     </x-header>

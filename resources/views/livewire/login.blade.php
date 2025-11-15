@@ -59,11 +59,10 @@ new class extends Component {
             <div class="w-full max-w-md">
                 <!-- Logo Text -->
                 <div class="text-center mb-8">
-                    <h1
-                        class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-2">
+                    <h1 class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent mb-2">
                         {{ config('app.name', 'YHBS') }}
                     </h1>
-                    <div class="w-20 h-1 bg-gradient-to-r from-primary to-secondary mx-auto rounded-full"></div>
+                    <div class="w-20 h-1 mx-auto rounded-full"></div>
                 </div>
 
                 <!-- Welcome Text -->
@@ -79,7 +78,7 @@ new class extends Component {
                 </div>
 
                 <!-- Login Form -->
-                <div class="bg-base-200/50 rounded-2xl p-6 md:p-8 shadow-lg border border-base-300/50">
+                <div class="bg-base-100 rounded-2xl p-6 md:p-8 shadow-lg">
                     @if (session('error'))
                         <x-alert title="Error!" description="{!! session('error') !!}" dismissible
                             class="mb-6 alert-error" />
@@ -94,7 +93,7 @@ new class extends Component {
                                 class="input-lg" placeholder="Enter your password" />
                         </div>
 
-                        <x-slot:actions class="mt-8 justify-center">
+                        <x-slot:actions>
                             <x-button label="Sign In" type="submit" icon="o-paper-airplane"
                                 class="btn-primary btn-lg w-full md:w-auto px-8" spinner="login" />
                         </x-slot:actions>
