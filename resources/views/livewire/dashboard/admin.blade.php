@@ -63,7 +63,7 @@ new class extends Component {
         <x-card class="text-success-content shadow-lg">
             <div class="flex items-center justify-between">
                 <div>
-                    <div class="text-success-content/70 text-sm font-medium">Admin Users</div>
+                    <div class="text-success-content text-sm font-medium">Admin Users</div>
                     <div class="text-3xl font-bold mt-1">{{ $stats['admin_users'] }}</div>
                 </div>
                 <x-icon name="o-shield-check" class="w-12 h-12 text-success-content/50" />

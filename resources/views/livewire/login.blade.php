@@ -79,11 +79,6 @@ new class extends Component {
 
                 <!-- Login Form -->
                 <div class="bg-base-100 rounded-2xl p-6 md:p-8 shadow-lg">
-                    @if (session('error'))
-                        <x-alert title="Error!" description="{!! session('error') !!}" dismissible
-                            class="mb-6 alert-error" />
-                    @endif
-
                     <x-form wire:submit="login">
                         <div class="space-y-5">
                             <x-input label="E-mail" type="email" wire:model="email" icon="o-envelope" class="input-lg"
