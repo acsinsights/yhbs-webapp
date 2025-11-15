@@ -136,7 +136,29 @@ new class extends Component {
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.1/Sortable.min.js"></script>
 @endsection
 <div class="pb-4">
-    <x-header title="Create Room" subtitle="Add a new hotel room" separator>
+    @php
+        $breadcrumbs = [
+            [
+                'link' => route('admin.index'),
+                'icon' => 's-home',
+            ],
+            [
+                'label' => 'Rooms',
+                'link' => route('admin.rooms.index'),
+                'icon' => 'o-home-modern',
+            ],
+            [
+                'label' => 'Create Room',
+                'icon' => 'o-plus',
+            ],
+        ];
+    @endphp
+
+    <x-header title="Create Room" separator>
+        <x-slot:subtitle>
+            <p class="text-sm text-base-content/50 mb-2">Add a new hotel room</p>
+            <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
+        </x-slot:subtitle>
         <x-slot:actions>
             <x-button icon="o-arrow-left" label="Back to Rooms" link="{{ route('admin.rooms.index') }}"
                 class="btn-primary btn-soft" responsive />
@@ -226,8 +248,7 @@ new class extends Component {
             <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-6 md:mt-8 pt-4 md:pt-6 border-t">
                 <x-button icon="o-x-mark" label="Cancel" link="{{ route('admin.rooms.index') }}"
                     class="btn-warning btn-soft" responsive />
-                <x-button icon="o-check" label="Add" type="submit" class="btn-primary w-full sm:w-auto order-3"
-                    spinner="save" responsive />
+                <x-button icon="o-check" label="Add" type="submit" class="btn-primary" spinner="save" responsive />
             </div>
         </x-form>
     </x-card>

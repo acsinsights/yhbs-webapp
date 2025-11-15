@@ -175,10 +175,32 @@ new class extends Component {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
 @endsection
 <div class="pb-4">
-    <x-header title="Edit Room" subtitle="Update room information" separator>
+    @php
+        $breadcrumbs = [
+            [
+                'link' => route('admin.index'),
+                'icon' => 's-home',
+            ],
+            [
+                'label' => 'Rooms',
+                'link' => route('admin.rooms.index'),
+                'icon' => 'o-home-modern',
+            ],
+            [
+                'label' => 'Edit Room',
+                'icon' => 'o-pencil',
+            ],
+        ];
+    @endphp
+
+    <x-header title="Edit Room" separator>
+        <x-slot:subtitle>
+            <p class="text-sm text-base-content/50 mb-2">Update room information</p>
+            <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
+        </x-slot:subtitle>
         <x-slot:actions>
-            <x-button icon="o-arrow-left" label="Back to Rooms" link="{{ route('admin.rooms.index') }}" class="btn-ghost"
-                responsive />
+            <x-button icon="o-arrow-left" label="Back to Rooms" link="{{ route('admin.rooms.index') }}"
+                class="btn-primary btn-soft" responsive />
         </x-slot:actions>
     </x-header>
 
@@ -246,12 +268,10 @@ new class extends Component {
 
             {{-- Form Actions --}}
             <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-6 md:mt-8 pt-4 md:pt-6 border-t">
-                <x-button icon="o-arrow-left" label="Back to Rooms" link="{{ route('admin.rooms.index') }}"
-                    class="btn-ghost w-full sm:w-auto order-2 sm:order-1" responsive />
                 <x-button icon="o-x-mark" label="Cancel" link="{{ route('admin.rooms.index') }}"
-                    class="btn-ghost w-full sm:w-auto order-1 sm:order-2" responsive />
-                <x-button icon="o-check" label="Update Room" type="submit"
-                    class="btn-primary w-full sm:w-auto order-3" spinner="update" responsive />
+                    class="btn-warning btn-soft" responsive />
+                <x-button icon="o-check" label="Update Room" type="submit" class="btn-primary" spinner="update"
+                    responsive />
             </div>
         </x-form>
     </x-card>

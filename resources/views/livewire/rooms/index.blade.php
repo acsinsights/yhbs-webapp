@@ -37,11 +37,29 @@ new class extends Component {
 }; ?>
 
 <div>
-    <x-header title="Rooms" subtitle="Manage all hotel rooms" separator>
+    @php
+        $breadcrumbs = [
+            [
+                'link' => route('admin.index'),
+                'icon' => 's-home',
+            ],
+            [
+                'label' => 'Rooms',
+                'icon' => 'o-home-modern',
+            ],
+        ];
+    @endphp
+
+    <x-header title="Rooms" separator>
+        <x-slot:subtitle>
+            <p class="text-sm text-base-content/50 mb-2">Manage all hotel rooms</p>
+            <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
+        </x-slot:subtitle>
+
         <x-slot:actions>
             <x-input icon="o-magnifying-glass" placeholder="Search..." wire:model.live.debounce="search" clearable />
             <x-button icon="o-plus" class="btn-primary" tooltip="Add Room" link="{{ route('admin.rooms.create') }}" />
-            <x-button icon="o-funnel" label="Filters" responsive />
+            <x-button icon="o-funnel" tooltip-left="Filters" class="btn-info" responsive />
         </x-slot:actions>
     </x-header>
 
