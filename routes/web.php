@@ -24,7 +24,6 @@ Route::name('admin.')->group(function () {
         // Yatch routes
         Route::group(['prefix' => 'yatches'], function () {
             Volt::route('/', 'yatch.index')->name('yatch.index');
-            Volt::route('/create', 'yatch.create')->name('yatch.create');
             Volt::route('/{yatch}/show', 'yatch.show')->name('yatch.show');
             Volt::route('/{yatch}/edit', 'yatch.edit')->name('yatch.edit');
         });

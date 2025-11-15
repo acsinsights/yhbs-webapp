@@ -1,60 +1,58 @@
 <?php
 
-use App\Models\Yatch;
-use Livewire\Volt\Component;
-use Livewire\Attributes\Title;
-use Livewire\Attributes\Rule;
-use Livewire\WithFileUploads;
-use Illuminate\Support\Collection;
-use Mary\Traits\WithMediaSync;
 use Mary\Traits\Toast;
+use Mary\Traits\WithMediaSync;
+use Illuminate\View\View;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Collection;
+use Livewire\Volt\Component;
+use Livewire\WithFileUploads;
+use Illuminate\Http\UploadedFile;
+use App\Models\Yatch;
 
 new class extends Component {
-    use WithFileUploads, Toast, WithMediaSync;
-
-    #[Title('Edit Yacht')]
-    #[Rule(['files.*' => 'image|max:1024'])]
-    public array $files = [];
-
-    public Collection $library;
+    use Toast, WithFileUploads, WithMediaSync;
 
     public Yatch $yatch;
+
     public string $name = '';
     public string $slug = '';
     public $image = null;
-    public ?string $description = '';
+    public ?string $existing_image = null;
+    public ?string $description = null;
     public ?int $sku = null;
     public ?float $price = null;
     public ?float $discount_price = null;
-    public $config = [
-        'aspectRatio' => 16 / 9,
-        'viewMode' => 1,
-        'dragMode' => 'move',
-        'autoCropArea' => 0.8,
-        'restore' => false,
-        'guides' => true,
-        'center' => true,
-        'highlight' => false,
-        'cropBoxMovable' => true,
-        'cropBoxResizable' => true,
-        'toggleDragModeOnDblclick' => false,
-    ];
 
-    public function mount($yatch): void
+    // Image library properties
+    public array $files = [];
+    public Collection $library;
+
+    public $config = ['aspectRatio' => 1];
+    public $config2 = ['aspectRatio' => 16 / 9];
+
+    public function rules(): array
     {
-        $this->yatch = $yatch instanceof Yatch ? $yatch : Yatch::findOrFail($yatch);
-        $this->name = $this->yatch->name;
-        $this->slug = $this->yatch->slug;
-        $this->description = $this->yatch->description;
-        $this->sku = $this->yatch->sku;
-        $this->price = $this->yatch->price;
-        $this->discount_price = $this->yatch->discount_price;
+        return [
+            'files.*' => 'image|max:5000',
+            'library' => 'nullable',
+        ];
+    }
 
-        // Convert library to Collection (model casts JSON to array automatically)
-        // Ensure we always have a Collection, even if library is null or not an array
-        $libraryData = $this->yatch->library;
+    public function mount(Yatch $yatch): void
+    {
+        $this->yatch = $yatch;
+        $this->name = $yatch->name;
+        $this->slug = $yatch->slug;
+        $this->existing_image = $yatch->image;
+        $this->image = null; // Keep null for file upload, use existing_image for display
+        $this->description = $yatch->description;
+        $this->sku = $yatch->sku;
+        $this->price = $yatch->price;
+        $this->discount_price = $yatch->discount_price;
+
+        // Load existing library metadata from yatch
+        $libraryData = $yatch->library;
         if (empty($libraryData)) {
             $this->library = Collection::make([]);
         } elseif (is_array($libraryData)) {
@@ -91,241 +89,110 @@ new class extends Component {
         }
     }
 
-    public function save(): void
+    public function update(): void
     {
-        $validated = $this->validate([
+        $rules = [
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:yatches,slug,' . $this->yatch->id,
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'files.*' => 'image|max:5000',
             'description' => 'nullable|string',
             'sku' => 'nullable|integer',
             'price' => 'nullable|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0|lt:price',
-        ]);
+            'discount_price' => 'nullable|numeric|min:0',
+            'library' => 'nullable',
+        ];
 
-        // Ensure library is a Collection before calling syncMedia (trait expects Collection)
-        $this->ensureLibraryIsCollection();
-
-        $this->syncMedia(model: $this->yatch, library: 'library', files: 'files', storage_subpath: '/yatches/library', model_field: 'library', visibility: 'public', disk: 'public');
-
-        $this->yatch->name = $validated['name'];
-        $this->yatch->slug = $validated['slug'];
-        $this->yatch->description = $validated['description'];
-        $this->yatch->sku = $validated['sku'];
-        $this->yatch->price = $validated['price'];
-        $this->yatch->discount_price = $validated['discount_price'];
-
-        if ($this->image) {
-            // Delete old image if exists
-            if ($this->yatch->image) {
-                Storage::disk('public')->delete(str_replace('/storage/', '', $this->yatch->image));
-            }
-
-            $url = $this->image->store('yatches', 'public');
-            $this->yatch->image = "/storage/$url";
+        // Only validate image if it's actually a file upload object
+        if ($this->image instanceof UploadedFile) {
+            $rules['image'] = 'nullable|image|max:5000';
         }
 
-        $this->yatch->save();
+        $this->validate($rules);
 
-        $this->success('Yacht updated successfully!', redirectTo: route('admin.yatch.index'));
+        // Handle single image upload - keep existing if no new upload
+        $imagePath = $this->existing_image;
+        if ($this->image instanceof UploadedFile) {
+            $url = $this->image->store('yatches', 'public');
+            $imagePath = "/storage/$url";
+        }
+
+        $this->yatch->update([
+            'name' => $this->name,
+            'slug' => $this->slug,
+            'image' => $imagePath,
+            'description' => $this->description,
+            'sku' => $this->sku,
+            'price' => $this->price,
+            'discount_price' => $this->discount_price,
+        ]);
+
+        // Ensure library is a Collection before calling syncMedia
+        $this->ensureLibraryIsCollection();
+
+        // Sync media files and update library metadata
+        $this->syncMedia(model: $this->yatch, library: 'library', files: 'files', storage_subpath: '/yatches/library', model_field: 'library', visibility: 'public', disk: 'public');
+
+        $this->success('Yacht updated successfully.', redirectTo: route('admin.yatch.index'));
     }
 }; ?>
 @section('cdn')
-    {{-- Cropper.js --}}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.2.1/tinymce.min.js" referrerpolicy="origin"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
-    {{-- Sortable.js --}}
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.1/Sortable.min.js"></script>
 @endsection
-<div>
-    <!-- Header Section -->
-    <div class="mb-6">
-        <div class="flex items-center gap-3 mb-4">
-            <div class="p-3 rounded-xl bg-gradient-to-br from-warning/20 to-warning/10">
-                <x-icon name="o-pencil" class="w-8 h-8 text-warning" />
-            </div>
-            <div>
-                <h1 class="text-3xl font-bold bg-gradient-to-r from-warning to-orange-500 bg-clip-text text-transparent">
-                    Edit Yacht
-                </h1>
-                <p class="text-sm text-base-content/60 mt-1">Update yacht information</p>
-            </div>
-        </div>
-        <div class="breadcrumbs text-sm">
-            <ul>
-                <li>
-                    <a href="{{ route('admin.yatch.index') }}" wire:navigate
-                        class="hover:text-primary transition-colors">
-                        <x-icon name="o-sparkles" class="w-4 h-4 inline mr-1" />
-                        Yachts
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ route('admin.yatch.show', $yatch) }}" wire:navigate
-                        class="hover:text-primary transition-colors">
-                        {{ $yatch->name }}
-                    </a>
-                </li>
-                <li class="text-warning font-semibold">Edit</li>
-            </ul>
-        </div>
-    </div>
+<div class="pb-4">
+    <x-header title="Edit Yacht" subtitle="Update yacht information" separator>
+        <x-slot:actions>
+            <x-button icon="o-arrow-left" label="Back to Yachts" link="{{ route('admin.yatch.index') }}" class="btn-ghost"
+                responsive />
+        </x-slot:actions>
+    </x-header>
 
-    <x-card shadow class="border-2 border-warning/20 overflow-hidden">
-        <!-- Card Header -->
-        <div class="bg-gradient-to-r from-warning/10 via-warning/5 to-transparent p-4 border-b border-warning/20">
-            <h2 class="text-xl font-bold flex items-center gap-2">
-                <x-icon name="o-document-text" class="w-6 h-6 text-warning" />
-                Edit Yacht Information
-            </h2>
-        </div>
+    <x-card shadow class="mt-3 md:mt-5">
+        <x-form wire:submit="update">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <x-input wire:model="name" label="Name" placeholder="Enter yacht name" icon="o-tag"
+                    hint="The slug will be auto-generated from the name" />
 
-        <x-form wire:submit="save" class="p-6">
-            <div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
-                <!-- Left Column -->
-                <div class="space-y-6">
-                    <div class="space-y-1">
-                        <div class="flex items-center gap-2 mb-2">
-                            <x-icon name="o-sparkles" class="w-5 h-5 text-primary" />
-                            <span class="font-semibold">Basic Information</span>
-                        </div>
-                        <div class="divider my-2"></div>
-                    </div>
+                <x-input wire:model="slug" label="Slug" placeholder="yacht-slug" icon="o-link"
+                    hint="URL-friendly version of the name" />
 
-                    <x-input label="Name" wire:model="name" placeholder="Enter yacht name"
-                        hint="The slug will be auto-generated from the name" icon="o-tag" class="input-bordered" />
+                <x-input wire:model="sku" type="number" label="SKU" placeholder="Enter SKU" icon="o-hashtag"
+                    hint="Stock keeping unit" />
 
-                    <x-input label="Slug" wire:model="slug" placeholder="yacht-slug"
-                        hint="URL-friendly version of the name" icon="o-link" class="input-bordered" />
+                <x-file wire:model="image" label="Yacht Image" placeholder="Upload yacht image" crop-after-change
+                    :crop-config="$config2" hint="Max: 5MB">
+                    <img src="{{ $existing_image ? asset($existing_image) : 'https://placehold.co/600x400' }}"
+                        alt="Yacht Image" class="rounded-md object-cover w-full h-35 md:h-40" />
+                </x-file>
 
-                    <x-input label="SKU" wire:model="sku" type="number" placeholder="Enter SKU" icon="o-hashtag"
-                        class="input-bordered" />
+                <x-image-library wire:model="files" wire:library="library" :preview="$library"
+                    label="Yacht Images Gallery" hint="Max 5MB per image" change-text="Change" crop-text="Crop"
+                    remove-text="Remove" crop-title-text="Crop image" crop-cancel-text="Cancel" crop-save-text="Crop"
+                    add-files-text="Add images" />
 
-                    <x-textarea label="Description" wire:model="description" placeholder="Enter yacht description"
-                        rows="6" class="textarea-bordered" />
+                <x-input wire:model="price" type="number" step="0.01" label="Price" placeholder="0.00"
+                    icon="o-currency-dollar" hint="Regular yacht price" />
 
-                    <div
-                        class="card bg-gradient-to-br from-warning/5 via-warning/10 to-orange-500/5 border-2 border-warning/30 shadow-lg hover:shadow-xl transition-all duration-300">
-                        <div class="card-body p-6">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="p-2 rounded-lg bg-warning/20">
-                                    <x-icon name="o-photo" class="w-6 h-6 text-warning" />
-                                </div>
-                                <div>
-                                    <h3 class="font-bold text-lg">Cover Image</h3>
-                                    <p class="text-xs text-base-content/60">Update the cover image for your yacht</p>
-                                </div>
-                            </div>
-                            <x-file label="" wire:model="image" accept="image" crop-after-change
-                                :crop-config="$config">
-                                <div class="mt-4">
-                                    <div class="relative group">
-                                        <div
-                                            class="absolute inset-0 bg-gradient-to-br from-warning/20 to-orange-500/20 rounded-xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                        </div>
-                                        <img src="{{ $yatch->image ?: 'https://placehold.co/800x400?text=Cover+Image' }}"
-                                            id="imagePreview" alt="Yacht Cover Image"
-                                            class="relative w-full h-48 object-cover rounded-xl border-2 border-warning/20 shadow-md group-hover:border-warning/40 transition-all duration-300">
-                                        <div
-                                            class="absolute inset-0 flex items-center justify-center bg-base-100/80 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                            <div class="text-center">
-                                                <x-icon name="o-camera" class="w-8 h-8 text-warning mx-auto mb-2" />
-                                                <p class="text-sm font-semibold text-warning">Click to update</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <p class="text-xs text-center text-base-content/50 mt-2">
-                                        Recommended: 16:9 aspect ratio, min 800x400px
-                                    </p>
-                                </div>
-                            </x-file>
-                        </div>
-                    </div>
-
-                    <div
-                        class="card bg-gradient-to-br from-warning/5 via-warning/10 to-orange-500/5 border-2 border-warning/30 shadow-lg hover:shadow-xl transition-all duration-300">
-                        <div class="card-body p-6">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="p-2 rounded-lg bg-warning/20">
-                                    <x-icon name="o-photo" class="w-6 h-6 text-warning" />
-                                </div>
-                                <div>
-                                    <h3 class="font-bold text-lg">Yacht Images</h3>
-                                    <p class="text-xs text-base-content/60">Add multiple images to your yacht gallery
-                                    </p>
-                                </div>
-                            </div>
-                            <x-image-library wire:model="files" wire:library="library" :preview="$library"
-                                label="Yacht Images" hint="Max 1MB" />
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right Column -->
-                <div class="space-y-6">
-                    <div class="space-y-1">
-                        <div class="flex items-center gap-2 mb-2">
-                            <x-icon name="o-currency-dollar" class="w-5 h-5 text-success" />
-                            <span class="font-semibold">Pricing Information</span>
-                        </div>
-                        <div class="divider my-2"></div>
-                    </div>
-
-                    <x-input label="Price" wire:model="price" type="number" step="0.01" placeholder="0.00"
-                        icon="o-currency-dollar" class="input-bordered input-lg" />
-
-                    <x-input label="Discount Price" wire:model="discount_price" type="number" step="0.01"
-                        placeholder="0.00" icon="o-tag" hint="Must be less than the regular price"
-                        class="input-bordered" />
-
-                    @if ($price && $discount_price && $discount_price < $price)
-                        @php
-                            $discountPercent = round((($price - $discount_price) / $price) * 100);
-                        @endphp
-                        <div class="alert alert-success shadow-lg">
-                            <x-icon name="o-check-circle" class="w-6 h-6" />
-                            <div>
-                                <h3 class="font-bold">Great Deal!</h3>
-                                <div class="text-sm">You're offering a <span
-                                        class="font-bold text-success">{{ $discountPercent }}% discount</span></div>
-                            </div>
-                        </div>
-                    @endif
-
-                    <div class="divider">Metadata</div>
-
-                    <div class="stats stats-vertical shadow-lg border-2 border-base-300">
-                        <div class="stat bg-gradient-to-br from-base-200 to-base-100">
-                            <div class="stat-title flex items-center gap-2">
-                                <x-icon name="o-calendar" class="w-4 h-4" />
-                                Created
-                            </div>
-                            <div class="stat-value text-lg">{{ $yatch->created_at->format('M d, Y') }}</div>
-                            <div class="stat-desc">{{ $yatch->created_at->diffForHumans() }}</div>
-                        </div>
-                        <div class="stat bg-gradient-to-br from-base-200 to-base-100">
-                            <div class="stat-title flex items-center gap-2">
-                                <x-icon name="o-clock" class="w-4 h-4" />
-                                Last Updated
-                            </div>
-                            <div class="stat-value text-lg">{{ $yatch->updated_at->format('M d, Y') }}</div>
-                            <div class="stat-desc">{{ $yatch->updated_at->diffForHumans() }}</div>
-                        </div>
-                    </div>
-                </div>
+                <x-input wire:model="discount_price" type="number" step="0.01" label="Discount Price"
+                    placeholder="0.00" icon="o-tag" hint="Discounted price (optional)" />
             </div>
 
-            <div class="divider my-6"></div>
+            {{-- Description Editor --}}
+            <div class="mt-4 md:mt-6">
+                <x-editor wire:model="description" label="Description" hint="Detailed description of the yacht" />
+            </div>
 
-            <x-slot:actions>
-                <div class="flex justify-between w-full items-center">
-                    <x-button label="Cancel" link="{{ route('admin.yatch.show', $yatch) }}"
-                        class="btn-ghost hover:btn-error transition-all duration-300" icon="o-x-mark" />
-                    <x-button label="Update Yacht"
-                        class="btn-warning btn-lg shadow-lg hover:shadow-xl transition-all duration-300"
-                        type="submit" spinner="save" icon="o-check" />
-                </div>
-            </x-slot:actions>
+            {{-- Form Actions --}}
+            <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-6 md:mt-8 pt-4 md:pt-6 border-t">
+                <x-button icon="o-arrow-left" label="Back to Yachts" link="{{ route('admin.yatch.index') }}"
+                    class="btn-ghost w-full sm:w-auto order-2 sm:order-1" responsive />
+                <x-button icon="o-x-mark" label="Cancel" link="{{ route('admin.yatch.index') }}"
+                    class="btn-ghost w-full sm:w-auto order-1 sm:order-2" responsive />
+                <x-button icon="o-check" label="Update Yacht" type="submit"
+                    class="btn-primary w-full sm:w-auto order-3" spinner="update" responsive />
+            </div>
         </x-form>
     </x-card>
 </div>

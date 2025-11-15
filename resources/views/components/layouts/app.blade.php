@@ -79,7 +79,6 @@
 
                     <x-menu-sub title="Yachts" icon="o-sparkles">
                         <x-menu-item title="All Yachts" icon="o-list-bullet" link="{{ route('admin.yatch.index') }}" />
-                        <x-menu-item title="Add Yacht" icon="o-plus-circle" link="{{ route('admin.yatch.create') }}" />
                     </x-menu-sub>
 
                     <x-menu-sub title="Hotels" icon="o-building-office">

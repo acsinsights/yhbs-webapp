@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Casts\AsCollection;
 
 class Yatch extends Model
 {
@@ -18,6 +19,6 @@ class Yatch extends Model
     ];
 
     protected $casts = [
-        'library' => 'array',
+        'library' => AsCollection::class,
     ];
 }
