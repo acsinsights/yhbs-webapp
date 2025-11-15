@@ -17,10 +17,12 @@ class Room extends Model
         'price',
         'discount_price',
         'library',
+        'is_active',
     ];
 
     protected $casts = [
         'library' => AsCollection::class,
+        'is_active' => 'boolean',
     ];
 
     /**
@@ -45,5 +47,18 @@ class Room extends Model
     public function amenities(): BelongsToMany
     {
         return $this->belongsToMany(Amenity::class);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeSearch($query, $search)
+    {
+        return $query->where('room_number', 'like', "%{$search}%")
+            ->orWhereHas('hotel', function ($query) use ($search) {
+                $query->where('name', 'like', "%{$search}%");
+            });
     }
 }

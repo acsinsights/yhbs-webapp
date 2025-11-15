@@ -25,6 +25,7 @@ new class extends Component {
     public array $amenity_ids = [];
     public ?string $meta_keywords = null;
     public ?string $meta_description = null;
+    public bool $is_active = false;
 
     // Image library properties
     public array $files = [];
@@ -61,10 +62,9 @@ new class extends Component {
         $this->discount_price = $room->discount_price;
         $this->meta_keywords = $room->meta_keywords;
         $this->meta_description = $room->meta_description;
+        $this->is_active = $room->is_active ?? false;
         $this->category_ids = $room->categories->pluck('id')->toArray();
         $this->amenity_ids = $room->amenities->pluck('id')->toArray();
-
-        // Load existing library metadata from room
         $this->library = $room->library ?? new Collection();
     }
 
@@ -80,6 +80,7 @@ new class extends Component {
             'discount_price' => 'nullable|numeric|min:0',
             'meta_keywords' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:150',
+            'is_active' => 'nullable|boolean',
             'library' => 'nullable',
         ]);
 
@@ -99,6 +100,7 @@ new class extends Component {
             'discount_price' => $this->discount_price,
             'meta_keywords' => $this->meta_keywords,
             'meta_description' => $this->meta_description,
+            'is_active' => $this->is_active,
         ]);
 
         // Sync media files and update library metadata
@@ -213,6 +215,10 @@ new class extends Component {
 
                 <x-input wire:model="room_number" label="Room Number" placeholder="e.g., 101, 202, Suite A"
                     icon="o-hashtag" hint="Unique room identifier" />
+
+                <div class="md:col-span-2">
+                    <x-toggle wire:model="is_active" label="Active Status" hint="Enable or disable this room" />
+                </div>
 
                 <x-file wire:model="image" label="Room Image" placeholder="Upload room image" crop-after-change
                     :crop-config="$config2" hint="Max: 5MB">

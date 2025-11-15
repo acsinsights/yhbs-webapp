@@ -81,10 +81,7 @@
                         <x-menu-item title="All Yachts" icon="o-list-bullet" link="{{ route('admin.yatch.index') }}" />
                     </x-menu-sub>
 
-                    <x-menu-sub title="Hotels" icon="o-building-office">
-                        <x-menu-item title="All Rooms" icon="o-home-modern" link="{{ route('admin.rooms.index') }}" />
-                        <x-menu-item title="Add Room" icon="o-plus-circle" link="{{ route('admin.rooms.create') }}" />
-                    </x-menu-sub>
+                    <x-menu-item title="All Rooms" icon="o-home-modern" link="{{ route('admin.rooms.index') }}" />
 
                     <x-menu-sub title="Categories" icon="o-list-bullet">
                         <x-menu-item title="All Categories" icon="o-list-bullet" link="{{ route('admin.index') }}" />

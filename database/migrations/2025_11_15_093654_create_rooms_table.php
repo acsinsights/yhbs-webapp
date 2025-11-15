@@ -23,6 +23,7 @@ return new class extends Migration
             $table->json('library')->nullable();
             $table->string('meta_description')->nullable();
             $table->string('meta_keywords')->nullable();
+            $table->boolean('is_active')->default(false);
 
             $table->timestamps();
         });

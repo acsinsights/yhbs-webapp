@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Room;
+use App\Models\Hotel;
 use Mary\Traits\Toast;
 use Livewire\Volt\Component;
 use Livewire\Attributes\Url;
@@ -16,6 +17,10 @@ new class extends Component {
     public array $sortBy = ['column' => 'id', 'direction' => 'desc'];
     public int $perPage = 10;
 
+    public bool $createModal = false;
+    public int $hotel_id = 0;
+    public string $room_number = '';
+
     // Delete action
     public function delete($id): void
     {
@@ -25,14 +30,34 @@ new class extends Component {
         $this->success('Room deleted successfully.');
     }
 
+    public function createRoom(): void
+    {
+        $this->validate([
+            'hotel_id' => 'required|exists:hotels,id',
+            'room_number' => 'required|string|max:255|unique:rooms,room_number,NULL,id,hotel_id,' . $this->hotel_id,
+        ]);
+
+        $room = Room::create([
+            'hotel_id' => $this->hotel_id,
+            'room_number' => $this->room_number,
+        ]);
+
+        $this->createModal = false;
+        $this->reset('hotel_id', 'room_number');
+        $this->success('Room created successfully.', redirectTo: route('admin.rooms.edit', $room->id));
+    }
+
     public function rendering(View $view)
     {
         $view->rooms = Room::query()
             ->with(['hotel', 'categories', 'amenities'])
+            ->search($this->search)
             ->orderBy(...array_values($this->sortBy))
             ->paginate($this->perPage);
 
-        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'room_number', 'label' => 'Room Number', 'sortable' => true], ['key' => 'hotel.name', 'label' => 'Hotel', 'sortable' => false], ['key' => 'price', 'label' => 'Price', 'sortable' => true], ['key' => 'discount_price', 'label' => 'Discount Price', 'sortable' => true], ['key' => 'categories', 'label' => 'Categories', 'sortable' => false], ['key' => 'amenities', 'label' => 'Amenities', 'sortable' => false]];
+        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'room_number', 'label' => 'Room Number', 'sortable' => true], ['key' => 'hotel.name', 'label' => 'Hotel', 'sortable' => false], ['key' => 'is_active', 'label' => 'Status', 'sortable' => true], ['key' => 'price', 'label' => 'Price', 'sortable' => true], ['key' => 'discount_price', 'label' => 'Discount Price', 'sortable' => true], ['key' => 'categories', 'label' => 'Categories', 'sortable' => false], ['key' => 'amenities', 'label' => 'Amenities', 'sortable' => false]];
+
+        $view->hotels = Hotel::latest()->get();
     }
 }; ?>
 
@@ -58,7 +83,7 @@ new class extends Component {
 
         <x-slot:actions>
             <x-input icon="o-magnifying-glass" placeholder="Search..." wire:model.live.debounce="search" clearable />
-            <x-button icon="o-plus" class="btn-primary" tooltip="Add Room" link="{{ route('admin.rooms.create') }}" />
+            <x-button icon="o-plus" class="btn-primary" tooltip="Add Room" @click="$wire.createModal = true" />
             <x-button icon="o-funnel" tooltip-left="Filters" class="btn-info" responsive />
         </x-slot:actions>
     </x-header>
@@ -68,6 +93,14 @@ new class extends Component {
             :per-page-values="[10, 25, 50, 100]">
             @scope('cell_room_number', $room)
                 <x-badge :value="$room->room_number" class="badge-soft badge-primary" />
+            @endscope
+
+            @scope('cell_is_active', $room)
+                @if ($room->is_active)
+                    <x-badge value="Active" class="badge-success badge-sm" />
+                @else
+                    <x-badge value="Inactive" class="badge-error badge-sm" />
+                @endif
             @endscope
 
             @scope('cell_price', $room)
@@ -120,4 +153,27 @@ new class extends Component {
             </x-slot:empty>
         </x-table>
     </x-card>
+
+    {{-- Create Room Modal --}}
+    <x-modal wire:model="createModal" title="Create Room" class="backdrop-blur" max-width="md">
+        <x-form wire:submit="createRoom">
+            <div class="space-y-4">
+                <x-select wire:model="hotel_id" label="Hotel" placeholder="Select a hotel" :options="$hotels"
+                    option-value="id" option-label="name" icon="o-building-office-2"
+                    hint="Select the hotel this room belongs to" />
+
+                <x-input wire:model="room_number" label="Room Number" placeholder="e.g., 101, 202, Suite A"
+                    icon="o-hashtag" hint="Unique room identifier" />
+            </div>
+
+            <x-slot:actions>
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+                    <x-button icon="o-x-mark" label="Cancel" @click="$wire.createModal = false"
+                        class="btn-ghost w-full sm:w-auto" responsive />
+                    <x-button icon="o-check" label="Create Room" type="submit" class="btn-primary w-full sm:w-auto"
+                        spinner="createRoom" responsive />
+                </div>
+            </x-slot:actions>
+        </x-form>
+    </x-modal>
 </div>

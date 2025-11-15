@@ -17,7 +17,6 @@ Route::name('admin.')->group(function () {
         // Rooms routes
         Route::group(['prefix' => 'rooms'], function () {
             Volt::route('/', 'rooms.index')->name('rooms.index');
-            Volt::route('/create', 'rooms.create')->name('rooms.create');
             Volt::route('/{room}/edit', 'rooms.edit')->name('rooms.edit');
         });
 
