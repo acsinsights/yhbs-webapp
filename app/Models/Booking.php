@@ -8,6 +8,18 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Booking extends Model
 {
+    protected $fillable = [
+        'bookingable_id',  
+        'user_id',
+        'check_in',
+        'check_out',
+        'price',
+        'discount_price',
+        'status',
+        'payment_status',
+        'payment_method',
+        'notes',
+    ];
     /**
      * Get the parent bookingable model (room or yatch).
      */

@@ -8,6 +8,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Room extends Model
 {
+    protected $fillable = [
+        'hotel_id',
+        'room_number',
+        'image',
+        'description',
+        'price',
+        'discount_price',
+        'library',
+    ];
     /**
      * Get the hotel that owns the room.
      */
