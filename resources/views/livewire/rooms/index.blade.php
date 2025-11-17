@@ -7,6 +7,7 @@ use Livewire\Volt\Component;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 use Illuminate\View\View;
+use Illuminate\Support\Str;
 
 new class extends Component {
     use Toast, WithPagination;
@@ -19,7 +20,13 @@ new class extends Component {
 
     public bool $createModal = false;
     public int $hotel_id = 0;
+    public string $name = '';
     public string $room_number = '';
+
+    public function mount()
+    {
+        $this->hotel_id = Hotel::first()->id;
+    }
 
     // Delete action
     public function delete($id): void
@@ -34,16 +41,30 @@ new class extends Component {
     {
         $this->validate([
             'hotel_id' => 'required|exists:hotels,id',
+            'name' => 'required|string|max:255|unique:rooms,name,NULL,id,hotel_id,' . $this->hotel_id,
             'room_number' => 'required|string|max:255|unique:rooms,room_number,NULL,id,hotel_id,' . $this->hotel_id,
         ]);
 
+        // Auto-generate slug from name
+        $slug = Str::slug($this->name);
+
+        // Ensure slug is unique
+        $originalSlug = $slug;
+        $counter = 1;
+        while (Room::where('slug', $slug)->exists()) {
+            $slug = $originalSlug . '-' . $counter;
+            $counter++;
+        }
+
         $room = Room::create([
             'hotel_id' => $this->hotel_id,
+            'name' => $this->name,
+            'slug' => $slug,
             'room_number' => $this->room_number,
         ]);
 
         $this->createModal = false;
-        $this->reset('hotel_id', 'room_number');
+        $this->reset('hotel_id', 'name', 'room_number');
         $this->success('Room created successfully.', redirectTo: route('admin.rooms.edit', $room->id));
     }
 
@@ -55,7 +76,7 @@ new class extends Component {
             ->orderBy(...array_values($this->sortBy))
             ->paginate($this->perPage);
 
-        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'room_number', 'label' => 'Room Number', 'sortable' => true], ['key' => 'hotel.name', 'label' => 'Hotel', 'sortable' => false], ['key' => 'is_active', 'label' => 'Status', 'sortable' => true], ['key' => 'price', 'label' => 'Price', 'sortable' => true], ['key' => 'discount_price', 'label' => 'Discount Price', 'sortable' => true], ['key' => 'categories', 'label' => 'Categories', 'sortable' => false], ['key' => 'amenities', 'label' => 'Amenities', 'sortable' => false]];
+        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'name', 'label' => 'Name'], ['key' => 'room_number', 'label' => 'Room Number', 'sortable' => true], ['key' => 'hotel.name', 'label' => 'Hotel', 'sortable' => false], ['key' => 'adults', 'label' => 'Adults', 'sortable' => true], ['key' => 'children', 'label' => 'Children', 'sortable' => true], ['key' => 'price', 'label' => 'Price', 'sortable' => true], ['key' => 'discount_price', 'label' => 'Discount Price', 'sortable' => true]];
 
         $view->hotels = Hotel::latest()->get();
     }
@@ -91,16 +112,33 @@ new class extends Component {
     <x-card shadow>
         <x-table :headers="$headers" :rows="$rooms" :sort-by="$sortBy" with-pagination per-page="perPage"
             :per-page-values="[10, 25, 50, 100]">
+
+            @scope('cell_name', $room)
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full {{ $room->is_active ? 'bg-green-500' : 'bg-red-500' }}"></span>
+                    <span class="font-medium">
+                        {{ $room->name }}
+                    </span>
+                </div>
+            @endscope
+
             @scope('cell_room_number', $room)
                 <x-badge :value="$room->room_number" class="badge-soft badge-primary" />
             @endscope
 
-            @scope('cell_is_active', $room)
-                @if ($room->is_active)
-                    <x-badge value="Active" class="badge-success badge-sm" />
-                @else
-                    <x-badge value="Inactive" class="badge-error badge-sm" />
-                @endif
+            @scope('cell_hotel.name', $room)
+                <x-button tooltip="{{ $room->hotel->name }}" link="{{ route('admin.hotels.edit', $room->hotel->id) }}"
+                    class="btn-circle btn-sm text-base-content/50">
+                    <x-icon name="o-building-office-2" class="w-4 h-4" />
+                </x-button>
+            @endscope
+
+            @scope('cell_adults', $room)
+                <x-badge :value="$room->adults ?? 'N/A'" class="badge-soft badge-info badge-sm" />
+            @endscope
+
+            @scope('cell_children', $room)
+                <x-badge :value="$room->children ?? 'N/A'" class="badge-soft badge-warning badge-sm" />
             @endscope
 
             @scope('cell_price', $room)
@@ -161,6 +199,9 @@ new class extends Component {
                 <x-select wire:model="hotel_id" label="Hotel" placeholder="Select a hotel" :options="$hotels"
                     option-value="id" option-label="name" icon="o-building-office-2"
                     hint="Select the hotel this room belongs to" />
+
+                <x-input wire:model="name" label="Room Name" placeholder="e.g., Standard Room, Deluxe Suite"
+                    icon="o-tag" hint="Display name for the room (slug will be auto-generated)" />
 
                 <x-input wire:model="room_number" label="Room Number" placeholder="e.g., 101, 202, Suite A"
                     icon="o-hashtag" hint="Unique room identifier" />

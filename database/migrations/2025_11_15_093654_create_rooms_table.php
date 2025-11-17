@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('hotel_id')->constrained('hotels');
+            $table->string('name');
+            $table->string('slug')->unique();
             $table->string('room_number');
             $table->string('image')->nullable();
             $table->text('description')->nullable();
@@ -24,6 +26,8 @@ return new class extends Migration
             $table->string('meta_description')->nullable();
             $table->string('meta_keywords')->nullable();
             $table->boolean('is_active')->default(false);
+            $table->integer('adults')->nullable();
+            $table->integer('children')->nullable();
 
             $table->timestamps();
         });

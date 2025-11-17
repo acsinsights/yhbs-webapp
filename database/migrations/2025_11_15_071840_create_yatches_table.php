@@ -21,6 +21,12 @@ return new class extends Migration
             $table->integer('sku')->nullable();
             $table->decimal('price', 10, 2)->nullable();
             $table->decimal('discount_price', 10, 2)->nullable();
+            $table->integer('length')->nullable();
+            $table->integer('width')->nullable();
+            $table->integer('max_guests')->nullable();
+            $table->integer('max_crew')->nullable();
+            $table->integer('max_fuel_capacity')->nullable();
+            $table->integer('max_capacity')->nullable();
             $table->json('library')->nullable();
 
             $table->timestamps();

@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug')->unique();
             $table->text('icon')->nullable();
+            $table->string('type')->default('room')->comment('room, yatch');
 
             $table->timestamps();
         });
@@ -24,6 +25,11 @@ return new class extends Migration
         Schema::create('category_room', function (Blueprint $table) {
             $table->foreignId('category_id')->constrained('categories');
             $table->foreignId('room_id')->constrained('rooms');
+        });
+
+        Schema::create('category_yatch', function (Blueprint $table) {
+            $table->foreignId('category_id')->constrained('categories');
+            $table->foreignId('yatch_id')->constrained('yatches');
         });
     }
 

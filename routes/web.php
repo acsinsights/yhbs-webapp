@@ -34,17 +34,13 @@ Route::name('admin.')->group(function () {
         });
 
         // Categories routes
-        Route::group(['prefix' => 'categories'], function () {
-            Volt::route('/', 'categories.index')->name('categories.index');
-            Volt::route('/create', 'categories.create')->name('categories.create');
-            Volt::route('/{category}/edit', 'categories.edit')->name('categories.edit');
+        Route::group(['prefix' => 'category'], function () {
+            Volt::route('/', 'category.index')->name('category.index');
         });
 
         // Amenities routes
-        Route::group(['prefix' => 'amenities'], function () {
-            Volt::route('/', 'amenities.index')->name('amenities.index');
-            Volt::route('/create', 'amenities.create')->name('amenities.create');
-            Volt::route('/{amenity}/edit', 'amenities.edit')->name('amenities.edit');
+        Route::group(['prefix' => 'amenity'], function () {
+            Volt::route('/', 'amenity.index')->name('amenity.index');
         });
 
         // Bookings routes

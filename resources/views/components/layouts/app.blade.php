@@ -67,50 +67,31 @@
                         <small class="hidden-when-collapsed">Bookings</small>
                     </div>
 
-                    <x-menu-item title="Yacht Bookings" icon="o-sparkles" link="{{ route('admin.index') }}" />
-                    <x-menu-item title="Hotel Bookings" icon="o-building-office" link="{{ route('admin.index') }}" />
-                    <x-menu-item title="Hotel Enquiries" icon="o-envelope" link="{{ route('admin.index') }}" />
+                    <x-menu-item title="Yacht Bookings" icon="o-sparkles" link="###" />
+                    <x-menu-item title="Hotel Bookings" icon="o-building-office" link="###" />
+                    <x-menu-item title="Hotel Enquiries" icon="o-envelope" link="###" />
                 @endrole
 
                 @role('admin|superadmin')
                     <div class="divider divider-start my-1">
                         <small class="hidden-when-collapsed">Management</small>
                     </div>
-
-                    <x-menu-sub title="Yachts" icon="o-sparkles">
-                        <x-menu-item title="All Yachts" icon="o-list-bullet" link="{{ route('admin.yatch.index') }}" />
-                    </x-menu-sub>
-
-                    <x-menu-item title="All Rooms" icon="o-home-modern" link="{{ route('admin.rooms.index') }}" />
-
-                    <x-menu-sub title="Categories" icon="o-list-bullet">
-                        <x-menu-item title="All Categories" icon="o-list-bullet" link="{{ route('admin.index') }}" />
-                        {{-- <x-menu-item title="Add Category" icon="o-plus-circle" link="{{ route('admin.index') }}" /> --}}
-                    </x-menu-sub>
+                    <x-menu-item title="Hotels" icon="o-building-office" link="{{ route('admin.hotels.index') }}" />
+                    <x-menu-item title="Yachts" icon="o-sparkles" link="{{ route('admin.yatch.index') }}" />
+                    <x-menu-item title="Rooms" icon="o-home-modern" link="{{ route('admin.rooms.index') }}" />
+                    <x-menu-item title="Categories" icon="o-tag" link="{{ route('admin.category.index') }}" />
+                    <x-menu-item title="Amenities" icon="o-star" link="{{ route('admin.amenity.index') }}" />
 
                     <div class="divider divider-start my-1">
                         <small class="hidden-when-collapsed">Reports</small>
                     </div>
-
-                    <x-menu-item title="Booking Reports" icon="o-chart-bar" link="{{ route('admin.index') }}" />
-                    <x-menu-item title="Revenue Reports" icon="o-currency-dollar" link="{{ route('admin.index') }}" />
+                    <x-menu-item title="Booking Reports" icon="o-chart-bar" link="###" />
+                    <x-menu-item title="Revenue Reports" icon="o-currency-dollar" link="###" />
                 @endrole
 
-                @role('reception|superadmin|admin')
-                    <div class="divider divider-start my-1">
-                        <small class="hidden-when-collapsed">Quick Actions</small>
-                    </div>
-
-                    <x-menu-item title="New Yacht Booking" icon="o-plus-circle" link="{{ route('admin.index') }}" />
-                    <x-menu-item title="New Hotel Booking" icon="o-plus-circle" link="{{ route('admin.index') }}" />
-                @endrole
-
-                @role('admin|superadmin')
-                    <div class="divider divider-start my-1">
-                        <small class="hidden-when-collapsed">Settings</small>
-                    </div>
-                @endrole
-
+                <div class="divider divider-start my-1">
+                    <small class="hidden-when-collapsed">Settings</small>
+                </div>
                 <x-menu-item title="Profile" icon="o-user-circle" link="{{ route('admin.profile') }}" />
             </x-menu>
         </x-slot:sidebar>

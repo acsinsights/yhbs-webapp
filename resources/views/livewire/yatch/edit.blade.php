@@ -8,7 +8,7 @@ use Illuminate\Support\Collection;
 use Livewire\Volt\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Http\UploadedFile;
-use App\Models\Yatch;
+use App\Models\{Yatch, Category, Amenity};
 
 new class extends Component {
     use Toast, WithFileUploads, WithMediaSync;
@@ -23,10 +23,25 @@ new class extends Component {
     public ?int $sku = null;
     public ?float $price = null;
     public ?float $discount_price = null;
+    public ?int $length = null;
+    public ?int $max_guests = null;
+    public ?int $max_crew = null;
+    public ?int $max_fuel_capacity = null;
+    public ?int $max_capacity = null;
+    public array $category_ids = [];
+    public array $amenity_ids = [];
 
     // Image library properties
     public array $files = [];
     public Collection $library;
+
+    public bool $addCategoryModal = false;
+    public string $category_name = '';
+    public $category_icon = null;
+
+    public bool $addAmenityModal = false;
+    public string $amenity_name = '';
+    public $amenity_icon = null;
 
     public $config = ['aspectRatio' => 1];
     public $config2 = ['aspectRatio' => 16 / 9];
@@ -43,13 +58,20 @@ new class extends Component {
     {
         $this->yatch = $yatch;
         $this->name = $yatch->name;
-        $this->slug = $yatch->slug;
         $this->existing_image = $yatch->image;
         $this->image = null; // Keep null for file upload, use existing_image for display
         $this->description = $yatch->description;
         $this->sku = $yatch->sku;
         $this->price = $yatch->price;
         $this->discount_price = $yatch->discount_price;
+        $this->length = $yatch->length;
+        $this->max_guests = $yatch->max_guests;
+        $this->max_crew = $yatch->max_crew;
+        $this->max_fuel_capacity = $yatch->max_fuel_capacity;
+        // Auto-calculate max_capacity from guests and crew
+        $this->calculateMaxCapacity();
+        $this->category_ids = $yatch->categories->pluck('id')->toArray();
+        $this->amenity_ids = $yatch->amenities->pluck('id')->toArray();
 
         // Load existing library metadata from yatch
         $libraryData = $yatch->library;
@@ -64,24 +86,23 @@ new class extends Component {
         }
     }
 
-    public function updatedName($value)
+    private function calculateMaxCapacity(): void
     {
-        $this->slug = Str::slug($value);
+        $guests = $this->max_guests ?? 0;
+        $crew = $this->max_crew ?? 0;
+        $this->max_capacity = $guests + $crew;
     }
 
-    // Ensure library is always a Collection after Livewire hydration
     public function hydrate(): void
     {
         $this->ensureLibraryIsCollection();
     }
 
-    // Ensure library is always a Collection after any property update
     public function updated($propertyName): void
     {
         $this->ensureLibraryIsCollection();
     }
 
-    // Helper method to ensure library is always a Collection
     private function ensureLibraryIsCollection(): void
     {
         if (!($this->library instanceof Collection)) {
@@ -92,24 +113,37 @@ new class extends Component {
     public function update(): void
     {
         $rules = [
-            'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:yatches,slug,' . $this->yatch->id,
+            'name' => 'required|string|max:255|unique:yatches,name,' . $this->yatch->id,
             'files.*' => 'image|max:5000',
             'description' => 'nullable|string',
             'sku' => 'nullable|integer',
             'price' => 'nullable|numeric|min:0',
             'discount_price' => 'nullable|numeric|min:0',
+            'length' => 'nullable|integer|min:0',
+            'max_guests' => 'nullable|integer|min:0',
+            'max_crew' => 'nullable|integer|min:0',
+            'max_fuel_capacity' => 'nullable|integer|min:0',
+            'max_capacity' => 'nullable|integer|min:0',
             'library' => 'nullable',
         ];
 
-        // Only validate image if it's actually a file upload object
         if ($this->image instanceof UploadedFile) {
             $rules['image'] = 'nullable|image|max:5000';
         }
 
         $this->validate($rules);
 
-        // Handle single image upload - keep existing if no new upload
+        $this->calculateMaxCapacity();
+
+        $slug = Str::slug($this->name);
+
+        $originalSlug = $slug;
+        $counter = 1;
+        while (Yatch::where('slug', $slug)->where('id', '!=', $this->yatch->id)->exists()) {
+            $slug = $originalSlug . '-' . $counter;
+            $counter++;
+        }
+
         $imagePath = $this->existing_image;
         if ($this->image instanceof UploadedFile) {
             $url = $this->image->store('yatches', 'public');
@@ -118,21 +152,85 @@ new class extends Component {
 
         $this->yatch->update([
             'name' => $this->name,
-            'slug' => $this->slug,
+            'slug' => $slug,
             'image' => $imagePath,
             'description' => $this->description,
             'sku' => $this->sku,
             'price' => $this->price,
             'discount_price' => $this->discount_price,
+            'length' => $this->length,
+            'max_guests' => $this->max_guests,
+            'max_crew' => $this->max_crew,
+            'max_fuel_capacity' => $this->max_fuel_capacity,
+            'max_capacity' => $this->max_capacity,
         ]);
 
-        // Ensure library is a Collection before calling syncMedia
         $this->ensureLibraryIsCollection();
 
-        // Sync media files and update library metadata
         $this->syncMedia(model: $this->yatch, library: 'library', files: 'files', storage_subpath: '/yatches/library', model_field: 'library', visibility: 'public', disk: 'public');
 
+        $this->yatch->categories()->sync($this->category_ids);
+        $this->yatch->amenities()->sync($this->amenity_ids);
+
         $this->success('Yacht updated successfully.', redirectTo: route('admin.yatch.index'));
+    }
+
+    public function saveCategory(): void
+    {
+        $this->validate([
+            'category_name' => 'required|string|max:255',
+            'category_icon' => 'nullable|image|max:2500',
+        ]);
+
+        $icon = null;
+        if ($this->category_icon) {
+            $url = $this->category_icon->store('categories', 'public');
+            $icon = "/storage/$url";
+        }
+
+        $category = Category::create([
+            'name' => $this->category_name,
+            'slug' => Str::slug($this->category_name),
+            'icon' => $icon,
+            'type' => 'yatch',
+        ]);
+
+        $this->success('Category created successfully.');
+        $this->addCategoryModal = false;
+        $this->reset('category_name', 'category_icon');
+        $this->category_ids = array_merge($this->category_ids, [$category->id]);
+    }
+
+    public function saveAmenity(): void
+    {
+        $this->validate([
+            'amenity_name' => 'required|string|max:255',
+            'amenity_icon' => 'nullable|image|max:2500',
+        ]);
+
+        $icon = null;
+        if ($this->amenity_icon) {
+            $url = $this->amenity_icon->store('amenities', 'public');
+            $icon = "/storage/$url";
+        }
+
+        $amenity = Amenity::create([
+            'name' => $this->amenity_name,
+            'slug' => Str::slug($this->amenity_name),
+            'icon' => $icon,
+            'type' => 'yatch',
+        ]);
+
+        $this->success('Amenity created successfully.');
+        $this->addAmenityModal = false;
+        $this->reset('amenity_name', 'amenity_icon');
+        $this->amenity_ids = array_merge($this->amenity_ids, [$amenity->id]);
+    }
+
+    public function rendering(View $view): void
+    {
+        $view->categories = Category::type('yatch')->latest()->get();
+        $view->amenities = Amenity::type('yatch')->latest()->get();
     }
 }; ?>
 @section('cdn')
@@ -144,8 +242,8 @@ new class extends Component {
 <div class="pb-4">
     <x-header title="Edit Yacht" subtitle="Update yacht information" separator>
         <x-slot:actions>
-            <x-button icon="o-arrow-left" label="Back to Yachts" link="{{ route('admin.yatch.index') }}" class="btn-ghost"
-                responsive />
+            <x-button icon="o-arrow-left" label="Back to Yachts" link="{{ route('admin.yatch.index') }}"
+                class="btn-primary btn-soft" responsive />
         </x-slot:actions>
     </x-header>
 
@@ -154,9 +252,6 @@ new class extends Component {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <x-input wire:model="name" label="Name" placeholder="Enter yacht name" icon="o-tag"
                     hint="The slug will be auto-generated from the name" />
-
-                <x-input wire:model="slug" label="Slug" placeholder="yacht-slug" icon="o-link"
-                    hint="URL-friendly version of the name" />
 
                 <x-input wire:model="sku" type="number" label="SKU" placeholder="Enter SKU" icon="o-hashtag"
                     hint="Stock keeping unit" />
@@ -177,14 +272,46 @@ new class extends Component {
 
                 <x-input wire:model="discount_price" type="number" step="0.01" label="Discount Price"
                     placeholder="0.00" icon="o-tag" hint="Discounted price (optional)" />
+
+                <x-input wire:model="length" type="number" label="Length (m)" placeholder="Enter length in meters"
+                    icon="o-arrows-pointing-out" hint="Yacht length in meters" />
+
+                <x-input wire:model="max_guests" type="number" label="Max Guests" placeholder="Enter maximum guests"
+                    icon="o-users" hint="Maximum number of guests" />
+
+                <x-input wire:model="max_crew" type="number" label="Max Crew" placeholder="Enter maximum crew"
+                    icon="o-user-group" hint="Maximum number of crew members" />
+
+                <x-input wire:model="max_fuel_capacity" type="number" label="Max Fuel Capacity (L)"
+                    placeholder="Enter fuel capacity" icon="o-beaker" hint="Maximum fuel capacity in liters" />
             </div>
 
-            {{-- Description Editor --}}
+            <div class="mt-4 md:mt-6">
+                <x-choices-offline wire:model="category_ids" label="Categories" placeholder="Select categories"
+                    :options="$categories" icon="o-squares-2x2" hint="Select one or more categories for this yacht"
+                    searchable clearable>
+                    <x-slot:append>
+                        <x-button icon="o-plus" label="Add Category" class="btn-primary join-item btn-sm md:btn-md"
+                            @click="$wire.addCategoryModal = true" responsive />
+                    </x-slot:append>
+                </x-choices-offline>
+            </div>
+
+            <div class="mt-4 md:mt-6">
+                <x-choices-offline wire:model="amenity_ids" label="Amenities" placeholder="Select amenities"
+                    :options="$amenities" icon="o-sparkles" hint="Select one or more amenities available in this yacht"
+                    searchable clearable>
+                    <x-slot:append>
+                        <x-button icon="o-plus" label="Add Amenity" class="btn-primary join-item btn-sm md:btn-md"
+                            @click="$wire.addAmenityModal = true" responsive />
+                    </x-slot:append>
+                </x-choices-offline>
+            </div>
+
             <div class="mt-4 md:mt-6">
                 <x-editor wire:model="description" label="Description" hint="Detailed description of the yacht" />
             </div>
 
-            {{-- Form Actions --}}
             <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-6 md:mt-8 pt-4 md:pt-6 border-t">
                 <x-button icon="o-arrow-left" label="Back to Yachts" link="{{ route('admin.yatch.index') }}"
                     class="btn-ghost w-full sm:w-auto order-2 sm:order-1" responsive />
@@ -195,4 +322,48 @@ new class extends Component {
             </div>
         </x-form>
     </x-card>
+
+    <x-modal wire:model="addCategoryModal" title="Add Category" class="backdrop-blur" max-width="md">
+        <x-form wire:submit="saveCategory">
+            <div class="space-y-4">
+                <x-input wire:model="category_name" label="Category Name" placeholder="Enter category name" />
+                <x-file wire:model="category_icon" label="Category Icon" placeholder="Enter category icon"
+                    crop-after-change :crop-config="$config" hint="Max: 2MB">
+                    <img src="https://placehold.co/300" alt="Category Icon"
+                        class="rounded-md w-full max-w-xs h-48 object-cover mx-auto" />
+                </x-file>
+            </div>
+
+            <x-slot:actions>
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+                    <x-button icon="o-x-mark" label="Cancel" @click="$wire.addCategoryModal = false"
+                        class="btn-ghost w-full sm:w-auto" responsive />
+                    <x-button icon="o-check" label="Add Category" type="submit"
+                        class="btn-primary w-full sm:w-auto" spinner="saveCategory" responsive />
+                </div>
+            </x-slot:actions>
+        </x-form>
+    </x-modal>
+
+    <x-modal wire:model="addAmenityModal" title="Add Amenity" class="backdrop-blur" max-width="md">
+        <x-form wire:submit="saveAmenity">
+            <div class="space-y-4">
+                <x-input wire:model="amenity_name" label="Amenity Name" placeholder="Enter amenity name" />
+                <x-file wire:model="amenity_icon" label="Amenity Icon" placeholder="Enter amenity icon"
+                    crop-after-change :crop-config="$config" hint="Max: 2MB">
+                    <img src="https://placehold.co/300" alt="Amenity Icon"
+                        class="rounded-md w-full max-w-xs h-48 object-cover mx-auto" />
+                </x-file>
+            </div>
+
+            <x-slot:actions>
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+                    <x-button icon="o-x-mark" label="Cancel" @click="$wire.addAmenityModal = false"
+                        class="btn-ghost w-full sm:w-auto" responsive />
+                    <x-button icon="o-check" label="Add Amenity" type="submit" class="btn-primary w-full sm:w-auto"
+                        spinner="saveAmenity" responsive />
+                </div>
+            </x-slot:actions>
+        </x-form>
+    </x-modal>
 </div>

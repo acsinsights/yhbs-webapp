@@ -15,6 +15,8 @@ new class extends Component {
     public Room $room;
 
     public int $hotel_id = 0;
+    public string $name = '';
+    public string $slug = '';
     public string $room_number = '';
     public ?string $image = null;
     public ?string $existing_image = null;
@@ -26,6 +28,8 @@ new class extends Component {
     public ?string $meta_keywords = null;
     public ?string $meta_description = null;
     public bool $is_active = false;
+    public ?int $adults = null;
+    public ?int $children = null;
 
     // Image library properties
     public array $files = [];
@@ -54,6 +58,8 @@ new class extends Component {
     {
         $this->room = $room;
         $this->hotel_id = $room->hotel_id;
+        $this->name = $room->name ?? '';
+        $this->slug = $room->slug ?? '';
         $this->room_number = $room->room_number;
         $this->existing_image = $room->image;
         $this->image = null; // Keep null for file upload, use existing_image for display
@@ -63,15 +69,33 @@ new class extends Component {
         $this->meta_keywords = $room->meta_keywords;
         $this->meta_description = $room->meta_description;
         $this->is_active = $room->is_active ?? false;
+        $this->adults = $room->adults;
+        $this->children = $room->children;
         $this->category_ids = $room->categories->pluck('id')->toArray();
         $this->amenity_ids = $room->amenities->pluck('id')->toArray();
         $this->library = $room->library ?? new Collection();
+    }
+
+    public function updatedName($value): void
+    {
+        // Auto-generate slug from name
+        $this->slug = Str::slug($value);
+
+        // Ensure slug is unique (excluding current room)
+        $originalSlug = $this->slug;
+        $counter = 1;
+        while (Room::where('slug', $this->slug)->where('id', '!=', $this->room->id)->exists()) {
+            $this->slug = $originalSlug . '-' . $counter;
+            $counter++;
+        }
     }
 
     public function update(): void
     {
         $this->validate([
             'hotel_id' => 'required|exists:hotels,id',
+            'name' => 'required|string|max:255',
+            'slug' => 'required|string|max:255|unique:rooms,slug,' . $this->room->id,
             'room_number' => 'required|string|max:255',
             'image' => 'nullable|image|max:5000',
             'files.*' => 'image|max:5000',
@@ -81,6 +105,8 @@ new class extends Component {
             'meta_keywords' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:150',
             'is_active' => 'nullable|boolean',
+            'adults' => 'nullable|integer|min:0',
+            'children' => 'nullable|integer|min:0',
             'library' => 'nullable',
         ]);
 
@@ -93,6 +119,8 @@ new class extends Component {
 
         $this->room->update([
             'hotel_id' => $this->hotel_id,
+            'name' => $this->name,
+            'slug' => $this->slug,
             'room_number' => $this->room_number,
             'image' => $imagePath,
             'description' => $this->description,
@@ -101,6 +129,8 @@ new class extends Component {
             'meta_keywords' => $this->meta_keywords,
             'meta_description' => $this->meta_description,
             'is_active' => $this->is_active,
+            'adults' => $this->adults,
+            'children' => $this->children,
         ]);
 
         // Sync media files and update library metadata
@@ -166,7 +196,7 @@ new class extends Component {
     public function rendering(View $view): void
     {
         $view->hotels = Hotel::latest()->get();
-        $view->categories = Category::latest()->get();
+        $view->categories = Category::type('room')->latest()->get();
         $view->amenities = Amenity::type('room')->latest()->get();
     }
 }; ?>
@@ -213,12 +243,19 @@ new class extends Component {
                     option-value="id" option-label="name" icon="o-building-office-2"
                     hint="Select the hotel this room belongs to" />
 
+                <x-input wire:model="name" label="Room Name" placeholder="e.g., Standard Room, Deluxe Suite"
+                    icon="o-tag" hint="Display name for the room (slug will be auto-generated)" />
+
                 <x-input wire:model="room_number" label="Room Number" placeholder="e.g., 101, 202, Suite A"
                     icon="o-hashtag" hint="Unique room identifier" />
 
-                <div class="md:col-span-2">
-                    <x-toggle wire:model="is_active" label="Active Status" hint="Enable or disable this room" />
-                </div>
+                <x-input wire:model="adults" type="number" label="Adults" placeholder="e.g., 2" icon="o-user"
+                    hint="Maximum number of adults (optional)" min="0" />
+
+                <x-input wire:model="children" type="number" label="Children" placeholder="e.g., 1" icon="o-user"
+                    hint="Maximum number of children (optional)" min="0" />
+
+                <x-toggle wire:model="is_active" label="Active Status" hint="Enable or disable this room" />
 
                 <x-file wire:model="image" label="Room Image" placeholder="Upload room image" crop-after-change
                     :crop-config="$config2" hint="Max: 5MB">
