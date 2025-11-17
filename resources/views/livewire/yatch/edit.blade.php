@@ -240,7 +240,29 @@ new class extends Component {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
 @endsection
 <div class="pb-4">
-    <x-header title="Edit Yacht" subtitle="Update yacht information" separator>
+    @php
+        $breadcrumbs = [
+            [
+                'link' => route('admin.index'),
+                'icon' => 's-home',
+            ],
+            [
+                'label' => 'Yachts',
+                'link' => route('admin.yatch.index'),
+                'icon' => 'o-home-modern',
+            ],
+            [
+                'label' => 'Edit Yacht',
+                'icon' => 'o-pencil',
+            ],
+        ];
+    @endphp
+
+    <x-header title="Edit Yacht" separator>
+        <x-slot:subtitle>
+            <p class="text-sm text-base-content/50 mb-2">Update yacht information</p>
+            <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
+        </x-slot:subtitle>
         <x-slot:actions>
             <x-button icon="o-arrow-left" label="Back to Yachts" link="{{ route('admin.yatch.index') }}"
                 class="btn-primary btn-soft" responsive />
