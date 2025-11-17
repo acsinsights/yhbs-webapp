@@ -49,6 +49,13 @@ Route::name('admin.')->group(function () {
             Volt::route('/create', 'bookings.create')->name('bookings.create');
         });
 
+        // Hotel Bookings routes
+        Route::group(['prefix' => 'bookings/hotel'], function () {
+            Volt::route('/', 'booking.hotel.index')->name('bookings.hotel.index');
+            Volt::route('/create', 'booking.hotel.create')->name('bookings.hotel.create');
+            Volt::route('/{booking}/show', 'booking.hotel.show')->name('bookings.hotel.show');
+        });
+
         Route::get('/admin/logout', function () {
             Auth::logout();
             request()->session()->invalidate();

@@ -16,11 +16,13 @@ return new class extends Migration
 
             $table->morphs('bookingable');
             $table->foreignId('user_id')->constrained('users');
+            $table->integer('adults')->nullable();
+            $table->integer('children')->nullable();
             $table->dateTime('check_in')->nullable();
             $table->dateTime('check_out')->nullable();
             $table->decimal('price', 10, 2)->nullable();
             $table->decimal('discount_price', 10, 2)->nullable();
-            $table->string('status')->default('booked')->comment('waiting, booked, cancelled, completed');
+            $table->string('status')->default('pending')->comment('pending, booked, checked_in, cancelled, checked_out');
             $table->string('payment_status')->default('pending')->comment('pending, paid, failed');
             $table->string('payment_method')->default('other')->comment('cash, card, other, online');
             $table->text('notes')->nullable();

@@ -68,7 +68,8 @@
                     </div>
 
                     <x-menu-item title="Yacht Bookings" icon="o-sparkles" link="###" />
-                    <x-menu-item title="Hotel Bookings" icon="o-building-office" link="###" />
+                    <x-menu-item title="Hotel Bookings" icon="o-building-office"
+                        link="{{ route('admin.bookings.hotel.index') }}" />
                     <x-menu-item title="Hotel Enquiries" icon="o-envelope" link="###" />
                 @endrole
 

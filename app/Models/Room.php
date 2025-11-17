@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Room extends Model
 {
@@ -66,5 +67,34 @@ class Room extends Model
             ->orWhereHas('hotel', function ($query) use ($search) {
                 $query->where('name', 'like', "%{$search}%");
             });
+    }
+
+    /**
+     * Check if room is available for given date range
+     */
+    public function scopeAvailable($query, $checkIn, $checkOut)
+    {
+        return $query->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
+            $q->where(function ($query) use ($checkIn, $checkOut) {
+                // Check if new booking overlaps with existing bookings
+                $query->where(function ($q) use ($checkIn, $checkOut) {
+                    $q->whereBetween('check_in', [$checkIn, $checkOut])
+                        ->orWhereBetween('check_out', [$checkIn, $checkOut])
+                        ->orWhere(function ($q) use ($checkIn, $checkOut) {
+                            $q->where('check_in', '<=', $checkIn)
+                                ->where('check_out', '>=', $checkOut);
+                        });
+                })
+                    ->whereIn('status', ['pending', 'booked', 'checked_in']); // Only consider active bookings
+            });
+        });
+    }
+
+    /**
+     * Get bookings for this room
+     */
+    public function bookings(): MorphMany
+    {
+        return $this->morphMany(Booking::class, 'bookingable');
     }
 }

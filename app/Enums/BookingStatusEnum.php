@@ -4,18 +4,20 @@ namespace App\Enums;
 
 enum BookingStatusEnum: string
 {
-    case WAITING = 'waiting';
+    case PENDING = 'pending';
     case BOOKED = 'booked';
+    case CHECKED_IN = 'checked_in';
     case CANCELLED = 'cancelled';
-    case COMPLETED = 'completed';
+    case CHECKED_OUT = 'checked_out';
 
     public function label(): string
     {
         return match ($this) {
-            self::WAITING => 'Waiting',
+            self::PENDING => 'Pending',
             self::BOOKED => 'Booked',
+            self::CHECKED_IN => 'Checked In',
             self::CANCELLED => 'Cancelled',
-            self::COMPLETED => 'Completed',
+            self::CHECKED_OUT => 'Checked Out',
         };
     }
 }
