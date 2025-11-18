@@ -47,7 +47,19 @@ new class extends Component {
             ->orderBy(...array_values($this->sortBy))
             ->paginate($this->perPage);
 
-        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'user.name', 'label' => 'Customer', 'sortable' => false], ['key' => 'room_number', 'label' => 'Room'], ['key' => 'check_in', 'label' => 'Check In', 'sortable' => true], ['key' => 'check_out', 'label' => 'Check Out', 'sortable' => true], ['key' => 'adults', 'label' => 'Adults'], ['key' => 'children', 'label' => 'Children'], ['key' => 'price', 'label' => 'Amount', 'sortable' => true], ['key' => 'payment_status', 'label' => 'Payment Status'], ['key' => 'payment_method', 'label' => 'Payment Method'], ['key' => 'status', 'label' => 'Status']];
+        $view->headers = [
+            ['key' => 'id', 'label' => '#', 'class' => 'w-1'],
+            ['key' => 'user.name', 'label' => 'Customer', 'sortable' => false, 'class' => 'whitespace-nowrap'],
+            ['key' => 'room_number', 'label' => 'Room', 'sortable' => false, 'class' => 'w-64'],
+            ['key' => 'check_in', 'label' => 'Check In', 'sortable' => true, 'class' => 'whitespace-nowrap'],
+            ['key' => 'check_out', 'label' => 'Check Out', 'sortable' => true, 'class' => 'whitespace-nowrap'],
+            ['key' => 'adults', 'label' => 'Adults', 'sortable' => false, 'class' => 'whitespace-nowrap'],
+            ['key' => 'children', 'label' => 'Children', 'sortable' => false, 'class' => 'whitespace-nowrap'],
+            ['key' => 'price', 'label' => 'Amount', 'sortable' => true, 'class' => 'whitespace-nowrap'],
+            ['key' => 'payment_status', 'label' => 'Payment Status', 'class' => 'whitespace-nowrap'],
+            ['key' => 'payment_method', 'label' => 'Payment Method', 'class' => 'whitespace-nowrap'],
+            ['key' => 'status', 'label' => 'Status', 'class' => 'whitespace-nowrap'],
+        ];
     }
 }; ?>
 
@@ -86,9 +98,13 @@ new class extends Component {
 
             @scope('cell_room_number', $booking)
                 @if ($booking->bookingable)
-                    <div class="flex flex-col">
-                        <span class="font-semibold">{{ $booking->bookingable->room_number }}</span>
-                        <span class="text-xs text-base-content/50">{{ $booking->bookingable->hotel->name ?? 'N/A' }}</span>
+                    <div class="flex gap-2 items-center">
+                        <x-button tooltip="{{ $booking->bookingable->hotel->name }}"
+                            link="{{ route('admin.hotels.edit', $booking->bookingable->hotel->id) }}"
+                            class="btn-ghost btn-sm">
+                            <x-icon name="o-building-office-2" class="w-4 h-4" />
+                            <span class="font-semibold">{{ $booking->bookingable->room_number }}</span>
+                        </x-button>
                     </div>
                 @else
                     <span class="text-base-content/50">—</span>
@@ -129,7 +145,7 @@ new class extends Component {
 
             @scope('cell_price', $booking)
                 <div class="font-semibold">
-                    ${{ number_format($booking->price ?? 0, 2) }}
+                    KD {{ number_format($booking->price ?? 0, 2) }}
                 </div>
             @endscope
 
