@@ -178,6 +178,8 @@ new class extends Component {
 
             @scope('actions', $room)
                 <div class="flex items-center gap-2">
+                    <x-button icon="o-eye" link="{{ route('admin.rooms.show', $room->id) }}" class="btn-ghost btn-sm"
+                        tooltip="Show" />
                     <x-button icon="o-pencil" link="{{ route('admin.rooms.edit', $room->id) }}" class="btn-ghost btn-sm"
                         tooltip="Edit" />
                     <x-button icon="o-trash" wire:click="delete({{ $room->id }})"

@@ -17,6 +17,7 @@ Route::name('admin.')->group(function () {
         // Rooms routes
         Route::group(['prefix' => 'rooms'], function () {
             Volt::route('/', 'rooms.index')->name('rooms.index');
+            Volt::route('/{room}/show', 'rooms.show')->name('rooms.show');
             Volt::route('/{room}/edit', 'rooms.edit')->name('rooms.edit');
         });
 
@@ -30,6 +31,7 @@ Route::name('admin.')->group(function () {
         // Hotels routes
         Route::group(['prefix' => 'hotels'], function () {
             Volt::route('/', 'hotels.index')->name('hotels.index');
+            Volt::route('/{hotel}/show', 'hotels.show')->name('hotels.show');
             Volt::route('/{hotel}/edit', 'hotels.edit')->name('hotels.edit');
         });
 
@@ -54,6 +56,13 @@ Route::name('admin.')->group(function () {
             Volt::route('/', 'booking.hotel.index')->name('bookings.hotel.index');
             Volt::route('/create', 'booking.hotel.create')->name('bookings.hotel.create');
             Volt::route('/{booking}/show', 'booking.hotel.show')->name('bookings.hotel.show');
+        });
+
+        // Yacht Bookings routes
+        Route::group(['prefix' => 'bookings/yatch'], function () {
+            Volt::route('/', 'booking.yatch.index')->name('bookings.yatch.index');
+            Volt::route('/create', 'booking.yatch.create')->name('bookings.yatch.create');
+            Volt::route('/{booking}/show', 'booking.yatch.show')->name('bookings.yatch.show');
         });
 
         Route::get('/admin/logout', function () {

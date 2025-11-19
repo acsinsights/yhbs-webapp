@@ -17,6 +17,36 @@ new class extends Component {
     public array $sortBy = ['column' => 'id', 'direction' => 'desc'];
     public int $perPage = 10;
 
+    public bool $createModal = false;
+    public string $name = '';
+
+    // Create hotel with just name
+    public function createHotel(): void
+    {
+        $this->validate([
+            'name' => 'required|string|max:255|unique:hotels,name',
+        ]);
+
+        $slug = Str::slug($this->name);
+
+        // Ensure slug is unique
+        $originalSlug = $slug;
+        $counter = 1;
+        while (Hotel::where('slug', $slug)->exists()) {
+            $slug = $originalSlug . '-' . $counter;
+            $counter++;
+        }
+
+        $hotel = Hotel::create([
+            'name' => $this->name,
+            'slug' => $slug,
+        ]);
+
+        $this->createModal = false;
+        $this->reset('name');
+        $this->success('Hotel created successfully.', redirectTo: route('admin.hotels.edit', $hotel));
+    }
+
     public function rendering(View $view)
     {
         $view->hotels = Hotel::query()
@@ -85,6 +115,8 @@ new class extends Component {
 
             @scope('actions', $hotel)
                 <div class="flex items-center gap-2">
+                    <x-button icon="o-eye" link="{{ route('admin.hotels.show', $hotel->id) }}" class="btn-ghost btn-sm"
+                        tooltip="Show" />
                     <x-button icon="o-pencil" link="{{ route('admin.hotels.edit', $hotel->id) }}" class="btn-ghost btn-sm"
                         tooltip="Edit" />
                 </div>
@@ -95,4 +127,23 @@ new class extends Component {
             </x-slot:empty>
         </x-table>
     </x-card>
+
+    {{-- Create Hotel Modal --}}
+    <x-modal wire:model="createModal" title="Create New Hotel" class="backdrop-blur" max-width="md">
+        <x-form wire:submit="createHotel">
+            <div class="space-y-4">
+                <x-input wire:model="name" label="Hotel Name" placeholder="Enter hotel name" icon="o-tag"
+                    hint="The slug will be auto-generated from the name" />
+            </div>
+
+            <x-slot:actions>
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+                    <x-button icon="o-x-mark" label="Cancel" @click="$wire.createModal = false"
+                        class="btn-ghost w-full sm:w-auto" responsive />
+                    <x-button icon="o-check" label="Create Hotel" type="submit" class="btn-primary w-full sm:w-auto"
+                        spinner="createHotel" responsive />
+                </div>
+            </x-slot:actions>
+        </x-form>
+    </x-modal>
 </div>

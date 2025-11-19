@@ -27,292 +27,208 @@ new class extends Component {
     }
 }; ?>
 
-<div>
-    <!-- Header Section -->
-    <div class="mb-6">
-        <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-3">
-                <div class="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10">
-                    <x-icon name="o-sparkles" class="w-8 h-8 text-primary" />
-                </div>
+@php
+    $slides = [];
+    if ($yatch->library && is_iterable($yatch->library)) {
+        foreach ($yatch->library as $item) {
+            if (is_string($item) && $item !== '') {
+                $slides[] = ['image' => asset($item)];
+            }
+        }
+    }
+@endphp
+
+<div class="space-y-6">
+    <x-header title="{{ $yatch->name }}" separator>
+        <x-slot:subtitle>
+            <p class="text-sm text-base-content/60">Yacht overview and details</p>
+        </x-slot:subtitle>
+        <x-slot:actions>
+            <x-button icon="o-pencil" label="Edit" link="{{ route('admin.yatch.edit', $yatch) }}" class="btn-primary" />
+            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.yatch.index') }}" class="btn-ghost" />
+            <x-button icon="o-trash" label="Delete" wire:click="delete"
+                wire:confirm="Delete this yacht? This action cannot be undone." class="btn-error" />
+        </x-slot:actions>
+    </x-header>
+
+    <x-card>
+        <div class="grid gap-6 lg:grid-cols-2">
+            <div class="space-y-4">
+                @if ($yatch->sku)
+                    <div>
+                        <p class="text-sm text-base-content/60 mb-1">SKU</p>
+                        <code class="px-3 py-1 rounded bg-base-200 text-sm font-mono">{{ $yatch->sku }}</code>
+                    </div>
+                @endif
                 <div>
-                    <h1
-                        class="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                        {{ $yatch->name }}
-                    </h1>
-                    <p class="text-sm text-base-content/60 mt-1">Yacht Details & Information</p>
+                    <p class="text-sm text-base-content/60 mb-1">Slug</p>
+                    <code class="px-3 py-1 rounded bg-base-200 text-sm">{{ $yatch->slug }}</code>
                 </div>
-            </div>
-            <div class="flex gap-2">
-                <x-button label="Edit" link="{{ route('admin.yatch.edit', $yatch) }}" icon="o-pencil"
-                    class="btn-warning shadow-lg hover:shadow-xl transition-all duration-300" />
-                <x-button label="Back" link="{{ route('admin.yatch.index') }}" icon="o-arrow-left"
-                    class="btn-ghost hover:btn-primary transition-all duration-300" />
-            </div>
-        </div>
-        <div class="breadcrumbs text-sm">
-            <ul>
-                <li>
-                    <a href="{{ route('admin.yatch.index') }}" wire:navigate
-                        class="hover:text-primary transition-colors">
-                        <x-icon name="o-sparkles" class="w-4 h-4 inline mr-1" />
-                        Yachts
-                    </a>
-                </li>
-                <li class="text-primary font-semibold">{{ $yatch->name }}</li>
-            </ul>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <!-- Main Content -->
-        <div class="lg:col-span-2 space-y-6">
-            <!-- Cover Image Section -->
-            <x-card shadow class="border-2 border-primary/20 overflow-hidden">
-                <div
-                    class="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 border-b border-primary/20">
-                    <h2 class="text-xl font-bold flex items-center gap-2">
-                        <x-icon name="o-photo" class="w-6 h-6 text-primary" />
-                        Cover Image
-                    </h2>
-                </div>
-                <div class="p-4">
-                    @if ($yatch->image)
-                        <div class="relative group overflow-hidden rounded-xl">
-                            <img src="{{ asset($yatch->image) }}" alt="{{ $yatch->name }}"
-                                class="w-full h-[500px] object-cover rounded-xl shadow-2xl border-2 border-primary/20 transition-transform duration-500 group-hover:scale-105">
-                            <div
-                                class="absolute inset-0 bg-gradient-to-t from-base-content/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl">
-                            </div>
-                        </div>
-                    @else
-                        <div
-                            class="w-full h-[500px] bg-gradient-to-br from-base-300 via-base-200 to-base-300 rounded-xl flex flex-col items-center justify-center border-2 border-dashed border-base-400 shadow-inner">
-                            <x-icon name="o-photo" class="w-32 h-32 text-base-content/20 mb-4" />
-                            <span class="text-xl text-base-content/40 font-medium">No image available</span>
-                        </div>
-                    @endif
-                </div>
-            </x-card>
-
-            <!-- Library Images Gallery -->
-            @php
-                $libraryImages = [];
-                if ($yatch->library && is_array($yatch->library)) {
-                    // Library is already cast to array by the model
-                    // Filter to ensure all items are strings (preg_match requires string)
-                    foreach ($yatch->library as $item) {
-                        if (is_string($item) && !empty($item)) {
-                            $libraryImages[] = $item;
-                        }
-                    }
-                }
-            @endphp
-
-            @if (!empty($libraryImages))
-                <x-card shadow class="border-2 border-primary/20 overflow-hidden">
-                    <div
-                        class="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 border-b border-primary/20">
-                        <h2 class="text-xl font-bold flex items-center gap-2">
-                            <x-icon name="o-photo" class="w-6 h-6 text-primary" />
-                            Gallery Images
-                            <span class="badge badge-primary badge-lg ml-2">{{ count($libraryImages) }}</span>
-                        </h2>
-                    </div>
-                    <div class="p-4">
-                        @if (count($libraryImages) > 1)
-                            <!-- DaisyUI Carousel for multiple images -->
-                            <div class="carousel w-full bg-base-200 rounded-xl p-4">
-                                @foreach ($libraryImages as $index => $libraryImage)
-                                    <div id="slide{{ $index }}" class="carousel-item relative w-full">
-                                        <div class="relative group overflow-hidden rounded-xl w-full">
-                                            <img src="{{ asset($libraryImage) }}"
-                                                alt="Gallery Image {{ $index + 1 }}"
-                                                class="w-full h-[500px] object-cover rounded-xl shadow-lg border-2 border-primary/20 transition-transform duration-300 group-hover:scale-105">
-                                            <div
-                                                class="absolute inset-0 bg-gradient-to-t from-base-content/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl">
-                                            </div>
-                                            <div
-                                                class="absolute bottom-4 left-4 right-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                                <div class="badge badge-primary badge-lg">Image {{ $index + 1 }} of
-                                                    {{ count($libraryImages) }}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                            <!-- Carousel Navigation -->
+                @if ($yatch->price)
+                    <div>
+                        <p class="text-sm text-base-content/60 mb-1">Price</p>
+                        <p class="text-2xl font-bold text-primary">${{ number_format($yatch->price, 2) }}</p>
+                        @if ($yatch->discount_price)
+                            <p class="text-lg font-semibold text-success">
+                                ${{ number_format($yatch->discount_price, 2) }}</p>
                             @php
-                                $totalImages = count($libraryImages);
-                                $lastIndex = $totalImages - 1;
+                                $discountPercent = round(
+                                    (($yatch->price - $yatch->discount_price) / $yatch->price) * 100,
+                                );
                             @endphp
-                            <div class="flex justify-center items-center gap-4 mt-4">
-                                <a href="#slide{{ $lastIndex }}" class="btn btn-circle btn-primary">
-                                    <x-icon name="o-chevron-left" class="w-6 h-6" />
-                                </a>
-                                <div class="flex gap-2">
-                                    @foreach ($libraryImages as $index => $libraryImage)
-                                        <a href="#slide{{ $index }}"
-                                            class="btn btn-xs btn-circle {{ $index === 0 ? 'btn-active' : '' }}">
-                                            {{ $index + 1 }}
-                                        </a>
-                                    @endforeach
-                                </div>
-                                <a href="#slide1" class="btn btn-circle btn-primary">
-                                    <x-icon name="o-chevron-right" class="w-6 h-6" />
-                                </a>
+                            <x-badge :value="$discountPercent . '% OFF'" class="badge-success badge-sm mt-1" />
+                        @endif
+                    </div>
+                @endif
+                <div class="space-y-1">
+                    <p class="text-sm text-base-content/60">Created</p>
+                    <p class="font-semibold">{{ $yatch->created_at->format('M d, Y') }}</p>
+                </div>
+                <div class="space-y-1">
+                    <p class="text-sm text-base-content/60">Updated</p>
+                    <p class="font-semibold">{{ $yatch->updated_at->format('M d, Y') }}</p>
+                </div>
+                <div class="space-y-1">
+                    <p class="text-sm text-base-content/60">ID</p>
+                    <p class="font-mono">{{ $yatch->id }}</p>
+                </div>
+            </div>
+            <div class="aspect-video rounded-xl overflow-hidden bg-base-200 flex items-center justify-center">
+                @if ($yatch->image)
+                    <img src="{{ asset($yatch->image) }}" alt="{{ $yatch->name }}"
+                        class="object-cover w-full h-full" />
+                @else
+                    <div class="text-center text-base-content/50">
+                        <x-icon name="o-photo" class="w-16 h-16 mx-auto mb-2" />
+                        <p>No cover image</p>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </x-card>
+
+    @if (!empty($slides))
+        <x-card>
+            <x-slot:title>Gallery</x-slot:title>
+            <x-carousel :slides="$slides" />
+        </x-card>
+    @endif
+
+    @if ($yatch->description)
+        <x-card>
+            <x-slot:title>Description</x-slot:title>
+            <p class="text-base-content/80 whitespace-pre-line">{{ $yatch->description }}</p>
+        </x-card>
+    @endif
+
+    <x-card>
+        <x-slot:title>More Details</x-slot:title>
+        <div class="space-y-4">
+            <x-collapse separator>
+                <x-slot:heading>Specifications</x-slot:heading>
+                <x-slot:content>
+                    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        @if ($yatch->length)
+                            <div>
+                                <p class="text-xs text-base-content/60 uppercase mb-1">Length</p>
+                                <span class="font-semibold">{{ $yatch->length }}m</span>
                             </div>
-                        @else
-                            <!-- Single image display -->
-                            <div class="relative group overflow-hidden rounded-xl">
-                                <img src="{{ asset($libraryImages[0]) }}" alt="Gallery Image"
-                                    class="w-full h-[500px] object-cover rounded-xl shadow-2xl border-2 border-primary/20 transition-transform duration-500 group-hover:scale-105">
-                                <div
-                                    class="absolute inset-0 bg-gradient-to-t from-base-content/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl">
-                                </div>
+                        @endif
+                        @if ($yatch->max_guests)
+                            <div>
+                                <p class="text-xs text-base-content/60 uppercase mb-1">Max Guests</p>
+                                <span class="font-semibold">{{ $yatch->max_guests }}</span>
+                            </div>
+                        @endif
+                        @if ($yatch->max_crew)
+                            <div>
+                                <p class="text-xs text-base-content/60 uppercase mb-1">Max Crew</p>
+                                <span class="font-semibold">{{ $yatch->max_crew }}</span>
+                            </div>
+                        @endif
+                        @if ($yatch->max_capacity)
+                            <div>
+                                <p class="text-xs text-base-content/60 uppercase mb-1">Max Capacity</p>
+                                <span class="font-semibold">{{ $yatch->max_capacity }}</span>
+                            </div>
+                        @endif
+                        @if ($yatch->max_fuel_capacity)
+                            <div>
+                                <p class="text-xs text-base-content/60 uppercase mb-1">Fuel Capacity</p>
+                                <span class="font-semibold">{{ $yatch->max_fuel_capacity }}L</span>
                             </div>
                         @endif
                     </div>
-                </x-card>
-            @endif
+                </x-slot:content>
+            </x-collapse>
 
-            <!-- Description Section -->
-            @if ($yatch->description)
-                <x-card shadow class="border-2 border-base-300/50">
-                    <div class="bg-gradient-to-r from-base-200/50 to-transparent p-4 border-b border-base-300">
-                        <h2 class="text-xl font-bold flex items-center gap-2">
-                            <x-icon name="o-document-text" class="w-6 h-6 text-primary" />
-                            Description
-                        </h2>
-                    </div>
-                    <div class="p-6">
-                        <p class="text-base-content/80 whitespace-pre-wrap leading-relaxed text-lg">
-                            {{ $yatch->description }}</p>
-                    </div>
-                </x-card>
-            @endif
-
-        </div>
-
-        <!-- Sidebar -->
-        <div class="space-y-6">
-            <!-- Actions Card -->
-            <x-card shadow class="border-2 border-primary/20 overflow-hidden">
-                <div
-                    class="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 border-b border-primary/20">
-                    <h2 class="text-xl font-bold flex items-center gap-2">
-                        <x-icon name="o-bolt" class="w-6 h-6 text-primary" />
-                        Quick Actions
-                    </h2>
-                </div>
-                <div class="p-4 space-y-3">
-                    <x-button label="Edit Yacht" link="{{ route('admin.yatch.edit', $yatch) }}" icon="o-pencil"
-                        class="btn-warning w-full shadow-lg hover:shadow-xl transition-all duration-300" />
-                    <x-button label="Delete Yacht" wire:click="delete"
-                        wire:confirm="Are you sure you want to delete this yacht? This action cannot be undone."
-                        icon="o-trash" class="btn-error w-full shadow-lg hover:shadow-xl transition-all duration-300" />
-                </div>
-            </x-card>
-
-            <!-- Details Card -->
-            <x-card shadow class="border-2 border-success/20 overflow-hidden">
-                <div
-                    class="bg-gradient-to-r from-success/10 via-success/5 to-transparent p-4 border-b border-success/20">
-                    <h2 class="text-xl font-bold flex items-center gap-2">
-                        <x-icon name="o-information-circle" class="w-6 h-6 text-success" />
-                        Details
-                    </h2>
-                </div>
-                <div class="p-4 space-y-4">
-                    <div class="p-3 rounded-lg bg-base-200/50 border border-base-300">
-                        <div class="text-xs font-semibold text-base-content/60 mb-1 uppercase tracking-wide">SKU</div>
-                        <div class="text-lg font-bold font-mono">{{ $yatch->sku ?? 'N/A' }}</div>
-                    </div>
-
-                    <div class="divider my-3"></div>
-
-                    <div class="p-3 rounded-lg bg-base-200/50 border border-base-300">
-                        <div class="text-xs font-semibold text-base-content/60 mb-1 uppercase tracking-wide">Slug</div>
-                        <div class="text-sm font-mono break-all bg-base-100 p-2 rounded border border-base-300">
-                            {{ $yatch->slug }}
+            <x-collapse separator>
+                <x-slot:heading>Identifiers</x-slot:heading>
+                <x-slot:content>
+                    <div class="grid gap-4 md:grid-cols-3">
+                        <div>
+                            <p class="text-xs text-base-content/60 uppercase mb-1">Slug</p>
+                            <span class="font-mono text-sm break-all">{{ $yatch->slug }}</span>
+                        </div>
+                        @if ($yatch->sku)
+                            <div>
+                                <p class="text-xs text-base-content/60 uppercase mb-1">SKU</p>
+                                <span class="font-mono text-sm">{{ $yatch->sku }}</span>
+                            </div>
+                        @endif
+                        <div>
+                            <p class="text-xs text-base-content/60 uppercase mb-1">Record ID</p>
+                            <span class="font-mono text-sm">{{ $yatch->id }}</span>
                         </div>
                     </div>
+                </x-slot:content>
+            </x-collapse>
 
-                    <div class="divider my-3"></div>
-
-                    <div
-                        class="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary/20">
-                        <div class="text-xs font-semibold text-base-content/60 mb-2 uppercase tracking-wide">Price
-                        </div>
+            <x-collapse separator>
+                <x-slot:heading>Pricing</x-slot:heading>
+                <x-slot:content>
+                    <div class="grid gap-4 md:grid-cols-2">
                         @if ($yatch->price)
-                            <div class="text-3xl font-bold text-primary mb-2">
-                                ${{ number_format($yatch->price, 2) }}
+                            <div>
+                                <p class="text-xs text-base-content/60 uppercase mb-1">Regular Price</p>
+                                <span
+                                    class="text-xl font-bold text-primary">${{ number_format($yatch->price, 2) }}</span>
                             </div>
-                            <div class="badge badge-primary badge-lg">Regular Price</div>
-                        @else
-                            <div class="text-lg text-base-content/60">N/A</div>
+                        @endif
+                        @if ($yatch->discount_price)
+                            <div>
+                                <p class="text-xs text-base-content/60 uppercase mb-1">Discount Price</p>
+                                <span
+                                    class="text-xl font-bold text-success">${{ number_format($yatch->discount_price, 2) }}</span>
+                                @if ($yatch->price)
+                                    @php
+                                        $discountPercent = round(
+                                            (($yatch->price - $yatch->discount_price) / $yatch->price) * 100,
+                                        );
+                                    @endphp
+                                    <x-badge :value="$discountPercent . '% OFF'" class="badge-success badge-sm mt-1" />
+                                @endif
+                            </div>
                         @endif
                     </div>
+                </x-slot:content>
+            </x-collapse>
 
-                    @if ($yatch->discount_price)
-                        <div
-                            class="p-4 rounded-xl bg-gradient-to-br from-success/10 to-success/5 border-2 border-success/20">
-                            <div class="text-xs font-semibold text-base-content/60 mb-2 uppercase tracking-wide">
-                                Discount Price</div>
-                            <div class="text-2xl font-bold text-success mb-2">
-                                ${{ number_format($yatch->discount_price, 2) }}
-                            </div>
-                            @if ($yatch->price)
-                                @php
-                                    $discountPercent = round(
-                                        (($yatch->price - $yatch->discount_price) / $yatch->price) * 100,
-                                    );
-                                @endphp
-                                <div class="badge badge-success badge-lg">
-                                    <x-icon name="o-tag" class="w-4 h-4 mr-1" />
-                                    {{ $discountPercent }}% OFF
-                                </div>
-                            @endif
+            <x-collapse separator>
+                <x-slot:heading>Timestamps</x-slot:heading>
+                <x-slot:content>
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <div>
+                            <p class="text-xs text-base-content/60 uppercase mb-1">Created</p>
+                            <span>{{ $yatch->created_at->format('M d, Y h:i A') }}</span>
                         </div>
-                    @endif
-                </div>
-            </x-card>
-
-            <!-- Metadata Card -->
-            <x-card shadow class="border-2 border-base-300/50 overflow-hidden">
-                <div class="bg-gradient-to-r from-base-200/50 to-transparent p-4 border-b border-base-300">
-                    <h2 class="text-xl font-bold flex items-center gap-2">
-                        <x-icon name="o-clock" class="w-6 h-6 text-base-content/60" />
-                        Metadata
-                    </h2>
-                </div>
-                <div class="p-4 space-y-3">
-                    <div
-                        class="flex justify-between items-center p-3 rounded-lg bg-base-200/50 border border-base-300">
-                        <span class="text-sm font-semibold text-base-content/60 flex items-center gap-2">
-                            <x-icon name="o-calendar" class="w-4 h-4" />
-                            Created
-                        </span>
-                        <span class="text-sm font-bold">{{ $yatch->created_at->format('M d, Y') }}</span>
+                        <div>
+                            <p class="text-xs text-base-content/60 uppercase mb-1">Updated</p>
+                            <span>{{ $yatch->updated_at->format('M d, Y h:i A') }}</span>
+                        </div>
                     </div>
-                    <div
-                        class="flex justify-between items-center p-3 rounded-lg bg-base-200/50 border border-base-300">
-                        <span class="text-sm font-semibold text-base-content/60 flex items-center gap-2">
-                            <x-icon name="o-clock" class="w-4 h-4" />
-                            Updated
-                        </span>
-                        <span class="text-sm font-bold">{{ $yatch->updated_at->format('M d, Y') }}</span>
-                    </div>
-                    <div
-                        class="flex justify-between items-center p-3 rounded-lg bg-base-200/50 border border-base-300">
-                        <span class="text-sm font-semibold text-base-content/60 flex items-center gap-2">
-                            <x-icon name="o-hashtag" class="w-4 h-4" />
-                            ID
-                        </span>
-                        <span class="text-sm font-mono font-bold">{{ $yatch->id }}</span>
-                    </div>
-                </div>
-            </x-card>
+                </x-slot:content>
+            </x-collapse>
         </div>
-    </div>
+    </x-card>
 </div>
