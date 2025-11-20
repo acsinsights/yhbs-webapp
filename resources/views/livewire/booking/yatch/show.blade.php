@@ -149,7 +149,7 @@ new class extends Component {
                             <x-icon name="o-sparkles" class="w-5 h-5" />
                             <span>Yacht Information</span>
                         </div>
-                    </x-slot:title> 
+                    </x-slot:title>
 
                     <div class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -239,7 +239,7 @@ new class extends Component {
                 <div class="space-y-4">
                     <div>
                         <div class="text-sm text-base-content/50 mb-1">Amount</div>
-                        <div class="font-semibold text-2xl">KD {{ number_format($booking->price ?? 0, 2) }}</div>
+                        <div class="font-semibold text-2xl">{{ currency_format($booking->price ?? 0) }}</div>
                     </div>
                     <div>
                         <div class="text-sm text-base-content/50 mb-1">Payment Method</div>

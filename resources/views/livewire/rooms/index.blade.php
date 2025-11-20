@@ -143,7 +143,7 @@ new class extends Component {
 
             @scope('cell_price', $room)
                 <div class="font-semibold line-through">
-                    {{ number_format($room->price ?? 0, 2) }}
+                    {{ currency_format($room->price) }}
                 </div>
             @endscope
 
@@ -151,7 +151,7 @@ new class extends Component {
                 @if ($room->discount_price)
                     <div class="flex items-center gap-2">
                         <div class="font-semibold text-success">
-                            {{ number_format($room->discount_price, 2) }}
+                            {{ currency_format($room->discount_price) }}
                         </div>
 
                         <div>

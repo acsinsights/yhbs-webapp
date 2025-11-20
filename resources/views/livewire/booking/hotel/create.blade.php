@@ -199,7 +199,7 @@ new class extends Component {
                                         </div>
                                         <div class="text-right">
                                             <div class="font-semibold">
-                                                ${{ number_format($room->discount_price ?? ($room->price ?? 0), 2) }}</div>
+                                                {{ currency_format($room->discount_price ?? ($room->price ?? 0)) }}</div>
                                             <div class="text-xs text-base-content/50">{{ $room->adults ?? 0 }} adults,
                                                 {{ $room->children ?? 0 }} children</div>
                                         </div>

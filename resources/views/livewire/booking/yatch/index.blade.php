@@ -139,7 +139,7 @@ new class extends Component {
 
             @scope('cell_price', $booking)
                 <div class="font-semibold">
-                    KD {{ number_format($booking->price ?? 0, 2) }}
+                    {{ currency_format($booking->price ?? 0) }}
                 </div>
             @endscope
 

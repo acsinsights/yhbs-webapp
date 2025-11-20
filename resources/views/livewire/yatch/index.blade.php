@@ -97,7 +97,7 @@ new class extends Component {
 
             @scope('cell_price', $yatch)
                 <div class="font-semibold line-through">
-                    {{ number_format($yatch->price ?? 0, 2) }}
+                    {{ currency_format($yatch->price) }}
                 </div>
             @endscope
 
@@ -105,7 +105,7 @@ new class extends Component {
                 @if ($yatch->discount_price)
                     <div class="flex items-center gap-2">
                         <div class="font-semibold text-success">
-                            {{ number_format($yatch->discount_price, 2) }}
+                            {{ currency_format($yatch->discount_price) }}
                         </div>
 
                         <div>

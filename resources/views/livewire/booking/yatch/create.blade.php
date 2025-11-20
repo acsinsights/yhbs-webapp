@@ -191,7 +191,7 @@ new class extends Component {
                                         </div>
                                         <div class="text-right">
                                             <div class="font-semibold">
-                                                KD {{ number_format($yatch->discount_price ?? ($yatch->price ?? 0), 2) }}
+                                                {{ currency_format($yatch->discount_price ?? ($yatch->price ?? 0)) }}
                                             </div>
                                             <div class="text-xs text-base-content/50">
                                                 Max guests: {{ $yatch->max_guests ?? '—' }}

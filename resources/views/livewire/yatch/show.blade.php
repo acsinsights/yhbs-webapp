@@ -56,7 +56,7 @@ new class extends Component {
             <div class="space-y-6">
                 {{-- Pricing Section --}}
                 @if ($yatch->price)
-                    <div class="p-4 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+                    <div class="p-4 rounded-lg bg-base-200">
                         <div class="flex items-center gap-2 mb-3">
                             <x-icon name="o-currency-dollar" class="w-5 h-5 text-primary" />
                             <p class="text-sm font-semibold text-base-content/70 uppercase tracking-wide">Pricing</p>
@@ -65,9 +65,9 @@ new class extends Component {
                             @if ($yatch->discount_price)
                                 <div class="flex items-baseline gap-3">
                                     <p class="text-3xl font-bold text-primary">
-                                        ${{ number_format($yatch->discount_price, 2) }}</p>
+                                        {{ currency_format($yatch->discount_price) }}</p>
                                     <p class="text-xl line-through text-base-content/40">
-                                        ${{ number_format($yatch->price, 2) }}</p>
+                                        {{ currency_format($yatch->price) }}</p>
                                     @php
                                         $discountPercent = round(
                                             (($yatch->price - $yatch->discount_price) / $yatch->price) * 100,
@@ -76,7 +76,7 @@ new class extends Component {
                                     <x-badge :value="$discountPercent . '% OFF'" class="badge-success badge-sm" />
                                 </div>
                             @else
-                                <p class="text-3xl font-bold text-primary">${{ number_format($yatch->price, 2) }}</p>
+                                <p class="text-3xl font-bold text-primary">{{ currency_format($yatch->price) }}</p>
                             @endif
                         </div>
                     </div>
@@ -234,7 +234,7 @@ new class extends Component {
                             <div>
                                 <p class="text-xs text-base-content/60 uppercase mb-1">Regular Price</p>
                                 <span
-                                    class="text-xl font-bold text-primary">${{ number_format($yatch->price, 2) }}</span>
+                                    class="text-xl font-bold text-primary">{{ currency_format($yatch->price) }}</span>
                             </div>
                         @endif
                         @if ($yatch->discount_price)
@@ -242,7 +242,7 @@ new class extends Component {
                                 <p class="text-xs text-base-content/60 uppercase mb-1">Discount Price</p>
                                 <div class="flex items-center gap-2">
                                     <span
-                                        class="text-xl font-bold text-success">${{ number_format($yatch->discount_price, 2) }}</span>
+                                        class="text-xl font-bold text-success">{{ currency_format($yatch->discount_price) }}</span>
                                     @if ($yatch->price)
                                         @php
                                             $discountPercent = round(

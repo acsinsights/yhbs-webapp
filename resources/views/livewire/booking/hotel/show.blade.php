@@ -228,7 +228,7 @@ new class extends Component {
                 <div class="space-y-4">
                     <div>
                         <div class="text-sm text-base-content/50 mb-1">Amount</div>
-                        <div class="font-semibold text-2xl">${{ number_format($booking->price ?? 0, 2) }}</div>
+                        <div class="font-semibold text-2xl">{{ currency_format($booking->price ?? 0) }}</div>
                     </div>
                     <div>
                         <div class="text-sm text-base-content/50 mb-1">Payment Method</div>
