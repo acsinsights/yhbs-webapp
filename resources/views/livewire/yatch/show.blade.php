@@ -51,56 +51,98 @@ new class extends Component {
         </x-slot:actions>
     </x-header>
 
-    <x-card>
+    <x-card shadow>
         <div class="grid gap-6 lg:grid-cols-2">
-            <div class="space-y-4">
-                @if ($yatch->sku)
-                    <div>
-                        <p class="text-sm text-base-content/60 mb-1">SKU</p>
-                        <code class="px-3 py-1 rounded bg-base-200 text-sm font-mono">{{ $yatch->sku }}</code>
-                    </div>
-                @endif
-                <div>
-                    <p class="text-sm text-base-content/60 mb-1">Slug</p>
-                    <code class="px-3 py-1 rounded bg-base-200 text-sm">{{ $yatch->slug }}</code>
-                </div>
+            <div class="space-y-6">
+                {{-- Pricing Section --}}
                 @if ($yatch->price)
-                    <div>
-                        <p class="text-sm text-base-content/60 mb-1">Price</p>
-                        <p class="text-2xl font-bold text-primary">${{ number_format($yatch->price, 2) }}</p>
-                        @if ($yatch->discount_price)
-                            <p class="text-lg font-semibold text-success">
-                                ${{ number_format($yatch->discount_price, 2) }}</p>
-                            @php
-                                $discountPercent = round(
-                                    (($yatch->price - $yatch->discount_price) / $yatch->price) * 100,
-                                );
-                            @endphp
-                            <x-badge :value="$discountPercent . '% OFF'" class="badge-success badge-sm mt-1" />
-                        @endif
+                    <div class="p-4 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+                        <div class="flex items-center gap-2 mb-3">
+                            <x-icon name="o-currency-dollar" class="w-5 h-5 text-primary" />
+                            <p class="text-sm font-semibold text-base-content/70 uppercase tracking-wide">Pricing</p>
+                        </div>
+                        <div class="space-y-2">
+                            @if ($yatch->discount_price)
+                                <div class="flex items-baseline gap-3">
+                                    <p class="text-3xl font-bold text-primary">
+                                        ${{ number_format($yatch->discount_price, 2) }}</p>
+                                    <p class="text-xl line-through text-base-content/40">
+                                        ${{ number_format($yatch->price, 2) }}</p>
+                                    @php
+                                        $discountPercent = round(
+                                            (($yatch->price - $yatch->discount_price) / $yatch->price) * 100,
+                                        );
+                                    @endphp
+                                    <x-badge :value="$discountPercent . '% OFF'" class="badge-success badge-sm" />
+                                </div>
+                            @else
+                                <p class="text-3xl font-bold text-primary">${{ number_format($yatch->price, 2) }}</p>
+                            @endif
+                        </div>
                     </div>
                 @endif
-                <div class="space-y-1">
-                    <p class="text-sm text-base-content/60">Created</p>
-                    <p class="font-semibold">{{ $yatch->created_at->format('M d, Y') }}</p>
+
+                {{-- Information Grid --}}
+                <div class="grid grid-cols-2 gap-4">
+                    @if ($yatch->sku)
+                        <div class="p-3 rounded-lg bg-base-200/50 border border-base-300">
+                            <div class="flex items-center gap-2 mb-1">
+                                <x-icon name="o-hashtag" class="w-4 h-4 text-base-content/50" />
+                                <p class="text-xs font-medium text-base-content/60 uppercase tracking-wide">SKU</p>
+                            </div>
+                            <p class="text-sm font-semibold font-mono">{{ $yatch->sku }}</p>
+                        </div>
+                    @endif
+
+                    <div class="p-3 rounded-lg bg-base-200/50 border border-base-300">
+                        <div class="flex items-center gap-2 mb-1">
+                            <x-icon name="o-identification" class="w-4 h-4 text-base-content/50" />
+                            <p class="text-xs font-medium text-base-content/60 uppercase tracking-wide">ID</p>
+                        </div>
+                        <p class="text-sm font-semibold font-mono">#{{ $yatch->id }}</p>
+                    </div>
                 </div>
-                <div class="space-y-1">
-                    <p class="text-sm text-base-content/60">Updated</p>
-                    <p class="font-semibold">{{ $yatch->updated_at->format('M d, Y') }}</p>
+
+                {{-- Slug --}}
+                <div class="p-3 rounded-lg bg-base-200/50 border border-base-300">
+                    <div class="flex items-center gap-2 mb-1">
+                        <x-icon name="o-link" class="w-4 h-4 text-base-content/50" />
+                        <p class="text-xs font-medium text-base-content/60 uppercase tracking-wide">Slug</p>
+                    </div>
+                    <code class="text-sm break-all">{{ $yatch->slug }}</code>
                 </div>
-                <div class="space-y-1">
-                    <p class="text-sm text-base-content/60">ID</p>
-                    <p class="font-mono">{{ $yatch->id }}</p>
+
+                {{-- Timestamps --}}
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-3 rounded-lg bg-base-200/50 border border-base-300">
+                        <div class="flex items-center gap-2 mb-1">
+                            <x-icon name="o-calendar" class="w-4 h-4 text-base-content/50" />
+                            <p class="text-xs font-medium text-base-content/60 uppercase tracking-wide">Created</p>
+                        </div>
+                        <p class="text-sm font-semibold">{{ $yatch->created_at->format('M d, Y') }}</p>
+                        <p class="text-xs text-base-content/50">{{ $yatch->created_at->format('h:i A') }}</p>
+                    </div>
+                    <div class="p-3 rounded-lg bg-base-200/50 border border-base-300">
+                        <div class="flex items-center gap-2 mb-1">
+                            <x-icon name="o-clock" class="w-4 h-4 text-base-content/50" />
+                            <p class="text-xs font-medium text-base-content/60 uppercase tracking-wide">Updated</p>
+                        </div>
+                        <p class="text-sm font-semibold">{{ $yatch->updated_at->format('M d, Y') }}</p>
+                        <p class="text-xs text-base-content/50">{{ $yatch->updated_at->format('h:i A') }}</p>
+                    </div>
                 </div>
             </div>
-            <div class="aspect-video rounded-xl overflow-hidden bg-base-200 flex items-center justify-center">
+
+            {{-- Image Section --}}
+            <div
+                class="aspect-video rounded-xl overflow-hidden bg-base-200 flex items-center justify-center shadow-lg border border-base-300">
                 @if ($yatch->image)
                     <img src="{{ asset($yatch->image) }}" alt="{{ $yatch->name }}"
                         class="object-cover w-full h-full" />
                 @else
                     <div class="text-center text-base-content/50">
                         <x-icon name="o-photo" class="w-16 h-16 mx-auto mb-2" />
-                        <p>No cover image</p>
+                        <p class="text-sm">No cover image</p>
                     </div>
                 @endif
             </div>
@@ -198,16 +240,18 @@ new class extends Component {
                         @if ($yatch->discount_price)
                             <div>
                                 <p class="text-xs text-base-content/60 uppercase mb-1">Discount Price</p>
-                                <span
-                                    class="text-xl font-bold text-success">${{ number_format($yatch->discount_price, 2) }}</span>
-                                @if ($yatch->price)
-                                    @php
-                                        $discountPercent = round(
-                                            (($yatch->price - $yatch->discount_price) / $yatch->price) * 100,
-                                        );
-                                    @endphp
-                                    <x-badge :value="$discountPercent . '% OFF'" class="badge-success badge-sm mt-1" />
-                                @endif
+                                <div class="flex items-center gap-2">
+                                    <span
+                                        class="text-xl font-bold text-success">${{ number_format($yatch->discount_price, 2) }}</span>
+                                    @if ($yatch->price)
+                                        @php
+                                            $discountPercent = round(
+                                                (($yatch->price - $yatch->discount_price) / $yatch->price) * 100,
+                                            );
+                                        @endphp
+                                        <x-badge :value="$discountPercent . '% OFF'" class="badge-success badge-sm" />
+                                    @endif
+                                </div>
                             </div>
                         @endif
                     </div>

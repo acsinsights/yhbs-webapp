@@ -43,7 +43,19 @@ new class extends Component {
             ->orderBy(...array_values($this->sortBy))
             ->paginate($this->perPage);
 
-        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'user.name', 'label' => 'Customer', 'sortable' => false, 'class' => 'whitespace-nowrap'], ['key' => 'yatch', 'label' => 'Yacht', 'sortable' => false, 'class' => 'w-64'], ['key' => 'check_in', 'label' => 'Check In', 'sortable' => true, 'class' => 'whitespace-nowrap'], ['key' => 'check_out', 'label' => 'Check Out', 'sortable' => true, 'class' => 'whitespace-nowrap'], ['key' => 'adults', 'label' => 'Adults', 'sortable' => false, 'class' => 'whitespace-nowrap'], ['key' => 'children', 'label' => 'Children', 'sortable' => false, 'class' => 'whitespace-nowrap'], ['key' => 'price', 'label' => 'Amount', 'sortable' => true, 'class' => 'whitespace-nowrap'], ['key' => 'payment_status', 'label' => 'Payment Status', 'class' => 'whitespace-nowrap'], ['key' => 'payment_method', 'label' => 'Payment Method', 'class' => 'whitespace-nowrap'], ['key' => 'status', 'label' => 'Status', 'class' => 'whitespace-nowrap']];
+        $view->headers = [
+            ['key' => 'id', 'label' => '#', 'class' => 'w-1'],
+            ['key' => 'user.name', 'label' => 'Customer', 'sortable' => false, 'class' => 'whitespace-nowrap'],
+            ['key' => 'yatch', 'label' => 'Yacht', 'sortable' => false, 'class' => 'whitespace-nowrap'],
+            ['key' => 'check_in', 'label' => 'Check In', 'sortable' => true, 'class' => 'whitespace-nowrap'],
+            ['key' => 'check_out', 'label' => 'Check Out', 'sortable' => true, 'class' => 'whitespace-nowrap'],
+            ['key' => 'adults', 'label' => 'Adults', 'sortable' => false, 'class' => 'whitespace-nowrap'],
+            ['key' => 'children', 'label' => 'Children', 'sortable' => false, 'class' => 'whitespace-nowrap'],
+            ['key' => 'price', 'label' => 'Amount', 'sortable' => true, 'class' => 'whitespace-nowrap'],
+            ['key' => 'payment_status', 'label' => 'Payment Status', 'class' => 'whitespace-nowrap'],
+            ['key' => 'payment_method', 'label' => 'Payment Method', 'class' => 'whitespace-nowrap'],
+            ['key' => 'status', 'label' => 'Status', 'class' => 'whitespace-nowrap'],
+        ];
     }
 }; ?>
 

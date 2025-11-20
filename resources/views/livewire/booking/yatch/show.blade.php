@@ -146,10 +146,10 @@ new class extends Component {
                 <x-card shadow>
                     <x-slot:title>
                         <div class="flex items-center gap-2">
-                            <x-icon name="o-ship" class="w-5 h-5" />
+                            <x-icon name="o-sparkles" class="w-5 h-5" />
                             <span>Yacht Information</span>
                         </div>
-                    </x-slot:title>
+                    </x-slot:title> 
 
                     <div class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
