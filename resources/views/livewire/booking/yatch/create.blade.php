@@ -31,18 +31,54 @@ new class extends Component {
 
     public function mount(): void
     {
-        $this->check_in = Carbon::today()->format('Y-m-d\TH:i');
+        $this->check_in = Carbon::now()->format('Y-m-d\TH:i');
         $this->check_out = Carbon::tomorrow()->format('Y-m-d\TH:i');
     }
 
     public function updatedCheckIn(): void
     {
         $this->yatch_id = null;
+
+        // Validate that check_in is not in the past
+        if ($this->check_in) {
+            $checkIn = Carbon::parse($this->check_in);
+            $now = Carbon::now();
+
+            if ($checkIn->lt($now)) {
+                $this->error('Departure date and time must be equal to or after the current date and time.');
+                // Set check_in to current date/time
+                $this->check_in = $now->format('Y-m-d\TH:i');
+                return;
+            }
+        }
+
+        // Ensure check_out is after check_in
+        if ($this->check_in && $this->check_out) {
+            $checkIn = Carbon::parse($this->check_in);
+            $checkOut = Carbon::parse($this->check_out);
+
+            if ($checkOut->lte($checkIn)) {
+                // Set check_out to 1 hour after check_in
+                $this->check_out = $checkIn->copy()->addHour()->format('Y-m-d\TH:i');
+            }
+        }
     }
 
     public function updatedCheckOut(): void
     {
         $this->yatch_id = null;
+
+        // Validate that check_out is after check_in
+        if ($this->check_in && $this->check_out) {
+            $checkIn = Carbon::parse($this->check_in);
+            $checkOut = Carbon::parse($this->check_out);
+
+            if ($checkOut->lte($checkIn)) {
+                $this->error('Return date and time must be after departure date and time.');
+                // Set check_out to 1 hour after check_in
+                $this->check_out = $checkIn->copy()->addHour()->format('Y-m-d\TH:i');
+            }
+        }
     }
 
     public function updatedYatchId(): void
@@ -129,6 +165,9 @@ new class extends Component {
         $view->availableYatches = $checkIn && $checkOut ? Yatch::available($checkIn, $checkOut)->orderBy('name')->get() : collect();
 
         $view->customers = User::role(RolesEnum::CUSTOMER->value)->orderBy('name')->get();
+
+        // Set minimum date for departure (current date/time)
+        $view->minDepartureDate = Carbon::now()->format('Y-m-d\TH:i');
     }
 }; ?>
 
@@ -168,9 +207,9 @@ new class extends Component {
                     <h3 class="text-lg font-semibold">Charter Dates</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <x-input wire:model="check_in" label="Departure" type="datetime-local" icon="o-calendar"
-                            hint="Select departure date and time" />
+                            :min="$minDepartureDate" hint="Departure must be today or later" />
                         <x-input wire:model="check_out" label="Return" type="datetime-local" icon="o-calendar"
-                            hint="Select return date and time" />
+                            :min="$check_in" hint="Return must be after departure" />
                     </div>
                 </div>
 
