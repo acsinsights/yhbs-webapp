@@ -17,7 +17,7 @@ new class extends Component {
     public ?int $user_id = null;
     public string $customer_name = '';
     public string $customer_email = '';
-    public bool $createNewCustomer = false;
+    public bool $createCustomerModal = false;
 
     public ?int $yatch_id = null;
     public ?string $check_in = null;
@@ -73,7 +73,9 @@ new class extends Component {
         $user->assignRole(RolesEnum::CUSTOMER->value);
 
         $this->user_id = $user->id;
-        $this->createNewCustomer = false;
+        $this->createCustomerModal = false;
+        $this->customer_name = '';
+        $this->customer_email = '';
         $this->success('Customer created successfully.');
     }
 
@@ -218,34 +220,20 @@ new class extends Component {
                 <div class="space-y-4">
                     <div class="flex items-center justify-between">
                         <h3 class="text-lg font-semibold">Customer Details</h3>
-                        <x-button type="button" icon="{{ $createNewCustomer ? 'o-x-mark' : 'o-plus' }}"
-                            :label="$createNewCustomer ? 'Cancel' : 'New Customer'" @click="$wire.createNewCustomer = !$wire.createNewCustomer"
-                            class="btn-sm" />
+                        <x-button type="button" icon="o-plus" label="New Customer"
+                            @click="$wire.createCustomerModal = true" class="btn-sm" />
                     </div>
 
-                    @if ($createNewCustomer)
-                        <x-card class="bg-base-200/50">
-                            <div class="space-y-4">
-                                <x-input wire:model="customer_name" label="Customer Name"
-                                    placeholder="Enter customer name" icon="o-user" />
-                                <x-input wire:model="customer_email" label="Email" type="email"
-                                    placeholder="Enter email address" icon="o-envelope" />
-                                <x-button type="button" icon="o-check" label="Create Customer"
-                                    wire:click="createCustomer" class="btn-primary" spinner="createCustomer" />
+                    <x-select wire:model="user_id" label="Select Customer" placeholder="Choose a customer"
+                        :options="$customers" option-value="id" option-label="name" icon="o-user"
+                        hint="Select existing customer or create a new one">
+                        @scope('option', $customer)
+                            <div>
+                                <div class="font-semibold">{{ $customer->name }}</div>
+                                <div class="text-xs text-base-content/50">{{ $customer->email }}</div>
                             </div>
-                        </x-card>
-                    @else
-                        <x-select wire:model="user_id" label="Select Customer" placeholder="Choose a customer"
-                            :options="$customers" option-value="id" option-label="name" icon="o-user"
-                            hint="Select existing customer or create a new one">
-                            @scope('option', $customer)
-                                <div>
-                                    <div class="font-semibold">{{ $customer->name }}</div>
-                                    <div class="text-xs text-base-content/50">{{ $customer->email }}</div>
-                                </div>
-                            @endscope
-                        </x-select>
-                    @endif
+                        @endscope
+                    </x-select>
                 </div>
 
                 <div class="divider my-4"></div>
@@ -268,10 +256,10 @@ new class extends Component {
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <x-input wire:model="amount" label="Amount" type="number" step="0.01" min="0"
                             icon="o-currency-dollar" hint="Total charter amount" />
-                        <x-select wire:model="payment_method" label="Payment Method" :options="[['id' => 'cash', 'name' => 'Cash'], ['id' => 'card', 'name' => 'Card']]"
-                            option-value="id" option-label="name" icon="o-credit-card" />
-                        <x-select wire:model="payment_status" label="Payment Status" :options="[['id' => 'paid', 'name' => 'Paid'], ['id' => 'pending', 'name' => 'Pending']]"
-                            option-value="id" option-label="name" icon="o-check-circle" />
+                        <x-select wire:model="payment_method" label="Payment Method" :options="[['id' => 'cash', 'name' => 'Cash'], ['id' => 'card', 'name' => 'Card']]" option-value="id"
+                            option-label="name" icon="o-credit-card" />
+                        <x-select wire:model="payment_status" label="Payment Status" :options="[['id' => 'paid', 'name' => 'Paid'], ['id' => 'pending', 'name' => 'Pending']]" option-value="id"
+                            option-label="name" icon="o-check-circle" />
                     </div>
                 </div>
 
@@ -294,4 +282,25 @@ new class extends Component {
             </x-slot:actions>
         </x-form>
     </x-card>
+
+    {{-- Create Customer Modal --}}
+    <x-modal wire:model="createCustomerModal" title="Create New Customer" class="backdrop-blur" max-width="md">
+        <x-form wire:submit="createCustomer">
+            <div class="space-y-4">
+                <x-input wire:model="customer_name" label="Customer Name" placeholder="Enter customer name"
+                    icon="o-user" hint="Full name of the customer" />
+                <x-input wire:model="customer_email" label="Email" type="email" placeholder="Enter email address"
+                    icon="o-envelope" hint="Unique email address" />
+            </div>
+
+            <x-slot:actions>
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+                    <x-button icon="o-x-mark" label="Cancel" @click="$wire.createCustomerModal = false"
+                        class="btn-ghost w-full sm:w-auto" responsive />
+                    <x-button icon="o-check" label="Create Customer" type="submit"
+                        class="btn-primary w-full sm:w-auto" spinner="createCustomer" responsive />
+                </div>
+            </x-slot:actions>
+        </x-form>
+    </x-modal>
 </div>
