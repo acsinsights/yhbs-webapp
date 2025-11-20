@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             RoomSeeder::class,
             YatchSeeder::class,
             BookingSeeder::class,
+            WebsiteSettingSeeder::class,
         ]);
     }
 }

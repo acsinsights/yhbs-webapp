@@ -45,6 +45,11 @@ Route::name('admin.')->group(function () {
             Volt::route('/', 'amenity.index')->name('amenity.index');
         });
 
+        // Website Settings routes
+        Route::group(['prefix' => 'website-settings'], function () {
+            Volt::route('/', 'website-settings.index')->name('website-settings.index');
+        });
+
         // Bookings routes
         Route::group(['prefix' => 'bookings'], function () {
             Volt::route('/', 'bookings.index')->name('bookings.index');

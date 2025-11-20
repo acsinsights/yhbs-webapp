@@ -67,7 +67,8 @@
                         <small class="hidden-when-collapsed">Bookings</small>
                     </div>
 
-                    <x-menu-item title="Yacht Bookings" icon="o-sparkles" link="###" />
+                    <x-menu-item title="Yacht Bookings" icon="o-sparkles"
+                        link="{{ route('admin.bookings.yatch.index') }}" />
                     <x-menu-item title="Hotel Bookings" icon="o-building-office"
                         link="{{ route('admin.bookings.hotel.index') }}" />
                     <x-menu-item title="Hotel Enquiries" icon="o-envelope" link="###" />
@@ -93,6 +94,8 @@
                 <div class="divider divider-start my-1">
                     <small class="hidden-when-collapsed">Settings</small>
                 </div>
+                <x-menu-item title="Website Settings" icon="o-cog-6-tooth"
+                    link="{{ route('admin.website-settings.index') }}" />
                 <x-menu-item title="Profile" icon="o-user-circle" link="{{ route('admin.profile') }}" />
             </x-menu>
         </x-slot:sidebar>
