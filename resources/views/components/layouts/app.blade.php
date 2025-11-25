@@ -19,7 +19,8 @@
     <x-nav sticky class="lg:hidden">
         <x-slot:brand>
             <a href="{{ route('admin.index') }}" wire:navigate="">
-                <div class="hidden-when-collapsed ">
+                {{-- Logo section - commented out temporarily --}}
+                {{-- <div class="hidden-when-collapsed ">
                     <div class="flex items-center gap-2">
                         <img src="{{ asset('default/app_logo.png') }}" height="100" width="100" alt="logo"
                             class="light-logo" />
@@ -32,6 +33,15 @@
                         class="light-logo" />
                     <img src="{{ asset('default/app_logo.png') }}" height="100" width="100" alt="logo"
                         class="dark-logo" />
+                </div> --}}
+                {{-- Text Logo --}}
+                <div class="hidden-when-collapsed">
+                    <div class="flex items gap-2">
+                        <span class="text-3xl font-bold text-primary">YHBS</span>
+                    </div>
+                </div>
+                <div class="display-when-collapsed hidden mx-5 mt-4 lg:mb-6">
+                    <span class="text-2xl font-bold text-primary">YHBS</span>
                 </div>
             </a>
         </x-slot:brand>
@@ -46,16 +56,13 @@
         <x-slot:sidebar drawer="main-drawer" collapsible class="bg-base-100 lg:bg-inherit">
             <a href="{{ route('admin.index') }}" wire:navigate="">
                 <div class="hidden-when-collapsed p-5 pt-3 ">
-                    <div class="flex items-center gap-2 justify-center">
-                        <img src="{{ asset('default/app_logo.png') }}" height="100" width="100" alt="logo"
-                            class="dark-logo" />
-                        <img src="{{ asset('default/app_logo.png') }}" height="100" width="100" alt="logo"
-                            class="light-logo" />
+                    <div class="flex gap-2">
+                        <span class="text-4xl font-bold text-primary">YHBS</span>
                     </div>
                 </div>
 
-                <div class="display-when-collapsed hidden mx-2 mt-4 lg:mb-3 h-[50px]">
-                    <img src="{{ asset('default/app_logo.png') }}" height="100" width="100" alt="logo" />
+                <div class="display-when-collapsed hidden mx-2 mt-4 lg:mb-3">
+                    <span class="text-2xl font-bold text-primary">YHBS</span>
                 </div>
             </a>
 
@@ -101,8 +108,7 @@
         </x-slot:sidebar>
         {{-- The `$slot` goes here --}}
         <x-slot:content class="lg:pt-0">
-            <div role="navigation" aria-label="Navbar"
-                class="navbar topbar-wrapper z-10 border-b border-base-200 px-3">
+            <div role="navigation" aria-label="Navbar" class="navbar topbar-wrapper z-10 border-b border-base-200 px-3">
                 <div class="gap-3 navbar-start">
 
                 </div>
