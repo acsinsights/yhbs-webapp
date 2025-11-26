@@ -4,6 +4,7 @@ use App\Models\Booking;
 use App\Models\Room;
 use App\Models\User;
 use App\Enums\RolesEnum;
+use App\Notifications\WelcomeCustomerNotification;
 use Mary\Traits\Toast;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
@@ -175,11 +176,14 @@ new class extends Component {
 
         $user->assignRole(RolesEnum::CUSTOMER->value);
 
+        // Send welcome email with password reset link
+        $user->notify(new WelcomeCustomerNotification());
+
         $this->user_id = $user->id;
         $this->createCustomerModal = false;
         $this->customer_name = '';
         $this->customer_email = '';
-        $this->success('Customer created successfully.');
+        $this->success('Customer created successfully. Welcome email with password reset link has been sent.');
     }
 
     public function store(): void

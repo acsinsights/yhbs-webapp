@@ -9,6 +9,10 @@ Route::redirect('/', '/dashboard');
 
 Route::name('admin.')->group(function () {
     Volt::route('/login', 'login')->name('login');
+    
+    // Password reset routes
+    Volt::route('/password/reset/{token}', 'password.reset')->name('password.reset');
+    Volt::route('/password/reset', 'password.reset-request')->name('password.request');
 
     Route::group(['middleware' => ['admin.auth']], function () {
         Volt::route('/dashboard', 'dashboard.index')->name('index');
