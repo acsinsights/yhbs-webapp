@@ -127,23 +127,8 @@ new class extends Component {
                         @php
                             $checkIn = Carbon::parse($booking->check_in);
                             $checkOut = Carbon::parse($booking->check_out);
-                            $totalHours = $checkIn->diffInHours($checkOut);
-                            $days = floor($totalHours / 24);
-                            $hours = $totalHours % 24;
-
-                            $durationText = '';
-                            if ($days > 0) {
-                                $durationText = $days . ' ' . ($days === 1 ? 'day' : 'days');
-                            }
-                            if ($hours > 0) {
-                                if ($durationText) {
-                                    $durationText .= ', ';
-                                }
-                                $durationText .= $hours . ' ' . ($hours === 1 ? 'hr' : 'hrs');
-                            }
-                            if (!$durationText) {
-                                $durationText = 'Less than 1 hr';
-                            }
+                            $days = round($checkIn->diffInDays($checkOut));
+                            $durationText = $days . ' ' . ($days === 1 ? 'night' : 'nights');
                         @endphp
                         <div>
                             <div class="text-sm text-base-content/50 mb-1">Duration</div>
