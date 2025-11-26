@@ -38,6 +38,7 @@ new class extends Component {
     public function updatedCheckIn(): void
     {
         $this->yatch_id = null;
+        $this->amount = null;
 
         // Validate that check_in is not in the past
         if ($this->check_in) {
@@ -67,6 +68,7 @@ new class extends Component {
     public function updatedCheckOut(): void
     {
         $this->yatch_id = null;
+        $this->amount = null;
 
         // Validate that check_out is after check_in
         if ($this->check_in && $this->check_out) {
@@ -86,8 +88,14 @@ new class extends Component {
         if ($this->yatch_id) {
             $yatch = Yatch::find($this->yatch_id);
             if ($yatch) {
-                $this->amount = $yatch->discount_price ?? ($yatch->price ?? 0);
+                $price = $yatch->discount_price ?? $yatch->price;
+                $this->amount = $price !== null ? (float) $price : null;
+            } else {
+                $this->amount = null;
             }
+        } else {
+            // Reset amount when yacht selection is cleared
+            $this->amount = null;
         }
     }
 
@@ -220,7 +228,7 @@ new class extends Component {
                     <h3 class="text-lg font-semibold">Yacht Selection</h3>
                     @if ($check_in && $check_out && Carbon::parse($check_in)->lt(Carbon::parse($check_out)))
                         @if ($availableYatches->count() > 0)
-                            <x-choices-offline wire:model="yatch_id" label="Select Yacht"
+                            <x-choices-offline wire:model.live="yatch_id" label="Select Yacht"
                                 placeholder="Choose an available yacht" :options="$availableYatches" icon="o-home-modern"
                                 hint="Only available yachts are shown" single clearable searchable>
                                 @scope('item', $yatch)
@@ -342,8 +350,9 @@ new class extends Component {
                 <div class="space-y-4">
                     <h3 class="text-lg font-semibold">Payment Details</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <x-input wire:model="amount" label="Amount" type="number" step="0.01" min="0"
-                            icon="o-currency-dollar" hint="Total charter amount" />
+                        <x-input wire:model.live="amount" label="Amount" type="number" step="0.01"
+                            min="0" icon="o-currency-dollar"
+                            hint="Total charter amount (auto-filled from yacht price)" />
                         <x-select wire:model="payment_method" label="Payment Method" :options="[['id' => 'cash', 'name' => 'Cash'], ['id' => 'card', 'name' => 'Card']]"
                             option-value="id" option-label="name" icon="o-credit-card" />
                         <x-select wire:model="payment_status" label="Payment Status" :options="[['id' => 'paid', 'name' => 'Paid'], ['id' => 'pending', 'name' => 'Pending']]"
