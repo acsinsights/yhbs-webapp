@@ -722,64 +722,141 @@ new class extends Component {
                                 $availableYatches->firstWhere('id', $yatch_id) ??
                                 ($yatch_id ? Yatch::find($yatch_id) : null);
                         @endphp
-                        <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-md sticky top-24">
-                            <div class="flex items-center justify-between mb-4">
+                        <div
+                            class="rounded-2xl border border-base-300/80 bg-gradient-to-br from-base-100 to-base-200/50 p-4 shadow-lg sticky top-24 backdrop-blur-sm">
+                            <div class="flex items-center justify-between mb-4 pb-3 border-b border-base-300/60">
                                 <div>
-                                    <p class="text-xs uppercase tracking-wide text-base-content/60">Live summary</p>
-                                    <h4 class="text-lg font-semibold text-base-content">Booking Overview</h4>
+                                    <p class="text-xs uppercase tracking-wider text-primary font-bold">Live Summary</p>
+                                    <h4 class="text-lg font-bold text-base-content">Booking Overview</h4>
                                 </div>
-                                <x-icon name="o-clipboard-document-check" class="w-7 h-7 text-primary" />
+                                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                                    <x-icon name="o-clipboard-document-check" class="w-5 h-5 text-primary" />
+                                </div>
                             </div>
-                            <dl class="space-y-4 text-sm">
-                                <div class="flex items-start justify-between gap-3">
-                                    <dt class="text-base-content/70">Charter Window</dt>
-                                    <dd class="text-right font-medium">
-                                        @if ($check_in && $check_out)
-                                            <span class="block">
-                                                {{ \Carbon\Carbon::parse($check_in)->format('M d, Y g:i A') }}
-                                            </span>
-                                            <span class="block text-xs text-base-content/60">to</span>
-                                            <span class="block">
-                                                {{ \Carbon\Carbon::parse($check_out)->format('M d, Y g:i A') }}
-                                            </span>
-                                        @else
-                                            <span class="text-base-content/50">Select dates</span>
-                                        @endif
-                                    </dd>
+
+                            <div class="space-y-2.5">
+                                {{-- Charter Window --}}
+                                <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
+                                    <div class="flex items-start gap-2">
+                                        <div
+                                            class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                                            <x-icon name="o-calendar" class="w-4 h-4 text-primary" />
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-xs font-semibold text-base-content/60 mb-1">Charter Window
+                                            </p>
+                                            @if ($check_in && $check_out)
+                                                <div class="space-y-1 flex justify-between">
+                                                    <div>
+                                                        <p class="text-xs font-semibold text-primary mb-0.5">Departure
+                                                        </p>
+                                                        <p class="text-xs font-semibold text-base-content">
+                                                            {{ \Carbon\Carbon::parse($check_in)->format('M d, Y') }} |
+                                                            {{ \Carbon\Carbon::parse($check_in)->format('g:i A') }}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <p class="text-xs font-semibold text-primary mb-0.5">Return</p>
+                                                        <p class="text-xs font-semibold text-base-content">
+                                                            {{ \Carbon\Carbon::parse($check_out)->format('M d, Y') }} |
+                                                            {{ \Carbon\Carbon::parse($check_out)->format('g:i A') }}
+                                                        </p> 
+                                                    </div>
+                                                </div>
+                                            @else
+                                                <p class="text-xs text-base-content/50 italic">Select dates</p>
+                                            @endif
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="flex items-center justify-between">
-                                    <dt class="text-base-content/70">Guests</dt>
-                                    <dd class="font-medium">{{ $adults + $children }} total</dd>
+
+                                {{-- Guests --}}
+                                <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
+                                    <div class="flex items-center gap-2">
+                                        <div
+                                            class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                                            <x-icon name="o-user-group" class="w-4 h-4 text-primary" />
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-xs font-semibold text-base-content/60 mb-0.5">Guests</p>
+                                            <p class="text-sm font-bold text-base-content">
+                                                {{ $adults + $children }}
+                                                <span class="text-xs font-normal text-base-content/70">
+                                                    ({{ $adults }}A{{ $children > 0 ? ', ' . $children . 'C' : '' }})
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <dt class="text-base-content/70 mb-1">Selected Yacht</dt>
-                                    <dd class="font-medium">
-                                        @if ($selectedYatch)
-                                            <p>{{ $selectedYatch->name }}</p>
-                                            <p class="text-xs text-base-content/60">SKU:
-                                                {{ $selectedYatch->sku ?? 'N/A' }}</p>
-                                        @else
-                                            <span class="text-base-content/50">No yacht selected</span>
-                                        @endif
-                                    </dd>
+
+                                {{-- Selected Yacht --}}
+                                <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
+                                    <div class="flex items-start gap-2">
+                                        <div
+                                            class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                                            <x-icon name="o-sparkles" class="w-4 h-4 text-primary" />
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-xs font-semibold text-base-content/60 mb-0.5">Selected Yacht
+                                            </p>
+                                            @if ($selectedYatch)
+                                                <p class="text-xs font-bold text-base-content line-clamp-1">
+                                                    {{ $selectedYatch->name }}</p>
+                                                @if ($selectedYatch->sku)
+                                                    <p class="text-xs text-base-content/60 font-mono">SKU:
+                                                        {{ $selectedYatch->sku }}</p>
+                                                @endif
+                                            @else
+                                                <p class="text-xs text-base-content/50 italic">No yacht selected</p>
+                                            @endif
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="flex items-center justify-between">
-                                    <dt class="text-base-content/70">Amount</dt>
-                                    <dd class="font-semibold text-primary">
-                                        {{ $amount ? currency_format($amount) : '—' }}
-                                    </dd>
+
+                                {{-- Amount --}}
+                                <div
+                                    class="bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg p-2.5 border-2 border-primary/20">
+                                    <div class="flex items-center gap-2">
+                                        <div
+                                            class="w-7 h-7 rounded-md bg-primary/20 flex items-center justify-center shrink-0">
+                                            <x-icon name="o-currency-dollar" class="w-4 h-4 text-primary" />
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-xs font-semibold text-primary/80 mb-0.5">Total Amount</p>
+                                            <p class="text-lg font-bold text-primary">
+                                                {{ $amount ? currency_format($amount) : '—' }}
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="flex flex-col gap-1">
-                                    <dt class="text-base-content/70">Payment</dt>
-                                    <dd class="font-medium capitalize">{{ $payment_method }}</dd>
-                                    <dd>
-                                        <span
-                                            class="px-2 py-1 text-xs rounded-full {{ $payment_status === 'paid' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning' }}">
-                                            {{ ucfirst($payment_status) }}
-                                        </span>
-                                    </dd>
+
+                                {{-- Payment Details --}}
+                                <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
+                                    <div class="flex items-start gap-2">
+                                        <div
+                                            class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                                            <x-icon name="o-credit-card" class="w-4 h-4 text-primary" />
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-xs font-semibold text-base-content/60 mb-1.5">Payment</p>
+                                            <div class="space-y-1">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-xs text-base-content/70">Method</span>
+                                                    <span
+                                                        class="text-xs font-semibold text-base-content capitalize">{{ $payment_method }}</span>
+                                                </div>
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-xs text-base-content/70">Status</span>
+                                                    <span
+                                                        class="px-2 py-0.5 text-xs font-semibold rounded-full {{ $payment_status === 'paid' ? 'bg-success/20 text-success border border-success/30' : 'bg-warning/20 text-warning border border-warning/30' }}">
+                                                        {{ ucfirst($payment_status) }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                            </dl>
+                            </div>
                             <div class="mt-6 p-4 rounded-xl bg-base-200/80 border border-dashed border-base-300">
                                 <p class="text-xs uppercase tracking-wide text-base-content/60">Checklist</p>
                                 <ul class="mt-2 space-y-2 text-sm">
