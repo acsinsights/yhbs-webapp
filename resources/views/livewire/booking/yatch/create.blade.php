@@ -220,27 +220,53 @@ new class extends Component {
                     <h3 class="text-lg font-semibold">Yacht Selection</h3>
                     @if ($check_in && $check_out && Carbon::parse($check_in)->lt(Carbon::parse($check_out)))
                         @if ($availableYatches->count() > 0)
-                            <x-select wire:model="yatch_id" label="Select Yacht" placeholder="Choose an available yacht"
-                                :options="$availableYatches" option-value="id" option-label="name" icon="o-home-modern"
-                                hint="Only available yachts are shown">
-                                @scope('option', $yatch)
-                                    <div class="flex justify-between items-center">
-                                        <div>
-                                            <div class="font-semibold">{{ $yatch->name }}</div>
-                                            <div class="text-xs text-base-content/50">SKU: {{ $yatch->sku ?? 'N/A' }}
+                            <x-choices-offline wire:model="yatch_id" label="Select Yacht"
+                                placeholder="Choose an available yacht" :options="$availableYatches" icon="o-home-modern"
+                                hint="Only available yachts are shown" single clearable searchable>
+                                @scope('item', $yatch)
+                                    <div
+                                        class="flex justify-between items-center gap-4 p-2 rounded-lg hover:bg-base-200/50 transition-colors">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="font-semibold text-base mb-1 truncate">{{ $yatch->name }}</div>
+                                            <div class="flex items-center gap-3 flex-wrap">
+                                                <div class="text-xs text-base-content/60 flex items-center gap-1">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z">
+                                                        </path>
+                                                    </svg>
+                                                    <span>SKU: {{ $yatch->sku ?? 'N/A' }}</span>
+                                                </div>
+                                                <div class="text-xs text-base-content/60 flex items-center gap-1">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                                                        </path>
+                                                    </svg>
+                                                    <span>Max: {{ $yatch->max_guests ?? '—' }} guests</span>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div class="text-right">
-                                            <div class="font-semibold">
+                                        <div class="text-right shrink-0">
+                                            <div class="font-bold text-lg text-primary">
                                                 {{ currency_format($yatch->discount_price ?? ($yatch->price ?? 0)) }}
                                             </div>
-                                            <div class="text-xs text-base-content/50">
-                                                Max guests: {{ $yatch->max_guests ?? '—' }}
-                                            </div>
+                                            @if ($yatch->discount_price && $yatch->price && $yatch->discount_price < $yatch->price)
+                                                <div class="text-xs text-base-content/50 line-through">
+                                                    {{ currency_format($yatch->price) }}
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 @endscope
-                            </x-select>
+                                @scope('selection', $yatch)
+                                    {{ $yatch->name }}
+                                @endscope
+                            </x-choices-offline>
                         @else
                             <x-alert icon="o-exclamation-triangle" class="alert-warning">
                                 No yachts available for the selected date range. Please choose different dates.
@@ -295,10 +321,10 @@ new class extends Component {
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <x-input wire:model="amount" label="Amount" type="number" step="0.01" min="0"
                             icon="o-currency-dollar" hint="Total charter amount" />
-                        <x-select wire:model="payment_method" label="Payment Method" :options="[['id' => 'cash', 'name' => 'Cash'], ['id' => 'card', 'name' => 'Card']]" option-value="id"
-                            option-label="name" icon="o-credit-card" />
-                        <x-select wire:model="payment_status" label="Payment Status" :options="[['id' => 'paid', 'name' => 'Paid'], ['id' => 'pending', 'name' => 'Pending']]" option-value="id"
-                            option-label="name" icon="o-check-circle" />
+                        <x-select wire:model="payment_method" label="Payment Method" :options="[['id' => 'cash', 'name' => 'Cash'], ['id' => 'card', 'name' => 'Card']]"
+                            option-value="id" option-label="name" icon="o-credit-card" />
+                        <x-select wire:model="payment_status" label="Payment Status" :options="[['id' => 'paid', 'name' => 'Paid'], ['id' => 'pending', 'name' => 'Pending']]"
+                            option-value="id" option-label="name" icon="o-check-circle" />
                     </div>
                 </div>
 
