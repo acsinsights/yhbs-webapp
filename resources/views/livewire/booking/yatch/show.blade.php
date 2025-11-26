@@ -58,6 +58,8 @@ new class extends Component {
             <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.yatch.index') }}"
                 class="btn-ghost" />
             @if ($booking->status !== 'checked_out' && $booking->status !== 'cancelled')
+                <x-button icon="o-pencil" label="Edit" link="{{ route('admin.bookings.yatch.edit', $booking->id) }}"
+                    class="btn-primary" />
                 <x-button icon="o-check-circle" label="Checkout" wire:click="checkout"
                     wire:confirm="Are you sure you want to checkout this booking?" class="btn-success"
                     spinner="checkout" />

@@ -65,6 +65,7 @@ Route::name('admin.')->group(function () {
             Volt::route('/', 'booking.hotel.index')->name('bookings.hotel.index');
             Volt::route('/create', 'booking.hotel.create')->name('bookings.hotel.create');
             Volt::route('/{booking}/show', 'booking.hotel.show')->name('bookings.hotel.show');
+            Volt::route('/{booking}/edit', 'booking.hotel.edit')->name('bookings.hotel.edit');
         });
 
         // Yacht Bookings routes
@@ -72,6 +73,7 @@ Route::name('admin.')->group(function () {
             Volt::route('/', 'booking.yatch.index')->name('bookings.yatch.index');
             Volt::route('/create', 'booking.yatch.create')->name('bookings.yatch.create');
             Volt::route('/{booking}/show', 'booking.yatch.show')->name('bookings.yatch.show');
+            Volt::route('/{booking}/edit', 'booking.yatch.edit')->name('bookings.yatch.edit');
         });
 
         Route::get('/admin/logout', function () {
