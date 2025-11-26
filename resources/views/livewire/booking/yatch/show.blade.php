@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Booking;
+use App\Models\Yatch;
 use Mary\Traits\Toast;
 use Livewire\Volt\Component;
 use Illuminate\View\View;
@@ -48,9 +49,9 @@ new class extends Component {
         ];
     @endphp
 
-    <x-header title="Yacht Booking Details" separator>
+    <x-header title="Booking Details" separator>
         <x-slot:subtitle>
-            <p class="text-sm text-base-content/50 mb-2">View yacht charter booking information</p>
+            <p class="text-sm text-base-content/50 mb-2">View booking information</p>
             <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
         </x-slot:subtitle>
         <x-slot:actions>
@@ -123,19 +124,37 @@ new class extends Component {
                     @endif
 
                     @if ($booking->check_in && $booking->check_out)
+                        @php
+                            $checkIn = Carbon::parse($booking->check_in);
+                            $checkOut = Carbon::parse($booking->check_out);
+                            $totalHours = $checkIn->diffInHours($checkOut);
+                            $days = floor($totalHours / 24);
+                            $hours = $totalHours % 24;
+
+                            $durationText = '';
+                            if ($days > 0) {
+                                $durationText = $days . ' ' . ($days === 1 ? 'day' : 'days');
+                            }
+                            if ($hours > 0) {
+                                if ($durationText) {
+                                    $durationText .= ', ';
+                                }
+                                $durationText .= $hours . ' ' . ($hours === 1 ? 'hr' : 'hrs');
+                            }
+                            if (!$durationText) {
+                                $durationText = 'Less than 1 hr';
+                            }
+                        @endphp
                         <div>
                             <div class="text-sm text-base-content/50 mb-1">Duration</div>
-                            <div class="font-semibold">
-                                {{ Carbon::parse($booking->check_in)->diffInHours(Carbon::parse($booking->check_out)) }}
-                                hrs
-                            </div>
+                            <div class="font-semibold">{{ $durationText }}</div>
                         </div>
                     @endif
 
                     @if ($booking->notes)
                         <div>
                             <div class="text-sm text-base-content/50 mb-1">Notes</div>
-                            <div class="text-sm">{{ $booking->notes }}</div>
+                            <div class="text-sm">{{ strip_tags($booking->notes) }}</div>
                         </div>
                     @endif
                 </div>
@@ -181,7 +200,7 @@ new class extends Component {
                         @if ($booking->bookingable->description)
                             <div>
                                 <div class="text-sm text-base-content/50 mb-1">Description</div>
-                                <div class="text-sm">{{ $booking->bookingable->description }}</div>
+                                <div class="text-sm">{{ strip_tags($booking->bookingable->description) }}</div>
                             </div>
                         @endif
                     </div>
