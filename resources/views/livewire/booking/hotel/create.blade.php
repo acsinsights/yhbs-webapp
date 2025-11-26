@@ -17,7 +17,7 @@ new class extends Component {
     public ?int $user_id = null;
     public string $customer_name = '';
     public string $customer_email = '';
-    public bool $createNewCustomer = false;
+    public bool $createCustomerModal = false;
 
     public ?int $room_id = null;
     public ?string $check_in = null;
@@ -78,7 +78,9 @@ new class extends Component {
         $user->assignRole(RolesEnum::CUSTOMER->value);
 
         $this->user_id = $user->id;
-        $this->createNewCustomer = false;
+        $this->createCustomerModal = false;
+        $this->customer_name = '';
+        $this->customer_email = '';
         $this->success('Customer created successfully.');
     }
 
@@ -187,25 +189,51 @@ new class extends Component {
                     <h3 class="text-lg font-semibold">Room Selection</h3>
                     @if ($check_in && $check_out && Carbon::parse($check_in)->lt(Carbon::parse($check_out)))
                         @if ($availableRooms->count() > 0)
-                            <x-select wire:model="room_id" label="Select Room" placeholder="Choose an available room"
-                                :options="$availableRooms" option-value="id" option-label="room_number" icon="o-home-modern"
-                                hint="Only available rooms are shown">
-                                @scope('option', $room)
-                                    <div class="flex justify-between items-center">
-                                        <div>
-                                            <div class="font-semibold">{{ $room->room_number }}</div>
-                                            <div class="text-xs text-base-content/50">{{ $room->hotel->name ?? 'N/A' }}
+                            <x-choices-offline wire:model="room_id" label="Select Room Number"
+                                placeholder="Choose an available room" :options="$availableRooms" icon="o-home-modern"
+                                hint="Only available rooms are shown" single clearable searchable>
+                                @scope('item', $room)
+                                    <div
+                                        class="flex justify-between items-center gap-4 p-2 rounded-lg hover:bg-base-200/50 transition-colors">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="font-semibold text-base mb-1 truncate">{{ $room->room_number }}
+                                            </div>
+                                            <div class="text-xs text-base-content/60 flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z">
+                                                    </path>
+                                                </svg>
+                                                <span>{{ $room->hotel->name ?? 'N/A' }}</span>
+                                            </div>
+                                            <div class="text-xs text-base-content/60 flex items-center gap-1 mt-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                                                    </path>
+                                                </svg>
+                                                <span>{{ $room->adults ?? 0 }} adults, {{ $room->children ?? 0 }}
+                                                    children</span>
                                             </div>
                                         </div>
-                                        <div class="text-right">
-                                            <div class="font-semibold">
-                                                {{ currency_format($room->discount_price ?? ($room->price ?? 0)) }}</div>
-                                            <div class="text-xs text-base-content/50">{{ $room->adults ?? 0 }} adults,
-                                                {{ $room->children ?? 0 }} children</div>
+                                        <div class="text-right shrink-0">
+                                            <div class="font-bold text-lg text-primary">
+                                                {{ currency_format($room->discount_price ?? ($room->price ?? 0)) }}
+                                            </div>
+                                            @if ($room->discount_price && $room->price && $room->discount_price < $room->price)
+                                                <div class="text-xs text-base-content/50 line-through">
+                                                    {{ currency_format($room->price) }}
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 @endscope
-                            </x-select>
+                                @scope('selection', $room)
+                                    {{ $room->room_number }}
+                                @endscope
+                            </x-choices-offline>
                         @else
                             <x-alert icon="o-exclamation-triangle" class="alert-warning">
                                 No rooms available for the selected date range. Please choose different dates.
@@ -224,34 +252,42 @@ new class extends Component {
                 <div class="space-y-4">
                     <div class="flex items-center justify-between">
                         <h3 class="text-lg font-semibold">Customer Details</h3>
-                        <x-button type="button" icon="{{ $createNewCustomer ? 'o-x-mark' : 'o-plus' }}"
-                            :label="$createNewCustomer ? 'Cancel' : 'New Customer'" @click="$wire.createNewCustomer = !$wire.createNewCustomer"
-                            class="btn-sm" />
+                        <x-button type="button" icon="o-plus" label="New Customer"
+                            @click="$wire.createCustomerModal = true" class="btn-sm" />
                     </div>
 
-                    @if ($createNewCustomer)
-                        <x-card class="bg-base-200/50">
-                            <div class="space-y-4">
-                                <x-input wire:model="customer_name" label="Customer Name"
-                                    placeholder="Enter customer name" icon="o-user" />
-                                <x-input wire:model="customer_email" label="Email" type="email"
-                                    placeholder="Enter email address" icon="o-envelope" />
-                                <x-button type="button" icon="o-check" label="Create Customer"
-                                    wire:click="createCustomer" class="btn-primary" spinner="createCustomer" />
-                            </div>
-                        </x-card>
-                    @else
-                        <x-select wire:model="user_id" label="Select Customer" placeholder="Choose a customer"
-                            :options="$customers" option-value="id" option-label="name" icon="o-user"
-                            hint="Select existing customer or create a new one">
-                            @scope('option', $customer)
-                                <div>
-                                    <div class="font-semibold">{{ $customer->name }}</div>
-                                    <div class="text-xs text-base-content/50">{{ $customer->email }}</div>
+                    <x-choices-offline wire:model="user_id" label="Select Customer" placeholder="Choose a customer"
+                        :options="$customers" icon="o-user" hint="Select existing customer or create a new one" single
+                        clearable searchable>
+                        @scope('item', $customer)
+                            <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-base-200/50 transition-colors">
+                                <div class="shrink-0">
+                                    <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
+                                            </path>
+                                        </svg>
+                                    </div>
                                 </div>
-                            @endscope
-                        </x-select>
-                    @endif
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-semibold text-base mb-1 truncate">{{ $customer->name }}</div>
+                                    <div class="text-xs text-base-content/60 flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                            </path>
+                                        </svg>
+                                        <span class="truncate">{{ $customer->email }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        @endscope
+                        @scope('selection', $customer)
+                            {{ $customer->name }}
+                        @endscope
+                    </x-choices-offline>
                 </div>
 
                 <div class="divider my-4"></div>
@@ -260,7 +296,8 @@ new class extends Component {
                 <div class="space-y-4">
                     <h3 class="text-lg font-semibold">Guest Details</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <x-input wire:model="adults" label="Adults" type="number" min="1" icon="o-user-group" />
+                        <x-input wire:model="adults" label="Adults" type="number" min="1"
+                            icon="o-user-group" />
                         <x-input wire:model="children" label="Children" type="number" min="0"
                             icon="o-face-smile" />
                     </div>
@@ -300,4 +337,25 @@ new class extends Component {
             </x-slot:actions>
         </x-form>
     </x-card>
+
+    {{-- Create Customer Modal --}}
+    <x-modal wire:model="createCustomerModal" title="Create New Customer" class="backdrop-blur" max-width="md">
+        <x-form wire:submit="createCustomer">
+            <div class="space-y-4">
+                <x-input wire:model="customer_name" label="Customer Name" placeholder="Enter customer name"
+                    icon="o-user" hint="Full name of the customer" />
+                <x-input wire:model="customer_email" label="Email" type="email" placeholder="Enter email address"
+                    icon="o-envelope" hint="Unique email address" />
+            </div>
+
+            <x-slot:actions>
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+                    <x-button icon="o-x-mark" label="Cancel" @click="$wire.createCustomerModal = false"
+                        class="btn-ghost w-full sm:w-auto" responsive />
+                    <x-button icon="o-check" label="Create Customer" type="submit"
+                        class="btn-primary w-full sm:w-auto" spinner="createCustomer" responsive />
+                </div>
+            </x-slot:actions>
+        </x-form>
+    </x-modal>
 </div>
