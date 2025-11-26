@@ -43,13 +43,10 @@ class WelcomeCustomerNotification extends Notification
 
         return (new MailMessage)
             ->subject('Welcome to ' . config('app.name'))
-            ->greeting('Hello ' . $notifiable->name . '!')
-            ->line('Welcome to ' . config('app.name') . '! We are excited to have you on board.')
-            ->line('Your account has been created successfully. To get started, please set your password by clicking the button below.')
-            ->action('Set Your Password', $resetUrl)
-            ->line('This password reset link will expire in 60 minutes.')
-            ->line('If you did not create an account, no further action is required.')
-            ->salutation('Best Regards, ' . config('app.name') . ' Team');
+            ->view('emails.welcome-customer', [
+                'notifiable' => $notifiable,
+                'resetUrl' => $resetUrl,
+            ]);
     }
 
     /**
