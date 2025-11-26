@@ -289,16 +289,38 @@ new class extends Component {
                             @click="$wire.createCustomerModal = true" class="btn-sm" />
                     </div>
 
-                    <x-select wire:model="user_id" label="Select Customer" placeholder="Choose a customer"
-                        :options="$customers" option-value="id" option-label="name" icon="o-user"
-                        hint="Select existing customer or create a new one">
-                        @scope('option', $customer)
-                            <div>
-                                <div class="font-semibold">{{ $customer->name }}</div>
-                                <div class="text-xs text-base-content/50">{{ $customer->email }}</div>
+                    <x-choices-offline wire:model="user_id" label="Select Customer" placeholder="Choose a customer"
+                        :options="$customers" icon="o-user" hint="Select existing customer or create a new one" single
+                        clearable searchable>
+                        @scope('item', $customer)
+                            <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-base-200/50 transition-colors">
+                                <div class="shrink-0">
+                                    <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
+                                            </path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-semibold text-base mb-1 truncate">{{ $customer->name }}</div>
+                                    <div class="text-xs text-base-content/60 flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                            </path>
+                                        </svg>
+                                        <span class="truncate">{{ $customer->email }}</span>
+                                    </div>
+                                </div>
                             </div>
                         @endscope
-                    </x-select>
+                        @scope('selection', $customer)
+                            {{ $customer->name }}
+                        @endscope
+                    </x-choices-offline>
                 </div>
 
                 <div class="divider my-4"></div>
@@ -307,7 +329,8 @@ new class extends Component {
                 <div class="space-y-4">
                     <h3 class="text-lg font-semibold">Guest Details</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <x-input wire:model="adults" label="Adults" type="number" min="1" icon="o-user-group" />
+                        <x-input wire:model="adults" label="Adults" type="number" min="1"
+                            icon="o-user-group" />
                         <x-input wire:model="children" label="Children" type="number" min="0"
                             icon="o-face-smile" />
                     </div>
