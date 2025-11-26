@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 class Booking extends Model
 {
     protected $fillable = [
+        'bookingable_type',
         'bookingable_id',
         'user_id',
         'adults',
