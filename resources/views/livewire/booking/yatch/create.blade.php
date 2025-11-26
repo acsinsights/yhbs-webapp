@@ -22,17 +22,30 @@ new class extends Component {
     public ?int $yatch_id = null;
     public ?string $check_in = null;
     public ?string $check_out = null;
-    public int $adults = 1;
-    public int $children = 0;
+    public ?int $adults = 1;
+    public ?int $children = 0;
     public ?float $amount = null;
     public string $payment_method = 'cash';
     public string $payment_status = 'pending';
     public ?string $notes = null;
+    public string $yatch_search = '';
 
     public function mount(): void
     {
         $this->check_in = Carbon::now()->format('Y-m-d\TH:i');
         $this->check_out = Carbon::tomorrow()->format('Y-m-d\TH:i');
+    }
+
+    public function updatedAdults(): void
+    {
+        $this->yatch_id = null;
+        $this->amount = null;
+    }
+
+    public function updatedChildren(): void
+    {
+        $this->yatch_id = null;
+        $this->amount = null;
     }
 
     public function updatedCheckIn(): void
@@ -139,11 +152,25 @@ new class extends Component {
 
         $checkIn = Carbon::parse($this->check_in);
         $checkOut = Carbon::parse($this->check_out);
+        $totalGuests = $this->adults + $this->children;
 
-        $availableYatches = Yatch::available($checkIn, $checkOut)->where('id', $this->yatch_id)->exists();
+        $yatch = Yatch::find($this->yatch_id);
 
-        if (!$availableYatches) {
+        if (!$yatch) {
+            $this->error('Selected yacht not found.');
+            return;
+        }
+
+        // Check if yacht is available for the date range
+        $isAvailable = Yatch::available($checkIn, $checkOut)->where('id', $this->yatch_id)->exists();
+        if (!$isAvailable) {
             $this->error('Selected yacht is not available for the chosen dates.');
+            return;
+        }
+
+        // Check guest capacity
+        if ($yatch->max_guests && $totalGuests > $yatch->max_guests) {
+            $this->error("Selected yacht can accommodate maximum {$yatch->max_guests} guests, but you have selected {$totalGuests} guests.");
             return;
         }
 
@@ -170,7 +197,33 @@ new class extends Component {
         $checkIn = $this->check_in ? Carbon::parse($this->check_in) : null;
         $checkOut = $this->check_out ? Carbon::parse($this->check_out) : null;
 
-        $view->availableYatches = $checkIn && $checkOut ? Yatch::available($checkIn, $checkOut)->orderBy('name')->get() : collect();
+        $totalGuests = $this->adults + $this->children;
+
+        // Only query if we have valid dates
+        if ($checkIn && $checkOut && $checkIn->lt($checkOut)) {
+            $query = Yatch::available($checkIn, $checkOut);
+
+            // Filter by guest capacity
+            if ($totalGuests > 0) {
+                $query->where(function ($q) use ($totalGuests) {
+                    $q->whereNull('max_guests')->orWhere('max_guests', '>=', $totalGuests);
+                });
+            }
+
+            // Filter by search term
+            if (!empty($this->yatch_search)) {
+                $search = $this->yatch_search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('sku', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
+                });
+            }
+
+            $view->availableYatches = $query->orderBy('name')->get();
+        } else {
+            $view->availableYatches = collect();
+        }
 
         $view->customers = User::role(RolesEnum::CUSTOMER->value)->orderBy('name')->get();
 
@@ -207,94 +260,35 @@ new class extends Component {
         </x-slot:actions>
     </x-header>
 
-    <x-card shadow class="max-w-4xl mx-auto">
+    <x-card shadow class="mx-auto">
         <x-form wire:submit="store">
-            <div class="space-y-6">
+            <div class="space-y-8">
                 {{-- Date Range Section --}}
                 <div class="space-y-4">
-                    <h3 class="text-lg font-semibold">Charter Dates</h3>
+                    <div>
+                        <h3 class="text-lg font-semibold text-base-content">Charter Dates</h3>
+                        <p class="text-sm text-base-content/60 mt-1">Select your departure and return dates</p>
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <x-input wire:model="check_in" label="Departure" type="datetime-local" icon="o-calendar"
-                            :min="$minDepartureDate" hint="Departure must be today or later" />
-                        <x-input wire:model="check_out" label="Return" type="datetime-local" icon="o-calendar"
-                            :min="$check_in" hint="Return must be after departure" />
+                        <x-input wire:model.live.debounce.300ms="check_in" label="Departure" type="datetime-local"
+                            icon="o-calendar" :min="$minDepartureDate" hint="Departure must be today or later" />
+                        <x-input wire:model.live.debounce.300ms="check_out" label="Return" type="datetime-local"
+                            icon="o-calendar" :min="$check_in" hint="Return must be after departure" />
                     </div>
                 </div>
 
-                <div class="divider my-4"></div>
-
-                {{-- Yacht Selection Section --}}
-                <div class="space-y-4">
-                    <h3 class="text-lg font-semibold">Yacht Selection</h3>
-                    @if ($check_in && $check_out && Carbon::parse($check_in)->lt(Carbon::parse($check_out)))
-                        @if ($availableYatches->count() > 0)
-                            <x-choices-offline wire:model.live="yatch_id" label="Select Yacht"
-                                placeholder="Choose an available yacht" :options="$availableYatches" icon="o-home-modern"
-                                hint="Only available yachts are shown" single clearable searchable>
-                                @scope('item', $yatch)
-                                    <div
-                                        class="flex justify-between items-center gap-4 p-2 rounded-lg hover:bg-base-200/50 transition-colors">
-                                        <div class="flex-1 min-w-0">
-                                            <div class="font-semibold text-base mb-1 truncate">{{ $yatch->name }}</div>
-                                            <div class="flex items-center gap-3 flex-wrap">
-                                                <div class="text-xs text-base-content/60 flex items-center gap-1">
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
-                                                        viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z">
-                                                        </path>
-                                                    </svg>
-                                                    <span>SKU: {{ $yatch->sku ?? 'N/A' }}</span>
-                                                </div>
-                                                <div class="text-xs text-base-content/60 flex items-center gap-1">
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
-                                                        viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
-                                                        </path>
-                                                    </svg>
-                                                    <span>Max: {{ $yatch->max_guests ?? '—' }} guests</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="text-right shrink-0">
-                                            <div class="font-bold text-lg text-primary">
-                                                {{ currency_format($yatch->discount_price ?? ($yatch->price ?? 0)) }}
-                                            </div>
-                                            @if ($yatch->discount_price && $yatch->price && $yatch->discount_price < $yatch->price)
-                                                <div class="text-xs text-base-content/50 line-through">
-                                                    {{ currency_format($yatch->price) }}
-                                                </div>
-                                            @endif
-                                        </div>
-                                    </div>
-                                @endscope
-                                @scope('selection', $yatch)
-                                    {{ $yatch->name }}
-                                @endscope
-                            </x-choices-offline>
-                        @else
-                            <x-alert icon="o-exclamation-triangle" class="alert-warning">
-                                No yachts available for the selected date range. Please choose different dates.
-                            </x-alert>
-                        @endif
-                    @else
-                        <x-alert icon="o-information-circle" class="alert-info">
-                            Please select departure and return dates to see available yachts.
-                        </x-alert>
-                    @endif
-                </div>
-
-                <div class="divider my-4"></div>
+                <div class="divider"></div>
 
                 {{-- Customer Section --}}
                 <div class="space-y-4">
                     <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-semibold">Customer Details</h3>
+                        <div>
+                            <h3 class="text-lg font-semibold text-base-content">Customer Details</h3>
+                            <p class="text-sm text-base-content/60 mt-1">Select or create a customer for this booking
+                            </p>
+                        </div>
                         <x-button type="button" icon="o-plus" label="New Customer"
-                            @click="$wire.createCustomerModal = true" class="btn-sm" />
+                            @click="$wire.createCustomerModal = true" class="btn-sm btn-primary" />
                     </div>
 
                     <x-choices-offline wire:model="user_id" label="Select Customer" placeholder="Choose a customer"
@@ -331,24 +325,258 @@ new class extends Component {
                     </x-choices-offline>
                 </div>
 
-                <div class="divider my-4"></div>
+                <div class="divider"></div>
 
                 {{-- Guest Details Section --}}
                 <div class="space-y-4">
-                    <h3 class="text-lg font-semibold">Guest Details</h3>
+                    <div>
+                        <h3 class="text-lg font-semibold text-base-content">Guest Details</h3>
+                        <p class="text-sm text-base-content/60 mt-1">Number of guests for this charter</p>
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <x-input wire:model="adults" label="Adults" type="number" min="1"
+                        <x-input wire:model.live.debounce.300ms="adults" label="Adults" type="number" min="1"
                             icon="o-user-group" />
-                        <x-input wire:model="children" label="Children" type="number" min="0"
-                            icon="o-face-smile" />
+                        <x-input wire:model.live.debounce.300ms="children" label="Children" type="number"
+                            min="0" icon="o-face-smile" />
                     </div>
                 </div>
 
-                <div class="divider my-4"></div>
+                <div class="divider"></div>
+
+                {{-- Yacht Selection Section --}}
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-base-content">Yacht Selection</h3>
+                            <p class="text-sm text-base-content/60 mt-1">Choose from available yachts for your charter
+                            </p>
+                        </div>
+                    </div>
+
+                    @if ($check_in && $check_out && Carbon::parse($check_in)->lt(Carbon::parse($check_out)))
+                        {{-- Search Input --}}
+                        <div class="mt-4">
+                            <x-input wire:model.live.debounce.300ms="yatch_search" label="Search Yachts"
+                                placeholder="Search by name, SKU, or description..." icon="o-magnifying-glass" clearable
+                                hint="Filter yachts by name, SKU, or description" />
+                        </div>
+
+                        {{-- Filter Info --}}
+                        @php
+                            $totalGuests = $adults + $children;
+                        @endphp
+                        <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-base-content/70">
+                            {{-- Loading Indicator --}}
+                            <div wire:loading wire:target="check_in,check_out,adults,children,yatch_search"
+                                class="flex items-center gap-2 text-primary">
+                                <span class="loading loading-spinner loading-sm"></span>
+                                <span>Loading yachts...</span>
+                            </div>
+
+                            <div wire:loading.remove wire:target="check_in,check_out,adults,children,yatch_search"
+                                class="flex items-center gap-2">
+                                <x-icon name="o-funnel" class="w-4 h-4" />
+                                <span>
+                                    <strong>{{ $availableYatches->count() }}</strong>
+                                    {{ $availableYatches->count() === 1 ? 'yacht' : 'yachts' }} available
+                                </span>
+                            </div>
+                            @if ($totalGuests > 0)
+                                <div wire:loading.remove wire:target="check_in,check_out,adults,children,yatch_search"
+                                    class="flex items-center gap-2">
+                                    <x-icon name="o-user-group" class="w-4 h-4" />
+                                    <span>Filtered for {{ $totalGuests }}
+                                        {{ $totalGuests === 1 ? 'guest' : 'guests' }}</span>
+                                </div>
+                            @endif
+                            @if (!empty($yatch_search))
+                                <div wire:loading.remove wire:target="check_in,check_out,adults,children,yatch_search"
+                                    class="flex items-center gap-2">
+                                    <x-icon name="o-magnifying-glass" class="w-4 h-4" />
+                                    <span>Search: "{{ $yatch_search }}"</span>
+                                </div>
+                            @endif
+                        </div>
+
+                        {{-- Loading Overlay for Yacht Grid --}}
+                        <div wire:loading wire:target="check_in,check_out,adults,children,yatch_search"
+                            class="mt-4">
+                            <div
+                                class="flex items-center justify-center py-12 bg-base-200/50 rounded-xl border-2 border-dashed border-base-300">
+                                <div class="text-center">
+                                    <span class="loading loading-spinner loading-lg text-primary"></span>
+                                    <p class="mt-4 text-sm text-base-content/70">Filtering available yachts...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div wire:loading.remove wire:target="check_in,check_out,adults,children,yatch_search">
+                            @if ($availableYatches->count() > 0)
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-4">
+                                    @foreach ($availableYatches as $yatch)
+                                        @php
+                                            $isSelected = $yatch_id == $yatch->id;
+                                        @endphp
+                                        <label wire:click="$wire.yatch_id = {{ $yatch->id }}"
+                                            class="relative cursor-pointer group block">
+                                            <input type="radio" wire:model.live="yatch_id"
+                                                value="{{ $yatch->id }}" class="sr-only">
+                                            <div
+                                                class="bg-base-100 border-2 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 h-full flex flex-col {{ $isSelected ? 'border-primary ring-2 ring-primary/20 shadow-lg' : 'border-base-300' }}">
+                                                {{-- Image Section --}}
+                                                <div class="relative aspect-[4/3] bg-base-200 overflow-hidden">
+                                                    @if ($yatch->image)
+                                                        <img src="{{ asset($yatch->image) }}"
+                                                            alt="{{ $yatch->name }}"
+                                                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                    @else
+                                                        <div
+                                                            class="w-full h-full flex items-center justify-center bg-gradient-to-br from-base-200 to-base-300">
+                                                            <x-icon name="o-photo"
+                                                                class="w-16 h-16 text-base-content/30" />
+                                                        </div>
+                                                    @endif
+
+                                                    {{-- Selection Indicator --}}
+                                                    <div class="absolute top-3 right-3">
+                                                        <div
+                                                            class="w-6 h-6 rounded-full border-2 border-base-100 bg-base-100/80 backdrop-blur-sm flex items-center justify-center transition-all {{ $isSelected ? 'bg-primary border-primary' : '' }}">
+                                                            @if ($isSelected)
+                                                                <svg class="w-4 h-4 text-primary-content"
+                                                                    fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path fill-rule="evenodd"
+                                                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                                        clip-rule="evenodd" />
+                                                                </svg>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+
+                                                    {{-- Discount Badge --}}
+                                                    @if ($yatch->discount_price && $yatch->price && $yatch->discount_price < $yatch->price)
+                                                        <div class="absolute top-3 left-3">
+                                                            <div
+                                                                class="bg-error text-error-content px-2 py-1 rounded-md text-xs font-semibold shadow-md">
+                                                                {{ number_format((($yatch->price - $yatch->discount_price) / $yatch->price) * 100, 0) }}%
+                                                                OFF
+                                                            </div>
+                                                        </div>
+                                                    @endif
+                                                </div>
+
+                                                {{-- Content Section --}}
+                                                <div class="p-4 flex-1 flex flex-col">
+                                                    {{-- Name and SKU --}}
+                                                    <div class="mb-3">
+                                                        <h4
+                                                            class="font-semibold text-base text-base-content mb-1 line-clamp-1">
+                                                            {{ $yatch->name }}
+                                                        </h4>
+                                                        @if ($yatch->sku)
+                                                            <p class="text-xs text-base-content/50 font-mono">
+                                                                SKU: {{ $yatch->sku }}
+                                                            </p>
+                                                        @endif
+                                                    </div>
+
+                                                    {{-- Details Grid --}}
+                                                    <div class="space-y-2 mb-4 flex-1">
+                                                        @if ($yatch->max_guests)
+                                                            <div
+                                                                class="flex items-center gap-2 text-sm text-base-content/70">
+                                                                <x-icon name="o-user-group"
+                                                                    class="w-4 h-4 text-base-content/50" />
+                                                                <span>Max {{ $yatch->max_guests }} guests</span>
+                                                            </div>
+                                                        @endif
+
+                                                        @if ($yatch->length)
+                                                            <div
+                                                                class="flex items-center gap-2 text-sm text-base-content/70">
+                                                                <x-icon name="o-arrows-pointing-out"
+                                                                    class="w-4 h-4 text-base-content/50" />
+                                                                <span>{{ $yatch->length }}m length</span>
+                                                            </div>
+                                                        @endif
+
+                                                        @if ($yatch->max_crew)
+                                                            <div
+                                                                class="flex items-center gap-2 text-sm text-base-content/70">
+                                                                <x-icon name="o-user"
+                                                                    class="w-4 h-4 text-base-content/50" />
+                                                                <span>Up to {{ $yatch->max_crew }} crew</span>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+
+                                                    {{-- Price Section --}}
+                                                    <div class="pt-3 border-t border-base-300">
+                                                        <div class="flex items-baseline justify-between gap-2">
+                                                            <div class="flex-1">
+                                                                <div class="font-bold text-lg text-primary">
+                                                                    {{ currency_format($yatch->discount_price ?? ($yatch->price ?? 0)) }}
+                                                                </div>
+                                                                @if ($yatch->discount_price && $yatch->price && $yatch->discount_price < $yatch->price)
+                                                                    <div
+                                                                        class="text-xs text-base-content/50 line-through">
+                                                                        {{ currency_format($yatch->price) }}
+                                                                    </div>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    @endforeach
+                                </div>
+
+                                @if ($yatch_id)
+                                    <div class="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                                        <div class="flex items-center gap-2 text-sm text-primary">
+                                            <x-icon name="o-check-circle" class="w-5 h-5" />
+                                            <span class="font-medium">Yacht selected:
+                                                {{ $availableYatches->firstWhere('id', $yatch_id)?->name }}</span>
+                                        </div>
+                                    </div>
+                                @endif
+                            @else
+                                <x-alert icon="o-exclamation-triangle" class="alert-warning mt-4">
+                                    <div>
+                                        <p class="font-semibold">No yachts available</p>
+                                        <p class="text-sm mt-1">
+                                            @if (!empty($yatch_search))
+                                                No yachts match your search criteria or are not available for the
+                                                selected
+                                                date range and guest count.
+                                            @else
+                                                No yachts are available for the selected date range and guest count.
+                                                Please
+                                                choose different dates or adjust guest count.
+                                            @endif
+                                        </p>
+                                    </div>
+                                </x-alert>
+                            @endif
+                        </div>
+                    @else
+                        <x-alert icon="o-information-circle" class="alert-info">
+                            <div>
+                                <p class="font-semibold">Select dates first</p>
+                                <p class="text-sm mt-1">Please select departure and return dates to see available
+                                    yachts.</p>
+                            </div>
+                        </x-alert>
+                    @endif
+                </div>
+                <div class="divider"></div>
 
                 {{-- Payment Section --}}
                 <div class="space-y-4">
-                    <h3 class="text-lg font-semibold">Payment Details</h3>
+                    <div>
+                        <h3 class="text-lg font-semibold text-base-content">Payment Details</h3>
+                        <p class="text-sm text-base-content/60 mt-1">Payment information for this booking</p>
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <x-input wire:model.live="amount" label="Amount" type="number" step="0.01"
                             min="0" icon="o-currency-dollar"
@@ -360,10 +588,14 @@ new class extends Component {
                     </div>
                 </div>
 
-                <div class="divider my-4"></div>
+                <div class="divider"></div>
 
                 {{-- Notes Section --}}
                 <div class="space-y-4">
+                    <div>
+                        <h3 class="text-lg font-semibold text-base-content">Additional Notes</h3>
+                        <p class="text-sm text-base-content/60 mt-1">Any special requests or additional information</p>
+                    </div>
                     <x-textarea wire:model="notes" label="Notes" placeholder="Additional notes (optional)"
                         icon="o-document-text" rows="3" />
                 </div>
