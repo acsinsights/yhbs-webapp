@@ -118,31 +118,43 @@ new class extends Component {
 
     public function updatedYatchId(): void
     {
+        // When yacht changes, reset the manual flag so new price can auto-fill
+        $this->amountManuallySet = false;
+
         if ($this->yatch_id) {
             $yatch = Yatch::find($this->yatch_id);
             if ($yatch) {
                 $price = $yatch->discount_price ?? $yatch->price;
-                // Only auto-fill if amount wasn't manually set
-                if (!$this->amountManuallySet) {
-                    $this->amount = $price !== null ? (float) $price : null;
-                }
+                $newAmount = $price !== null ? (float) $price : null;
+                $this->amount = $newAmount;
+                // Force update to ensure Live Summary refreshes
+                $this->dispatch('amount-updated');
             } else {
-                if (!$this->amountManuallySet) {
-                    $this->amount = null;
-                }
+                $this->amount = null;
+                $this->dispatch('amount-updated');
             }
         } else {
-            // Reset amount when yacht selection is cleared (only if not manually set)
-            if (!$this->amountManuallySet) {
-                $this->amount = null;
-            }
+            // Reset amount when yacht selection is cleared
+            $this->amount = null;
+            $this->dispatch('amount-updated');
         }
     }
 
     public function updatedAmount(): void
     {
-        // Mark amount as manually set when user types in it
+        // Validate and limit amount
         if ($this->amount !== null && $this->amount !== '') {
+            // Limit to maximum 999,999,999.99 (999 million)
+            $maxAmount = 999999999.99;
+            if ($this->amount > $maxAmount) {
+                $this->error('Amount cannot exceed ' . currency_format($maxAmount) . '.');
+                $this->amount = $maxAmount;
+                return;
+            }
+            // Ensure amount is not negative
+            if ($this->amount < 0) {
+                $this->amount = 0;
+            }
             $this->amountManuallySet = true;
         }
     }
@@ -191,17 +203,23 @@ new class extends Component {
 
     public function store(): void
     {
-        $this->validate([
-            'user_id' => 'required|exists:users,id',
-            'yatch_id' => 'required|exists:yatches,id',
-            'check_in' => 'required|date|after_or_equal:today',
-            'check_out' => 'required|date|after:check_in',
-            'adults' => 'required|integer|min:1',
-            'children' => 'required|integer|min:0',
-            'amount' => 'required|numeric|min:0',
-            'payment_method' => 'required|in:cash,card',
-            'payment_status' => 'required|in:paid,pending',
-        ]);
+        $this->validate(
+            [
+                'user_id' => 'required|exists:users,id',
+                'yatch_id' => 'required|exists:yatches,id',
+                'check_in' => 'required|date|after_or_equal:today',
+                'check_out' => 'required|date|after:check_in',
+                'adults' => 'required|integer|min:1',
+                'children' => 'required|integer|min:0',
+                'amount' => 'required|numeric|min:0|max:999999999.99',
+                'payment_method' => 'required|in:cash,card',
+                'payment_status' => 'required|in:paid,pending',
+            ],
+            [
+                'amount.max' => 'Amount cannot exceed ' . currency_format(999999999.99) . '.',
+                'amount.min' => 'Amount must be greater than or equal to 0.',
+            ],
+        );
 
         $checkIn = Carbon::parse($this->check_in);
         $checkOut = Carbon::parse($this->check_out);
@@ -683,9 +701,10 @@ new class extends Component {
                                 <x-icon name="o-credit-card" class="w-8 h-8 text-primary/70" />
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                                <x-input wire:model="amount" wire:change="$wire.updatedAmount()" label="Amount"
-                                    type="number" step="0.01" min="0" icon="o-currency-dollar"
-                                    hint="Total charter amount (auto-filled from yacht price)" />
+                                <x-input wire:model.live.debounce.500ms="amount" wire:change="$wire.updatedAmount()"
+                                    label="Amount" type="number" step="0.01" min="0" max="999999999.99"
+                                    icon="o-currency-dollar"
+                                    hint="Total charter amount (auto-filled from yacht price, max: 999,999,999.99)" />
                                 <x-select wire:model.live="payment_method" label="Payment Method" :options="[['id' => 'cash', 'name' => 'Cash'], ['id' => 'card', 'name' => 'Card']]"
                                     option-value="id" option-label="name" icon="o-credit-card" />
                                 <x-select wire:model.live="payment_status" label="Payment Status" :options="[
@@ -760,7 +779,7 @@ new class extends Component {
                                                         <p class="text-xs font-semibold text-base-content">
                                                             {{ \Carbon\Carbon::parse($check_out)->format('M d, Y') }} |
                                                             {{ \Carbon\Carbon::parse($check_out)->format('g:i A') }}
-                                                        </p> 
+                                                        </p>
                                                     </div>
                                                 </div>
                                             @else
@@ -814,8 +833,8 @@ new class extends Component {
                                 </div>
 
                                 {{-- Amount --}}
-                                <div
-                                    class="bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg p-2.5 border-2 border-primary/20">
+                                <div class="bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg p-2.5 border-2 border-primary/20"
+                                    wire:key="summary-amount-{{ $amount }}">
                                     <div class="flex items-center gap-2">
                                         <div
                                             class="w-7 h-7 rounded-md bg-primary/20 flex items-center justify-center shrink-0">
