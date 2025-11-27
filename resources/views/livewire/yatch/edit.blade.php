@@ -331,7 +331,16 @@ new class extends Component {
             </div>
 
             <div class="mt-4 md:mt-6">
-                <x-editor wire:model="description" label="Description" hint="Detailed description of the yacht" />
+                @php
+                    $editorConfig = [
+                        'valid_elements' => '*[*]',
+                        'extended_valid_elements' => '*[*]',
+                        'plugins' => 'code',
+                        'toolbar' => 'undo redo | align bullist numlist | outdent indent | quickimage quicktable | code',
+                    ];
+                @endphp
+                <x-editor wire:model="description" label="Description" hint="Detailed description of the yacht (HTML code editing enabled)"
+                    :config="$editorConfig" />
             </div>
 
             <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-6 md:mt-8 pt-4 md:pt-6 border-t">

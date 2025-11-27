@@ -135,7 +135,16 @@ new class extends Component {
 
             {{-- Description Editor --}}
             <div class="mt-4 md:mt-6">
-                <x-editor wire:model="description" label="Description" hint="Detailed description of the hotel" />
+                @php
+                    $editorConfig = [
+                        'valid_elements' => '*[*]',
+                        'extended_valid_elements' => '*[*]',
+                        'plugins' => 'code',
+                        'toolbar' => 'undo redo | align bullist numlist | outdent indent | quickimage quicktable | code',
+                    ];
+                @endphp
+                <x-editor wire:model="description" label="Description" hint="Detailed description of the hotel (HTML code editing enabled)"
+                    :config="$editorConfig" />
             </div>
 
             {{-- Form Actions --}}
