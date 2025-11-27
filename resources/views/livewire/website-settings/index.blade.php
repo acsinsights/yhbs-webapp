@@ -5,6 +5,7 @@ use Mary\Traits\Toast;
 use Livewire\Volt\Component;
 use Illuminate\View\View;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 
 new class extends Component {
     use Toast;
@@ -43,6 +44,9 @@ new class extends Component {
         $this->editingSetting->update([
             'value' => $value,
         ]);
+
+        // Clear cache for this specific setting
+        Cache::forget("website_setting_{$this->editingSetting->key}");
 
         $this->editModal = false;
         $this->reset('edit_value', 'edit_toggle_value', 'edit_type', 'editingSetting');
