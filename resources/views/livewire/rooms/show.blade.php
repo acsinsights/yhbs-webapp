@@ -37,10 +37,33 @@ new class extends Component {
 
 @php
     $slides = [];
+
+    // Add main image first if it exists
+    if ($room->image) {
+        $slides[] = ['image' => asset($room->image)];
+    }
+
+    // Add library images
     if ($room->library && is_iterable($room->library)) {
         foreach ($room->library as $item) {
-            if (is_string($item) && $item !== '') {
-                $slides[] = ['image' => asset($item)];
+            $imageUrl = null;
+
+            // Handle object/array structure with url, path, uuid
+            if (is_array($item) || is_object($item)) {
+                $item = (array) $item;
+                // Use url if available (full URL), otherwise use path
+                if (!empty($item['url'])) {
+                    $imageUrl = $item['url'];
+                } elseif (!empty($item['path'])) {
+                    $imageUrl = asset('storage' . $item['path']);
+                }
+            } elseif (is_string($item) && $item !== '') {
+                // Backward compatibility: handle string paths
+                $imageUrl = asset($item);
+            }
+
+            if ($imageUrl) {
+                $slides[] = ['image' => $imageUrl];
             }
         }
     }
@@ -108,26 +131,20 @@ new class extends Component {
                     <p class="font-semibold">{{ $room->updated_at->format('M d, Y') }}</p>
                 </div>
             </div>
-            <div class="aspect-video rounded-xl overflow-hidden bg-base-200 flex items-center justify-center">
-                @if ($room->image)
-                    <img src="{{ asset($room->image) }}" alt="{{ $room->name }}"
-                        class="object-cover w-full h-full" />
+            <div>
+                @if (!empty($slides))
+                    <x-carousel :slides="$slides" />
                 @else
-                    <div class="text-center text-base-content/50">
-                        <x-icon name="o-photo" class="w-16 h-16 mx-auto mb-2" />
-                        <p>No cover image</p>
+                    <div class="aspect-video rounded-xl overflow-hidden bg-base-200 flex items-center justify-center">
+                        <div class="text-center text-base-content/50">
+                            <x-icon name="o-photo" class="w-16 h-16 mx-auto mb-2" />
+                            <p>No images available</p>
+                        </div>
                     </div>
                 @endif
             </div>
         </div>
     </x-card>
-
-    @if (!empty($slides))
-        <x-card>
-            <x-slot:title>Gallery</x-slot:title>
-            <x-carousel :slides="$slides" />
-        </x-card>
-    @endif
 
     @if ($room->description)
         <x-card>
