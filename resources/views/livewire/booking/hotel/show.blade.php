@@ -1,11 +1,10 @@
 <?php
 
-use App\Models\Booking;
-use App\Models\Room;
-use Mary\Traits\Toast;
-use Livewire\Volt\Component;
-use Illuminate\View\View;
 use Carbon\Carbon;
+use Mary\Traits\Toast;
+use Illuminate\View\View;
+use Livewire\Volt\Component;
+use App\Models\{Booking, Room};
 
 new class extends Component {
     use Toast;

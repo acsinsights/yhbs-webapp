@@ -1,14 +1,13 @@
 <?php
 
-use Mary\Traits\Toast;
-use Mary\Traits\WithMediaSync;
 use Illuminate\View\View;
 use Illuminate\Support\Str;
 use Illuminate\Support\Collection;
-use Livewire\Volt\Component;
-use Livewire\WithFileUploads;
 use Illuminate\Http\UploadedFile;
-use App\Models\{Yatch, Category, Amenity};
+use Livewire\WithFileUploads;
+use Livewire\Volt\Component;
+use Mary\Traits\{Toast, WithMediaSync};
+use App\Models\{Amenity, Category, Yatch};
 
 new class extends Component {
     use Toast, WithFileUploads, WithMediaSync;
@@ -17,7 +16,7 @@ new class extends Component {
 
     public string $name = '';
     public string $slug = '';
-    public $image = null;
+    public ?UploadedFile $image = null;
     public ?string $existing_image = null;
     public ?string $description = null;
     public ?int $sku = null;
@@ -336,11 +335,12 @@ new class extends Component {
                         'valid_elements' => '*[*]',
                         'extended_valid_elements' => '*[*]',
                         'plugins' => 'code',
-                        'toolbar' => 'undo redo | align bullist numlist | outdent indent | quickimage quicktable | code',
+                        'toolbar' =>
+                            'undo redo | align bullist numlist | outdent indent | quickimage quicktable | code',
                     ];
                 @endphp
-                <x-editor wire:model="description" label="Description" hint="Detailed description of the yacht (HTML code editing enabled)"
-                    :config="$editorConfig" />
+                <x-editor wire:model="description" label="Description"
+                    hint="Detailed description of the yacht (HTML code editing enabled)" :config="$editorConfig" />
             </div>
 
             <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-6 md:mt-8 pt-4 md:pt-6 border-t">

@@ -1,10 +1,11 @@
 <?php
 
-use App\Models\Room;
-use Livewire\Volt\Component;
-use Mary\Traits\Toast;
-use Illuminate\View\View;
 use Carbon\Carbon;
+use Mary\Traits\Toast;
+use App\Models\Room;
+use Illuminate\View\View;
+use Livewire\Volt\Component;
+use Illuminate\Support\Facades\Storage;
 
 new class extends Component {
     use Toast;
@@ -19,7 +20,7 @@ new class extends Component {
     public function delete(): void
     {
         if ($this->room->image) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete(str_replace('/storage/', '', $this->room->image));
+            Storage::disk('public')->delete(str_replace('/storage/', '', $this->room->image));
         }
 
         $this->room->delete();
@@ -85,12 +86,12 @@ new class extends Component {
                         class="badge-soft {{ $room->is_active ? 'badge-success' : 'badge-error' }}" />
                 </div>
                 @if ($room->price)
-                <div>
-                    <p class="text-sm text-base-content/60 mb-1">Price</p>
-                    <p class="text-2xl font-bold text-primary">{{ currency_format($room->price) }}</p>
-                    @if ($room->discount_price)
-                        <p class="text-lg font-semibold text-success">
-                            {{ currency_format($room->discount_price) }}</p>
+                    <div>
+                        <p class="text-sm text-base-content/60 mb-1">Price</p>
+                        <p class="text-2xl font-bold text-primary">{{ currency_format($room->price) }}</p>
+                        @if ($room->discount_price)
+                            <p class="text-lg font-semibold text-success">
+                                {{ currency_format($room->discount_price) }}</p>
                             @php
                                 $discountPercent = round((($room->price - $room->discount_price) / $room->price) * 100);
                             @endphp
@@ -215,7 +216,8 @@ new class extends Component {
                         @if ($room->discount_price)
                             <div>
                                 <p class="text-xs text-base-content/60 uppercase mb-1">Discount Price</p>
-                                <span class="text-xl font-bold text-success">{{ currency_format($room->discount_price) }}</span>
+                                <span
+                                    class="text-xl font-bold text-success">{{ currency_format($room->discount_price) }}</span>
                                 @if ($room->price)
                                     @php
                                         $discountPercent = round(

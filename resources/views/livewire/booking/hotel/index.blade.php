@@ -1,13 +1,12 @@
 <?php
 
-use App\Models\Booking;
-use App\Models\Room;
+use Carbon\Carbon;
 use Mary\Traits\Toast;
-use Livewire\Volt\Component;
+use Illuminate\View\View;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
-use Illuminate\View\View;
-use Carbon\Carbon;
+use Livewire\Volt\Component;
+use App\Models\{Booking, Room};
 
 new class extends Component {
     use Toast, WithPagination;

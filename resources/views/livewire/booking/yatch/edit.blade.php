@@ -1,14 +1,12 @@
 <?php
 
-use App\Models\Booking;
-use App\Models\Yatch;
-use App\Models\User;
-use App\Enums\RolesEnum;
-use Mary\Traits\Toast;
-use Livewire\Volt\Component;
-use Livewire\WithPagination;
-use Illuminate\View\View;
 use Carbon\Carbon;
+use Mary\Traits\Toast;
+use Illuminate\View\View;
+use Livewire\WithPagination;
+use Livewire\Volt\Component;
+use App\Enums\RolesEnum;
+use App\Models\{Booking, User, Yatch};
 
 new class extends Component {
     use Toast, WithPagination;
@@ -31,7 +29,7 @@ new class extends Component {
     public function mount(Booking $booking): void
     {
         $this->booking = $booking->load(['bookingable', 'user']);
-        
+
         // Pre-fill form with existing booking data
         $this->yatch_id = $booking->bookingable_id;
         $this->check_in = $booking->check_in ? Carbon::parse($booking->check_in)->format('Y-m-d\TH:i') : null;
@@ -190,8 +188,7 @@ new class extends Component {
                     $q->whereBetween('check_in', [$checkIn, $checkOut])
                         ->orWhereBetween('check_out', [$checkIn, $checkOut])
                         ->orWhere(function ($q2) use ($checkIn, $checkOut) {
-                            $q2->where('check_in', '<=', $checkIn)
-                                ->where('check_out', '>=', $checkOut);
+                            $q2->where('check_in', '<=', $checkIn)->where('check_out', '>=', $checkOut);
                         });
                 })
                 ->exists();
@@ -240,11 +237,11 @@ new class extends Component {
                 $q->where('id', '!=', $this->booking->id)
                     ->whereIn('status', ['pending', 'booked', 'checked_in'])
                     ->where(function ($query) use ($checkIn, $checkOut) {
-                        $query->whereBetween('check_in', [$checkIn, $checkOut])
+                        $query
+                            ->whereBetween('check_in', [$checkIn, $checkOut])
                             ->orWhereBetween('check_out', [$checkIn, $checkOut])
                             ->orWhere(function ($q) use ($checkIn, $checkOut) {
-                                $q->where('check_in', '<=', $checkIn)
-                                    ->where('check_out', '>=', $checkOut);
+                                $q->where('check_in', '<=', $checkIn)->where('check_out', '>=', $checkOut);
                             });
                     });
             });
@@ -276,25 +273,13 @@ new class extends Component {
             // Manually paginate the collection
             $currentPage = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage();
             $items = $availableYatches->slice(($currentPage - 1) * $this->perPage, $this->perPage)->values();
-            $view->availableYatches = new \Illuminate\Pagination\LengthAwarePaginator(
-                $items,
-                $availableYatches->count(),
-                $this->perPage,
-                $currentPage,
-                ['path' => request()->url(), 'query' => request()->query()]
-            );
+            $view->availableYatches = new \Illuminate\Pagination\LengthAwarePaginator($items, $availableYatches->count(), $this->perPage, $currentPage, ['path' => request()->url(), 'query' => request()->query()]);
         } else {
             // If dates are invalid, still show current yacht
             $collection = $currentYatch ? collect([$currentYatch]) : collect();
             $currentPage = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage();
             $items = $collection->slice(($currentPage - 1) * $this->perPage, $this->perPage)->values();
-            $view->availableYatches = new \Illuminate\Pagination\LengthAwarePaginator(
-                $items,
-                $collection->count(),
-                $this->perPage,
-                $currentPage,
-                ['path' => request()->url(), 'query' => request()->query()]
-            );
+            $view->availableYatches = new \Illuminate\Pagination\LengthAwarePaginator($items, $collection->count(), $this->perPage, $currentPage, ['path' => request()->url(), 'query' => request()->query()]);
         }
 
         // Set minimum date for departure (current date/time)
@@ -363,7 +348,8 @@ new class extends Component {
                         <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm opacity-75">
                             <div class="flex items-start justify-between gap-3">
                                 <div>
-                                    <p class="text-xs uppercase tracking-wide text-base-content/50 font-semibold">Customer</p>
+                                    <p class="text-xs uppercase tracking-wide text-base-content/50 font-semibold">
+                                        Customer</p>
                                     <h3 class="text-xl font-semibold text-base-content mt-1">Customer Details</h3>
                                     <p class="text-sm text-base-content/60 mt-1">Customer cannot be changed</p>
                                 </div>
@@ -372,7 +358,8 @@ new class extends Component {
                             <div class="mt-6">
                                 <div class="p-4 bg-base-200/50 rounded-lg">
                                     <div class="font-semibold text-base">{{ $booking->user->name ?? 'N/A' }}</div>
-                                    <div class="text-sm text-base-content/60 mt-1">{{ $booking->user->email ?? 'N/A' }}</div>
+                                    <div class="text-sm text-base-content/60 mt-1">{{ $booking->user->email ?? 'N/A' }}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -529,7 +516,8 @@ new class extends Component {
 
                                                             {{-- Discount Badge --}}
                                                             @if ($yatch->discount_price && $yatch->price && $yatch->discount_price < $yatch->price)
-                                                                <div class="absolute {{ $isCurrentYatch ? 'top-12' : 'top-3' }} left-3">
+                                                                <div
+                                                                    class="absolute {{ $isCurrentYatch ? 'top-12' : 'top-3' }} left-3">
                                                                     <div
                                                                         class="bg-primary text-primary-content px-2 py-1 rounded-md text-xs font-semibold shadow-md">
                                                                         {{ number_format((($yatch->price - $yatch->discount_price) / $yatch->price) * 100, 0) }}%
@@ -861,8 +849,8 @@ new class extends Component {
                 <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:justify-between">
                     <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
                         <x-button icon="o-arrow-left" label="Back"
-                            link="{{ route('admin.bookings.yatch.show', $booking->id) }}" class="btn-ghost w-full sm:w-auto"
-                            responsive />
+                            link="{{ route('admin.bookings.yatch.show', $booking->id) }}"
+                            class="btn-ghost w-full sm:w-auto" responsive />
                     </div>
                     <x-button icon="o-check" label="Update Booking" type="submit"
                         class="btn-primary w-full sm:w-auto" spinner="update" responsive />
@@ -871,4 +859,3 @@ new class extends Component {
         </x-form>
     </x-card>
 </div>
-

@@ -1,15 +1,12 @@
 <?php
 
-use App\Enums\RolesEnum;
-use App\Models\User;
-use App\Models\Booking;
-use App\Models\Room;
-use App\Models\Yatch;
 use Illuminate\View\View;
-use Livewire\Volt\Component;
 use Livewire\Attributes\Title;
+use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Enums\RolesEnum;
+use App\Models\{Booking, Room, User, Yatch};
 
 new class extends Component {
     #[Title('Admin Dashboard')]

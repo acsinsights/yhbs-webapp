@@ -1,11 +1,9 @@
 <?php
 
-use Livewire\Attributes\Layout;
-use Livewire\Attributes\Rule;
-use Livewire\Attributes\Title;
-use Livewire\Volt\Component;
 use Mary\Traits\Toast;
+use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\{Layout, Rule, Title};
 
 new class extends Component {
     use Toast;

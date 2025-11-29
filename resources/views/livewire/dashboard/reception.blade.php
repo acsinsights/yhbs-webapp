@@ -1,12 +1,12 @@
 <?php
 
-use App\Enums\RolesEnum;
-use App\Models\User;
 use Illuminate\View\View;
-use Livewire\Volt\Component;
 use Livewire\Attributes\Title;
+use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Enums\RolesEnum;
+use App\Models\User;
 
 new class extends Component {
     #[Title('Reception Dashboard')]

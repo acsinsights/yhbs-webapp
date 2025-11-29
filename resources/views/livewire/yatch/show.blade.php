@@ -1,9 +1,10 @@
 <?php
 
-use App\Models\Yatch;
-use Livewire\Volt\Component;
-use Livewire\Attributes\Title;
 use Mary\Traits\Toast;
+use App\Models\Yatch;
+use Livewire\Attributes\Title;
+use Livewire\Volt\Component;
+use Illuminate\Support\Facades\Storage;
 
 new class extends Component {
     use Toast;
@@ -19,7 +20,7 @@ new class extends Component {
     {
         // Delete image if exists
         if ($this->yatch->image) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete(str_replace('/storage/', '', $this->yatch->image));
+            Storage::disk('public')->delete(str_replace('/storage/', '', $this->yatch->image));
         }
 
         $this->yatch->delete();

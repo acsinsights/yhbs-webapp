@@ -1,13 +1,13 @@
 <?php
 
-use App\Models\Amenity;
 use Mary\Traits\Toast;
-use Livewire\Volt\Component;
+use Illuminate\View\View;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
-use Illuminate\View\View;
-use Illuminate\Support\Str;
+use Livewire\Volt\Component;
+use App\Models\Amenity;
 
 new class extends Component {
     use Toast, WithPagination, WithFileUploads;

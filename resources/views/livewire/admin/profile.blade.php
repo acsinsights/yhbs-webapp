@@ -1,12 +1,12 @@
 <?php
 
-use App\Models\User;
 use Mary\Traits\Toast;
 use Illuminate\View\View;
-use Livewire\Volt\Component;
 use Livewire\WithFileUploads;
 use Livewire\Attributes\Title;
+use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Hash;
+use App\Models\User;
 
 new class extends Component {
     use WithFileUploads, Toast;

@@ -1,10 +1,10 @@
 <?php
 
-use App\Enums\RolesEnum;
 use Illuminate\View\View;
-use Livewire\Volt\Component;
 use Livewire\Attributes\Title;
+use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\RolesEnum;
 
 new class extends Component {
     #[Title('Dashboard')]

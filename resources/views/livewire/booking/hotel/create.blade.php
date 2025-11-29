@@ -1,17 +1,15 @@
 <?php
 
-use App\Models\Booking;
-use App\Models\Room;
-use App\Models\User;
-use App\Enums\RolesEnum;
-use App\Notifications\WelcomeCustomerNotification;
-use Mary\Traits\Toast;
-use Livewire\Volt\Component;
-use Livewire\WithPagination;
-use Illuminate\View\View;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Mary\Traits\Toast;
+use Illuminate\View\View;
+use Illuminate\Support\Str;
+use Livewire\WithPagination;
+use Livewire\Volt\Component;
+use Illuminate\Support\Facades\Hash;
+use App\Models\{Booking, Room, User};
+use App\Enums\{BookingStatusEnum, RolesEnum};
+use App\Notifications\WelcomeCustomerNotification;
 
 new class extends Component {
     use Toast, WithPagination;
@@ -230,7 +228,7 @@ new class extends Component {
             'price' => $this->amount,
             'payment_method' => $this->payment_method,
             'payment_status' => $this->payment_status,
-            'status' => 'pending',
+            'status' => BookingStatusEnum::BOOKED->value,
             'notes' => $this->notes,
         ]);
 

@@ -1,12 +1,12 @@
 <?php
 
-use Mary\Traits\Toast;
-use Mary\Traits\WithMediaSync;
 use Illuminate\View\View;
 use Illuminate\Support\Str;
 use Illuminate\Support\Collection;
-use Livewire\Volt\Component;
+use Illuminate\Http\UploadedFile;
 use Livewire\WithFileUploads;
+use Livewire\Volt\Component;
+use Mary\Traits\{Toast, WithMediaSync};
 use App\Models\Hotel;
 
 new class extends Component {
@@ -16,7 +16,7 @@ new class extends Component {
 
     public string $name = '';
     public string $slug = '';
-    public ?string $image = null;
+    public ?UploadedFile $image = null;
     public ?string $existing_image = null;
     public ?string $description = null;
 
@@ -58,7 +58,7 @@ new class extends Component {
 
         // Handle single image upload - keep existing if no new upload
         $imagePath = $this->existing_image;
-        if ($this->image) {
+        if ($this->image instanceof UploadedFile) {
             $url = $this->image->store('hotels', 'public');
             $imagePath = "/storage/$url";
         }
@@ -140,11 +140,12 @@ new class extends Component {
                         'valid_elements' => '*[*]',
                         'extended_valid_elements' => '*[*]',
                         'plugins' => 'code',
-                        'toolbar' => 'undo redo | align bullist numlist | outdent indent | quickimage quicktable | code',
+                        'toolbar' =>
+                            'undo redo | align bullist numlist | outdent indent | quickimage quicktable | code',
                     ];
                 @endphp
-                <x-editor wire:model="description" label="Description" hint="Detailed description of the hotel (HTML code editing enabled)"
-                    :config="$editorConfig" />
+                <x-editor wire:model="description" label="Description"
+                    hint="Detailed description of the hotel (HTML code editing enabled)" :config="$editorConfig" />
             </div>
 
             {{-- Form Actions --}}

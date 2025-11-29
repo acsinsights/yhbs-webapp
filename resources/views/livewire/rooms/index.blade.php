@@ -1,13 +1,12 @@
 <?php
 
-use App\Models\Room;
-use App\Models\Hotel;
 use Mary\Traits\Toast;
-use Livewire\Volt\Component;
-use Livewire\Attributes\Url;
-use Livewire\WithPagination;
 use Illuminate\View\View;
 use Illuminate\Support\Str;
+use Livewire\Attributes\Url;
+use Livewire\WithPagination;
+use Livewire\Volt\Component;
+use App\Models\{Hotel, Room};
 
 new class extends Component {
     use Toast, WithPagination;
@@ -76,7 +75,7 @@ new class extends Component {
             ->orderBy(...array_values($this->sortBy))
             ->paginate($this->perPage);
 
-        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'name', 'label' => 'Name'], ['key' => 'room_number', 'label' => 'Room Number', 'sortable' => true], ['key' => 'hotel.name', 'label' => 'Hotel', 'sortable' => false], ['key' => 'adults', 'label' => 'Adults', 'sortable' => true], ['key' => 'children', 'label' => 'Children', 'sortable' => true], ['key' => 'price', 'label' => 'Price', 'sortable' => true], ['key' => 'discount_price', 'label' => 'Discount Price', 'sortable' => true]];
+        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'name', 'label' => 'Name'], ['key' => 'room_number', 'label' => 'Room Number'], ['key' => 'hotel.name', 'label' => 'Hotel', 'sortable' => false], ['key' => 'adults', 'label' => 'Adults'], ['key' => 'children', 'label' => 'Children'], ['key' => 'price', 'label' => 'Price', 'class' => 'whitespace-nowrap'], ['key' => 'discount_price', 'label' => 'Discount Price', 'class' => 'whitespace-nowrap']];
 
         $view->hotels = Hotel::latest()->get();
     }

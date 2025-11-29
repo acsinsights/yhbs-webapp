@@ -1,13 +1,13 @@
 <?php
 
-use Mary\Traits\Toast;
-use Mary\Traits\WithMediaSync;
 use Illuminate\View\View;
 use Illuminate\Support\Str;
 use Illuminate\Support\Collection;
-use Livewire\Volt\Component;
+use Illuminate\Http\UploadedFile;
 use Livewire\WithFileUploads;
-use App\Models\{Room, Hotel, Category, Amenity};
+use Livewire\Volt\Component;
+use Mary\Traits\{Toast, WithMediaSync};
+use App\Models\{Amenity, Category, Hotel, Room};
 
 new class extends Component {
     use Toast, WithFileUploads, WithMediaSync;
@@ -18,7 +18,7 @@ new class extends Component {
     public string $name = '';
     public string $slug = '';
     public string $room_number = '';
-    public ?string $image = null;
+    public ?UploadedFile $image = null;
     public ?string $existing_image = null;
     public ?string $description = null;
     public ?float $price = null;
@@ -112,7 +112,7 @@ new class extends Component {
 
         // Handle single image upload - keep existing if no new upload
         $imagePath = $this->existing_image;
-        if ($this->image) {
+        if ($this->image instanceof UploadedFile) {
             $url = $this->image->store('rooms', 'public');
             $imagePath = "/storage/$url";
         }

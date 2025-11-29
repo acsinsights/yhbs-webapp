@@ -1,12 +1,12 @@
 <?php
 
-use App\Models\Hotel;
 use Mary\Traits\Toast;
-use Livewire\Volt\Component;
-use Livewire\Attributes\Url;
-use Livewire\WithPagination;
 use Illuminate\View\View;
 use Illuminate\Support\Str;
+use Livewire\Attributes\Url;
+use Livewire\WithPagination;
+use Livewire\Volt\Component;
+use App\Models\Hotel;
 
 new class extends Component {
     use Toast, WithPagination;

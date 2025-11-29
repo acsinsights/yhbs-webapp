@@ -1,9 +1,9 @@
 <?php
 
-use App\Models\User;
+use Mary\Traits\Toast;
 use Illuminate\Support\Collection;
 use Livewire\Volt\Component;
-use Mary\Traits\Toast;
+use App\Models\User;
 
 new class extends Component {
     use Toast;

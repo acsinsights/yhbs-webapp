@@ -1,14 +1,12 @@
 <?php
 
-use App\Models\Booking;
-use App\Models\Room;
-use App\Models\User;
-use App\Enums\RolesEnum;
-use Mary\Traits\Toast;
-use Livewire\Volt\Component;
-use Livewire\WithPagination;
-use Illuminate\View\View;
 use Carbon\Carbon;
+use Mary\Traits\Toast;
+use Illuminate\View\View;
+use Livewire\WithPagination;
+use Livewire\Volt\Component;
+use App\Enums\RolesEnum;
+use App\Models\{Booking, Room, User};
 
 new class extends Component {
     use Toast, WithPagination;
@@ -31,7 +29,7 @@ new class extends Component {
     public function mount(Booking $booking): void
     {
         $this->booking = $booking->load(['bookingable.hotel', 'user']);
-        
+
         // Pre-fill form with existing booking data
         $this->room_id = $booking->bookingable_id;
         $this->check_in = $booking->check_in ? Carbon::parse($booking->check_in)->format('Y-m-d\TH:i') : null;
@@ -173,8 +171,7 @@ new class extends Component {
                     $q->whereBetween('check_in', [$checkIn, $checkOut])
                         ->orWhereBetween('check_out', [$checkIn, $checkOut])
                         ->orWhere(function ($q2) use ($checkIn, $checkOut) {
-                            $q2->where('check_in', '<=', $checkIn)
-                                ->where('check_out', '>=', $checkOut);
+                            $q2->where('check_in', '<=', $checkIn)->where('check_out', '>=', $checkOut);
                         });
                 })
                 ->exists();
@@ -210,18 +207,20 @@ new class extends Component {
 
         if ($checkIn && $checkOut && $checkIn->lt($checkOut)) {
             // Get available rooms excluding current booking
-            $query = Room::active()->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
-                $q->where('id', '!=', $this->booking->id)
-                    ->whereIn('status', ['pending', 'booked', 'checked_in'])
-                    ->where(function ($query) use ($checkIn, $checkOut) {
-                        $query->whereBetween('check_in', [$checkIn, $checkOut])
-                            ->orWhereBetween('check_out', [$checkIn, $checkOut])
-                            ->orWhere(function ($q) use ($checkIn, $checkOut) {
-                                $q->where('check_in', '<=', $checkIn)
-                                    ->where('check_out', '>=', $checkOut);
-                            });
-                    });
-            })->with('hotel');
+            $query = Room::active()
+                ->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
+                    $q->where('id', '!=', $this->booking->id)
+                        ->whereIn('status', ['pending', 'booked', 'checked_in'])
+                        ->where(function ($query) use ($checkIn, $checkOut) {
+                            $query
+                                ->whereBetween('check_in', [$checkIn, $checkOut])
+                                ->orWhereBetween('check_out', [$checkIn, $checkOut])
+                                ->orWhere(function ($q) use ($checkIn, $checkOut) {
+                                    $q->where('check_in', '<=', $checkIn)->where('check_out', '>=', $checkOut);
+                                });
+                        });
+                })
+                ->with('hotel');
 
             // Filter by search term
             if (!empty($this->room_search)) {
@@ -245,25 +244,13 @@ new class extends Component {
             // Manually paginate the collection
             $currentPage = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage();
             $items = $availableRooms->slice(($currentPage - 1) * $this->perPage, $this->perPage)->values();
-            $view->availableRooms = new \Illuminate\Pagination\LengthAwarePaginator(
-                $items,
-                $availableRooms->count(),
-                $this->perPage,
-                $currentPage,
-                ['path' => request()->url(), 'query' => request()->query()]
-            );
+            $view->availableRooms = new \Illuminate\Pagination\LengthAwarePaginator($items, $availableRooms->count(), $this->perPage, $currentPage, ['path' => request()->url(), 'query' => request()->query()]);
         } else {
             // If dates are invalid, still show current room
             $collection = $currentRoom ? collect([$currentRoom]) : collect();
             $currentPage = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage();
             $items = $collection->slice(($currentPage - 1) * $this->perPage, $this->perPage)->values();
-            $view->availableRooms = new \Illuminate\Pagination\LengthAwarePaginator(
-                $items,
-                $collection->count(),
-                $this->perPage,
-                $currentPage,
-                ['path' => request()->url(), 'query' => request()->query()]
-            );
+            $view->availableRooms = new \Illuminate\Pagination\LengthAwarePaginator($items, $collection->count(), $this->perPage, $currentPage, ['path' => request()->url(), 'query' => request()->query()]);
         }
 
         // Set minimum date for check-in (current date/time)
@@ -334,7 +321,8 @@ new class extends Component {
                         <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm opacity-75">
                             <div class="flex items-start justify-between gap-3">
                                 <div>
-                                    <p class="text-xs uppercase tracking-wide text-base-content/50 font-semibold">Customer</p>
+                                    <p class="text-xs uppercase tracking-wide text-base-content/50 font-semibold">
+                                        Customer</p>
                                     <h3 class="text-xl font-semibold text-base-content mt-1">Customer Details</h3>
                                     <p class="text-sm text-base-content/60 mt-1">Customer cannot be changed</p>
                                 </div>
@@ -343,7 +331,8 @@ new class extends Component {
                             <div class="mt-6">
                                 <div class="p-4 bg-base-200/50 rounded-lg">
                                     <div class="font-semibold text-base">{{ $booking->user->name ?? 'N/A' }}</div>
-                                    <div class="text-sm text-base-content/60 mt-1">{{ $booking->user->email ?? 'N/A' }}</div>
+                                    <div class="text-sm text-base-content/60 mt-1">{{ $booking->user->email ?? 'N/A' }}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -672,7 +661,8 @@ new class extends Component {
                                                         </p>
                                                     </div>
                                                     <div>
-                                                        <p class="text-xs font-semibold text-primary mb-0.5">Check Out</p>
+                                                        <p class="text-xs font-semibold text-primary mb-0.5">Check Out
+                                                        </p>
                                                         <p class="text-xs font-semibold text-base-content">
                                                             {{ \Carbon\Carbon::parse($check_out)->format('M d, Y') }} |
                                                             {{ \Carbon\Carbon::parse($check_out)->format('g:i A') }}
@@ -784,8 +774,8 @@ new class extends Component {
                 <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:justify-between">
                     <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
                         <x-button icon="o-arrow-left" label="Back"
-                            link="{{ route('admin.bookings.hotel.show', $booking->id) }}" class="btn-ghost w-full sm:w-auto"
-                            responsive />
+                            link="{{ route('admin.bookings.hotel.show', $booking->id) }}"
+                            class="btn-ghost w-full sm:w-auto" responsive />
                     </div>
                     <x-button icon="o-check" label="Update Booking" type="submit"
                         class="btn-primary w-full sm:w-auto" spinner="update" responsive />
@@ -794,4 +784,3 @@ new class extends Component {
         </x-form>
     </x-card>
 </div>
-
