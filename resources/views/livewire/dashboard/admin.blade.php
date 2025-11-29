@@ -361,8 +361,8 @@ new class extends Component {
         <!-- Booking Distribution Chart -->
         <x-card shadow title="Booking Distribution" separator>
             <div class="p-4">
-                <div class="h-80">
-                    <x-chart wire:model="bookingChart" />
+                <div class="h-96">
+                    <x-chart wire:model="bookingChart" class="h-full" />
                 </div>
             </div>
         </x-card>
@@ -370,8 +370,8 @@ new class extends Component {
         <!-- Revenue Chart -->
         <x-card shadow title="Monthly Revenue Comparison" separator>
             <div class="p-4">
-                <div class="h-80">
-                    <x-chart wire:model="revenueChart" />
+                <div class="h-96">
+                    <x-chart wire:model="revenueChart" class="h-full" />
                 </div>
             </div>
         </x-card>
@@ -379,8 +379,8 @@ new class extends Component {
         <!-- Customer Growth Chart -->
         <x-card shadow title="Customer Growth" separator>
             <div class="p-4">
-                <div class="h-80">
-                    <x-chart wire:model="customerChart" />
+                <div class="h-96">
+                    <x-chart wire:model="customerChart" class="h-full" />
                 </div>
             </div>
         </x-card>
