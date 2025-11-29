@@ -68,225 +68,217 @@ new class extends Component {
             <p class="text-sm text-base-content/60">Yacht overview and details</p>
         </x-slot:subtitle>
         <x-slot:actions>
-            <x-button icon="o-pencil" label="Edit" link="{{ route('admin.yatch.edit', $yatch) }}" class="btn-primary" />
-            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.yatch.index') }}" class="btn-ghost" />
+            <x-button icon="o-pencil" label="Edit" link="{{ route('admin.yatch.edit', $yatch) }}" class="btn-primary"
+                responsive />
+            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.yatch.index') }}"
+                class="btn-outline btn-primary" responsive />
             <x-button icon="o-trash" label="Delete" wire:click="delete"
-                wire:confirm="Delete this yacht? This action cannot be undone." class="btn-error" />
+                wire:confirm="Delete this yacht? This action cannot be undone." class="btn-error" responsive />
         </x-slot:actions>
     </x-header>
 
+    {{-- Main Image Carousel --}}
     <x-card shadow>
-        <div class="grid gap-6 lg:grid-cols-2">
-            <div class="space-y-6">
-                {{-- Pricing Section --}}
-                @if ($yatch->price)
-                    <div class="p-4 rounded-lg bg-base-200">
-                        <div class="flex items-center gap-2 mb-3">
-                            <x-icon name="o-currency-dollar" class="w-5 h-5 text-primary" />
-                            <p class="text-sm font-semibold text-base-content/70 uppercase tracking-wide">Pricing</p>
-                        </div>
-                        <div class="space-y-2">
-                            @if ($yatch->discount_price)
-                                <div class="flex items-baseline gap-3">
-                                    <p class="text-3xl font-bold text-primary">
-                                        {{ currency_format($yatch->discount_price) }}</p>
-                                    <p class="text-xl line-through text-base-content/40">
-                                        {{ currency_format($yatch->price) }}</p>
-                                    @php
-                                        $discountPercent = round(
-                                            (($yatch->price - $yatch->discount_price) / $yatch->price) * 100,
-                                        );
-                                    @endphp
-                                    <x-badge :value="$discountPercent . '% OFF'" class="badge-success badge-sm" />
-                                </div>
-                            @else
-                                <p class="text-3xl font-bold text-primary">{{ currency_format($yatch->price) }}</p>
-                            @endif
-                        </div>
-                    </div>
-                @endif
-
-                {{-- Information Grid --}}
-                <div class="grid grid-cols-2 gap-4">
-                    @if ($yatch->sku)
-                        <div class="p-3 rounded-lg bg-base-200/50 border border-base-300">
-                            <div class="flex items-center gap-2 mb-1">
-                                <x-icon name="o-hashtag" class="w-4 h-4 text-base-content/50" />
-                                <p class="text-xs font-medium text-base-content/60 uppercase tracking-wide">SKU</p>
-                            </div>
-                            <p class="text-sm font-semibold font-mono">{{ $yatch->sku }}</p>
-                        </div>
-                    @endif
-
-                    <div class="p-3 rounded-lg bg-base-200/50 border border-base-300">
-                        <div class="flex items-center gap-2 mb-1">
-                            <x-icon name="o-identification" class="w-4 h-4 text-base-content/50" />
-                            <p class="text-xs font-medium text-base-content/60 uppercase tracking-wide">ID</p>
-                        </div>
-                        <p class="text-sm font-semibold font-mono">#{{ $yatch->id }}</p>
-                    </div>
-                </div>
-
-                {{-- Slug --}}
-                <div class="p-3 rounded-lg bg-base-200/50 border border-base-300">
-                    <div class="flex items-center gap-2 mb-1">
-                        <x-icon name="o-link" class="w-4 h-4 text-base-content/50" />
-                        <p class="text-xs font-medium text-base-content/60 uppercase tracking-wide">Slug</p>
-                    </div>
-                    <code class="text-sm break-all">{{ $yatch->slug }}</code>
-                </div>
-
-                {{-- Timestamps --}}
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="p-3 rounded-lg bg-base-200/50 border border-base-300">
-                        <div class="flex items-center gap-2 mb-1">
-                            <x-icon name="o-calendar" class="w-4 h-4 text-base-content/50" />
-                            <p class="text-xs font-medium text-base-content/60 uppercase tracking-wide">Created</p>
-                        </div>
-                        <p class="text-sm font-semibold">{{ $yatch->created_at->format('M d, Y') }}</p>
-                        <p class="text-xs text-base-content/50">{{ $yatch->created_at->format('h:i A') }}</p>
-                    </div>
-                    <div class="p-3 rounded-lg bg-base-200/50 border border-base-300">
-                        <div class="flex items-center gap-2 mb-1">
-                            <x-icon name="o-clock" class="w-4 h-4 text-base-content/50" />
-                            <p class="text-xs font-medium text-base-content/60 uppercase tracking-wide">Updated</p>
-                        </div>
-                        <p class="text-sm font-semibold">{{ $yatch->updated_at->format('M d, Y') }}</p>
-                        <p class="text-xs text-base-content/50">{{ $yatch->updated_at->format('h:i A') }}</p>
-                    </div>
+        @if (!empty($slides))
+            <x-carousel :slides="$slides" />
+        @else
+            <div class="aspect-video rounded-lg overflow-hidden bg-base-200 flex items-center justify-center">
+                <div class="text-center text-base-content/50">
+                    <x-icon name="o-photo" class="w-16 h-16 mx-auto mb-2" />
+                    <p class="text-sm">No images available</p>
                 </div>
             </div>
-
-            {{-- Image Section --}}
-            <div>
-                @if (!empty($slides))
-                    <x-carousel :slides="$slides" />
-                @else
-                    <div
-                        class="aspect-video rounded-xl overflow-hidden bg-base-200 flex items-center justify-center shadow-lg border border-base-300">
-                        <div class="text-center text-base-content/50">
-                            <x-icon name="o-photo" class="w-16 h-16 mx-auto mb-2" />
-                            <p class="text-sm">No images available</p>
-                        </div>
-                    </div>
-                @endif
-            </div>
-        </div>
+        @endif
     </x-card>
 
+    {{-- Quick Stats --}}
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        @if ($yatch->sku)
+            <x-card shadow class="border-l-4 border-l-info">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-info/10">
+                        <x-icon name="o-hashtag" class="w-6 h-6 text-info" />
+                    </div>
+                    <div>
+                        <p class="text-xs text-base-content/60 uppercase tracking-wide">SKU</p>
+                        <p class="font-semibold text-sm font-mono">{{ $yatch->sku }}</p>
+                    </div>
+                </div>
+            </x-card>
+        @endif
+
+        <x-card shadow class="border-l-4 border-l-primary">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg bg-primary/10">
+                    <x-icon name="o-identification" class="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                    <p class="text-xs text-base-content/60 uppercase tracking-wide">ID</p>
+                    <p class="font-semibold text-sm font-mono">#{{ $yatch->id }}</p>
+                </div>
+            </div>
+        </x-card>
+
+        <x-card shadow class="border-l-4 border-l-success">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg bg-success/10">
+                    <x-icon name="o-link" class="w-6 h-6 text-success" />
+                </div>
+                <div>
+                    <p class="text-xs text-base-content/60 uppercase tracking-wide">Slug</p>
+                    <code class="text-sm break-all">{{ $yatch->slug }}</code>
+                </div>
+            </div>
+        </x-card>
+
+        <x-card shadow class="border-l-4 border-l-warning">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg bg-warning/10">
+                    <x-icon name="o-calendar" class="w-6 h-6 text-warning" />
+                </div>
+                <div>
+                    <p class="text-xs text-base-content/60 uppercase tracking-wide">Created</p>
+                    <p class="font-semibold text-sm">{{ $yatch->created_at->format('M d, Y') }}</p>
+                </div>
+            </div>
+        </x-card>
+    </div>
+
+    {{-- Pricing Card --}}
+    @if ($yatch->price)
+        <x-card shadow>
+            <x-slot:title class="flex items-center gap-2">
+                <x-icon name="o-currency-dollar" class="w-5 h-5" />
+                <span>Pricing</span>
+            </x-slot:title>
+            <div class="flex items-baseline gap-4">
+                @if ($yatch->discount_price)
+                    <div>
+                        <p class="text-xs text-base-content/60 mb-1">Regular Price</p>
+                        <p class="text-2xl font-bold text-base-content/40 line-through">
+                            {{ currency_format($yatch->price) }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-base-content/60 mb-1">Discount Price</p>
+                        <div class="flex items-baseline gap-2">
+                            <p class="text-3xl font-bold text-primary">{{ currency_format($yatch->discount_price) }}</p>
+                            @php
+                                $discountPercent = round(
+                                    (($yatch->price - $yatch->discount_price) / $yatch->price) * 100,
+                                );
+                            @endphp
+                            <x-badge :value="$discountPercent . '% OFF'" class="badge-success badge-sm" />
+                        </div>
+                    </div>
+                @else
+                    <div>
+                        <p class="text-xs text-base-content/60 mb-1">Price</p>
+                        <p class="text-3xl font-bold text-primary">{{ currency_format($yatch->price) }}</p>
+                    </div>
+                @endif
+            </div>
+        </x-card>
+    @endif
+
+    {{-- Description --}}
     @if ($yatch->description)
-        <x-card>
-            <x-slot:title>Description</x-slot:title>
+        <x-card shadow>
+            <x-slot:title class="flex items-center gap-2">
+                <x-icon name="o-document-text" class="w-5 h-5" />
+                <span>Description</span>
+            </x-slot:title>
             <p class="text-base-content/80 whitespace-pre-line">{{ $yatch->description }}</p>
         </x-card>
     @endif
 
-    <x-card>
-        <x-slot:title>More Details</x-slot:title>
+    {{-- Specifications --}}
+    <x-card shadow>
+        <x-slot:title class="flex items-center gap-2">
+            <x-icon name="o-cog-6-tooth" class="w-5 h-5" />
+            <span>Specifications</span>
+        </x-slot:title>
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            @if ($yatch->length)
+                <div class="p-3 rounded-lg bg-base-200/50">
+                    <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Length</p>
+                    <p class="text-sm font-semibold">{{ $yatch->length }}m</p>
+                </div>
+            @endif
+            @if ($yatch->max_guests)
+                <div class="p-3 rounded-lg bg-base-200/50">
+                    <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Max Guests</p>
+                    <p class="text-sm font-semibold">{{ $yatch->max_guests }}</p>
+                </div>
+            @endif
+            @if ($yatch->max_crew)
+                <div class="p-3 rounded-lg bg-base-200/50">
+                    <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Max Crew</p>
+                    <p class="text-sm font-semibold">{{ $yatch->max_crew }}</p>
+                </div>
+            @endif
+            @if ($yatch->max_capacity)
+                <div class="p-3 rounded-lg bg-base-200/50">
+                    <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Max Capacity</p>
+                    <p class="text-sm font-semibold">{{ $yatch->max_capacity }}</p>
+                </div>
+            @endif
+            @if ($yatch->max_fuel_capacity)
+                <div class="p-3 rounded-lg bg-base-200/50">
+                    <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Fuel Capacity</p>
+                    <p class="text-sm font-semibold">{{ $yatch->max_fuel_capacity }}L</p>
+                </div>
+            @endif
+        </div>
+    </x-card>
+
+    {{-- Additional Information --}}
+    <x-card shadow>
+        <x-slot:title class="flex items-center gap-2">
+            <x-icon name="o-information-circle" class="w-5 h-5" />
+            <span>Additional Information</span>
+        </x-slot:title>
         <div class="space-y-4">
             <x-collapse separator>
-                <x-slot:heading>Specifications</x-slot:heading>
-                <x-slot:content>
-                    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        @if ($yatch->length)
-                            <div>
-                                <p class="text-xs text-base-content/60 uppercase mb-1">Length</p>
-                                <span class="font-semibold">{{ $yatch->length }}m</span>
-                            </div>
-                        @endif
-                        @if ($yatch->max_guests)
-                            <div>
-                                <p class="text-xs text-base-content/60 uppercase mb-1">Max Guests</p>
-                                <span class="font-semibold">{{ $yatch->max_guests }}</span>
-                            </div>
-                        @endif
-                        @if ($yatch->max_crew)
-                            <div>
-                                <p class="text-xs text-base-content/60 uppercase mb-1">Max Crew</p>
-                                <span class="font-semibold">{{ $yatch->max_crew }}</span>
-                            </div>
-                        @endif
-                        @if ($yatch->max_capacity)
-                            <div>
-                                <p class="text-xs text-base-content/60 uppercase mb-1">Max Capacity</p>
-                                <span class="font-semibold">{{ $yatch->max_capacity }}</span>
-                            </div>
-                        @endif
-                        @if ($yatch->max_fuel_capacity)
-                            <div>
-                                <p class="text-xs text-base-content/60 uppercase mb-1">Fuel Capacity</p>
-                                <span class="font-semibold">{{ $yatch->max_fuel_capacity }}L</span>
-                            </div>
-                        @endif
-                    </div>
-                </x-slot:content>
-            </x-collapse>
-
-            <x-collapse separator>
-                <x-slot:heading>Identifiers</x-slot:heading>
+                <x-slot:heading class="flex items-center gap-2">
+                    <x-icon name="o-finger-print" class="w-4 h-4" />
+                    <span>Identifiers</span>
+                </x-slot:heading>
                 <x-slot:content>
                     <div class="grid gap-4 md:grid-cols-3">
-                        <div>
-                            <p class="text-xs text-base-content/60 uppercase mb-1">Slug</p>
-                            <span class="font-mono text-sm break-all">{{ $yatch->slug }}</span>
+                        <div class="p-3 rounded-lg bg-base-200/50">
+                            <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Slug</p>
+                            <code class="text-sm font-mono break-all">{{ $yatch->slug }}</code>
                         </div>
                         @if ($yatch->sku)
-                            <div>
-                                <p class="text-xs text-base-content/60 uppercase mb-1">SKU</p>
-                                <span class="font-mono text-sm">{{ $yatch->sku }}</span>
+                            <div class="p-3 rounded-lg bg-base-200/50">
+                                <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">SKU</p>
+                                <code class="text-sm font-mono">{{ $yatch->sku }}</code>
                             </div>
                         @endif
-                        <div>
-                            <p class="text-xs text-base-content/60 uppercase mb-1">Record ID</p>
-                            <span class="font-mono text-sm">{{ $yatch->id }}</span>
+                        <div class="p-3 rounded-lg bg-base-200/50">
+                            <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Record ID</p>
+                            <code class="text-sm font-mono">#{{ $yatch->id }}</code>
                         </div>
                     </div>
                 </x-slot:content>
             </x-collapse>
 
             <x-collapse separator>
-                <x-slot:heading>Pricing</x-slot:heading>
+                <x-slot:heading class="flex items-center gap-2">
+                    <x-icon name="o-clock" class="w-4 h-4" />
+                    <span>Timestamps</span>
+                </x-slot:heading>
                 <x-slot:content>
                     <div class="grid gap-4 md:grid-cols-2">
-                        @if ($yatch->price)
-                            <div>
-                                <p class="text-xs text-base-content/60 uppercase mb-1">Regular Price</p>
-                                <span
-                                    class="text-xl font-bold text-primary">{{ currency_format($yatch->price) }}</span>
-                            </div>
-                        @endif
-                        @if ($yatch->discount_price)
-                            <div>
-                                <p class="text-xs text-base-content/60 uppercase mb-1">Discount Price</p>
-                                <div class="flex items-center gap-2">
-                                    <span
-                                        class="text-xl font-bold text-success">{{ currency_format($yatch->discount_price) }}</span>
-                                    @if ($yatch->price)
-                                        @php
-                                            $discountPercent = round(
-                                                (($yatch->price - $yatch->discount_price) / $yatch->price) * 100,
-                                            );
-                                        @endphp
-                                        <x-badge :value="$discountPercent . '% OFF'" class="badge-success badge-sm" />
-                                    @endif
-                                </div>
-                            </div>
-                        @endif
-                    </div>
-                </x-slot:content>
-            </x-collapse>
-
-            <x-collapse separator>
-                <x-slot:heading>Timestamps</x-slot:heading>
-                <x-slot:content>
-                    <div class="grid gap-4 md:grid-cols-2">
-                        <div>
-                            <p class="text-xs text-base-content/60 uppercase mb-1">Created</p>
-                            <span>{{ $yatch->created_at->format('M d, Y h:i A') }}</span>
+                        <div class="p-3 rounded-lg bg-base-200/50">
+                            <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Created</p>
+                            <p class="text-sm font-semibold">{{ $yatch->created_at->format('M d, Y') }}</p>
+                            <p class="text-xs text-base-content/50">{{ $yatch->created_at->format('h:i A') }}</p>
                         </div>
-                        <div>
-                            <p class="text-xs text-base-content/60 uppercase mb-1">Updated</p>
-                            <span>{{ $yatch->updated_at->format('M d, Y h:i A') }}</span>
+                        <div class="p-3 rounded-lg bg-base-200/50">
+                            <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Updated</p>
+                            <p class="text-sm font-semibold">{{ $yatch->updated_at->format('M d, Y') }}</p>
+                            <p class="text-xs text-base-content/50">{{ $yatch->updated_at->format('h:i A') }}</p>
                         </div>
                     </div>
                 </x-slot:content>

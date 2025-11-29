@@ -68,89 +68,137 @@ new class extends Component {
             <p class="text-sm text-base-content/60">Hotel overview and media</p>
         </x-slot:subtitle>
         <x-slot:actions>
-            <x-button icon="o-pencil" label="Edit" link="{{ route('admin.hotels.edit', $hotel) }}" class="btn-primary" />
-            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.hotels.index') }}" class="btn-ghost" />
+            <x-button icon="o-pencil" label="Edit" link="{{ route('admin.hotels.edit', $hotel) }}" class="btn-primary"
+                responsive />
+            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.hotels.index') }}"
+                class="btn-outline btn-primary" responsive />
             <x-button icon="o-trash" label="Delete" wire:click="delete"
-                wire:confirm="Delete this hotel? This action cannot be undone." class="btn-error" />
+                wire:confirm="Delete this hotel? This action cannot be undone." class="btn-error" responsive />
         </x-slot:actions>
     </x-header>
 
-    <x-card>
-        <div class="grid gap-6 lg:grid-cols-2">
-            <div class="space-y-4">
-                <div>
-                    <p class="text-sm text-base-content/60 mb-1">Slug</p>
-                    <code class="px-3 py-1 rounded bg-base-200 text-sm">{{ $hotel->slug }}</code>
-                </div>
-                <div class="space-y-1">
-                    <p class="text-sm text-base-content/60">Created</p>
-                    <p class="font-semibold">{{ $hotel->created_at->format('M d, Y') }}</p>
-                </div>
-                <div class="space-y-1">
-                    <p class="text-sm text-base-content/60">Updated</p>
-                    <p class="font-semibold">{{ $hotel->updated_at->format('M d, Y') }}</p>
-                </div>
-                <div class="space-y-1">
-                    <p class="text-sm text-base-content/60">ID</p>
-                    <p class="font-mono">{{ $hotel->id }}</p>
+    {{-- Main Image Carousel --}}
+    <x-card shadow>
+        @if (!empty($slides))
+            <x-carousel :slides="$slides" />
+        @else
+            <div class="aspect-video rounded-lg overflow-hidden bg-base-200 flex items-center justify-center">
+                <div class="text-center text-base-content/50">
+                    <x-icon name="o-photo" class="w-16 h-16 mx-auto mb-2" />
+                    <p class="text-sm">No images available</p>
                 </div>
             </div>
-            <div>
-                @if (!empty($slides))
-                    <x-carousel :slides="$slides" />
-                @else
-                    <div class="aspect-video rounded-xl overflow-hidden bg-base-200 flex items-center justify-center">
-                        <div class="text-center text-base-content/50">
-                            <x-icon name="o-photo" class="w-16 h-16 mx-auto mb-2" />
-                            <p>No images available</p>
-                        </div>
-                    </div>
-                @endif
-            </div>
-        </div>
+        @endif
     </x-card>
 
+    {{-- Quick Stats --}}
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <x-card shadow class="border-l-4 border-l-primary">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg bg-primary/10">
+                    <x-icon name="o-link" class="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                    <p class="text-xs text-base-content/60 uppercase tracking-wide">Slug</p>
+                    <code class="text-sm break-all">{{ $hotel->slug }}</code>
+                </div>
+            </div>
+        </x-card>
+
+        <x-card shadow class="border-l-4 border-l-info">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg bg-info/10">
+                    <x-icon name="o-identification" class="w-6 h-6 text-info" />
+                </div>
+                <div>
+                    <p class="text-xs text-base-content/60 uppercase tracking-wide">ID</p>
+                    <p class="font-semibold text-sm font-mono">#{{ $hotel->id }}</p>
+                </div>
+            </div>
+        </x-card>
+
+        <x-card shadow class="border-l-4 border-l-success">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg bg-success/10">
+                    <x-icon name="o-photo" class="w-6 h-6 text-success" />
+                </div>
+                <div>
+                    <p class="text-xs text-base-content/60 uppercase tracking-wide">Total Images</p>
+                    <p class="font-semibold text-sm">{{ count($slides) }}</p>
+                </div>
+            </div>
+        </x-card>
+
+        <x-card shadow class="border-l-4 border-l-warning">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg bg-warning/10">
+                    <x-icon name="o-calendar" class="w-6 h-6 text-warning" />
+                </div>
+                <div>
+                    <p class="text-xs text-base-content/60 uppercase tracking-wide">Created</p>
+                    <p class="font-semibold text-sm">{{ $hotel->created_at->format('M d, Y') }}</p>
+                </div>
+            </div>
+        </x-card>
+    </div>
+
+    {{-- Description --}}
     @if ($hotel->description)
-        <x-card>
-            <x-slot:title>Description</x-slot:title>
+        <x-card shadow>
+            <x-slot:title class="flex items-center gap-2">
+                <x-icon name="o-document-text" class="w-5 h-5" />
+                <span>Description</span>
+            </x-slot:title>
             <p class="text-base-content/80 whitespace-pre-line">{{ $hotel->description }}</p>
         </x-card>
     @endif
 
-    <x-card>
-        <x-slot:title>More Details</x-slot:title>
+    {{-- Additional Information --}}
+    <x-card shadow>
+        <x-slot:title class="flex items-center gap-2">
+            <x-icon name="o-information-circle" class="w-5 h-5" />
+            <span>Additional Information</span>
+        </x-slot:title>
         <div class="space-y-4">
             <x-collapse separator>
-                <x-slot:heading>Identifiers</x-slot:heading>
+                <x-slot:heading class="flex items-center gap-2">
+                    <x-icon name="o-finger-print" class="w-4 h-4" />
+                    <span>Identifiers</span>
+                </x-slot:heading>
                 <x-slot:content>
                     <div class="grid gap-4 md:grid-cols-3">
-                        <div>
-                            <p class="text-xs text-base-content/60 uppercase mb-1">Slug</p>
-                            <span class="font-mono text-sm break-all">{{ $hotel->slug }}</span>
+                        <div class="p-3 rounded-lg bg-base-200/50">
+                            <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Slug</p>
+                            <code class="text-sm font-mono break-all">{{ $hotel->slug }}</code>
                         </div>
-                        <div>
-                            <p class="text-xs text-base-content/60 uppercase mb-1">Record ID</p>
-                            <span class="font-mono text-sm">{{ $hotel->id }}</span>
+                        <div class="p-3 rounded-lg bg-base-200/50">
+                            <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Record ID</p>
+                            <code class="text-sm font-mono">#{{ $hotel->id }}</code>
                         </div>
-                        <div>
-                            <p class="text-xs text-base-content/60 uppercase mb-1">Library Images</p>
-                            <span>{{ count($slides) }}</span>
+                        <div class="p-3 rounded-lg bg-base-200/50">
+                            <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Library Images</p>
+                            <p class="text-sm font-semibold">{{ count($slides) }}</p>
                         </div>
                     </div>
                 </x-slot:content>
             </x-collapse>
 
             <x-collapse separator>
-                <x-slot:heading>Timestamps</x-slot:heading>
+                <x-slot:heading class="flex items-center gap-2">
+                    <x-icon name="o-clock" class="w-4 h-4" />
+                    <span>Timestamps</span>
+                </x-slot:heading>
                 <x-slot:content>
                     <div class="grid gap-4 md:grid-cols-2">
-                        <div>
-                            <p class="text-xs text-base-content/60 uppercase mb-1">Created</p>
-                            <span>{{ $hotel->created_at->format('M d, Y h:i A') }}</span>
+                        <div class="p-3 rounded-lg bg-base-200/50">
+                            <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Created</p>
+                            <p class="text-sm font-semibold">{{ $hotel->created_at->format('M d, Y') }}</p>
+                            <p class="text-xs text-base-content/50">{{ $hotel->created_at->format('h:i A') }}</p>
                         </div>
-                        <div>
-                            <p class="text-xs text-base-content/60 uppercase mb-1">Updated</p>
-                            <span>{{ $hotel->updated_at->format('M d, Y h:i A') }}</span>
+                        <div class="p-3 rounded-lg bg-base-200/50">
+                            <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Updated</p>
+                            <p class="text-sm font-semibold">{{ $hotel->updated_at->format('M d, Y') }}</p>
+                            <p class="text-xs text-base-content/50">{{ $hotel->updated_at->format('h:i A') }}</p>
                         </div>
                     </div>
                 </x-slot:content>

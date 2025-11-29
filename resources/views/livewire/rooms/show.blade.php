@@ -75,76 +75,117 @@ new class extends Component {
             <p class="text-sm text-base-content/60">Room overview, media, and booking history</p>
         </x-slot:subtitle>
         <x-slot:actions>
-            <x-button icon="o-pencil" label="Edit" link="{{ route('admin.rooms.edit', $room) }}" class="btn-primary" />
-            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.rooms.index') }}" class="btn-ghost" />
+            <x-button icon="o-pencil" label="Edit" link="{{ route('admin.rooms.edit', $room) }}" class="btn-primary"
+                responsive />
+            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.rooms.index') }}"
+                class="btn-outline btn-primary" responsive />
             <x-button icon="o-trash" label="Delete" wire:click="delete"
-                wire:confirm="Delete this room? This action cannot be undone." class="btn-error" />
+                wire:confirm="Delete this room? This action cannot be undone." class="btn-error" responsive />
         </x-slot:actions>
     </x-header>
 
-    <x-card>
-        <div class="grid gap-6 lg:grid-cols-2">
-            <div class="space-y-4">
-                <div>
-                    <p class="text-sm text-base-content/60 mb-1">Room Number</p>
-                    <code class="px-3 py-1 rounded bg-base-200 text-sm font-mono">{{ $room->room_number }}</code>
+    {{-- Main Image Carousel --}}
+    <x-card shadow>
+        @if (!empty($slides))
+            <x-carousel :slides="$slides" />
+        @else
+            <div class="aspect-video rounded-lg overflow-hidden bg-base-200 flex items-center justify-center">
+                <div class="text-center text-base-content/50">
+                    <x-icon name="o-photo" class="w-16 h-16 mx-auto mb-2" />
+                    <p class="text-sm">No images available</p>
+                </div>
+            </div>
+        @endif
+    </x-card>
+
+    {{-- Quick Stats --}}
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <x-card shadow class="border-l-4 border-l-primary">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg bg-primary/10">
+                    <x-icon name="o-building-office" class="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                    <p class="text-sm text-base-content/60 mb-1">Slug</p>
-                    <code class="px-3 py-1 rounded bg-base-200 text-sm">{{ $room->slug }}</code>
+                    <p class="text-xs text-base-content/60 uppercase tracking-wide">Hotel</p>
+                    <p class="font-semibold text-sm">{{ $room->hotel->name ?? 'N/A' }}</p>
                 </div>
-                <div class="space-y-1">
-                    <p class="text-sm text-base-content/60">Hotel</p>
-                    <p class="font-semibold">{{ $room->hotel->name ?? 'N/A' }}</p>
+            </div>
+        </x-card>
+
+        <x-card shadow class="border-l-4 border-l-info">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg bg-info/10">
+                    <x-icon name="o-hashtag" class="w-6 h-6 text-info" />
                 </div>
-                <div class="space-y-1">
-                    <p class="text-sm text-base-content/60">Capacity</p>
-                    <p class="font-semibold">
-                        {{ $room->adults ?? 0 }} adults · {{ $room->children ?? 0 }} children
+                <div>
+                    <p class="text-xs text-base-content/60 uppercase tracking-wide">Room Number</p>
+                    <p class="font-semibold text-sm font-mono">{{ $room->room_number }}</p>
+                </div>
+            </div>
+        </x-card>
+
+        <x-card shadow class="border-l-4 border-l-success">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg bg-success/10">
+                    <x-icon name="o-users" class="w-6 h-6 text-success" />
+                </div>
+                <div>
+                    <p class="text-xs text-base-content/60 uppercase tracking-wide">Capacity</p>
+                    <p class="font-semibold text-sm">
+                        {{ $room->adults ?? 0 }} adults, {{ $room->children ?? 0 }} children
                     </p>
                 </div>
-                <div class="space-y-1">
-                    <p class="text-sm text-base-content/60">Status</p>
-                    <x-badge :value="$room->is_active ? 'Active' : 'Inactive'"
-                        class="badge-soft {{ $room->is_active ? 'badge-success' : 'badge-error' }}" />
+            </div>
+        </x-card>
+
+        <x-card shadow class="border-l-4 {{ $room->is_active ? 'border-l-success' : 'border-l-error' }}">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg {{ $room->is_active ? 'bg-success/10' : 'bg-error/10' }}">
+                    <x-icon name="o-check-circle"
+                        class="w-6 h-6 {{ $room->is_active ? 'text-success' : 'text-error' }}" />
                 </div>
-                @if ($room->price)
+                <div>
+                    <p class="text-xs text-base-content/60 uppercase tracking-wide">Status</p>
+                    <x-badge :value="$room->is_active ? 'Active' : 'Inactive'"
+                        class="badge-soft {{ $room->is_active ? 'badge-success' : 'badge-error' }} badge-sm" />
+                </div>
+            </div>
+        </x-card>
+    </div>
+
+    {{-- Pricing Card --}}
+    @if ($room->price)
+        <x-card shadow>
+            <x-slot:title class="flex items-center gap-2">
+                <x-icon name="o-currency-dollar" class="w-5 h-5" />
+                <span>Pricing</span>
+            </x-slot:title>
+            <div class="flex items-baseline gap-4">
+                @if ($room->discount_price)
                     <div>
-                        <p class="text-sm text-base-content/60 mb-1">Price</p>
-                        <p class="text-2xl font-bold text-primary">{{ currency_format($room->price) }}</p>
-                        @if ($room->discount_price)
-                            <p class="text-lg font-semibold text-success">
-                                {{ currency_format($room->discount_price) }}</p>
+                        <p class="text-xs text-base-content/60 mb-1">Regular Price</p>
+                        <p class="text-2xl font-bold text-base-content/40 line-through">
+                            {{ currency_format($room->price) }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-base-content/60 mb-1">Discount Price</p>
+                        <div class="flex items-baseline gap-2">
+                            <p class="text-3xl font-bold text-primary">{{ currency_format($room->discount_price) }}</p>
                             @php
                                 $discountPercent = round((($room->price - $room->discount_price) / $room->price) * 100);
                             @endphp
-                            <x-badge :value="$discountPercent . '% OFF'" class="badge-success badge-sm mt-1" />
-                        @endif
-                    </div>
-                @endif
-                <div class="space-y-1">
-                    <p class="text-sm text-base-content/60">Created</p>
-                    <p class="font-semibold">{{ $room->created_at->format('M d, Y') }}</p>
-                </div>
-                <div class="space-y-1">
-                    <p class="text-sm text-base-content/60">Updated</p>
-                    <p class="font-semibold">{{ $room->updated_at->format('M d, Y') }}</p>
-                </div>
-            </div>
-            <div>
-                @if (!empty($slides))
-                    <x-carousel :slides="$slides" />
-                @else
-                    <div class="aspect-video rounded-xl overflow-hidden bg-base-200 flex items-center justify-center">
-                        <div class="text-center text-base-content/50">
-                            <x-icon name="o-photo" class="w-16 h-16 mx-auto mb-2" />
-                            <p>No images available</p>
+                            <x-badge :value="$discountPercent . '% OFF'" class="badge-success badge-sm" />
                         </div>
                     </div>
+                @else
+                    <div>
+                        <p class="text-xs text-base-content/60 mb-1">Price</p>
+                        <p class="text-3xl font-bold text-primary">{{ currency_format($room->price) }}</p>
+                    </div>
                 @endif
             </div>
-        </div>
-    </x-card>
+        </x-card>
+    @endif
 
     @if ($room->description)
         <x-card>
@@ -153,67 +194,80 @@ new class extends Component {
         </x-card>
     @endif
 
-    <x-card>
-        <x-slot:title>More Details</x-slot:title>
+    {{-- Categories & Amenities --}}
+    <div class="grid gap-4 md:grid-cols-2">
+        <x-card shadow>
+            <x-slot:title class="flex items-center gap-2">
+                <x-icon name="o-tag" class="w-5 h-5" />
+                <span>Categories</span>
+            </x-slot:title>
+            <div class="flex flex-wrap gap-2">
+                @forelse ($room->categories as $category)
+                    <x-badge :value="$category->name" class="badge-soft badge-primary" />
+                @empty
+                    <p class="text-sm text-base-content/50">No categories assigned</p>
+                @endforelse
+            </div>
+        </x-card>
+
+        <x-card shadow>
+            <x-slot:title class="flex items-center gap-2">
+                <x-icon name="o-sparkles" class="w-5 h-5" />
+                <span>Amenities</span>
+            </x-slot:title>
+            <div class="flex flex-wrap gap-2">
+                @forelse ($room->amenities as $amenity)
+                    <x-badge :value="$amenity->name" class="badge-soft badge-secondary" />
+                @empty
+                    <p class="text-sm text-base-content/50">No amenities assigned</p>
+                @endforelse
+            </div>
+        </x-card>
+    </div>
+
+    {{-- Additional Information --}}
+    <x-card shadow>
+        <x-slot:title class="flex items-center gap-2">
+            <x-icon name="o-information-circle" class="w-5 h-5" />
+            <span>Additional Information</span>
+        </x-slot:title>
         <div class="space-y-4">
             <x-collapse separator>
-                <x-slot:heading>Identifiers</x-slot:heading>
+                <x-slot:heading class="flex items-center gap-2">
+                    <x-icon name="o-finger-print" class="w-4 h-4" />
+                    <span>Identifiers</span>
+                </x-slot:heading>
                 <x-slot:content>
                     <div class="grid gap-4 md:grid-cols-3">
-                        <div>
-                            <p class="text-xs text-base-content/60 uppercase mb-1">Slug</p>
-                            <span class="font-mono text-sm break-all">{{ $room->slug }}</span>
+                        <div class="p-3 rounded-lg bg-base-200/50">
+                            <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Slug</p>
+                            <code class="text-sm font-mono break-all">{{ $room->slug }}</code>
                         </div>
-                        <div>
-                            <p class="text-xs text-base-content/60 uppercase mb-1">Room Number</p>
-                            <span class="font-mono text-sm">{{ $room->room_number }}</span>
+                        <div class="p-3 rounded-lg bg-base-200/50">
+                            <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Room Number</p>
+                            <code class="text-sm font-mono">{{ $room->room_number }}</code>
                         </div>
-                        <div>
-                            <p class="text-xs text-base-content/60 uppercase mb-1">Record ID</p>
-                            <span class="font-mono text-sm">{{ $room->id }}</span>
-                        </div>
-                    </div>
-                </x-slot:content>
-            </x-collapse>
-
-            <x-collapse separator>
-                <x-slot:heading>Categories & Amenities</x-slot:heading>
-                <x-slot:content>
-                    <div class="space-y-2">
-                        <div>
-                            <p class="text-xs text-base-content/60 uppercase mb-1">Categories</p>
-                            <div class="flex flex-wrap gap-1">
-                                @forelse ($room->categories as $category)
-                                    <x-badge :value="$category->name" class="badge-soft badge-sm" />
-                                @empty
-                                    <span class="text-base-content/50 text-sm">No categories assigned</span>
-                                @endforelse
-                            </div>
-                        </div>
-                        <div>
-                            <p class="text-xs text-base-content/60 uppercase mb-1">Amenities</p>
-                            <div class="flex flex-wrap gap-1">
-                                @forelse ($room->amenities as $amenity)
-                                    <x-badge :value="$amenity->name" class="badge-soft badge-sm" />
-                                @empty
-                                    <span class="text-base-content/50 text-sm">No amenities assigned</span>
-                                @endforelse
-                            </div>
+                        <div class="p-3 rounded-lg bg-base-200/50">
+                            <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Record ID</p>
+                            <code class="text-sm font-mono">#{{ $room->id }}</code>
                         </div>
                     </div>
                 </x-slot:content>
             </x-collapse>
 
             <x-collapse separator>
-                <x-slot:heading>SEO</x-slot:heading>
+                <x-slot:heading class="flex items-center gap-2">
+                    <x-icon name="o-magnifying-glass" class="w-4 h-4" />
+                    <span>SEO Information</span>
+                </x-slot:heading>
                 <x-slot:content>
-                    <div class="grid gap-4">
-                        <div>
-                            <p class="text-xs text-base-content/60 uppercase mb-1">Meta Description</p>
+                    <div class="space-y-3">
+                        <div class="p-3 rounded-lg bg-base-200/50">
+                            <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Meta Description</p>
                             <p class="text-sm">{{ $room->meta_description ?? '—' }}</p>
                         </div>
-                        <div>
-                            <p class="text-xs text-base-content/60 uppercase mb-1">Meta Keywords</p>
+                        <div class="p-3 rounded-lg bg-base-200/50">
+                            <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Meta Keywords</p>
                             <p class="text-sm">{{ $room->meta_keywords ?? '—' }}</p>
                         </div>
                     </div>
@@ -221,38 +275,34 @@ new class extends Component {
             </x-collapse>
 
             <x-collapse separator>
-                <x-slot:heading>Pricing</x-slot:heading>
+                <x-slot:heading class="flex items-center gap-2">
+                    <x-icon name="o-clock" class="w-4 h-4" />
+                    <span>Timestamps</span>
+                </x-slot:heading>
                 <x-slot:content>
                     <div class="grid gap-4 md:grid-cols-2">
-                        @if ($room->price)
-                            <div>
-                                <p class="text-xs text-base-content/60 uppercase mb-1">Regular Price</p>
-                                <span class="text-xl font-bold text-primary">{{ currency_format($room->price) }}</span>
-                            </div>
-                        @endif
-                        @if ($room->discount_price)
-                            <div>
-                                <p class="text-xs text-base-content/60 uppercase mb-1">Discount Price</p>
-                                <span
-                                    class="text-xl font-bold text-success">{{ currency_format($room->discount_price) }}</span>
-                                @if ($room->price)
-                                    @php
-                                        $discountPercent = round(
-                                            (($room->price - $room->discount_price) / $room->price) * 100,
-                                        );
-                                    @endphp
-                                    <x-badge :value="$discountPercent . '% OFF'" class="badge-success badge-sm mt-1" />
-                                @endif
-                            </div>
-                        @endif
+                        <div class="p-3 rounded-lg bg-base-200/50">
+                            <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Created</p>
+                            <p class="text-sm font-semibold">{{ $room->created_at->format('M d, Y') }}</p>
+                            <p class="text-xs text-base-content/50">{{ $room->created_at->format('h:i A') }}</p>
+                        </div>
+                        <div class="p-3 rounded-lg bg-base-200/50">
+                            <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Updated</p>
+                            <p class="text-sm font-semibold">{{ $room->updated_at->format('M d, Y') }}</p>
+                            <p class="text-xs text-base-content/50">{{ $room->updated_at->format('h:i A') }}</p>
+                        </div>
                     </div>
                 </x-slot:content>
             </x-collapse>
         </div>
     </x-card>
 
-    <x-card>
-        <x-slot:title>Booking History</x-slot:title>
+    {{-- Booking History --}}
+    <x-card shadow>
+        <x-slot:title class="flex items-center gap-2">
+            <x-icon name="o-calendar-days" class="w-5 h-5" />
+            <span>Booking History</span>
+        </x-slot:title>
         <x-table :headers="$bookingHeaders" :rows="$bookings">
             @scope('cell_customer', $booking)
                 <div>
