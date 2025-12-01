@@ -4,12 +4,14 @@ use Livewire\Volt\Volt;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
+// Frontend Home Page
+Route::get('/', function () {
+    return view('frontend.home');
+})->name('home');
 
-Route::redirect('/', '/dashboard');
-
-Route::name('admin.')->group(function () {
+Route::prefix('admin')->name('admin.')->group(function () {
     Volt::route('/login', 'login')->name('login');
-    
+
     // Password reset routes
     Volt::route('/password/reset/{token}', 'password.reset')->name('password.reset');
     Volt::route('/password/reset', 'password.reset-request')->name('password.request');
@@ -76,7 +78,7 @@ Route::name('admin.')->group(function () {
             Volt::route('/{booking}/edit', 'booking.yatch.edit')->name('bookings.yatch.edit');
         });
 
-        Route::get('/admin/logout', function () {
+        Route::get('/logout', function () {
             Auth::logout();
             request()->session()->invalidate();
             request()->session()->regenerateToken();
