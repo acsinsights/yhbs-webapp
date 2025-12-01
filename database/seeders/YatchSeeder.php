@@ -3,6 +3,9 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\File;
 use App\Models\{Yatch, Category, Amenity};
 
 class YatchSeeder extends Seeder
@@ -12,6 +15,15 @@ class YatchSeeder extends Seeder
      */
     public function run(): void
     {
+        // Map yacht slugs to folder numbers
+        $yatchFolderMap = [
+            'luxury-ocean-explorer' => 1,
+            'royal-sea-voyager' => 2,
+            'sunset-cruiser' => 4,
+            'adventure-seeker' => 5,
+            'executive-business-class' => 7,
+        ];
+
         $yatches = [
             [
                 'name' => 'Luxury Ocean Explorer',
@@ -102,10 +114,62 @@ class YatchSeeder extends Seeder
         ];
 
         foreach ($yatches as $yatch) {
+            $folderNumber = $yatchFolderMap[$yatch['slug']] ?? null;
+
+            // Set cover image if folder exists
+            $coverImage = null;
+            $libraryImages = new Collection();
+
+            if ($folderNumber) {
+                $folderPath = public_path("default/yachts/{$folderNumber}");
+
+                // Set cover image
+                $coverPath = "{$folderPath}/cover.png";
+                if (File::exists($coverPath)) {
+                    $coverImage = "/default/yachts/{$folderNumber}/cover.png";
+                }
+
+                // Get all images from folder (excluding cover.png)
+                if (File::isDirectory($folderPath)) {
+                    $allFiles = File::files($folderPath);
+
+                    foreach ($allFiles as $file) {
+                        $fileName = $file->getFilename();
+                        $extension = strtolower($file->getExtension());
+
+                        // Only process image files
+                        if (!in_array($extension, ['png', 'jpg', 'jpeg'])) {
+                            continue;
+                        }
+
+                        // Skip cover.png as it's the main image
+                        if ($fileName === 'cover.png') {
+                            continue;
+                        }
+
+                        $imageUrl = "/default/yachts/{$folderNumber}/{$fileName}";
+                        $libraryImages->push([
+                            'uuid' => Str::uuid()->toString(),
+                            'url' => $imageUrl,
+                        ]);
+                    }
+                }
+            }
+
+            // Add cover image to yatch data
+            if ($coverImage) {
+                $yatch['image'] = $coverImage;
+            }
+
             $yatchModel = Yatch::updateOrCreate(
                 ['slug' => $yatch['slug']],
                 $yatch
             );
+
+            // Set library images
+            if ($libraryImages->isNotEmpty()) {
+                $yatchModel->update(['library' => $libraryImages]);
+            }
 
             if (isset($categoryAssignments[$yatch['slug']])) {
                 $categoryIds = Category::whereIn('slug', $categoryAssignments[$yatch['slug']])->pluck('id');

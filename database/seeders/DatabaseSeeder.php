@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             AmenitySeeder::class,
             RoomSeeder::class,
-            YatchSeeder::class,
+            // YatchSeeder::class,
             BookingSeeder::class,
             WebsiteSettingSeeder::class,
         ]);
