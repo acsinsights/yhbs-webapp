@@ -6,7 +6,7 @@ use Illuminate\Support\Str;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 use Livewire\Volt\Component;
-use App\Models\Hotel;
+use App\Models\House;
 
 new class extends Component {
     use Toast, WithPagination;
@@ -20,11 +20,11 @@ new class extends Component {
     public bool $createModal = false;
     public string $name = '';
 
-    // Create hotel with just name
-    public function createHotel(): void
+    // Create house with just name
+    public function createHouse(): void
     {
         $this->validate([
-            'name' => 'required|string|max:255|unique:hotels,name',
+            'name' => 'required|string|max:255|unique:houses,name',
         ]);
 
         $slug = Str::slug($this->name);
@@ -32,24 +32,24 @@ new class extends Component {
         // Ensure slug is unique
         $originalSlug = $slug;
         $counter = 1;
-        while (Hotel::where('slug', $slug)->exists()) {
+        while (House::where('slug', $slug)->exists()) {
             $slug = $originalSlug . '-' . $counter;
             $counter++;
         }
 
-        $hotel = Hotel::create([
+        $house = House::create([
             'name' => $this->name,
             'slug' => $slug,
         ]);
 
         $this->createModal = false;
         $this->reset('name');
-        $this->success('Hotel created successfully.', redirectTo: route('admin.hotels.edit', $hotel));
+        $this->success('House created successfully.', redirectTo: route('admin.houses.edit', $house));
     }
 
     public function rendering(View $view)
     {
-        $view->hotels = Hotel::query()
+        $view->houses = House::query()
             ->when($this->search, function ($query) {
                 $query->where('name', 'like', "%{$this->search}%")->orWhere('slug', 'like', "%{$this->search}%");
             })
@@ -68,15 +68,15 @@ new class extends Component {
                 'icon' => 's-home',
             ],
             [
-                'label' => 'Hotels',
+                'label' => 'Houses',
                 'icon' => 'o-building-office-2',
             ],
         ];
     @endphp
 
-    <x-header title="Hotels" separator>
+    <x-header title="Houses" separator>
         <x-slot:subtitle>
-            <p class="text-sm text-base-content/50 mb-2">Manage hotel information</p>
+            <p class="text-sm text-base-content/50 mb-2">Manage house information</p>
             <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
         </x-slot:subtitle>
 
@@ -87,52 +87,52 @@ new class extends Component {
     </x-header>
 
     <x-card shadow>
-        <x-table :headers="$headers" :rows="$hotels" :sort-by="$sortBy" with-pagination per-page="perPage"
+        <x-table :headers="$headers" :rows="$houses" :sort-by="$sortBy" with-pagination per-page="perPage"
             :per-page-values="[10, 25, 50, 100]">
-            @scope('cell_name', $hotel)
-                <x-badge :value="$hotel->name" class="badge-soft badge-primary" />
+            @scope('cell_name', $house)
+                <x-badge :value="$house->name" class="badge-soft badge-primary" />
             @endscope
 
-            @scope('cell_slug', $hotel)
-                <code class="text-xs bg-base-200 px-2 py-1 rounded">{{ $hotel->slug }}</code>
+            @scope('cell_slug', $house)
+                <code class="text-xs bg-base-200 px-2 py-1 rounded">{{ $house->slug }}</code>
             @endscope
 
-            @scope('cell_image', $hotel)
-                @if ($hotel->image)
-                    <img src="{{ asset($hotel->image) }}" alt="{{ $hotel->name }}"
+            @scope('cell_image', $house)
+                @if ($house->image)
+                    <img src="{{ asset($house->image) }}" alt="{{ $house->name }}"
                         class="w-12 h-12 rounded object-cover" />
                 @else
-                    <img src="https://placehold.co/100x100" alt="{{ $hotel->name }}"
+                    <img src="https://placehold.co/100x100" alt="{{ $house->name }}"
                         class="w-12 h-12 rounded object-cover" />
                 @endif
             @endscope
 
-            @scope('cell_description', $hotel)
+            @scope('cell_description', $house)
                 <div class="max-w-md">
-                    <p class="text-sm line-clamp-2">{{ Str::limit($hotel->description ?? 'No description', 100) }}</p>
+                    <p class="text-sm line-clamp-2">{{ Str::limit($house->description ?? 'No description', 100) }}</p>
                 </div>
             @endscope
 
-            @scope('actions', $hotel)
+            @scope('actions', $house)
                 <div class="flex items-center gap-2">
-                    <x-button icon="o-eye" link="{{ route('admin.hotels.show', $hotel->id) }}" class="btn-ghost btn-sm"
+                    <x-button icon="o-eye" link="{{ route('admin.houses.show', $house->id) }}" class="btn-ghost btn-sm"
                         tooltip="Show" />
-                    <x-button icon="o-pencil" link="{{ route('admin.hotels.edit', $hotel->id) }}" class="btn-ghost btn-sm"
+                    <x-button icon="o-pencil" link="{{ route('admin.houses.edit', $house->id) }}" class="btn-ghost btn-sm"
                         tooltip="Edit" />
                 </div>
             @endscope
 
             <x-slot:empty>
-                <x-empty icon="o-building-office-2" message="No hotels found" />
+                <x-empty icon="o-building-office-2" message="No houses found" />
             </x-slot:empty>
         </x-table>
     </x-card>
 
-    {{-- Create Hotel Modal --}}
-    <x-modal wire:model="createModal" title="Create New Hotel" class="backdrop-blur" max-width="md">
-        <x-form wire:submit="createHotel">
+    {{-- Create House Modal --}}
+    <x-modal wire:model="createModal" title="Create New House" class="backdrop-blur" max-width="md">
+        <x-form wire:submit="createHouse">
             <div class="space-y-4">
-                <x-input wire:model="name" label="Hotel Name" placeholder="Enter hotel name" icon="o-tag"
+                <x-input wire:model="name" label="House Name" placeholder="Enter house name" icon="o-tag"
                     hint="The slug will be auto-generated from the name" />
             </div>
 
@@ -140,8 +140,8 @@ new class extends Component {
                 <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
                     <x-button icon="o-x-mark" label="Cancel" @click="$wire.createModal = false"
                         class="btn-ghost w-full sm:w-auto" responsive />
-                    <x-button icon="o-check" label="Create Hotel" type="submit" class="btn-primary w-full sm:w-auto"
-                        spinner="createHotel" responsive />
+                    <x-button icon="o-check" label="Create House" type="submit" class="btn-primary w-full sm:w-auto"
+                        spinner="createHouse" responsive />
                 </div>
             </x-slot:actions>
         </x-form>

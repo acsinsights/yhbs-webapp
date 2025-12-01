@@ -28,7 +28,7 @@ new class extends Component {
 
     public function mount(Booking $booking): void
     {
-        $this->booking = $booking->load(['bookingable.hotel', 'user']);
+        $this->booking = $booking->load(['bookingable.house', 'user']);
 
         // Pre-fill form with existing booking data
         $this->room_id = $booking->bookingable_id;
@@ -194,7 +194,7 @@ new class extends Component {
             'notes' => $this->notes,
         ]);
 
-        $this->success('Booking updated successfully.', redirectTo: route('admin.bookings.hotel.show', $this->booking->id));
+        $this->success('Booking updated successfully.', redirectTo: route('admin.bookings.house.show', $this->booking->id));
     }
 
     public function rendering(View $view)
@@ -220,7 +220,7 @@ new class extends Component {
                                 });
                         });
                 })
-                ->with('hotel');
+                ->with('house');
 
             // Filter by search term
             if (!empty($this->room_search)) {
@@ -228,8 +228,8 @@ new class extends Component {
                 $query->where(function ($q) use ($search) {
                     $q->where('room_number', 'like', "%{$search}%")
                         ->orWhere('name', 'like', "%{$search}%")
-                        ->orWhereHas('hotel', function ($hotelQuery) use ($search) {
-                            $hotelQuery->where('name', 'like', "%{$search}%");
+                        ->orWhereHas('house', function ($houseQuery) use ($search) {
+                            $houseQuery->where('name', 'like', "%{$search}%");
                         });
                 });
             }
@@ -266,11 +266,11 @@ new class extends Component {
                 'icon' => 's-home',
             ],
             [
-                'link' => route('admin.bookings.hotel.index'),
-                'label' => 'Hotel Bookings',
+                'link' => route('admin.bookings.house.index'),
+                'label' => 'Room Bookings',
             ],
             [
-                'link' => route('admin.bookings.hotel.show', $booking->id),
+                'link' => route('admin.bookings.house.show', $booking->id),
                 'label' => 'Booking Details',
             ],
             [
@@ -279,13 +279,13 @@ new class extends Component {
         ];
     @endphp
 
-    <x-header title="Edit Hotel Booking" separator>
+    <x-header title="Edit Room Booking" separator>
         <x-slot:subtitle>
             <p class="text-sm text-base-content/50 mb-2">Update booking information</p>
             <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
         </x-slot:subtitle>
         <x-slot:actions>
-            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.hotel.show', $booking->id) }}"
+            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.house.show', $booking->id) }}"
                 class="btn-ghost" />
         </x-slot:actions>
     </x-header>
@@ -372,8 +372,8 @@ new class extends Component {
                                 {{-- Search Input --}}
                                 <div class="mt-4">
                                     <x-input wire:model.live.debounce.300ms="room_search" label="Search Rooms"
-                                        placeholder="Search by room number, name, or hotel..." icon="o-magnifying-glass"
-                                        clearable hint="Filter rooms by room number, name, or hotel" />
+                                        placeholder="Search by room number, name, or house..." icon="o-magnifying-glass"
+                                        clearable hint="Filter rooms by room number, name, or house" />
                                 </div>
 
                                 {{-- Filter Info --}}
@@ -445,10 +445,10 @@ new class extends Component {
                                                                             class="text-xs text-base-content/60 line-clamp-1">
                                                                             {{ $room->name }}</p>
                                                                     @endif
-                                                                    @if ($room->hotel)
+                                                                    @if ($room->house)
                                                                         <p
                                                                             class="text-xs text-primary font-medium mt-1">
-                                                                            {{ $room->hotel->name }}</p>
+                                                                            {{ $room->house->name }}</p>
                                                                     @endif
                                                                 </div>
                                                                 {{-- Selection Indicator --}}
@@ -708,9 +708,9 @@ new class extends Component {
                                             @if ($selectedRoom)
                                                 <p class="text-xs font-bold text-base-content line-clamp-1">
                                                     {{ $selectedRoom->room_number }}</p>
-                                                @if ($selectedRoom->hotel)
+                                                @if ($selectedRoom->house)
                                                     <p class="text-xs text-base-content/60">
-                                                        {{ $selectedRoom->hotel->name }}
+                                                        {{ $selectedRoom->house->name }}
                                                     </p>
                                                 @endif
                                             @else
@@ -774,7 +774,7 @@ new class extends Component {
                 <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:justify-between">
                     <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
                         <x-button icon="o-arrow-left" label="Back"
-                            link="{{ route('admin.bookings.hotel.show', $booking->id) }}"
+                            link="{{ route('admin.bookings.house.show', $booking->id) }}"
                             class="btn-ghost w-full sm:w-auto" responsive />
                     </div>
                     <x-button icon="o-check" label="Update Booking" type="submit"

@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Model;
 
-class Hotel extends Model
+class House extends Model
 {
     protected $fillable = [
         'name',

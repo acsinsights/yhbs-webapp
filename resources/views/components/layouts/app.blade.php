@@ -76,16 +76,16 @@
 
                     <x-menu-item title="Yacht Bookings" icon="o-sparkles"
                         link="{{ route('admin.bookings.yatch.index') }}" />
-                    <x-menu-item title="Hotel Bookings" icon="o-building-office"
-                        link="{{ route('admin.bookings.hotel.index') }}" />
-                    <x-menu-item title="Hotel Enquiries" icon="o-envelope" link="###" />
+                    <x-menu-item title="Room Bookings" icon="o-building-office"
+                        link="{{ route('admin.bookings.house.index') }}" />
+                    <x-menu-item title="Room Enquiries" icon="o-envelope" link="###" />
                 @endrole
 
                 @role('admin|superadmin')
                     <div class="divider divider-start my-1">
                         <small class="hidden-when-collapsed">Management</small>
                     </div>
-                    <x-menu-item title="Hotels" icon="o-building-office" link="{{ route('admin.hotels.index') }}" />
+                    <x-menu-item title="Houses" icon="o-building-office" link="{{ route('admin.houses.index') }}" />
                     <x-menu-item title="Yachts" icon="o-sparkles" link="{{ route('admin.yatch.index') }}" />
                     <x-menu-item title="Rooms" icon="o-home-modern" link="{{ route('admin.rooms.index') }}" />
                     <x-menu-item title="Categories" icon="o-tag" link="{{ route('admin.category.index') }}" />

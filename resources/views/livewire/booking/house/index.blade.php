@@ -30,7 +30,7 @@ new class extends Component {
     {
         $view->bookings = Booking::query()
             ->where('bookingable_type', Room::class)
-            ->with(['bookingable.hotel', 'user'])
+            ->with(['bookingable.house', 'user'])
             ->when($this->search, function ($query) {
                 return $query
                     ->whereHas('user', function ($q) {
@@ -39,7 +39,7 @@ new class extends Component {
                     ->orWhereHas('bookingable', function ($q) {
                         $q->where('room_number', 'like', "%{$this->search}%");
                     })
-                    ->orWhereHas('bookingable.hotel', function ($q) {
+                    ->orWhereHas('bookingable.house', function ($q) {
                         $q->where('name', 'like', "%{$this->search}%");
                     });
             })
@@ -70,21 +70,21 @@ new class extends Component {
                 'icon' => 's-home',
             ],
             [
-                'label' => 'Hotel Bookings',
+                'label' => 'Room Bookings',
                 'icon' => 'o-building-office',
             ],
         ];
     @endphp
 
-    <x-header title="Hotel Bookings" separator>
+    <x-header title="Room Bookings" separator>
         <x-slot:subtitle>
-            <p class="text-sm text-base-content/50 mb-2">Manage all hotel room bookings</p>
+            <p class="text-sm text-base-content/50 mb-2">Manage all house room bookings</p>
             <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
         </x-slot:subtitle>
         <x-slot:actions>
             <x-input icon="o-magnifying-glass" placeholder="Search..." wire:model.live.debounce="search" clearable />
             <x-button icon="o-plus" class="btn-primary" label="New Booking"
-                link="{{ route('admin.bookings.hotel.create') }}" />
+                link="{{ route('admin.bookings.house.create') }}" />
         </x-slot:actions>
     </x-header>
 
@@ -98,8 +98,8 @@ new class extends Component {
             @scope('cell_room_number', $booking)
                 @if ($booking->bookingable)
                     <div class="flex gap-2 items-center">
-                        <x-button tooltip="{{ $booking->bookingable->hotel->name }}"
-                            link="{{ route('admin.hotels.edit', $booking->bookingable->hotel->id) }}"
+                        <x-button tooltip="{{ $booking->bookingable->house->name }}"
+                            link="{{ route('admin.houses.edit', $booking->bookingable->house->id) }}"
                             class="btn-ghost btn-sm">
                             <x-icon name="o-building-office-2" class="w-4 h-4" />
                             <span class="font-semibold">{{ $booking->bookingable->room_number }}</span>
@@ -180,7 +180,7 @@ new class extends Component {
 
             @scope('actions', $booking)
                 <div class="flex items-center gap-2">
-                    <x-button icon="o-eye" link="{{ route('admin.bookings.hotel.show', $booking->id) }}"
+                    <x-button icon="o-eye" link="{{ route('admin.bookings.house.show', $booking->id) }}"
                         class="btn-ghost btn-sm" tooltip="View Details" />
                     <x-button icon="o-trash" wire:click="delete({{ $booking->id }})"
                         wire:confirm="Are you sure you want to delete this booking?" spinner

@@ -14,14 +14,17 @@ return new class extends Migration
         Schema::create('rooms', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('hotel_id')->constrained('hotels');
+            $table->foreignId('house_id')->constrained('houses');
             $table->string('name');
             $table->string('slug')->unique();
             $table->string('room_number');
             $table->string('image')->nullable();
             $table->text('description')->nullable();
             $table->decimal('price', 10, 2)->nullable();
-            $table->decimal('discount_price', 10, 2)->nullable();
+            $table->decimal('price_per_night', 10, 2)->nullable();
+            $table->decimal('price_per_2night', 10, 2)->nullable();
+            $table->decimal('price_per_3night', 10, 2)->nullable();
+            $table->decimal('additional_night_price', 10, 2)->nullable();
             $table->json('library')->nullable();
             $table->string('meta_description')->nullable();
             $table->string('meta_keywords')->nullable();

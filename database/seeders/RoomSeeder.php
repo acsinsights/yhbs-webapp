@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Room;
-use App\Models\Hotel;
+use App\Models\House;
 use App\Models\Category;
 use App\Models\Amenity;
 use Illuminate\Database\Seeder;
@@ -15,18 +15,18 @@ class RoomSeeder extends Seeder
      */
     public function run(): void
     {
-        $hotels = Hotel::all();
+        $houses = House::all();
         $categories = Category::all();
         $amenities = Amenity::all();
 
-        if ($hotels->isEmpty() || $categories->isEmpty()) {
-            $this->command->warn('Please run HotelSeeder and CategorySeeder first!');
+        if ($houses->isEmpty() || $categories->isEmpty()) {
+            $this->command->warn('Please run HouseSeeder and CategorySeeder first!');
             return;
         }
 
         $rooms = [
             [
-                'hotel_id' => $hotels->random()->id,
+                'house_id' => $houses->random()->id,
                 'name' => 'Standard Room 101',
                 'slug' => 'standard-room-101',
                 'room_number' => '101',
@@ -34,13 +34,13 @@ class RoomSeeder extends Seeder
                 'price' => 150.00,
                 'discount_price' => 120.00,
                 'meta_description' => 'Comfortable standard room with all basic amenities. Perfect for budget travelers.',
-                'meta_keywords' => 'standard room, budget hotel, comfortable stay',
+                'meta_keywords' => 'standard room, budget house, comfortable stay',
                 'is_active' => true,
                 'adults' => 2,
                 'children' => 1,
             ],
             [
-                'hotel_id' => $hotels->random()->id,
+                'house_id' => $houses->random()->id,
                 'name' => 'Deluxe Room 102',
                 'slug' => 'deluxe-room-102',
                 'room_number' => '102',
@@ -54,7 +54,7 @@ class RoomSeeder extends Seeder
                 'children' => 2,
             ],
             [
-                'hotel_id' => $hotels->random()->id,
+                'house_id' => $houses->random()->id,
                 'name' => 'Luxury Suite 201',
                 'slug' => 'luxury-suite-201',
                 'room_number' => '201',
@@ -68,7 +68,7 @@ class RoomSeeder extends Seeder
                 'children' => 2,
             ],
             [
-                'hotel_id' => $hotels->random()->id,
+                'house_id' => $houses->random()->id,
                 'name' => 'Executive Room 202',
                 'slug' => 'executive-room-202',
                 'room_number' => '202',
@@ -82,7 +82,7 @@ class RoomSeeder extends Seeder
                 'children' => 0,
             ],
             [
-                'hotel_id' => $hotels->random()->id,
+                'house_id' => $houses->random()->id,
                 'name' => 'Presidential Suite 301',
                 'slug' => 'presidential-suite-301',
                 'room_number' => '301',
@@ -96,7 +96,7 @@ class RoomSeeder extends Seeder
                 'children' => 3,
             ],
             [
-                'hotel_id' => $hotels->random()->id,
+                'house_id' => $houses->random()->id,
                 'name' => 'City View Room 302',
                 'slug' => 'city-view-room-302',
                 'room_number' => '302',
@@ -110,7 +110,7 @@ class RoomSeeder extends Seeder
                 'children' => 1,
             ],
             [
-                'hotel_id' => $hotels->random()->id,
+                'house_id' => $houses->random()->id,
                 'name' => 'Ocean View Deluxe 401',
                 'slug' => 'ocean-view-deluxe-401',
                 'room_number' => '401',
@@ -124,7 +124,7 @@ class RoomSeeder extends Seeder
                 'children' => 2,
             ],
             [
-                'hotel_id' => $hotels->random()->id,
+                'house_id' => $houses->random()->id,
                 'name' => 'Jacuzzi Suite 402',
                 'slug' => 'jacuzzi-suite-402',
                 'room_number' => '402',
@@ -142,7 +142,7 @@ class RoomSeeder extends Seeder
         foreach ($rooms as $roomData) {
             $room = Room::updateOrCreate(
                 [
-                    'hotel_id' => $roomData['hotel_id'],
+                    'house_id' => $roomData['house_id'],
                     'room_number' => $roomData['room_number'],
                 ],
                 $roomData

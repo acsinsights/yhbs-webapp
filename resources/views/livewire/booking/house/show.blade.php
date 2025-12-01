@@ -13,7 +13,7 @@ new class extends Component {
 
     public function mount(Booking $booking): void
     {
-        $this->booking = $booking->load(['bookingable.hotel', 'user']);
+        $this->booking = $booking->load(['bookingable.house', 'user']);
     }
 
     public function checkout(): void
@@ -22,7 +22,7 @@ new class extends Component {
             'status' => 'checked_out',
         ]);
 
-        $this->success('Booking checked out successfully.', redirectTo: route('admin.bookings.hotel.index'));
+        $this->success('Booking checked out successfully.', redirectTo: route('admin.bookings.house.index'));
     }
 
     public function rendering(View $view)
@@ -39,8 +39,8 @@ new class extends Component {
                 'icon' => 's-home',
             ],
             [
-                'link' => route('admin.bookings.hotel.index'),
-                'label' => 'Hotel Bookings',
+                'link' => route('admin.bookings.house.index'),
+                'label' => 'Room Bookings',
             ],
             [
                 'label' => 'Booking Details',
@@ -54,10 +54,10 @@ new class extends Component {
             <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
         </x-slot:subtitle>
         <x-slot:actions>
-            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.hotel.index') }}"
+            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.house.index') }}"
                 class="btn-ghost" />
             @if ($booking->status !== 'checked_out' && $booking->status !== 'cancelled')
-                <x-button icon="o-pencil" label="Edit" link="{{ route('admin.bookings.hotel.edit', $booking->id) }}"
+                <x-button icon="o-pencil" label="Edit" link="{{ route('admin.bookings.house.edit', $booking->id) }}"
                     class="btn-primary" />
                 <x-button icon="o-check-circle" label="Checkout" wire:click="checkout"
                     wire:confirm="Are you sure you want to checkout this booking?" class="btn-success"
@@ -168,8 +168,8 @@ new class extends Component {
                             </div>
                         </div>
                         <div>
-                            <div class="text-sm text-base-content/50 mb-1">Hotel</div>
-                            <div class="font-semibold">{{ $booking->bookingable->hotel->name ?? 'N/A' }}</div>
+                            <div class="text-sm text-base-content/50 mb-1">House</div>
+                            <div class="font-semibold">{{ $booking->bookingable->house->name ?? 'N/A' }}</div>
                         </div>
                         @if ($booking->bookingable->description)
                             <div>

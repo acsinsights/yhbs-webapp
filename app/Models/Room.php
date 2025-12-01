@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 class Room extends Model
 {
     protected $fillable = [
-        'hotel_id',
+        'house_id',
         'name',
         'slug',
         'room_number',
@@ -33,11 +33,11 @@ class Room extends Model
     ];
 
     /**
-     * Get the hotel that owns the room.
+     * Get the house that owns the room.
      */
-    public function hotel(): BelongsTo
+    public function house(): BelongsTo
     {
-        return $this->belongsTo(Hotel::class);
+        return $this->belongsTo(House::class);
     }
 
     /**
@@ -64,7 +64,7 @@ class Room extends Model
     public function scopeSearch($query, $search)
     {
         return $query->where('room_number', 'like', "%{$search}%")
-            ->orWhereHas('hotel', function ($query) use ($search) {
+            ->orWhereHas('house', function ($query) use ($search) {
                 $query->where('name', 'like', "%{$search}%");
             });
     }
