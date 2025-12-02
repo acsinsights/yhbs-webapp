@@ -1,4 +1,4 @@
-@extends('frontend.layouts.app') 
+@extends('frontend.layouts.app')
 @section('content')
     <!-- Breadcrumb section Start-->
     <div class="breadcrumb-section"
@@ -176,4 +176,5 @@
             </div>
         </div>
     </div>
-
+    
+@endsection
