@@ -77,7 +77,7 @@
                             <i class="bi bi-currency-dollar"></i>
                         </div>
                         <div class="stat-content">
-                            <h3>${{ number_format($totalSpent ?? 0, 2) }}</h3>
+                            <h3>{{ currency_format($totalSpent ?? 0) }}</h3>
                             <p>Total Spent</p>
                         </div>
                     </div>

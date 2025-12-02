@@ -102,7 +102,7 @@
                                         <div class="col-md-3 text-end">
                                             <div class="booking-price mb-3">
                                                 <small class="text-muted">Total Amount</small>
-                                                <h3 class="text-primary">${{ number_format($booking->total ?? 0, 2) }}</h3>
+                                                <h3 class="text-primary">{{ currency_format($booking->total ?? 0) }}</h3>
                                             </div>
                                             <div class="booking-actions">
                                                 <a href="{{ route('customer.booking.details', $booking->id ?? '#') }}"
@@ -176,5 +176,4 @@
             </div>
         </div>
     </div>
-    
 @endsection

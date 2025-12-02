@@ -117,13 +117,12 @@
                             <div class="payment-breakdown">
                                 <div class="payment-row">
                                     <span>Booking Amount</span>
-                                    <span>${{ number_format($booking->price ?? 0, 2) }}</span>
+                                    <span>{{ currency_format($booking->price ?? 0) }}</span>
                                 </div>
                                 @if ($booking->discount_price)
                                     <div class="payment-row">
                                         <span>Discount</span>
-                                        <span
-                                            class="text-success">-${{ number_format($booking->discount_price, 2) }}</span>
+                                        <span class="text-success">-{{ currency_format($booking->discount_price) }}</span>
                                     </div>
                                 @endif
                             </div>
@@ -132,7 +131,7 @@
 
                             <div class="total-amount">
                                 <span>Total Paid</span>
-                                <span>${{ number_format(($booking->price ?? 0) - ($booking->discount_price ?? 0), 2) }}</span>
+                                <span>{{ currency_format(($booking->price ?? 0) - ($booking->discount_price ?? 0)) }}</span>
                             </div>
 
                             <div class="payment-status">
