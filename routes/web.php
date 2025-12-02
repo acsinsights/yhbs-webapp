@@ -87,100 +87,36 @@ Route::prefix('admin')->name('admin.')->group(function () {
     });
 });
 
+use App\Http\Controllers\Customer\AuthController;
+use App\Http\Controllers\Customer\DashboardController;
+
 // Customer Routes
 Route::prefix('customer')->name('customer.')->group(function () {
     // Guest routes (Login, Register, Forgot Password)
     Route::middleware('guest')->group(function () {
-        // Login
-        Route::get('/login', function () {
-            return view('frontend.auth.login');
-        })->name('login');
+        Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+        Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 
-        Route::post('/login', function () {
-            // Handle login logic here
-            return redirect()->route('customer.dashboard');
-        })->name('login.submit');
+        Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+        Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
 
-        // Register
-        Route::get('/register', function () {
-            return view('frontend.auth.register');
-        })->name('register');
-
-        Route::post('/register', function () {
-            // Handle registration logic here
-            return redirect()->route('customer.dashboard');
-        })->name('register.submit');
-
-        // Forgot Password
-        Route::get('/forgot-password', function () {
-            return view('frontend.auth.forgot-password');
-        })->name('forgot-password');
-
-        Route::post('/forgot-password', function () {
-            // Handle forgot password logic here
-            return back()->with('success', 'Password reset link sent to your email!');
-        })->name('forgot-password.submit');
+        Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('forgot-password');
+        Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('forgot-password.submit');
     });
 
     // Authenticated customer routes
     Route::middleware('auth')->group(function () {
-        // Dashboard
-        Route::get('/dashboard', function () {
-            $totalBookings = 0;
-            $confirmedBookings = 0;
-            $pendingBookings = 0;
-            $totalSpent = 0;
-            $recentBookings = [];
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-            return view('frontend.customer.dashboard', compact(
-                'totalBookings',
-                'confirmedBookings',
-                'pendingBookings',
-                'totalSpent',
-                'recentBookings'
-            ));
-        })->name('dashboard');
+        Route::get('/profile', [DashboardController::class, 'profile'])->name('profile');
+        Route::put('/profile', [DashboardController::class, 'updateProfile'])->name('profile.update');
+        Route::put('/password', [DashboardController::class, 'updatePassword'])->name('password.update');
 
-        // Profile
-        Route::get('/profile', function () {
-            return view('frontend.customer.profile');
-        })->name('profile');
+        Route::get('/bookings', [DashboardController::class, 'bookings'])->name('bookings');
+        Route::get('/bookings/{id}', [DashboardController::class, 'bookingDetails'])->name('booking.details');
 
-        Route::put('/profile', function () {
-            // Handle profile update logic here
-            return back()->with('success', 'Profile updated successfully!');
-        })->name('profile.update');
-
-        Route::put('/password', function () {
-            // Handle password change logic here
-            return back()->with('success', 'Password changed successfully!');
-        })->name('password.update');
-
-        // Bookings
-        Route::get('/bookings', function () {
-            $bookings = [];
-            return view('frontend.customer.bookings', compact('bookings'));
-        })->name('bookings');
-
-        Route::get('/bookings/{id}', function ($id) {
-            // Fetch booking details
-            return view('frontend.customer.booking-details');
-        })->name('booking.details');
-
-        // Logout
-        Route::post('/logout', function () {
-            Auth::logout();
-            request()->session()->invalidate();
-            request()->session()->regenerateToken();
-            return redirect()->route('home');
-        })->name('logout');
-
-        Route::get('/logout', function () {
-            Auth::logout();
-            request()->session()->invalidate();
-            request()->session()->regenerateToken();
-            return redirect()->route('home');
-        })->name('logout.get');
+        Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+        Route::get('/logout', [AuthController::class, 'logout'])->name('logout.get');
     });
 });
 

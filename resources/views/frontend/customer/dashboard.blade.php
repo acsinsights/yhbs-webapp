@@ -22,7 +22,7 @@
             <div class="welcome-banner mb-4">
                 <div class="row align-items-center">
                     <div class="col-md-8">
-                        <h2>Welcome back, {{ auth()->user()->name ?? 'Guest' }}!</h2>
+                        <h2 class="text-white">Welcome back, {{ auth()->user()->name ?? 'Guest' }}!</h2>
                         <p class="mb-0">Manage your bookings and profile from your dashboard</p>
                     </div>
                     <div class="col-md-4 text-end">

@@ -22,3 +22,5 @@
 <!-- Custom JS -->
 <script src="{{ asset('frontend/js/select-dropdown.js') }}"></script>
 <script src="{{ asset('frontend/js/custom.js') }}"></script>
+<!-- Customer Panel JS -->
+<script src="{{ asset('frontend/js/customer-panel.js') }}"></script>

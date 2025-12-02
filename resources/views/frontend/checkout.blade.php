@@ -244,15 +244,4 @@
         </div>
     </div>
 
-
-    <script>
-        document.getElementById('checkoutForm').addEventListener('submit', function(e) {
-            const termsCheckbox = document.getElementById('terms');
-            if (!termsCheckbox.checked) {
-                e.preventDefault();
-                alert('Please accept the terms and conditions to continue');
-                termsCheckbox.focus();
-            }
-        });
-    </script>
 @endsection
