@@ -24,9 +24,9 @@
 
 <body class="tt-magic-cursor">
 
-    <div id="magic-cursor">
+    {{-- <div id="magic-cursor">
         <div id="ball"></div>
-    </div>
+    </div> --}}
 
     <!-- Back To Top -->
     <div class="progress-wrap">

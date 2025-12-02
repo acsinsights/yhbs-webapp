@@ -1,5 +1,4 @@
-@extends('frontend.layouts.app')
-@section('title', 'My Bookings - YHBS')
+@extends('frontend.layouts.app') 
 @section('content')
     <!-- Breadcrumb section Start-->
     <div class="breadcrumb-section"
