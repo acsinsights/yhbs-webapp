@@ -86,3 +86,158 @@ Route::prefix('admin')->name('admin.')->group(function () {
         })->name('logout');
     });
 });
+
+// Customer Routes
+Route::prefix('customer')->name('customer.')->group(function () {
+    // Guest routes (Login, Register, Forgot Password)
+    Route::middleware('guest')->group(function () {
+        // Login
+        Route::get('/login', function () {
+            return view('frontend.auth.login');
+        })->name('login');
+
+        Route::post('/login', function () {
+            // Handle login logic here
+            return redirect()->route('customer.dashboard');
+        })->name('login.submit');
+
+        // Register
+        Route::get('/register', function () {
+            return view('frontend.auth.register');
+        })->name('register');
+
+        Route::post('/register', function () {
+            // Handle registration logic here
+            return redirect()->route('customer.dashboard');
+        })->name('register.submit');
+
+        // Forgot Password
+        Route::get('/forgot-password', function () {
+            return view('frontend.auth.forgot-password');
+        })->name('forgot-password');
+
+        Route::post('/forgot-password', function () {
+            // Handle forgot password logic here
+            return back()->with('success', 'Password reset link sent to your email!');
+        })->name('forgot-password.submit');
+    });
+
+    // Authenticated customer routes
+    Route::middleware('auth')->group(function () {
+        // Dashboard
+        Route::get('/dashboard', function () {
+            $totalBookings = 0;
+            $confirmedBookings = 0;
+            $pendingBookings = 0;
+            $totalSpent = 0;
+            $recentBookings = [];
+
+            return view('frontend.customer.dashboard', compact(
+                'totalBookings',
+                'confirmedBookings',
+                'pendingBookings',
+                'totalSpent',
+                'recentBookings'
+            ));
+        })->name('dashboard');
+
+        // Profile
+        Route::get('/profile', function () {
+            return view('frontend.customer.profile');
+        })->name('profile');
+
+        Route::put('/profile', function () {
+            // Handle profile update logic here
+            return back()->with('success', 'Profile updated successfully!');
+        })->name('profile.update');
+
+        Route::put('/password', function () {
+            // Handle password change logic here
+            return back()->with('success', 'Password changed successfully!');
+        })->name('password.update');
+
+        // Bookings
+        Route::get('/bookings', function () {
+            $bookings = [];
+            return view('frontend.customer.bookings', compact('bookings'));
+        })->name('bookings');
+
+        Route::get('/bookings/{id}', function ($id) {
+            // Fetch booking details
+            return view('frontend.customer.booking-details');
+        })->name('booking.details');
+
+        // Logout
+        Route::post('/logout', function () {
+            Auth::logout();
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+            return redirect()->route('home');
+        })->name('logout');
+
+        Route::get('/logout', function () {
+            Auth::logout();
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+            return redirect()->route('home');
+        })->name('logout.get');
+    });
+});
+
+// Booking Routes (accessible to guests and authenticated users)
+Route::get('/checkout', function () {
+    $booking = (object) [
+        'property_image' => null,
+        'property_name' => 'Sample Property',
+        'location' => 'Sample Location',
+        'check_in' => date('Y-m-d'),
+        'check_out' => date('Y-m-d', strtotime('+3 days')),
+        'nights' => 3,
+        'guests' => 2,
+        'price_per_night' => 150,
+        'service_fee' => 15,
+        'tax' => 20,
+        'total' => 485,
+    ];
+
+    return view('frontend.checkout', compact('booking'));
+})->name('checkout');
+
+Route::post('/booking/confirm', function () {
+    // Handle booking confirmation logic here
+    return redirect()->route('booking.confirmation', ['id' => 1]);
+})->name('booking.confirm');
+
+Route::get('/booking/confirmation/{id}', function ($id) {
+    // Fetch booking details
+    $booking = (object) [
+        'id' => $id,
+        'reference' => 'YHBS' . str_pad($id, 4, '0', STR_PAD_LEFT),
+        'property_image' => null,
+        'property_name' => 'Luxury Room',
+        'location' => 'Sample Location',
+        'check_in' => date('Y-m-d'),
+        'check_out' => date('Y-m-d', strtotime('+3 days')),
+        'nights' => 3,
+        'guests' => 2,
+        'customer_name' => auth()->user()->name ?? 'Guest',
+        'customer_email' => auth()->user()->email ?? 'guest@example.com',
+        'customer_phone' => 'N/A',
+        'payment_method' => 'card',
+        'price_per_night' => 150,
+        'service_fee' => 15,
+        'tax' => 20,
+        'total' => 485,
+    ];
+
+    return view('frontend.booking-confirmation', compact('booking'));
+})->name('booking.confirmation');
+
+// Frontend pages routes
+Route::get('/rooms', function () {
+    return view('frontend.rooms.index');
+})->name('rooms.index');
+
+Route::get('/yachts', function () {
+    return view('frontend.yachts.index');
+})->name('yachts.index');
