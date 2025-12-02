@@ -14,7 +14,7 @@ new class extends Component {
 
     public function mount($room): void
     {
-        $this->room = $room instanceof Room ? $room->load(['hotel', 'categories', 'amenities']) : Room::with(['hotel', 'categories', 'amenities'])->findOrFail($room);
+        $this->room = $room instanceof Room ? $room->load(['house', 'categories', 'amenities']) : Room::with(['house', 'categories', 'amenities'])->findOrFail($room);
     }
 
     public function delete(): void
@@ -106,8 +106,8 @@ new class extends Component {
                     <x-icon name="o-building-office" class="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                    <p class="text-xs text-base-content/60 uppercase tracking-wide">Hotel</p>
-                    <p class="font-semibold text-sm">{{ $room->hotel->name ?? 'N/A' }}</p>
+                    <p class="text-xs text-base-content/60 uppercase tracking-wide">House</p>
+                    <p class="font-semibold text-sm">{{ $room->house->name ?? 'N/A' }}</p>
                 </div>
             </div>
         </x-card>
@@ -160,27 +160,63 @@ new class extends Component {
                 <x-icon name="o-currency-dollar" class="w-5 h-5" />
                 <span>Pricing</span>
             </x-slot:title>
-            <div class="flex items-baseline gap-4">
-                @if ($room->discount_price)
-                    <div>
-                        <p class="text-xs text-base-content/60 mb-1">Regular Price</p>
-                        <p class="text-2xl font-bold text-base-content/40 line-through">
-                            {{ currency_format($room->price) }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-base-content/60 mb-1">Discount Price</p>
-                        <div class="flex items-baseline gap-2">
-                            <p class="text-3xl font-bold text-primary">{{ currency_format($room->discount_price) }}</p>
-                            @php
-                                $discountPercent = round((($room->price - $room->discount_price) / $room->price) * 100);
-                            @endphp
-                            <x-badge :value="$discountPercent . '% OFF'" class="badge-success badge-sm" />
+            <div class="grid gap-6">
+                <div class="flex items-baseline gap-4">
+                    @if ($room->discount_price)
+                        <div>
+                            <p class="text-xs text-base-content/60 mb-1">Regular Price</p>
+                            <p class="text-2xl font-bold text-base-content/40 line-through">
+                                {{ currency_format($room->price) }}</p>
                         </div>
-                    </div>
-                @else
-                    <div>
-                        <p class="text-xs text-base-content/60 mb-1">Price</p>
-                        <p class="text-3xl font-bold text-primary">{{ currency_format($room->price) }}</p>
+                        <div>
+                            <p class="text-xs text-base-content/60 mb-1">Discount Price</p>
+                            <div class="flex items-baseline gap-2">
+                                <p class="text-3xl font-bold text-primary">{{ currency_format($room->discount_price) }}
+                                </p>
+                                @php
+                                    $discountPercent = round(
+                                        (($room->price - $room->discount_price) / $room->price) * 100,
+                                    );
+                                @endphp
+                                <x-badge :value="$discountPercent . '% OFF'" class="badge-success badge-sm" />
+                            </div>
+                        </div>
+                    @else
+                        <div>
+                            <p class="text-xs text-base-content/60 mb-1">Price</p>
+                            <p class="text-3xl font-bold text-primary">{{ currency_format($room->price) }}</p>
+                        </div>
+                    @endif
+                </div>
+
+                @if ($room->price_per_night || $room->price_per_2night || $room->price_per_3night || $room->additional_night_price)
+                    <div class="divider my-0"></div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        @if ($room->price_per_night)
+                            <div>
+                                <p class="text-xs text-base-content/60 mb-1">Per Night</p>
+                                <p class="text-lg font-semibold">{{ currency_format($room->price_per_night) }}</p>
+                            </div>
+                        @endif
+                        @if ($room->price_per_2night)
+                            <div>
+                                <p class="text-xs text-base-content/60 mb-1">2 Nights</p>
+                                <p class="text-lg font-semibold">{{ currency_format($room->price_per_2night) }}</p>
+                            </div>
+                        @endif
+                        @if ($room->price_per_3night)
+                            <div>
+                                <p class="text-xs text-base-content/60 mb-1">3 Nights</p>
+                                <p class="text-lg font-semibold">{{ currency_format($room->price_per_3night) }}</p>
+                            </div>
+                        @endif
+                        @if ($room->additional_night_price)
+                            <div>
+                                <p class="text-xs text-base-content/60 mb-1">Additional Night</p>
+                                <p class="text-lg font-semibold">{{ currency_format($room->additional_night_price) }}
+                                </p>
+                            </div>
+                        @endif
                     </div>
                 @endif
             </div>

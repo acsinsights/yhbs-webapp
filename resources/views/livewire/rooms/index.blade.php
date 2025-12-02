@@ -6,7 +6,7 @@ use Illuminate\Support\Str;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 use Livewire\Volt\Component;
-use App\Models\{Hotel, Room};
+use App\Models\{House, Room};
 
 new class extends Component {
     use Toast, WithPagination;
@@ -18,13 +18,13 @@ new class extends Component {
     public int $perPage = 10;
 
     public bool $createModal = false;
-    public int $hotel_id = 0;
+    public int $house_id = 0;
     public string $name = '';
     public string $room_number = '';
 
     public function mount()
     {
-        $this->hotel_id = Hotel::first()->id;
+        $this->house_id = House::first()->id;
     }
 
     // Delete action
@@ -39,9 +39,9 @@ new class extends Component {
     public function createRoom(): void
     {
         $this->validate([
-            'hotel_id' => 'required|exists:hotels,id',
-            'name' => 'required|string|max:255|unique:rooms,name,NULL,id,hotel_id,' . $this->hotel_id,
-            'room_number' => 'required|string|max:255|unique:rooms,room_number,NULL,id,hotel_id,' . $this->hotel_id,
+            'house_id' => 'required|exists:houses,id',
+            'name' => 'required|string|max:255|unique:rooms,name,NULL,id,house_id,' . $this->house_id,
+            'room_number' => 'required|string|max:255|unique:rooms,room_number,NULL,id,house_id,' . $this->house_id,
         ]);
 
         // Auto-generate slug from name
@@ -56,28 +56,28 @@ new class extends Component {
         }
 
         $room = Room::create([
-            'hotel_id' => $this->hotel_id,
+            'house_id' => $this->house_id,
             'name' => $this->name,
             'slug' => $slug,
             'room_number' => $this->room_number,
         ]);
 
         $this->createModal = false;
-        $this->reset('hotel_id', 'name', 'room_number');
+        $this->reset('house_id', 'name', 'room_number');
         $this->success('Room created successfully.', redirectTo: route('admin.rooms.edit', $room->id));
     }
 
     public function rendering(View $view)
     {
         $view->rooms = Room::query()
-            ->with(['hotel', 'categories', 'amenities'])
+            ->with(['house', 'categories', 'amenities'])
             ->search($this->search)
             ->orderBy(...array_values($this->sortBy))
             ->paginate($this->perPage);
 
-        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'name', 'label' => 'Name'], ['key' => 'room_number', 'label' => 'Room Number'], ['key' => 'hotel.name', 'label' => 'Hotel', 'sortable' => false], ['key' => 'adults', 'label' => 'Adults'], ['key' => 'children', 'label' => 'Children'], ['key' => 'price', 'label' => 'Price', 'class' => 'whitespace-nowrap'], ['key' => 'discount_price', 'label' => 'Discount Price', 'class' => 'whitespace-nowrap']];
+        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'name', 'label' => 'Name'], ['key' => 'room_number', 'label' => 'Room Number'], ['key' => 'house.name', 'label' => 'House', 'sortable' => false], ['key' => 'adults', 'label' => 'Adults'], ['key' => 'children', 'label' => 'Children'], ['key' => 'price', 'label' => 'Price', 'class' => 'whitespace-nowrap'], ['key' => 'discount_price', 'label' => 'Discount Price', 'class' => 'whitespace-nowrap']];
 
-        $view->hotels = Hotel::latest()->get();
+        $view->houses = House::latest()->get();
     }
 }; ?>
 
@@ -197,9 +197,9 @@ new class extends Component {
     <x-modal wire:model="createModal" title="Create Room" class="backdrop-blur" max-width="md">
         <x-form wire:submit="createRoom">
             <div class="space-y-4">
-                <x-select wire:model="hotel_id" label="Hotel" placeholder="Select a hotel" :options="$hotels"
+                <x-select wire:model="house_id" label="House" placeholder="Select a house" :options="$houses"
                     option-value="id" option-label="name" icon="o-building-office-2"
-                    hint="Select the hotel this room belongs to" />
+                    hint="Select the house this room belongs to" />
 
                 <x-input wire:model="name" label="Room Name" placeholder="e.g., Standard Room, Deluxe Suite"
                     icon="o-tag" hint="Display name for the room (slug will be auto-generated)" />

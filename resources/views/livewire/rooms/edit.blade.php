@@ -7,14 +7,14 @@ use Illuminate\Http\UploadedFile;
 use Livewire\WithFileUploads;
 use Livewire\Volt\Component;
 use Mary\Traits\{Toast, WithMediaSync};
-use App\Models\{Amenity, Category, Hotel, Room};
+use App\Models\{Amenity, Category, House, Room};
 
 new class extends Component {
     use Toast, WithFileUploads, WithMediaSync;
 
     public Room $room;
 
-    public int $hotel_id = 0;
+    public int $house_id = 0;
     public string $name = '';
     public string $slug = '';
     public string $room_number = '';
@@ -23,6 +23,10 @@ new class extends Component {
     public ?string $description = null;
     public ?float $price = null;
     public ?float $discount_price = null;
+    public ?float $price_per_night = null;
+    public ?float $price_per_2night = null;
+    public ?float $price_per_3night = null;
+    public ?float $additional_night_price = null;
     public array $category_ids = [];
     public array $amenity_ids = [];
     public ?string $meta_keywords = null;
@@ -57,7 +61,7 @@ new class extends Component {
     public function mount(Room $room): void
     {
         $this->room = $room;
-        $this->hotel_id = $room->hotel_id;
+        $this->house_id = $room->house_id;
         $this->name = $room->name ?? '';
         $this->slug = $room->slug ?? '';
         $this->room_number = $room->room_number;
@@ -66,6 +70,10 @@ new class extends Component {
         $this->description = $room->description;
         $this->price = $room->price;
         $this->discount_price = $room->discount_price;
+        $this->price_per_night = $room->price_per_night;
+        $this->price_per_2night = $room->price_per_2night;
+        $this->price_per_3night = $room->price_per_3night;
+        $this->additional_night_price = $room->additional_night_price;
         $this->meta_keywords = $room->meta_keywords;
         $this->meta_description = $room->meta_description;
         $this->is_active = $room->is_active ?? false;
@@ -93,7 +101,7 @@ new class extends Component {
     public function update(): void
     {
         $this->validate([
-            'hotel_id' => 'required|exists:hotels,id',
+            'house_id' => 'required|exists:houses,id',
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:rooms,slug,' . $this->room->id,
             'room_number' => 'required|string|max:255',
@@ -102,6 +110,10 @@ new class extends Component {
             'description' => 'nullable|string',
             'price' => 'nullable|numeric|min:0',
             'discount_price' => 'nullable|numeric|min:0',
+            'price_per_night' => 'nullable|numeric|min:0',
+            'price_per_2night' => 'nullable|numeric|min:0',
+            'price_per_3night' => 'nullable|numeric|min:0',
+            'additional_night_price' => 'nullable|numeric|min:0',
             'meta_keywords' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:150',
             'is_active' => 'nullable|boolean',
@@ -118,7 +130,7 @@ new class extends Component {
         }
 
         $this->room->update([
-            'hotel_id' => $this->hotel_id,
+            'house_id' => $this->house_id,
             'name' => $this->name,
             'slug' => $this->slug,
             'room_number' => $this->room_number,
@@ -126,6 +138,10 @@ new class extends Component {
             'description' => $this->description,
             'price' => $this->price,
             'discount_price' => $this->discount_price,
+            'price_per_night' => $this->price_per_night,
+            'price_per_2night' => $this->price_per_2night,
+            'price_per_3night' => $this->price_per_3night,
+            'additional_night_price' => $this->additional_night_price,
             'meta_keywords' => $this->meta_keywords,
             'meta_description' => $this->meta_description,
             'is_active' => $this->is_active,
@@ -195,7 +211,7 @@ new class extends Component {
 
     public function rendering(View $view): void
     {
-        $view->hotels = Hotel::latest()->get();
+        $view->houses = House::latest()->get();
         $view->categories = Category::type('room')->latest()->get();
         $view->amenities = Amenity::type('room')->latest()->get();
     }
@@ -239,9 +255,9 @@ new class extends Component {
     <x-card shadow class="mt-3 md:mt-5">
         <x-form wire:submit="update">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                <x-select wire:model="hotel_id" label="Hotel" placeholder="Select a hotel" :options="$hotels"
+                <x-select wire:model="house_id" label="House" placeholder="Select a house" :options="$houses"
                     option-value="id" option-label="name" icon="o-building-office-2"
-                    hint="Select the hotel this room belongs to" />
+                    hint="Select the house this room belongs to" />
 
                 <x-input wire:model="name" label="Room Name" placeholder="e.g., Standard Room, Deluxe Suite"
                     icon="o-tag" hint="Display name for the room (slug will be auto-generated)" />
@@ -274,6 +290,19 @@ new class extends Component {
                 <x-input wire:model="discount_price" type="number" step="0.01" label="Discount Price"
                     placeholder="0.00" icon="o-tag" hint="Discounted price (optional)" />
 
+                <x-input wire:model="price_per_night" type="number" step="0.01" label="Price Per Night"
+                    placeholder="0.00" icon="o-currency-dollar" hint="Price for 1 night (optional)" />
+
+                <x-input wire:model="price_per_2night" type="number" step="0.01" label="Price Per 2 Nights"
+                    placeholder="0.00" icon="o-currency-dollar" hint="Price for 2 nights (optional)" />
+
+                <x-input wire:model="price_per_3night" type="number" step="0.01" label="Price Per 3 Nights"
+                    placeholder="0.00" icon="o-currency-dollar" hint="Price for 3 nights (optional)" />
+
+                <x-input wire:model="additional_night_price" type="number" step="0.01"
+                    label="Additional Night Price" placeholder="0.00" icon="o-currency-dollar"
+                    hint="Price for each additional night (optional)" />
+
                 <x-textarea wire:model="meta_description" label="Meta Description" hint="Max 150 characters"
                     rows="3" />
 
@@ -283,8 +312,8 @@ new class extends Component {
 
             <div class="mt-4 md:mt-6">
                 <x-choices-offline wire:model="category_ids" label="Categories" placeholder="Select categories"
-                    :options="$categories" icon="o-squares-2x2" hint="Select one or more categories for this room" searchable
-                    clearable>
+                    :options="$categories" icon="o-squares-2x2" hint="Select one or more categories for this room"
+                    searchable clearable>
                     <x-slot:append>
                         <x-button icon="o-plus" label="Add Category" class="btn-primary join-item btn-sm md:btn-md"
                             @click="$wire.addCategoryModal = true" responsive />
