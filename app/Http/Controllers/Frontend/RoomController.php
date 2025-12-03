@@ -24,6 +24,15 @@ class RoomController extends Controller
             });
         }
 
+        // Filter by amenities
+        if ($request->filled('amenities') && is_array($request->amenities)) {
+            foreach ($request->amenities as $amenityId) {
+                $query->whereHas('amenities', function ($q) use ($amenityId) {
+                    $q->where('amenities.id', $amenityId);
+                });
+            }
+        }
+
         // Filter by price range
         if ($request->filled('min_price')) {
             $query->where('price', '>=', $request->min_price);
@@ -37,16 +46,43 @@ class RoomController extends Controller
             $query->where('adults', '>=', $request->capacity);
         }
 
+        // Filter by number of children
+        if ($request->filled('children')) {
+            $query->where('children', '>=', $request->children);
+        }
+
         // Search by name or description
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->search . '%')
-                    ->orWhere('description', 'like', '%' . $request->search . '%');
+                    ->orWhere('description', 'like', '%' . $request->search . '%')
+                    ->orWhere('room_number', 'like', '%' . $request->search . '%');
             });
         }
 
+        // Sort options
+        $sortBy = $request->get('sort_by', 'latest');
+        switch ($sortBy) {
+            case 'price_low':
+                $query->orderBy('price', 'asc');
+                break;
+            case 'price_high':
+                $query->orderBy('price', 'desc');
+                break;
+            case 'name':
+                $query->orderBy('name', 'asc');
+                break;
+            case 'capacity':
+                $query->orderBy('adults', 'desc');
+                break;
+            default:
+                $query->latest();
+                break;
+        }
+
         $rooms = $query->where('is_active', true)
-            ->paginate(12);
+            ->paginate(12)
+            ->appends($request->all());
 
         $categories = Category::all();
         $amenities = Amenity::all();

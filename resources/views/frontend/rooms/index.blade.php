@@ -18,39 +18,211 @@
     <div class="filter-wrapper hotel mb-100">
         <div class="container">
             <div class="filter-input-wrap">
-                <h6>Find Your Perfect Room</h6>
-                <form method="GET" action="{{ route('rooms.index') }}" class="filter-input two show">
-                    <div class="single-search-box">
-                        <input type="text" name="search" placeholder="Search by room name"
-                            value="{{ request('search') }}">
-                    </div>
-                    <div class="single-search-box">
-                        <select name="category">
-                            <option value="">All Categories</option>
-                            @foreach ($categories as $category)
-                                <option value="{{ $category->id }}"
-                                    {{ request('category') == $category->id ? 'selected' : '' }}>
-                                    {{ $category->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="single-search-box">
-                        <input type="number" name="min_price" placeholder="Min Price" value="{{ request('min_price') }}">
-                    </div>
-                    <div class="single-search-box">
-                        <input type="number" name="max_price" placeholder="Max Price" value="{{ request('max_price') }}">
-                    </div>
-                    <div class="single-search-box">
-                        <input type="number" name="capacity" placeholder="Min Capacity" value="{{ request('capacity') }}">
-                    </div>
-                    <button type="submit" class="primary-btn1">
-                        <i class="bi bi-search"></i> Search
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">Find Your Perfect Room</h6>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="toggleAdvancedFilters">
+                        <i class="bi bi-funnel"></i> Advanced Filters
                     </button>
+                </div>
+
+                <form method="GET" action="{{ route('rooms.index') }}" id="filterForm">
+                    <!-- Basic Filters -->
+                    <div class="filter-input two show">
+                        <div class="single-search-box">
+                            <input type="text" name="search" placeholder="Search by room name or number"
+                                value="{{ request('search') }}">
+                        </div>
+                        <div class="single-search-box">
+                            <select name="category" class="form-select">
+                                <option value="">All Categories</option>
+                                @foreach ($categories as $category)
+                                    <option value="{{ $category->id }}"
+                                        {{ request('category') == $category->id ? 'selected' : '' }}>
+                                        {{ $category->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="single-search-box">
+                            <input type="number" name="min_price" placeholder="Min Price"
+                                value="{{ request('min_price') }}" min="0">
+                        </div>
+                        <div class="single-search-box">
+                            <input type="number" name="max_price" placeholder="Max Price"
+                                value="{{ request('max_price') }}" min="0">
+                        </div>
+                        <div class="single-search-box">
+                            <select name="sort_by" class="form-select">
+                                <option value="latest" {{ request('sort_by') == 'latest' ? 'selected' : '' }}>Latest
+                                </option>
+                                <option value="price_low" {{ request('sort_by') == 'price_low' ? 'selected' : '' }}>Price:
+                                    Low to High</option>
+                                <option value="price_high" {{ request('sort_by') == 'price_high' ? 'selected' : '' }}>
+                                    Price: High to Low</option>
+                                <option value="name" {{ request('sort_by') == 'name' ? 'selected' : '' }}>Name (A-Z)
+                                </option>
+                                <option value="capacity" {{ request('sort_by') == 'capacity' ? 'selected' : '' }}>Capacity
+                                </option>
+                            </select>
+                        </div>
+                        <button type="submit" class="primary-btn1 gap-2">
+                            <i class="bi bi-search"></i> Search
+                        </button>
+                    </div>
+
+                    <!-- Advanced Filters (Collapsible) -->
+                    <div id="advancedFilters" class="advanced-filters mt-4" style="display: none;">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label"><i class="bi bi-people"></i> Adults</label>
+                                <input type="number" name="capacity" class="form-control" placeholder="Min adults"
+                                    value="{{ request('capacity') }}" min="0">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label"><i class="bi bi-person"></i> Children</label>
+                                <input type="number" name="children" class="form-control" placeholder="Min children"
+                                    value="{{ request('children') }}" min="0">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label"><i class="bi bi-star"></i> Amenities</label>
+                                <div class="amenities-filter-grid">
+                                    @foreach ($amenities as $amenity)
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="amenities[]"
+                                                value="{{ $amenity->id }}" id="amenity{{ $amenity->id }}"
+                                                {{ in_array($amenity->id, request('amenities', [])) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="amenity{{ $amenity->id }}">
+                                                {{ $amenity->name }}
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary me-2">
+                                    <i class="bi bi-check-circle"></i> Apply Filters
+                                </button>
+                                <a href="{{ route('rooms.index') }}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle"></i> Clear All
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </form>
+
+                <!-- Active Filters Display -->
+                @if (request()->hasAny(['search', 'category', 'min_price', 'max_price', 'capacity', 'children', 'amenities', 'sort_by']))
+                    <div class="active-filters mt-3">
+                        <span class="badge bg-secondary me-2">Active Filters:</span>
+                        @if (request('search'))
+                            <span class="badge bg-primary me-1">Search: {{ request('search') }}</span>
+                        @endif
+                        @if (request('category'))
+                            <span class="badge bg-primary me-1">Category:
+                                {{ $categories->find(request('category'))->name ?? 'N/A' }}</span>
+                        @endif
+                        @if (request('min_price'))
+                            <span class="badge bg-primary me-1">Min Price:
+                                {{ currency_format(request('min_price')) }}</span>
+                        @endif
+                        @if (request('max_price'))
+                            <span class="badge bg-primary me-1">Max Price:
+                                {{ currency_format(request('max_price')) }}</span>
+                        @endif
+                        @if (request('capacity'))
+                            <span class="badge bg-primary me-1">Adults: {{ request('capacity') }}+</span>
+                        @endif
+                        @if (request('children'))
+                            <span class="badge bg-primary me-1">Children: {{ request('children') }}+</span>
+                        @endif
+                        @if (request('amenities'))
+                            <span class="badge bg-primary me-1">Amenities: {{ count(request('amenities')) }}
+                                selected</span>
+                        @endif
+                        <a href="{{ route('rooms.index') }}" class="badge bg-danger text-decoration-none">
+                            <i class="bi bi-x"></i> Clear All
+                        </a>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
+
+    <style>
+        .advanced-filters {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .amenities-filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+
+        .form-check {
+            margin-bottom: 0;
+        }
+
+        .active-filters {
+            padding: 10px;
+            background: #fff;
+            border-radius: 5px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .filter-input-wrap h6 {
+            color: #333;
+            font-size: 1.2rem;
+        }
+
+        .single-search-box input,
+        .single-search-box select {
+            border: 0px;
+            border-radius: 5px;
+        }
+
+        .single-search-box input:focus,
+        .single-search-box select:focus {
+            border-color: #0066cc;
+            box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.25);
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleBtn = document.getElementById('toggleAdvancedFilters');
+            const advancedFilters = document.getElementById('advancedFilters');
+
+            toggleBtn.addEventListener('click', function() {
+                if (advancedFilters.style.display === 'none') {
+                    advancedFilters.style.display = 'block';
+                    toggleBtn.innerHTML = '<i class="bi bi-funnel-fill"></i> Hide Advanced Filters';
+                } else {
+                    advancedFilters.style.display = 'none';
+                    toggleBtn.innerHTML = '<i class="bi bi-funnel"></i> Advanced Filters';
+                }
+            });
+
+            // Auto-expand if advanced filters are active
+            const hasAdvancedFilters =
+                {{ request()->hasAny(['capacity', 'children', 'amenities']) ? 'true' : 'false' }};
+            if (hasAdvancedFilters) {
+                advancedFilters.style.display = 'block';
+                toggleBtn.innerHTML = '<i class="bi bi-funnel-fill"></i> Hide Advanced Filters';
+            }
+        });
+    </script>
 
     <!-- Rooms Grid Section -->
     <div class="package-grid-section pt-50 pb-100">
