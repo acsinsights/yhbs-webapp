@@ -19,12 +19,14 @@ new class extends Component {
 
     public bool $createModal = false;
     public string $name = '';
+    public string $house_number = '';
 
-    // Create house with just name
+    // Create house with name and house_number
     public function createHouse(): void
     {
         $this->validate([
             'name' => 'required|string|max:255|unique:houses,name',
+            'house_number' => 'nullable|string|max:255|unique:houses,house_number',
         ]);
 
         $slug = Str::slug($this->name);
@@ -40,23 +42,35 @@ new class extends Component {
         $house = House::create([
             'name' => $this->name,
             'slug' => $slug,
+            'house_number' => $this->house_number ?: null,
+            'is_active' => false,
         ]);
 
         $this->createModal = false;
-        $this->reset('name');
+        $this->reset('name', 'house_number');
         $this->success('House created successfully.', redirectTo: route('admin.houses.edit', $house));
+    }
+
+    public function toggleActive($id): void
+    {
+        $house = House::findOrFail($id);
+        $house->update(['is_active' => !$house->is_active]);
+        $this->success('Status updated successfully.');
     }
 
     public function rendering(View $view)
     {
         $view->houses = House::query()
             ->when($this->search, function ($query) {
-                $query->where('name', 'like', "%{$this->search}%")->orWhere('slug', 'like', "%{$this->search}%");
+                $query
+                    ->where('name', 'like', "%{$this->search}%")
+                    ->orWhere('slug', 'like', "%{$this->search}%")
+                    ->orWhere('house_number', 'like', "%{$this->search}%");
             })
             ->orderBy(...array_values($this->sortBy))
             ->paginate($this->perPage);
 
-        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'name', 'label' => 'Name', 'sortable' => true], ['key' => 'slug', 'label' => 'Slug', 'sortable' => true], ['key' => 'image', 'label' => 'Image', 'sortable' => false], ['key' => 'description', 'label' => 'Description', 'sortable' => false]];
+        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'image', 'label' => 'Image', 'sortable' => false], ['key' => 'name', 'label' => 'Name'], ['key' => 'house_number', 'label' => 'House Number'], ['key' => 'description', 'label' => 'Description', 'sortable' => false]];
     }
 }; ?>
 
@@ -82,20 +96,13 @@ new class extends Component {
 
         <x-slot:actions>
             <x-input icon="o-magnifying-glass" placeholder="Search..." wire:model.live.debounce="search" clearable />
-            <x-button icon="o-funnel" tooltip-left="Filters" class="btn-info" responsive />
+            <x-button icon="o-plus" class="btn-primary" tooltip="Add House" @click="$wire.createModal = true" />
         </x-slot:actions>
     </x-header>
 
     <x-card shadow>
         <x-table :headers="$headers" :rows="$houses" :sort-by="$sortBy" with-pagination per-page="perPage"
             :per-page-values="[10, 25, 50, 100]">
-            @scope('cell_name', $house)
-                <x-badge :value="$house->name" class="badge-soft badge-primary" />
-            @endscope
-
-            @scope('cell_slug', $house)
-                <code class="text-xs bg-base-200 px-2 py-1 rounded">{{ $house->slug }}</code>
-            @endscope
 
             @scope('cell_image', $house)
                 @if ($house->image)
@@ -107,9 +114,21 @@ new class extends Component {
                 @endif
             @endscope
 
+            @scope('cell_name', $house)
+                <x-badge :value="$house->name" class="badge-soft badge-primary" />
+            @endscope
+
+            @scope('cell_house_number', $house)
+                @if ($house->house_number)
+                    <code class="text-xs bg-base-200 px-2 py-1 rounded">{{ $house->house_number }}</code>
+                @else
+                    <span class="text-base-content/50">—</span>
+                @endif
+            @endscope
+
             @scope('cell_description', $house)
                 <div class="max-w-md">
-                    <p class="text-sm line-clamp-2">{{ Str::limit($house->description ?? 'No description', 100) }}</p>
+                    <div class="text-sm line-clamp-2">{!! Str::limit($house->description ?? 'No description', 60) !!}</div>
                 </div>
             @endscope
 
@@ -134,6 +153,9 @@ new class extends Component {
             <div class="space-y-4">
                 <x-input wire:model="name" label="House Name" placeholder="Enter house name" icon="o-tag"
                     hint="The slug will be auto-generated from the name" />
+
+                <x-input wire:model="house_number" label="House Number" placeholder="Enter house number"
+                    icon="o-hashtag" hint="Optional unique house number" />
             </div>
 
             <x-slot:actions>

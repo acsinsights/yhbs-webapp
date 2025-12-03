@@ -82,7 +82,7 @@ new class extends Component {
         @if (!empty($slides))
             <x-carousel :slides="$slides" />
         @else
-            <div class="aspect-video rounded-lg overflow-hidden bg-base-200 flex items-center justify-center">
+            <div class="rounded-lg overflow-hidden bg-base-200 flex items-center justify-center h-96">
                 <div class="text-center text-base-content/50">
                     <x-icon name="o-photo" class="w-16 h-16 mx-auto mb-2" />
                     <p class="text-sm">No images available</p>
@@ -100,7 +100,7 @@ new class extends Component {
                 </div>
                 <div>
                     <p class="text-xs text-base-content/60 uppercase tracking-wide">Slug</p>
-                    <code class="text-sm break-all">{{ $hotel->slug }}</code>
+                    <code class="text-sm break-all">{{ $house->slug }}</code>
                 </div>
             </div>
         </x-card>
@@ -112,7 +112,7 @@ new class extends Component {
                 </div>
                 <div>
                     <p class="text-xs text-base-content/60 uppercase tracking-wide">ID</p>
-                    <p class="font-semibold text-sm font-mono">#{{ $hotel->id }}</p>
+                    <p class="font-semibold text-sm font-mono">#{{ $house->id }}</p>
                 </div>
             </div>
         </x-card>
@@ -136,7 +136,7 @@ new class extends Component {
                 </div>
                 <div>
                     <p class="text-xs text-base-content/60 uppercase tracking-wide">Created</p>
-                    <p class="font-semibold text-sm">{{ $house->created_at->format('M d, Y') }}</p>
+                    <p class="font-semibold text-sm">{{ $house->created_at->format('M d, Y g:i A') }}</p>
                 </div>
             </div>
         </x-card>
@@ -149,7 +149,10 @@ new class extends Component {
                 <x-icon name="o-document-text" class="w-5 h-5" />
                 <span>Description</span>
             </x-slot:title>
-            <p class="text-base-content/80 whitespace-pre-line">{{ $house->description }}</p>
+
+            <div class="text-base-content/80 whitespace-pre-line">
+                {!! $house->description !!}
+            </div>
         </x-card>
     @endif
 
@@ -196,7 +199,7 @@ new class extends Component {
                             <p class="text-xs text-base-content/50">{{ $house->created_at->format('h:i A') }}</p>
                         </div>
                         <div class="p-3 rounded-lg bg-base-200/50">
-                            <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Updated</p>
+                            <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Last Updated</p>
                             <p class="text-sm font-semibold">{{ $house->updated_at->format('M d, Y') }}</p>
                             <p class="text-xs text-base-content/50">{{ $house->updated_at->format('h:i A') }}</p>
                         </div>

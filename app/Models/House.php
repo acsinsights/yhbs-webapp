@@ -11,6 +11,8 @@ class House extends Model
     protected $fillable = [
         'name',
         'slug',
+        'house_number',
+        'is_active',
         'image',
         'description',
         'library',

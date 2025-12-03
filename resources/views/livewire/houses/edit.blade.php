@@ -16,6 +16,8 @@ new class extends Component {
 
     public string $name = '';
     public string $slug = '';
+    public string $house_number = '';
+    public bool $is_active = false;
     public ?UploadedFile $image = null;
     public ?string $existing_image = null;
     public ?string $description = null;
@@ -39,17 +41,21 @@ new class extends Component {
         $this->house = $house;
         $this->name = $house->name;
         $this->slug = $house->slug;
+        $this->house_number = $house->house_number ?? '';
+        $this->is_active = $house->is_active ?? false;
         $this->existing_image = $house->image;
         $this->image = null; // Keep null for file upload, use existing_image for display
         $this->description = $house->description;
         $this->library = $house->library ?? new Collection();
     }
-
+    
     public function update(): void
     {
         $this->validate([
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:houses,slug,' . $this->house->id,
+            'house_number' => 'nullable|string|max:255|unique:houses,house_number,' . $this->house->id,
+            'is_active' => 'boolean',
             'image' => 'nullable|image|max:5000',
             'files.*' => 'image|max:5000',
             'description' => 'nullable|string',
@@ -66,6 +72,8 @@ new class extends Component {
         $this->house->update([
             'name' => $this->name,
             'slug' => Str::slug($this->slug),
+            'house_number' => $this->house_number ?: null,
+            'is_active' => $this->is_active,
             'image' => $imagePath,
             'description' => $this->description,
         ]);
@@ -120,6 +128,14 @@ new class extends Component {
 
                 <x-input wire:model="slug" label="Slug" placeholder="house-slug" icon="o-link"
                     hint="URL-friendly version of the name" />
+
+                <x-input wire:model="house_number" label="House Number" placeholder="Enter house number"
+                    icon="o-hashtag" hint="Optional unique house number" />
+
+                <div>
+                    <label class="block text-sm font-medium mb-2">Active Status</label>
+                    <x-toggle wire:model="is_active" label="Active" hint="Toggle to activate/deactivate this house" />
+                </div>
 
                 <x-file wire:model="image" label="House Image" placeholder="Upload house image" crop-after-change
                     :crop-config="$config2" hint="Max: 5MB">

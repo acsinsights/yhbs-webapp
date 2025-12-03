@@ -16,6 +16,8 @@ return new class extends Migration
 
             $table->string('name');
             $table->string('slug')->unique();
+            $table->string('house_number')->unique()->nullable();
+            $table->boolean('is_active')->default(false);
             $table->string('image')->nullable();
             $table->text('description')->nullable();
             $table->json('library')->nullable();
