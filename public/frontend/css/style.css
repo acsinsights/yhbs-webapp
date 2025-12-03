@@ -42902,6 +42902,11 @@ header.style-3.two .main-menu>ul>li.active>a i {
 .user-menu-dropdown:hover .user-dropdown-menu {
   display: block !important;
 }
+ 
+.batch-success span {
+    background-color: #10b981 !important;
+    color: #ffffff !important;
+}
 
 /* Fix: Ensure menu is visible on all screen sizes for style-2 header */
 @media (min-width: 1200px) {

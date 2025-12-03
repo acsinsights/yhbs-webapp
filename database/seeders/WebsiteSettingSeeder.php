@@ -34,13 +34,13 @@ class WebsiteSettingSeeder extends Seeder
             [
                 'name' => 'Currency Symbol',
                 'key' => 'currency_symbol',
-                'value' => '$',
+                'value' => 'KWD',
                 'type' => 'text',
             ],
             [
                 'name' => 'Currency Name',
                 'key' => 'currency_name',
-                'value' => 'USD',
+                'value' => 'Kuwaiti Dinar',
                 'type' => 'text',
             ],
         ];

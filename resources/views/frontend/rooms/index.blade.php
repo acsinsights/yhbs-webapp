@@ -81,7 +81,7 @@
                                                 @endif
                                             </a>
                                             @if ($room->is_active)
-                                                <div class="batch">
+                                                <div class="batch batch-success">
                                                     <span>Available</span>
                                                 </div>
                                             @endif
@@ -90,7 +90,7 @@
                                             <div class="rating-area mb-2">
                                                 @if ($room->categories->first())
                                                     <span
-                                                        class="badge bg-primary">{{ $room->categories->first()->name }}</span>
+                                                        class="badge bg-primary text-white">{{ $room->categories->first()->name }}</span>
                                                 @endif
                                             </div>
                                             <h5><a href="{{ route('rooms.show', $room->id) }}">{{ $room->name }}</a>

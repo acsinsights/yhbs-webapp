@@ -74,10 +74,32 @@
                             <h4>Room Details</h4>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <strong>Capacity:</strong> {{ $room->adults ?? 0 }} guests
+                                    <strong><i class="bi bi-hash me-2"></i>Room Number:</strong> {{ $room->room_number }}
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <strong>Status:</strong>
+                                    <strong><i class="bi bi-building me-2"></i>Property:</strong>
+                                    {{ $room->house->name ?? 'N/A' }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <strong><i class="bi bi-people me-2"></i>Adults:</strong> {{ $room->adults ?? 0 }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <strong><i class="bi bi-person me-2"></i>Children:</strong> {{ $room->children ?? 0 }}
+                                </div>
+                                @if ($room->price_per_night)
+                                    <div class="col-md-6 mb-3">
+                                        <strong><i class="bi bi-cash me-2"></i>Price per Night:</strong>
+                                        {{ currency_format($room->price_per_night) }}
+                                    </div>
+                                @endif
+                                @if ($room->discount_price)
+                                    <div class="col-md-6 mb-3">
+                                        <strong><i class="bi bi-tag-fill me-2"></i>Discount Price:</strong>
+                                        <span class="text-success">{{ currency_format($room->discount_price) }}</span>
+                                    </div>
+                                @endif
+                                <div class="col-md-6 mb-3">
+                                    <strong><i class="bi bi-check-circle me-2"></i>Status:</strong>
                                     <span class="badge {{ $room->is_active ? 'bg-success' : 'bg-danger' }}">
                                         {{ $room->is_active ? 'Available' : 'Not Available' }}
                                     </span>
@@ -139,10 +161,98 @@
                             </div>
 
                             @if ($room->is_active)
-                                <a href="{{ route('checkout') }}?type=room&id={{ $room->id }}"
-                                    class="primary-btn1 w-100">
-                                    <span>Book Now</span>
-                                </a>
+                                <form action="{{ route('checkout') }}" method="GET" id="roomBookingForm">
+                                    <input type="hidden" name="type" value="room">
+                                    <input type="hidden" name="id" value="{{ $room->id }}">
+
+                                    <!-- Check-in Date -->
+                                    <div class="mb-3">
+                                        <label class="form-label"><i class="bi bi-calendar-check me-2"></i>Check-in</label>
+                                        <input type="date" name="check_in" class="form-control" required
+                                            min="{{ date('Y-m-d') }}" id="checkInDate">
+                                    </div>
+
+                                    <!-- Check-out Date -->
+                                    <div class="mb-3">
+                                        <label class="form-label"><i class="bi bi-calendar-x me-2"></i>Check-out</label>
+                                        <input type="date" name="check_out" class="form-control" required
+                                            min="{{ date('Y-m-d', strtotime('+1 day')) }}" id="checkOutDate">
+                                    </div>
+
+                                    <!-- Adults -->
+                                    <div class="mb-3">
+                                        <label class="form-label"><i class="bi bi-people me-2"></i>Adults</label>
+                                        <input type="number" name="adults" class="form-control" min="1"
+                                            max="{{ $room->adults ?? 1 }}" value="1" required id="adultsInput">
+                                        <small class="text-muted">Max: {{ $room->adults ?? 1 }} adults</small>
+                                    </div>
+
+                                    <!-- Children -->
+                                    <div class="mb-3">
+                                        <label class="form-label"><i class="bi bi-person me-2"></i>Children</label>
+                                        <input type="number" name="children" class="form-control" min="0"
+                                            max="{{ $room->children ?? 0 }}" value="0" id="childrenInput">
+                                        <small class="text-muted">Max: {{ $room->children ?? 0 }} children</small>
+                                    </div>
+
+                                    <!-- Validation Alert -->
+                                    <div class="alert alert-warning d-none" id="capacityAlert">
+                                        <small><i class="bi bi-exclamation-triangle me-2"></i>Guest capacity
+                                            exceeded!</small>
+                                    </div>
+
+                                    <button type="submit" class="primary-btn1 w-100">
+                                        <span>Book Now</span>
+                                    </button>
+                                </form>
+
+                                <script>
+                                    document.addEventListener('DOMContentLoaded', function() {
+                                        const checkInDate = document.getElementById('checkInDate');
+                                        const checkOutDate = document.getElementById('checkOutDate');
+                                        const adultsInput = document.getElementById('adultsInput');
+                                        const childrenInput = document.getElementById('childrenInput');
+                                        const capacityAlert = document.getElementById('capacityAlert');
+                                        const form = document.getElementById('roomBookingForm');
+
+                                        const maxAdults = {{ $room->adults ?? 1 }};
+                                        const maxChildren = {{ $room->children ?? 0 }};
+
+                                        // Update check-out min date when check-in changes
+                                        checkInDate.addEventListener('change', function() {
+                                            const minCheckOut = new Date(this.value);
+                                            minCheckOut.setDate(minCheckOut.getDate() + 1);
+                                            checkOutDate.min = minCheckOut.toISOString().split('T')[0];
+                                            if (checkOutDate.value && checkOutDate.value <= this.value) {
+                                                checkOutDate.value = '';
+                                            }
+                                        });
+
+                                        // Validate guest capacity
+                                        function validateCapacity() {
+                                            const adults = parseInt(adultsInput.value) || 0;
+                                            const children = parseInt(childrenInput.value) || 0;
+
+                                            if (adults > maxAdults || children > maxChildren) {
+                                                capacityAlert.classList.remove('d-none');
+                                                return false;
+                                            } else {
+                                                capacityAlert.classList.add('d-none');
+                                                return true;
+                                            }
+                                        }
+
+                                        adultsInput.addEventListener('input', validateCapacity);
+                                        childrenInput.addEventListener('input', validateCapacity);
+
+                                        form.addEventListener('submit', function(e) {
+                                            if (!validateCapacity()) {
+                                                e.preventDefault();
+                                                alert('Please ensure guest numbers are within the allowed capacity.');
+                                            }
+                                        });
+                                    });
+                                </script>
                             @else
                                 <button class="btn btn-secondary w-100" disabled>Not Available</button>
                             @endif
@@ -153,13 +263,32 @@
                             <h5 class="mb-3">Quick Info</h5>
                             <ul class="list-unstyled">
                                 <li class="mb-2">
+                                    <i class="bi bi-hash me-2"></i>
+                                    <strong>Room:</strong> {{ $room->room_number }}
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-building me-2"></i>
+                                    <strong>Property:</strong> {{ $room->house->name ?? 'N/A' }}
+                                </li>
+                                <li class="mb-2">
                                     <i class="bi bi-people me-2"></i>
-                                    <strong>Capacity:</strong> {{ $room->adults ?? 0 }} guests
+                                    <strong>Adults:</strong> {{ $room->adults ?? 0 }}
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-person me-2"></i>
+                                    <strong>Children:</strong> {{ $room->children ?? 0 }}
                                 </li>
                                 @if ($room->categories->first())
                                     <li class="mb-2">
                                         <i class="bi bi-tag me-2"></i>
                                         <strong>Category:</strong> {{ $room->categories->first()->name }}
+                                    </li>
+                                @endif
+                                @if ($room->discount_price)
+                                    <li class="mb-2">
+                                        <i class="bi bi-tag-fill me-2"></i>
+                                        <strong>Discount:</strong> <span
+                                            class="text-success">{{ currency_format($room->discount_price) }}</span>
                                     </li>
                                 @endif
                                 <li class="mb-2">
