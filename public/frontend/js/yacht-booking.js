@@ -29,7 +29,9 @@ document.addEventListener('DOMContentLoaded', function () {
         dateRangePicker = flatpickr(dateRangeInput, {
             mode: 'range',
             minDate: 'today',
-            dateFormat: 'Y-m-d',
+            dateFormat: 'd-m-Y',
+            altInput: true,
+            altFormat: 'd-m-Y',
             locale: {
                 rangeSeparator: ' to '
             },
