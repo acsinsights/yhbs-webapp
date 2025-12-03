@@ -14,14 +14,22 @@ class Booking extends Model
         'user_id',
         'adults',
         'children',
+        'guest_details',
         'check_in',
         'check_out',
+        'arrival_time',
         'price',
         'discount_price',
         'status',
         'payment_status',
         'payment_method',
         'notes',
+    ];
+
+    protected $casts = [
+        'guest_details' => 'array',
+        'check_in' => 'datetime',
+        'check_out' => 'datetime',
     ];
     /**
      * Get the parent bookingable model (room or yatch).

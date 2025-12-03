@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const availabilityMessage = document.getElementById('yachtAvailabilityMessage');
     const availabilityText = document.getElementById('yachtAvailabilityText');
     const form = document.getElementById('yachtBookingForm');
+    const guestDetailsContainer = document.getElementById('yachtGuestDetailsContainer');
+    const guestNamesList = document.getElementById('yachtGuestNamesList');
 
     if (!dateRangeInput || !startInput || !endInput) {
         return; // Exit if elements don't exist
@@ -120,8 +122,46 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    if (guestsInput) guestsInput.addEventListener('input', validateCapacity);
-    if (crewInput) crewInput.addEventListener('input', validateCapacity);
+    // Generate guest name input fields
+    function generateGuestFields() {
+        const guests = parseInt(guestsInput?.value) || 0;
+
+        if (guests > 0 && guestNamesList) {
+            guestDetailsContainer.style.display = 'block';
+            guestNamesList.innerHTML = '';
+
+            // Add input fields for each guest
+            for (let i = 1; i <= guests; i++) {
+                const inputGroup = document.createElement('div');
+                inputGroup.className = 'mb-2';
+                inputGroup.innerHTML = `
+                    <input type="text"
+                        name="guest_names[]"
+                        class="form-control"
+                        placeholder="Guest ${i} - Full Name"
+                        required>
+                `;
+                guestNamesList.appendChild(inputGroup);
+            }
+        } else {
+            guestDetailsContainer.style.display = 'none';
+            guestNamesList.innerHTML = '';
+        }
+    }
+
+    if (guestsInput) {
+        guestsInput.addEventListener('input', function () {
+            validateCapacity();
+            generateGuestFields();
+        });
+    }
+
+    if (crewInput) {
+        crewInput.addEventListener('input', validateCapacity);
+    }
+
+    // Initial guest fields generation
+    generateGuestFields();
 
     if (form) {
         form.addEventListener('submit', function (e) {

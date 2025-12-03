@@ -43,15 +43,65 @@ Route::prefix('customer')->name('customer.')->group(function () {
 
 // Booking Routes (accessible to guests and authenticated users)
 Route::get('/checkout', function () {
+    // Get booking data from request
+    $guestNames = request('guest_names', []);
+    $arrivalTime = request('arrival_time');
+    $type = request('type', 'room');
+    $id = request('id');
+
+    // Fetch property details based on type
+    $propertyImage = null;
+    $propertyName = 'Property';
+    $location = 'Location';
+    $price = 150;
+
+    if ($type === 'room' && $id) {
+        $room = \App\Models\Room::with('house')->find($id);
+        if ($room) {
+            if ($room->image) {
+                if (str_starts_with($room->image, '/default')) {
+                    $propertyImage = asset($room->image);
+                } else {
+                    $propertyImage = asset('storage/' . $room->image);
+                }
+            }
+            $propertyName = $room->name;
+            $location = $room->house->name ?? 'N/A';
+            $price = $room->price;
+        }
+    } elseif ($type === 'yacht' && $id) {
+        $yacht = \App\Models\Yatch::find($id);
+        if ($yacht) {
+            if ($yacht->image) {
+                if (str_starts_with($yacht->image, '/default')) {
+                    $propertyImage = asset($yacht->image);
+                } else {
+                    $propertyImage = asset('storage/' . $yacht->image);
+                }
+            }
+            $propertyName = $yacht->name;
+            $location = $yacht->location ?? 'N/A';
+            $price = $yacht->price;
+        }
+    }
+
+    // If no image found, use default
+    if (!$propertyImage) {
+        $propertyImage = asset('frontend/assets/img/innerpages/hotel-img1.jpg');
+    }
+
     $booking = (object) [
-        'property_image' => null,
-        'property_name' => 'Sample Property',
-        'location' => 'Sample Location',
-        'check_in' => date('Y-m-d'),
-        'check_out' => date('Y-m-d', strtotime('+3 days')),
+        'property_image' => $propertyImage,
+        'property_name' => $propertyName,
+        'location' => $location,
+        'check_in' => request('check_in', date('Y-m-d')),
+        'check_out' => request('check_out', date('Y-m-d', strtotime('+3 days'))),
+        'arrival_time' => $arrivalTime,
         'nights' => 3,
-        'guests' => 2,
-        'price_per_night' => 150,
+        'guests' => request('adults', 2),
+        'children' => request('children', 0),
+        'guest_names' => $guestNames,
+        'price_per_night' => $price,
         'service_fee' => 15,
         'tax' => 20,
         'total' => 485,

@@ -198,6 +198,22 @@
                                         <small class="text-muted">Max: {{ $room->children ?? 0 }} children</small>
                                     </div>
 
+                                    <!-- Arrival Time -->
+                                    <div class="mb-3">
+                                        <label class="form-label"><i class="bi bi-clock me-2"></i>Expected Arrival
+                                            Time</label>
+                                        <input type="time" name="arrival_time" class="form-control" required>
+                                        <small class="text-muted">Please select your expected check-in time</small>
+                                    </div>
+
+                                    <!-- Guest Details Container -->
+                                    <div class="mb-3" id="guestDetailsContainer" style="display: none;">
+                                        <label class="form-label"><i class="bi bi-person-lines-fill me-2"></i>Guest
+                                            Names</label>
+                                        <div id="guestNamesList"></div>
+                                        <small class="text-muted">Please provide the names of all guests</small>
+                                    </div>
+
                                     <!-- Validation Alert -->
                                     <div class="alert alert-warning d-none" id="capacityAlert">
                                         <small><i class="bi bi-exclamation-triangle me-2"></i>Guest capacity

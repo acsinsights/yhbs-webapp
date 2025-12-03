@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const availabilityMessage = document.getElementById('availabilityMessage');
     const availabilityText = document.getElementById('availabilityText');
     const form = document.getElementById('roomBookingForm');
+    const guestDetailsContainer = document.getElementById('guestDetailsContainer');
+    const guestNamesList = document.getElementById('guestNamesList');
 
     if (!dateRangeInput || !checkInInput || !checkOutInput) {
         return; // Exit if elements don't exist
@@ -118,8 +120,54 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    if (adultsInput) adultsInput.addEventListener('input', validateCapacity);
-    if (childrenInput) childrenInput.addEventListener('input', validateCapacity);
+    // Generate guest name input fields
+    function generateGuestFields() {
+        const adults = parseInt(adultsInput?.value) || 0;
+        const children = parseInt(childrenInput?.value) || 0;
+        const totalGuests = adults + children;
+
+        if (totalGuests > 0 && guestNamesList) {
+            guestDetailsContainer.style.display = 'block';
+            guestNamesList.innerHTML = '';
+
+            // Add input fields for each guest
+            for (let i = 1; i <= totalGuests; i++) {
+                const guestType = i <= adults ? 'Adult' : 'Child';
+                const guestNumber = i <= adults ? i : i - adults;
+
+                const inputGroup = document.createElement('div');
+                inputGroup.className = 'mb-2';
+                inputGroup.innerHTML = `
+                    <input type="text"
+                        name="guest_names[]"
+                        class="form-control"
+                        placeholder="${guestType} ${guestNumber} - Full Name"
+                        required>
+                `;
+                guestNamesList.appendChild(inputGroup);
+            }
+        } else {
+            guestDetailsContainer.style.display = 'none';
+            guestNamesList.innerHTML = '';
+        }
+    }
+
+    if (adultsInput) {
+        adultsInput.addEventListener('input', function () {
+            validateCapacity();
+            generateGuestFields();
+        });
+    }
+
+    if (childrenInput) {
+        childrenInput.addEventListener('input', function () {
+            validateCapacity();
+            generateGuestFields();
+        });
+    }
+
+    // Initial guest fields generation
+    generateGuestFields();
 
     if (form) {
         form.addEventListener('submit', function (e) {

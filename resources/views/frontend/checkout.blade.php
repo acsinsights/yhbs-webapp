@@ -92,6 +92,42 @@
                                     placeholder="Early check-in, late check-out, dietary requirements, etc.">{{ old('special_requests') }}</textarea>
                             </div>
                         </div>
+
+                        <!-- Arrival Time & Guest Details -->
+                        @if (isset($booking->arrival_time) || (isset($booking->guest_names) && count($booking->guest_names) > 0))
+                            <div class="checkout-card mt-4">
+                                <div class="card-header">
+                                    <h4><i class="bi bi-clock-history me-2"></i>Booking Details</h4>
+                                </div>
+                                <div class="card-body">
+                                    @if (isset($booking->arrival_time))
+                                        <div class="mb-3">
+                                            <label class="form-label"><i class="bi bi-clock me-2"></i>Expected Arrival
+                                                Time</label>
+                                            <input type="time" name="arrival_time" class="form-control"
+                                                value="{{ $booking->arrival_time }}" readonly>
+                                        </div>
+                                    @endif
+
+                                    @if (isset($booking->guest_names) && count($booking->guest_names) > 0)
+                                        <div class="mb-0">
+                                            <label class="form-label"><i class="bi bi-person-lines-fill me-2"></i>Guest
+                                                Names</label>
+                                            <div class="guest-names-list">
+                                                @foreach ($booking->guest_names as $index => $guestName)
+                                                    <div class="guest-name-item mb-2">
+                                                        <input type="text" name="guest_names[]" class="form-control"
+                                                            value="{{ $guestName }}" readonly>
+                                                        <input type="hidden" name="guest_names_hidden[]"
+                                                            value="{{ $guestName }}">
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
                     </div>
 
                     <!-- Right Side - Booking Summary -->
@@ -129,6 +165,16 @@
                                                 {{ $booking->check_out ?? 'N/A' }}
                                             </div>
                                         </div>
+                                        @if (isset($booking->arrival_time))
+                                            <div class="detail-row">
+                                                <div class="detail-label">
+                                                    <i class="bi bi-clock me-2"></i>Arrival Time
+                                                </div>
+                                                <div class="detail-value">
+                                                    {{ \Carbon\Carbon::parse($booking->arrival_time)->format('h:i A') }}
+                                                </div>
+                                            </div>
+                                        @endif
                                         <div class="detail-row">
                                             <div class="detail-label">
                                                 <i class="bi bi-moon me-2"></i>Nights
@@ -143,8 +189,21 @@
                                             </div>
                                             <div class="detail-value">
                                                 {{ $booking->guests ?? '2' }} Adults
+                                                @if (isset($booking->children) && $booking->children > 0)
+                                                    , {{ $booking->children }} Children
+                                                @endif
                                             </div>
                                         </div>
+                                        @if (isset($booking->guest_names) && count($booking->guest_names) > 0)
+                                            <div class="detail-row">
+                                                <div class="detail-label">
+                                                    <i class="bi bi-person-lines-fill me-2"></i>Total Guests
+                                                </div>
+                                                <div class="detail-value">
+                                                    {{ count($booking->guest_names) }} Persons
+                                                </div>
+                                            </div>
+                                        @endif
                                     </div>
 
                                     <div class="divider"></div>
