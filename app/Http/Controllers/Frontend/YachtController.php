@@ -69,6 +69,27 @@ class YachtController extends Controller
             ->take(3)
             ->get();
 
-        return view('frontend.yachts.show', compact('yacht', 'similarYachts'));
+        // Get booked dates for this yacht
+        $bookedDates = \App\Models\Booking::where('bookingable_type', Yatch::class)
+            ->where('bookingable_id', $id)
+            ->whereIn('status', ['pending', 'booked', 'checked_in'])
+            ->get(['check_in', 'check_out'])
+            ->flatMap(function ($booking) {
+                $dates = [];
+                $checkIn = new \DateTime($booking->check_in);
+                $checkOut = new \DateTime($booking->check_out);
+
+                while ($checkIn < $checkOut) {
+                    $dates[] = $checkIn->format('Y-m-d');
+                    $checkIn->modify('+1 day');
+                }
+
+                return $dates;
+            })
+            ->unique()
+            ->values()
+            ->toArray();
+
+        return view('frontend.yachts.show', compact('yacht', 'similarYachts', 'bookedDates'));
     }
 }

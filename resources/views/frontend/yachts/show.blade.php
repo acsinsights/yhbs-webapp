@@ -177,48 +177,53 @@
                                 <input type="hidden" name="type" value="yacht">
                                 <input type="hidden" name="id" value="{{ $yacht->id }}">
 
-                                <!-- Start Date -->
+                                <!-- Date Range Picker -->
                                 <div class="mb-3">
-                                    <label class="form-label"><i class="bi bi-calendar-check me-2"></i>Start Date</label>
-                                    <input type="date" name="check_in" class="form-control" required
-                                           min="{{ date('Y-m-d') }}" id="startDate">
+                                    <label class="form-label"><i class="bi bi-calendar-range me-2"></i>Select Dates (Start
+                                        to End)</label>
+                                    <input type="text" name="date_range" class="form-control" required
+                                        placeholder="Select start and end dates" id="yachtDateRangePicker" readonly>
+                                    <input type="hidden" name="check_in" id="startDate">
+                                    <input type="hidden" name="check_out" id="endDate">
                                 </div>
 
-                                <!-- End Date -->
-                                <div class="mb-3">
-                                    <label class="form-label"><i class="bi bi-calendar-x me-2"></i>End Date</label>
-                                    <input type="date" name="check_out" class="form-control" required
-                                           min="{{ date('Y-m-d', strtotime('+1 day')) }}" id="endDate">
+                                <!-- Availability Message -->
+                                <div class="alert alert-info d-none" id="yachtAvailabilityMessage">
+                                    <small><i class="bi bi-info-circle me-2"></i><span
+                                            id="yachtAvailabilityText"></span></small>
                                 </div>
 
                                 <!-- Guests -->
                                 <div class="mb-3">
                                     <label class="form-label"><i class="bi bi-people me-2"></i>Guests</label>
-                                    <input type="number" name="guests" class="form-control"
-                                           min="1" max="{{ $yacht->max_guests ?? 1 }}" value="1" required id="guestsInput">
+                                    <input type="number" name="guests" class="form-control" min="1"
+                                        max="{{ $yacht->max_guests ?? 1 }}" value="1" required id="guestsInput">
                                     <small class="text-muted">Max: {{ $yacht->max_guests ?? 1 }} guests</small>
                                 </div>
 
-                                @if($yacht->max_crew)
-                                <!-- Crew Members -->
-                                <div class="mb-3">
-                                    <label class="form-label"><i class="bi bi-person-badge me-2"></i>Crew Members (Optional)</label>
-                                    <input type="number" name="crew" class="form-control"
-                                           min="0" max="{{ $yacht->max_crew }}" value="0" id="crewInput">
-                                    <small class="text-muted">Max: {{ $yacht->max_crew }} crew</small>
-                                </div>
+                                @if ($yacht->max_crew)
+                                    <!-- Crew Members -->
+                                    <div class="mb-3">
+                                        <label class="form-label"><i class="bi bi-person-badge me-2"></i>Crew Members
+                                            (Optional)</label>
+                                        <input type="number" name="crew" class="form-control" min="0"
+                                            max="{{ $yacht->max_crew }}" value="0" id="crewInput">
+                                        <small class="text-muted">Max: {{ $yacht->max_crew }} crew</small>
+                                    </div>
                                 @endif
 
                                 <!-- Total Capacity Alert -->
-                                @if($yacht->max_capacity)
-                                <div class="alert alert-info mb-3">
-                                    <small><i class="bi bi-info-circle me-2"></i>Total capacity: {{ $yacht->max_capacity }} persons (guests + crew)</small>
-                                </div>
+                                @if ($yacht->max_capacity)
+                                    <div class="alert alert-info mb-3">
+                                        <small><i class="bi bi-info-circle me-2"></i>Total capacity:
+                                            {{ $yacht->max_capacity }} persons (guests + crew)</small>
+                                    </div>
                                 @endif
 
                                 <!-- Validation Alert -->
                                 <div class="alert alert-warning d-none" id="yachtCapacityAlert">
-                                    <small><i class="bi bi-exclamation-triangle me-2"></i>Capacity exceeded! Please adjust guest/crew numbers.</small>
+                                    <small><i class="bi bi-exclamation-triangle me-2"></i>Capacity exceeded! Please adjust
+                                        guest/crew numbers.</small>
                                 </div>
 
                                 <button type="submit" class="primary-btn1 w-100">
@@ -226,57 +231,14 @@
                                 </button>
                             </form>
 
-                            <script>
-                                document.addEventListener('DOMContentLoaded', function() {
-                                    const startDate = document.getElementById('startDate');
-                                    const endDate = document.getElementById('endDate');
-                                    const guestsInput = document.getElementById('guestsInput');
-                                    const crewInput = document.getElementById('crewInput');
-                                    const capacityAlert = document.getElementById('yachtCapacityAlert');
-                                    const form = document.getElementById('yachtBookingForm');
+                            <!-- Flatpickr CSS -->
+                            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
-                                    const maxGuests = {{ $yacht->max_guests ?? 1 }};
-                                    const maxCrew = {{ $yacht->max_crew ?? 0 }};
-                                    const maxCapacity = {{ $yacht->max_capacity ?? 999 }};
+                            <!-- Flatpickr JS -->
+                            <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
-                                    // Update end date min when start date changes
-                                    startDate.addEventListener('change', function() {
-                                        const minEnd = new Date(this.value);
-                                        minEnd.setDate(minEnd.getDate() + 1);
-                                        endDate.min = minEnd.toISOString().split('T')[0];
-                                        if (endDate.value && endDate.value <= this.value) {
-                                            endDate.value = '';
-                                        }
-                                    });
-
-                                    // Validate capacity
-                                    function validateCapacity() {
-                                        const guests = parseInt(guestsInput.value) || 0;
-                                        const crew = crewInput ? (parseInt(crewInput.value) || 0) : 0;
-                                        const total = guests + crew;
-
-                                        if (guests > maxGuests || crew > maxCrew || total > maxCapacity) {
-                                            capacityAlert.classList.remove('d-none');
-                                            return false;
-                                        } else {
-                                            capacityAlert.classList.add('d-none');
-                                            return true;
-                                        }
-                                    }
-
-                                    guestsInput.addEventListener('input', validateCapacity);
-                                    if (crewInput) {
-                                        crewInput.addEventListener('input', validateCapacity);
-                                    }
-
-                                    form.addEventListener('submit', function(e) {
-                                        if (!validateCapacity()) {
-                                            e.preventDefault();
-                                            alert('Please ensure guest and crew numbers are within the allowed capacity.');
-                                        }
-                                    });
-                                });
-                            </script>
+                            <!-- Yacht Booking JS -->
+                            <script src="{{ asset('frontend/js/yacht-booking.js') }}"></script>
                         </div>
 
                         <!-- Quick Info -->

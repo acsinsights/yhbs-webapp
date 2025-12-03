@@ -165,18 +165,21 @@
                                     <input type="hidden" name="type" value="room">
                                     <input type="hidden" name="id" value="{{ $room->id }}">
 
-                                    <!-- Check-in Date -->
+                                    <!-- Date Range Picker -->
                                     <div class="mb-3">
-                                        <label class="form-label"><i class="bi bi-calendar-check me-2"></i>Check-in</label>
-                                        <input type="date" name="check_in" class="form-control" required
-                                            min="{{ date('Y-m-d') }}" id="checkInDate">
+                                        <label class="form-label"><i class="bi bi-calendar-range me-2"></i>Select Dates
+                                            (Check-in to Check-out)</label>
+                                        <input type="text" name="date_range" class="form-control" required
+                                            placeholder="Select check-in and check-out dates" id="dateRangePicker"
+                                            data-booked-dates='@json($bookedDates)' readonly>
+                                        <input type="hidden" name="check_in" id="checkInDate">
+                                        <input type="hidden" name="check_out" id="checkOutDate">
                                     </div>
 
-                                    <!-- Check-out Date -->
-                                    <div class="mb-3">
-                                        <label class="form-label"><i class="bi bi-calendar-x me-2"></i>Check-out</label>
-                                        <input type="date" name="check_out" class="form-control" required
-                                            min="{{ date('Y-m-d', strtotime('+1 day')) }}" id="checkOutDate">
+                                    <!-- Availability Message -->
+                                    <div class="alert alert-info d-none" id="availabilityMessage">
+                                        <small><i class="bi bi-info-circle me-2"></i><span
+                                                id="availabilityText"></span></small>
                                     </div>
 
                                     <!-- Adults -->
@@ -206,53 +209,15 @@
                                     </button>
                                 </form>
 
-                                <script>
-                                    document.addEventListener('DOMContentLoaded', function() {
-                                        const checkInDate = document.getElementById('checkInDate');
-                                        const checkOutDate = document.getElementById('checkOutDate');
-                                        const adultsInput = document.getElementById('adultsInput');
-                                        const childrenInput = document.getElementById('childrenInput');
-                                        const capacityAlert = document.getElementById('capacityAlert');
-                                        const form = document.getElementById('roomBookingForm');
+                                <!-- Flatpickr CSS -->
+                                <link rel="stylesheet"
+                                    href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
-                                        const maxAdults = {{ $room->adults ?? 1 }};
-                                        const maxChildren = {{ $room->children ?? 0 }};
+                                <!-- Flatpickr JS -->
+                                <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
-                                        // Update check-out min date when check-in changes
-                                        checkInDate.addEventListener('change', function() {
-                                            const minCheckOut = new Date(this.value);
-                                            minCheckOut.setDate(minCheckOut.getDate() + 1);
-                                            checkOutDate.min = minCheckOut.toISOString().split('T')[0];
-                                            if (checkOutDate.value && checkOutDate.value <= this.value) {
-                                                checkOutDate.value = '';
-                                            }
-                                        });
-
-                                        // Validate guest capacity
-                                        function validateCapacity() {
-                                            const adults = parseInt(adultsInput.value) || 0;
-                                            const children = parseInt(childrenInput.value) || 0;
-
-                                            if (adults > maxAdults || children > maxChildren) {
-                                                capacityAlert.classList.remove('d-none');
-                                                return false;
-                                            } else {
-                                                capacityAlert.classList.add('d-none');
-                                                return true;
-                                            }
-                                        }
-
-                                        adultsInput.addEventListener('input', validateCapacity);
-                                        childrenInput.addEventListener('input', validateCapacity);
-
-                                        form.addEventListener('submit', function(e) {
-                                            if (!validateCapacity()) {
-                                                e.preventDefault();
-                                                alert('Please ensure guest numbers are within the allowed capacity.');
-                                            }
-                                        });
-                                    });
-                                </script>
+                                <!-- Room Booking JS -->
+                                <script src="{{ asset('frontend/js/room-booking.js') }}"></script>
                             @else
                                 <button class="btn btn-secondary w-100" disabled>Not Available</button>
                             @endif

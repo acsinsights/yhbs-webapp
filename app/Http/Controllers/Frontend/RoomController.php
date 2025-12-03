@@ -68,6 +68,27 @@ class RoomController extends Controller
             ->take(3)
             ->get();
 
-        return view('frontend.rooms.show', compact('room', 'similarRooms'));
+        // Get booked dates for this room
+        $bookedDates = \App\Models\Booking::where('bookingable_type', Room::class)
+            ->where('bookingable_id', $id)
+            ->whereIn('status', ['pending', 'booked', 'checked_in'])
+            ->get(['check_in', 'check_out'])
+            ->flatMap(function ($booking) {
+                $dates = [];
+                $checkIn = new \DateTime($booking->check_in);
+                $checkOut = new \DateTime($booking->check_out);
+
+                while ($checkIn < $checkOut) {
+                    $dates[] = $checkIn->format('Y-m-d');
+                    $checkIn->modify('+1 day');
+                }
+
+                return $dates;
+            })
+            ->unique()
+            ->values()
+            ->toArray();
+
+        return view('frontend.rooms.show', compact('room', 'similarRooms', 'bookedDates'));
     }
 }
