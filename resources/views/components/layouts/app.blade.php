@@ -83,7 +83,7 @@
 
                 @role('admin|superadmin')
                     <div class="divider divider-start my-1">
-                        <small class="hidden-when-collapsed">Management</small>
+                        <small class="hidden-when-collapsed">Property Management</small>
                     </div>
                     <x-menu-item title="Houses" icon="o-building-office" link="{{ route('admin.houses.index') }}" />
                     <x-menu-item title="Yachts" icon="o-sparkles" link="{{ route('admin.yatch.index') }}" />
