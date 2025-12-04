@@ -46,7 +46,7 @@ new class extends Component {
         $this->validate([
             'name' => 'required|string|max:255|unique:categories,name',
             'icon' => 'nullable|image|mimes:jpeg,jpg,svg|max:2500',
-            'type' => 'required|in:room,yatch',
+            'type' => 'required|in:room,yacht',
         ]);
 
         $iconPath = null;
@@ -82,7 +82,7 @@ new class extends Component {
         $this->validate([
             'edit_name' => 'required|string|max:255|unique:categories,name,' . $this->editingCategory->id,
             'edit_icon' => 'nullable|image|mimes:jpeg,jpg,svg|max:2500',
-            'edit_type' => 'required|in:room,yatch',
+            'edit_type' => 'required|in:room,yacht',
         ]);
 
         $iconPath = $this->existing_icon;
@@ -198,7 +198,7 @@ new class extends Component {
                 <x-input wire:model="name" label="Category Name" placeholder="Enter category name" icon="o-tag"
                     hint="Unique category name" />
 
-                <x-select wire:model="type" label="Type" placeholder="Select type" :options="[['id' => 'room', 'name' => 'Room'], ['id' => 'yatch', 'name' => 'Yatch']]" option-value="id"
+                <x-select wire:model="type" label="Type" placeholder="Select type" :options="[['id' => 'room', 'name' => 'Room'], ['id' => 'yacht', 'name' => 'Yacht']]" option-value="id"
                     option-label="name" icon="o-squares-2x2" hint="Category type" />
 
                 <x-file wire:model="icon" label="Category Icon" placeholder="Upload category icon" crop-after-change
@@ -226,7 +226,7 @@ new class extends Component {
                 <x-input wire:model="edit_name" label="Category Name" placeholder="Enter category name" icon="o-tag"
                     hint="Unique category name" />
 
-                <x-select wire:model="edit_type" label="Type" placeholder="Select type" :options="[['id' => 'room', 'name' => 'Room'], ['id' => 'yatch', 'name' => 'Yatch']]"
+                <x-select wire:model="edit_type" label="Type" placeholder="Select type" :options="[['id' => 'room', 'name' => 'Room'], ['id' => 'yacht', 'name' => 'Yacht']]"
                     option-value="id" option-label="name" icon="o-squares-2x2" hint="Category type" />
 
                 <x-file wire:model="edit_icon" label="Category Icon" placeholder="Upload category icon"

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
-use App\Models\Yatch;
+use App\Models\Yacht;
 use App\Models\Category;
 use App\Models\Amenity;
 use Illuminate\Http\Request;
@@ -15,7 +15,7 @@ class YachtController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Yatch::with(['categories', 'amenities']);
+        $query = Yacht::with(['categories', 'amenities']);
 
         // Filter by category
         if ($request->filled('category')) {
@@ -58,11 +58,11 @@ class YachtController extends Controller
      */
     public function show($id)
     {
-        $yacht = Yatch::with(['categories', 'amenities'])->findOrFail($id);
+        $yacht = Yacht::with(['categories', 'amenities'])->findOrFail($id);
 
         // Get similar yachts (yachts with similar category)
         $categoryIds = $yacht->categories->pluck('id');
-        $similarYachts = Yatch::whereHas('categories', function ($q) use ($categoryIds) {
+        $similarYachts = Yacht::whereHas('categories', function ($q) use ($categoryIds) {
             $q->whereIn('categories.id', $categoryIds);
         })
             ->where('id', '!=', $yacht->id)
@@ -70,7 +70,7 @@ class YachtController extends Controller
             ->get();
 
         // Get booked dates for this yacht
-        $bookedDates = \App\Models\Booking::where('bookingable_type', Yatch::class)
+        $bookedDates = \App\Models\Booking::where('bookingable_type', Yacht::class)
             ->where('bookingable_id', $id)
             ->whereIn('status', ['pending', 'booked', 'checked_in'])
             ->get(['check_in', 'check_out'])

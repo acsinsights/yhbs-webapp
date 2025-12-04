@@ -7,8 +7,10 @@ use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
-class Yatch extends Model
+class Yacht extends Model
 {
+    protected $table = 'yachts';
+
     protected $fillable = [
         'name',
         'slug',
@@ -35,8 +37,8 @@ class Yatch extends Model
      */
     public function categories(): BelongsToMany
     {
-        return $this->belongsToMany(Category::class, 'category_yatch', 'yatch_id', 'category_id')
-            ->where('categories.type', 'yatch');
+        return $this->belongsToMany(Category::class, 'category_yacht', 'yacht_id', 'category_id')
+            ->where('categories.type', 'yacht');
     }
 
     /**
@@ -44,8 +46,8 @@ class Yatch extends Model
      */
     public function amenities(): BelongsToMany
     {
-        return $this->belongsToMany(Amenity::class, 'amenity_yatch', 'yatch_id', 'amenity_id')
-            ->where('amenities.type', 'yatch');
+        return $this->belongsToMany(Amenity::class, 'amenity_yacht', 'yacht_id', 'amenity_id')
+            ->where('amenities.type', 'yacht');
     }
 
     /**

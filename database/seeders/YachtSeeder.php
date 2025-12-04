@@ -6,9 +6,9 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
-use App\Models\{Yatch, Category, Amenity};
+use App\Models\{Yacht, Category, Amenity};
 
-class YatchSeeder extends Seeder
+class YachtSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -16,7 +16,7 @@ class YatchSeeder extends Seeder
     public function run(): void
     {
         // Map yacht slugs to folder numbers
-        $yatchFolderMap = [
+        $yachtFolderMap = [
             'luxury-ocean-explorer' => 1,
             'royal-sea-voyager' => 2,
             'sunset-cruiser' => 4,
@@ -24,7 +24,7 @@ class YatchSeeder extends Seeder
             'executive-business-class' => 7,
         ];
 
-        $yatches = [
+        $yachts = [
             [
                 'name' => 'Luxury Ocean Explorer',
                 'slug' => 'luxury-ocean-explorer',
@@ -113,8 +113,8 @@ class YatchSeeder extends Seeder
             'executive-business-class' => ['onboard-chef', 'cinema-room', 'onboard-spa'],
         ];
 
-        foreach ($yatches as $yatch) {
-            $folderNumber = $yatchFolderMap[$yatch['slug']] ?? null;
+        foreach ($yachts as $yacht) {
+            $folderNumber = $yachtFolderMap[$yacht['slug']] ?? null;
 
             // Set cover image if folder exists
             $coverImage = null;
@@ -156,32 +156,32 @@ class YatchSeeder extends Seeder
                 }
             }
 
-            // Add cover image to yatch data
+            // Add cover image to yacht data
             if ($coverImage) {
-                $yatch['image'] = $coverImage;
+                $yacht['image'] = $coverImage;
             }
 
-            $yatchModel = Yatch::updateOrCreate(
-                ['slug' => $yatch['slug']],
-                $yatch
+            $yachtModel = Yacht::updateOrCreate(
+                ['slug' => $yacht['slug']],
+                $yacht
             );
 
             // Set library images
             if ($libraryImages->isNotEmpty()) {
-                $yatchModel->update(['library' => $libraryImages]);
+                $yachtModel->update(['library' => $libraryImages]);
             }
 
-            if (isset($categoryAssignments[$yatch['slug']])) {
-                $categoryIds = Category::whereIn('slug', $categoryAssignments[$yatch['slug']])->pluck('id');
+            if (isset($categoryAssignments[$yacht['slug']])) {
+                $categoryIds = Category::whereIn('slug', $categoryAssignments[$yacht['slug']])->pluck('id');
                 if ($categoryIds->isNotEmpty()) {
-                    $yatchModel->categories()->sync($categoryIds);
+                    $yachtModel->categories()->sync($categoryIds);
                 }
             }
 
-            if (isset($amenityAssignments[$yatch['slug']])) {
-                $amenityIds = Amenity::whereIn('slug', $amenityAssignments[$yatch['slug']])->pluck('id');
+            if (isset($amenityAssignments[$yacht['slug']])) {
+                $amenityIds = Amenity::whereIn('slug', $amenityAssignments[$yacht['slug']])->pluck('id');
                 if ($amenityIds->isNotEmpty()) {
-                    $yatchModel->amenities()->sync($amenityIds);
+                    $yachtModel->amenities()->sync($amenityIds);
                 }
             }
         }

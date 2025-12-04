@@ -77,37 +77,37 @@ class AmenitySeeder extends Seeder
                 'name' => 'Onboard Chef',
                 'slug' => 'onboard-chef',
                 'icon' => 'https://placehold.co/100x100/FBBF24/FFFFFF?text=Chef',
-                'type' => 'yatch',
+                'type' => 'yacht',
             ],
             [
                 'name' => 'Water Toys',
                 'slug' => 'water-toys',
                 'icon' => 'https://placehold.co/100x100/0EA5E9/FFFFFF?text=Toys',
-                'type' => 'yatch',
+                'type' => 'yacht',
             ],
             [
                 'name' => 'Sun Deck Lounge',
                 'slug' => 'sun-deck-lounge',
                 'icon' => 'https://placehold.co/100x100/F97316/FFFFFF?text=Sun',
-                'type' => 'yatch',
+                'type' => 'yacht',
             ],
             [
                 'name' => 'Helipad',
                 'slug' => 'helipad',
                 'icon' => 'https://placehold.co/100x100/374151/FFFFFF?text=Heli',
-                'type' => 'yatch',
+                'type' => 'yacht',
             ],
             [
                 'name' => 'Onboard Spa',
                 'slug' => 'onboard-spa',
                 'icon' => 'https://placehold.co/100x100/9333EA/FFFFFF?text=Spa',
-                'type' => 'yatch',
+                'type' => 'yacht',
             ],
             [
                 'name' => 'Cinema Room',
                 'slug' => 'cinema-room',
                 'icon' => 'https://placehold.co/100x100/DB2777/FFFFFF?text=Film',
-                'type' => 'yatch',
+                'type' => 'yacht',
             ],
         ];
 

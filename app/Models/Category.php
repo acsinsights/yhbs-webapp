@@ -24,8 +24,8 @@ class Category extends Model
         return $this->belongsToMany(Room::class);
     }
 
-    public function yatches(): BelongsToMany
+    public function yachts(): BelongsToMany
     {
-        return $this->belongsToMany(Yatch::class);
+        return $this->belongsToMany(Yacht::class);
     }
 }

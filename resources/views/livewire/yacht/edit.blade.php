@@ -7,12 +7,12 @@ use Illuminate\Http\UploadedFile;
 use Livewire\WithFileUploads;
 use Livewire\Volt\Component;
 use Mary\Traits\{Toast, WithMediaSync};
-use App\Models\{Amenity, Category, Yatch};
+use App\Models\{Amenity, Category, Yacht};
 
 new class extends Component {
     use Toast, WithFileUploads, WithMediaSync;
 
-    public Yatch $yatch;
+    public Yacht $yacht;
 
     public string $name = '';
     public string $slug = '';
@@ -53,27 +53,27 @@ new class extends Component {
         ];
     }
 
-    public function mount(Yatch $yatch): void
+    public function mount(Yacht $yacht): void
     {
-        $this->yatch = $yatch;
-        $this->name = $yatch->name;
-        $this->existing_image = $yatch->image;
+        $this->yacht = $yacht;
+        $this->name = $yacht->name;
+        $this->existing_image = $yacht->image;
         $this->image = null; // Keep null for file upload, use existing_image for display
-        $this->description = $yatch->description;
-        $this->sku = $yatch->sku;
-        $this->price = $yatch->price;
-        $this->discount_price = $yatch->discount_price;
-        $this->length = $yatch->length;
-        $this->max_guests = $yatch->max_guests;
-        $this->max_crew = $yatch->max_crew;
-        $this->max_fuel_capacity = $yatch->max_fuel_capacity;
+        $this->description = $yacht->description;
+        $this->sku = $yacht->sku;
+        $this->price = $yacht->price;
+        $this->discount_price = $yacht->discount_price;
+        $this->length = $yacht->length;
+        $this->max_guests = $yacht->max_guests;
+        $this->max_crew = $yacht->max_crew;
+        $this->max_fuel_capacity = $yacht->max_fuel_capacity;
         // Auto-calculate max_capacity from guests and crew
         $this->calculateMaxCapacity();
-        $this->category_ids = $yatch->categories->pluck('id')->toArray();
-        $this->amenity_ids = $yatch->amenities->pluck('id')->toArray();
+        $this->category_ids = $yacht->categories->pluck('id')->toArray();
+        $this->amenity_ids = $yacht->amenities->pluck('id')->toArray();
 
-        // Load existing library metadata from yatch
-        $libraryData = $yatch->library;
+        // Load existing library metadata from yacht
+        $libraryData = $yacht->library;
         if (empty($libraryData)) {
             $this->library = Collection::make([]);
         } elseif (is_array($libraryData)) {
@@ -112,7 +112,7 @@ new class extends Component {
     public function update(): void
     {
         $rules = [
-            'name' => 'required|string|max:255|unique:yatches,name,' . $this->yatch->id,
+            'name' => 'required|string|max:255|unique:yachts,name,' . $this->yacht->id,
             'files.*' => 'image|max:5000',
             'description' => 'nullable|string',
             'sku' => 'nullable|integer',
@@ -138,18 +138,18 @@ new class extends Component {
 
         $originalSlug = $slug;
         $counter = 1;
-        while (Yatch::where('slug', $slug)->where('id', '!=', $this->yatch->id)->exists()) {
+        while (Yacht::where('slug', $slug)->where('id', '!=', $this->yacht->id)->exists()) {
             $slug = $originalSlug . '-' . $counter;
             $counter++;
         }
 
         $imagePath = $this->existing_image;
         if ($this->image instanceof UploadedFile) {
-            $url = $this->image->store('yatches', 'public');
+            $url = $this->image->store('yachts', 'public');
             $imagePath = "/storage/$url";
         }
 
-        $this->yatch->update([
+        $this->yacht->update([
             'name' => $this->name,
             'slug' => $slug,
             'image' => $imagePath,
@@ -166,12 +166,12 @@ new class extends Component {
 
         $this->ensureLibraryIsCollection();
 
-        $this->syncMedia(model: $this->yatch, library: 'library', files: 'files', storage_subpath: '/yatches/library', model_field: 'library', visibility: 'public', disk: 'public');
+        $this->syncMedia(model: $this->yacht, library: 'library', files: 'files', storage_subpath: '/yachts/library', model_field: 'library', visibility: 'public', disk: 'public');
 
-        $this->yatch->categories()->sync($this->category_ids);
-        $this->yatch->amenities()->sync($this->amenity_ids);
+        $this->yacht->categories()->sync($this->category_ids);
+        $this->yacht->amenities()->sync($this->amenity_ids);
 
-        $this->success('Yacht updated successfully.', redirectTo: route('admin.yatch.index'));
+        $this->success('Yacht updated successfully.', redirectTo: route('admin.yacht.index'));
     }
 
     public function saveCategory(): void
@@ -191,7 +191,7 @@ new class extends Component {
             'name' => $this->category_name,
             'slug' => Str::slug($this->category_name),
             'icon' => $icon,
-            'type' => 'yatch',
+            'type' => 'yacht',
         ]);
 
         $this->success('Category created successfully.');
@@ -217,7 +217,7 @@ new class extends Component {
             'name' => $this->amenity_name,
             'slug' => Str::slug($this->amenity_name),
             'icon' => $icon,
-            'type' => 'yatch',
+            'type' => 'yacht',
         ]);
 
         $this->success('Amenity created successfully.');
@@ -228,8 +228,8 @@ new class extends Component {
 
     public function rendering(View $view): void
     {
-        $view->categories = Category::type('yatch')->latest()->get();
-        $view->amenities = Amenity::type('yatch')->latest()->get();
+        $view->categories = Category::type('yacht')->latest()->get();
+        $view->amenities = Amenity::type('yacht')->latest()->get();
     }
 }; ?>
 @section('cdn')
@@ -247,7 +247,7 @@ new class extends Component {
             ],
             [
                 'label' => 'Yachts',
-                'link' => route('admin.yatch.index'),
+                'link' => route('admin.yacht.index'),
                 'icon' => 'o-home-modern',
             ],
             [
@@ -263,7 +263,7 @@ new class extends Component {
             <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
         </x-slot:subtitle>
         <x-slot:actions>
-            <x-button icon="o-arrow-left" label="Back to Yachts" link="{{ route('admin.yatch.index') }}"
+            <x-button icon="o-arrow-left" label="Back to Yachts" link="{{ route('admin.yacht.index') }}"
                 class="btn-primary btn-soft" responsive />
         </x-slot:actions>
     </x-header>
@@ -344,9 +344,9 @@ new class extends Component {
             </div>
 
             <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-6 md:mt-8 pt-4 md:pt-6 border-t">
-                <x-button icon="o-arrow-left" label="Back to Yachts" link="{{ route('admin.yatch.index') }}"
+                <x-button icon="o-arrow-left" label="Back to Yachts" link="{{ route('admin.yacht.index') }}"
                     class="btn-ghost w-full sm:w-auto order-2 sm:order-1" responsive />
-                <x-button icon="o-x-mark" label="Cancel" link="{{ route('admin.yatch.index') }}"
+                <x-button icon="o-x-mark" label="Cancel" link="{{ route('admin.yacht.index') }}"
                     class="btn-ghost w-full sm:w-auto order-1 sm:order-2" responsive />
                 <x-button icon="o-check" label="Update Yacht" type="submit"
                     class="btn-primary w-full sm:w-auto order-3" spinner="update" responsive />

@@ -46,7 +46,7 @@ new class extends Component {
         $this->validate([
             'name' => 'required|string|max:255|unique:amenities,name',
             'icon' => 'nullable|image|mimes:jpeg,jpg,svg|max:2500',
-            'type' => 'required|in:room,yatch',
+            'type' => 'required|in:room,yacht',
         ]);
 
         $iconPath = null;
@@ -82,7 +82,7 @@ new class extends Component {
         $this->validate([
             'edit_name' => 'required|string|max:255|unique:amenities,name,' . $this->editingAmenity->id,
             'edit_icon' => 'nullable|image|mimes:jpeg,jpg,svg|max:2500',
-            'edit_type' => 'required|in:room,yatch',
+            'edit_type' => 'required|in:room,yacht',
         ]);
 
         $iconPath = $this->existing_icon;
@@ -197,7 +197,7 @@ new class extends Component {
                 <x-input wire:model="name" label="Amenity Name" placeholder="Enter amenity name" icon="o-tag"
                     hint="Unique amenity name" />
 
-                <x-select wire:model="type" label="Type" placeholder="Select type" :options="[['id' => 'room', 'name' => 'Room'], ['id' => 'yatch', 'name' => 'Yatch']]" option-value="id"
+                <x-select wire:model="type" label="Type" placeholder="Select type" :options="[['id' => 'room', 'name' => 'Room'], ['id' => 'yacht', 'name' => 'Yacht']]" option-value="id"
                     option-label="name" icon="o-sparkles" hint="Amenity type" />
 
                 <x-file wire:model="icon" label="Amenity Icon" placeholder="Upload amenity icon" crop-after-change
@@ -225,7 +225,7 @@ new class extends Component {
                 <x-input wire:model="edit_name" label="Amenity Name" placeholder="Enter amenity name" icon="o-tag"
                     hint="Unique amenity name" />
 
-                <x-select wire:model="edit_type" label="Type" placeholder="Select type" :options="[['id' => 'room', 'name' => 'Room'], ['id' => 'yatch', 'name' => 'Yatch']]"
+                <x-select wire:model="edit_type" label="Type" placeholder="Select type" :options="[['id' => 'room', 'name' => 'Room'], ['id' => 'yacht', 'name' => 'Yacht']]"
                     option-value="id" option-label="name" icon="o-sparkles" hint="Amenity type" />
 
                 <x-file wire:model="edit_icon" label="Amenity Icon" placeholder="Upload amenity icon" crop-after-change

@@ -70,7 +70,7 @@ Route::get('/checkout', function () {
             $price = $room->price;
         }
     } elseif ($type === 'yacht' && $id) {
-        $yacht = \App\Models\Yatch::find($id);
+        $yacht = \App\Models\Yacht::find($id);
         if ($yacht) {
             if ($yacht->image) {
                 if (str_starts_with($yacht->image, '/default')) {

@@ -4,7 +4,7 @@ use Carbon\Carbon;
 use Mary\Traits\Toast;
 use Illuminate\View\View;
 use Livewire\Volt\Component;
-use App\Models\{Booking, Yatch};
+use App\Models\{Booking, Yacht};
 
 new class extends Component {
     use Toast;
@@ -22,7 +22,7 @@ new class extends Component {
             'status' => 'checked_out',
         ]);
 
-        $this->success('Booking checked out successfully.', redirectTo: route('admin.bookings.yatch.index'));
+        $this->success('Booking checked out successfully.', redirectTo: route('admin.bookings.yacht.index'));
     }
 
     public function rendering(View $view)
@@ -39,7 +39,7 @@ new class extends Component {
                 'icon' => 's-home',
             ],
             [
-                'link' => route('admin.bookings.yatch.index'),
+                'link' => route('admin.bookings.yacht.index'),
                 'label' => 'Yacht Bookings',
             ],
             [
@@ -54,10 +54,10 @@ new class extends Component {
             <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
         </x-slot:subtitle>
         <x-slot:actions>
-            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.yatch.index') }}"
+            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.yacht.index') }}"
                 class="btn-ghost" />
             @if ($booking->status !== 'checked_out' && $booking->status !== 'cancelled')
-                <x-button icon="o-pencil" label="Edit" link="{{ route('admin.bookings.yatch.edit', $booking->id) }}"
+                <x-button icon="o-pencil" label="Edit" link="{{ route('admin.bookings.yacht.edit', $booking->id) }}"
                     class="btn-primary" />
                 <x-button icon="o-check-circle" label="Checkout" wire:click="checkout"
                     wire:confirm="Are you sure you want to checkout this booking?" class="btn-success"

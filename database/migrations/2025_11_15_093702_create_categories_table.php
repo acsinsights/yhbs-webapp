@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -17,7 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug')->unique();
             $table->text('icon')->nullable();
-            $table->string('type')->default('room')->comment('room, yatch');
+            $table->string('type')->default('room')->comment('room, yacht');
 
             $table->timestamps();
         });
@@ -27,9 +26,9 @@ return new class extends Migration
             $table->foreignId('room_id')->constrained('rooms');
         });
 
-        Schema::create('category_yatch', function (Blueprint $table) {
+        Schema::create('category_yacht', function (Blueprint $table) {
             $table->foreignId('category_id')->constrained('categories');
-            $table->foreignId('yatch_id')->constrained('yatches');
+            $table->foreignId('yacht_id')->constrained('yachts');
         });
     }
 

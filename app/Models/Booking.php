@@ -32,7 +32,7 @@ class Booking extends Model
         'check_out' => 'datetime',
     ];
     /**
-     * Get the parent bookingable model (room or yatch).
+     * Get the parent bookingable model (room or yacht).
      */
     public function bookingable(): MorphTo
     {

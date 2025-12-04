@@ -6,7 +6,7 @@ use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Enums\RolesEnum;
-use App\Models\{Booking, Room, User, Yatch};
+use App\Models\{Booking, Room, User, Yacht};
 
 new class extends Component {
     #[Title('Admin Dashboard')]
@@ -37,7 +37,7 @@ new class extends Component {
             ->count();
 
         // Current bookings for yacht
-        $currentYachtBookings = Booking::where('bookingable_type', Yatch::class)
+        $currentYachtBookings = Booking::where('bookingable_type', Yacht::class)
             ->whereIn('status', ['pending', 'booked', 'checked_in'])
             ->where(function ($query) use ($now) {
                 $query->where('check_in', '<=', $now)->where('check_out', '>=', $now);
@@ -56,8 +56,8 @@ new class extends Component {
         $availableRooms = $totalRooms - $bookedRoomIds->count();
 
         // Available yachts
-        $totalYachts = Yatch::count();
-        $bookedYachtIds = Booking::where('bookingable_type', Yatch::class)
+        $totalYachts = Yacht::count();
+        $bookedYachtIds = Booking::where('bookingable_type', Yacht::class)
             ->whereIn('status', ['pending', 'booked', 'checked_in'])
             ->where(function ($query) use ($now) {
                 $query->where('check_in', '<=', $now)->where('check_out', '>=', $now);
@@ -73,7 +73,7 @@ new class extends Component {
         $hotelRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Room::class)->sum(DB::raw('COALESCE(discount_price, price)'));
 
         // Yacht revenue
-        $yachtRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Yatch::class)->sum(DB::raw('COALESCE(discount_price, price)'));
+        $yachtRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Yacht::class)->sum(DB::raw('COALESCE(discount_price, price)'));
 
         // Active customers (users with bookings in last 30 days or with active bookings)
         $customerUserIds = User::role(RolesEnum::CUSTOMER->value)->pluck('id');
@@ -118,7 +118,7 @@ new class extends Component {
             })
             ->count();
 
-        $currentYachtBookings = Booking::where('bookingable_type', Yatch::class)
+        $currentYachtBookings = Booking::where('bookingable_type', Yacht::class)
             ->whereIn('status', ['pending', 'booked', 'checked_in'])
             ->where(function ($query) use ($now) {
                 $query->where('check_in', '<=', $now)->where('check_out', '>=', $now);
@@ -152,7 +152,7 @@ new class extends Component {
             $month = now()->subMonths($i);
             $hotelRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Room::class)->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum(DB::raw('COALESCE(discount_price, price)'));
 
-            $yachtRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Yatch::class)->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum(DB::raw('COALESCE(discount_price, price)'));
+            $yachtRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Yacht::class)->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum(DB::raw('COALESCE(discount_price, price)'));
 
             $monthlyHotelRevenue[] = $hotelRevenue;
             $monthlyYachtRevenue[] = $yachtRevenue;

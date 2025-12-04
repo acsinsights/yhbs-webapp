@@ -6,7 +6,7 @@ use Illuminate\Support\Str;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 use Livewire\Volt\Component;
-use App\Models\Yatch;
+use App\Models\Yacht;
 
 new class extends Component {
     use Toast, WithPagination;
@@ -27,28 +27,28 @@ new class extends Component {
             'name' => 'required|string|max:255',
         ]);
 
-        $yatch = Yatch::create([
+        $yacht = Yacht::create([
             'name' => $this->name,
             'slug' => Str::slug($this->name),
         ]);
 
         $this->createModal = false;
         $this->reset('name');
-        $this->success('Yacht created successfully.', redirectTo: route('admin.yatch.edit', $yatch));
+        $this->success('Yacht created successfully.', redirectTo: route('admin.yacht.edit', $yacht));
     }
 
     // Delete action
     public function delete($id): void
     {
-        $yatch = Yatch::findOrFail($id);
-        $yatch->delete();
+        $yacht = Yacht::findOrFail($id);
+        $yacht->delete();
 
         $this->success('Yacht deleted successfully.');
     }
 
     public function rendering(View $view)
     {
-        $view->yatches = Yatch::query()
+        $view->yachts = Yacht::query()
             ->when($this->search, function ($query) {
                 return $query
                     ->where('name', 'like', "%{$this->search}%")
@@ -89,28 +89,28 @@ new class extends Component {
     </x-header>
 
     <x-card shadow>
-        <x-table :headers="$headers" :rows="$yatches" :sort-by="$sortBy" with-pagination per-page="perPage"
+        <x-table :headers="$headers" :rows="$yachts" :sort-by="$sortBy" with-pagination per-page="perPage"
             :per-page-values="[10, 25, 50, 100]">
-            @scope('cell_name', $yatch)
-                <x-badge :value="$yatch->name" class="badge-soft badge-primary" />
+            @scope('cell_name', $yacht)
+                <x-badge :value="$yacht->name" class="badge-soft badge-primary" />
             @endscope
 
-            @scope('cell_price', $yatch)
+            @scope('cell_price', $yacht)
                 <div class="font-semibold line-through">
-                    {{ currency_format($yatch->price) }}
+                    {{ currency_format($yacht->price) }}
                 </div>
             @endscope
 
-            @scope('cell_discount_price', $yatch)
-                @if ($yatch->discount_price)
+            @scope('cell_discount_price', $yacht)
+                @if ($yacht->discount_price)
                     <div class="flex items-center gap-2">
                         <div class="font-semibold text-success">
-                            {{ currency_format($yatch->discount_price) }}
+                            {{ currency_format($yacht->discount_price) }}
                         </div>
 
                         <div>
                             <x-badge :value="number_format(
-                                (($yatch->price - $yatch->discount_price) / $yatch->price) * 100,
+                                (($yacht->price - $yacht->discount_price) / $yacht->price) * 100,
                                 2,
                             ) . '% off'" class="badge-soft badge-sm badge-error" />
                         </div>
@@ -120,17 +120,17 @@ new class extends Component {
                 @endif
             @endscope
 
-            @scope('cell_sku', $yatch)
-                <span class="font-mono text-sm">{{ $yatch->sku ?? 'N/A' }}</span>
+            @scope('cell_sku', $yacht)
+                <span class="font-mono text-sm">{{ $yacht->sku ?? 'N/A' }}</span>
             @endscope
 
-            @scope('actions', $yatch)
+            @scope('actions', $yacht)
                 <div class="flex items-center gap-2">
-                    <x-button icon="o-eye" link="{{ route('admin.yatch.show', $yatch->id) }}" class="btn-ghost btn-sm"
+                    <x-button icon="o-eye" link="{{ route('admin.yacht.show', $yacht->id) }}" class="btn-ghost btn-sm"
                         tooltip="Show" />
-                    <x-button icon="o-pencil" link="{{ route('admin.yatch.edit', $yatch->id) }}" class="btn-ghost btn-sm"
+                    <x-button icon="o-pencil" link="{{ route('admin.yacht.edit', $yacht->id) }}" class="btn-ghost btn-sm"
                         tooltip="Edit" />
-                    <x-button icon="o-trash" wire:click="delete({{ $yatch->id }})"
+                    <x-button icon="o-trash" wire:click="delete({{ $yacht->id }})"
                         wire:confirm="Are you sure you want to delete this yacht?" spinner
                         class="btn-ghost btn-sm text-error" tooltip="Delete" />
                 </div>

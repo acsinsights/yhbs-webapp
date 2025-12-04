@@ -78,7 +78,7 @@
                     </div>
 
                     <x-menu-item title="Yacht Bookings" icon="o-sparkles"
-                        link="{{ route('admin.bookings.yatch.index') }}" />
+                        link="{{ route('admin.bookings.yacht.index') }}" />
                     <x-menu-item title="Room Bookings" icon="o-building-office"
                         link="{{ route('admin.bookings.house.index') }}" />
                     <x-menu-item title="Room Enquiries" icon="o-envelope" link="###" />
@@ -89,7 +89,7 @@
                         <small class="hidden-when-collapsed">Property Management</small>
                     </div>
                     <x-menu-item title="Houses" icon="o-building-office" link="{{ route('admin.houses.index') }}" />
-                    <x-menu-item title="Yachts" icon="o-sparkles" link="{{ route('admin.yatch.index') }}" />
+                    <x-menu-item title="Yachts" icon="o-sparkles" link="{{ route('admin.yacht.index') }}" />
                     <x-menu-item title="Rooms" icon="o-home-modern" link="{{ route('admin.rooms.index') }}" />
                     <x-menu-item title="Categories" icon="o-tag" link="{{ route('admin.category.index') }}" />
                     <x-menu-item title="Amenities" icon="o-star" link="{{ route('admin.amenity.index') }}" />

@@ -47,31 +47,31 @@ class CategorySeeder extends Seeder
                 'name' => 'Luxury Yacht',
                 'slug' => 'luxury-yacht',
                 'icon' => 'https://placehold.co/100x100/111827/FFFFFF?text=Luxury',
-                'type' => 'yatch',
+                'type' => 'yacht',
             ],
             [
                 'name' => 'Expedition Yacht',
                 'slug' => 'expedition-yacht',
                 'icon' => 'https://placehold.co/100x100/0F766E/FFFFFF?text=Explore',
-                'type' => 'yatch',
+                'type' => 'yacht',
             ],
             [
                 'name' => 'Party Yacht',
                 'slug' => 'party-yacht',
                 'icon' => 'https://placehold.co/100x100/BE185D/FFFFFF?text=Party',
-                'type' => 'yatch',
+                'type' => 'yacht',
             ],
             [
                 'name' => 'Family Cruiser',
                 'slug' => 'family-cruiser',
                 'icon' => 'https://placehold.co/100x100/CA8A04/FFFFFF?text=Family',
-                'type' => 'yatch',
+                'type' => 'yacht',
             ],
             [
                 'name' => 'Corporate Charter',
                 'slug' => 'corporate-charter',
                 'icon' => 'https://placehold.co/100x100/2563EB/FFFFFF?text=Biz',
-                'type' => 'yatch',
+                'type' => 'yacht',
             ],
         ];
 

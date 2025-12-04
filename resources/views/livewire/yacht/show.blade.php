@@ -1,7 +1,7 @@
 <?php
 
 use Mary\Traits\Toast;
-use App\Models\Yatch;
+use App\Models\Yacht;
 use Livewire\Attributes\Title;
 use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Storage;
@@ -9,22 +9,22 @@ use Illuminate\Support\Facades\Storage;
 new class extends Component {
     use Toast;
 
-    public Yatch $yatch;
+    public Yacht $yacht;
 
-    public function mount($yatch): void
+    public function mount($yacht): void
     {
-        $this->yatch = $yatch instanceof Yatch ? $yatch : Yatch::findOrFail($yatch);
+        $this->yacht = $yacht instanceof Yacht ? $yacht : Yacht::findOrFail($yacht);
     }
 
     public function delete(): void
     {
         // Delete image if exists
-        if ($this->yatch->image) {
-            Storage::disk('public')->delete(str_replace('/storage/', '', $this->yatch->image));
+        if ($this->yacht->image) {
+            Storage::disk('public')->delete(str_replace('/storage/', '', $this->yacht->image));
         }
 
-        $this->yatch->delete();
-        $this->success('Yacht deleted successfully!', redirectTo: route('admin.yatch.index'));
+        $this->yacht->delete();
+        $this->success('Yacht deleted successfully!', redirectTo: route('admin.yacht.index'));
     }
 }; ?>
 
@@ -32,13 +32,13 @@ new class extends Component {
     $slides = [];
 
     // Add main image first if it exists
-    if ($yatch->image) {
-        $slides[] = ['image' => asset($yatch->image)];
+    if ($yacht->image) {
+        $slides[] = ['image' => asset($yacht->image)];
     }
 
     // Add library images
-    if ($yatch->library && is_iterable($yatch->library)) {
-        foreach ($yatch->library as $item) {
+    if ($yacht->library && is_iterable($yacht->library)) {
+        foreach ($yacht->library as $item) {
             $imageUrl = null;
 
             // Handle object/array structure with url, path, uuid
@@ -63,14 +63,14 @@ new class extends Component {
 @endphp
 
 <div class="space-y-6">
-    <x-header title="{{ $yatch->name }}" separator>
+    <x-header title="{{ $yacht->name }}" separator>
         <x-slot:subtitle>
             <p class="text-sm text-base-content/60">Yacht overview and details</p>
         </x-slot:subtitle>
         <x-slot:actions>
-            <x-button icon="o-pencil" label="Edit" link="{{ route('admin.yatch.edit', $yatch) }}" class="btn-primary"
+            <x-button icon="o-pencil" label="Edit" link="{{ route('admin.yacht.edit', $yacht) }}" class="btn-primary"
                 responsive />
-            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.yatch.index') }}"
+            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.yacht.index') }}"
                 class="btn-outline btn-primary" responsive />
             <x-button icon="o-trash" label="Delete" wire:click="delete"
                 wire:confirm="Delete this yacht? This action cannot be undone." class="btn-error" responsive />
@@ -93,7 +93,7 @@ new class extends Component {
 
     {{-- Quick Stats --}}
     <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        @if ($yatch->sku)
+        @if ($yacht->sku)
             <x-card shadow class="border-l-4 border-l-info">
                 <div class="flex items-center gap-3">
                     <div class="p-2 rounded-lg bg-info/10">
@@ -101,7 +101,7 @@ new class extends Component {
                     </div>
                     <div>
                         <p class="text-xs text-base-content/60 uppercase tracking-wide">SKU</p>
-                        <p class="font-semibold text-sm font-mono">{{ $yatch->sku }}</p>
+                        <p class="font-semibold text-sm font-mono">{{ $yacht->sku }}</p>
                     </div>
                 </div>
             </x-card>
@@ -114,7 +114,7 @@ new class extends Component {
                 </div>
                 <div>
                     <p class="text-xs text-base-content/60 uppercase tracking-wide">ID</p>
-                    <p class="font-semibold text-sm font-mono">#{{ $yatch->id }}</p>
+                    <p class="font-semibold text-sm font-mono">#{{ $yacht->id }}</p>
                 </div>
             </div>
         </x-card>
@@ -126,7 +126,7 @@ new class extends Component {
                 </div>
                 <div>
                     <p class="text-xs text-base-content/60 uppercase tracking-wide">Slug</p>
-                    <code class="text-sm break-all">{{ $yatch->slug }}</code>
+                    <code class="text-sm break-all">{{ $yacht->slug }}</code>
                 </div>
             </div>
         </x-card>
@@ -138,33 +138,33 @@ new class extends Component {
                 </div>
                 <div>
                     <p class="text-xs text-base-content/60 uppercase tracking-wide">Created</p>
-                    <p class="font-semibold text-sm">{{ $yatch->created_at->format('M d, Y') }}</p>
+                    <p class="font-semibold text-sm">{{ $yacht->created_at->format('M d, Y') }}</p>
                 </div>
             </div>
         </x-card>
     </div>
 
     {{-- Pricing Card --}}
-    @if ($yatch->price)
+    @if ($yacht->price)
         <x-card shadow>
             <x-slot:title class="flex items-center gap-2">
                 <x-icon name="o-currency-dollar" class="w-5 h-5" />
                 <span>Pricing</span>
             </x-slot:title>
             <div class="flex items-baseline gap-4">
-                @if ($yatch->discount_price)
+                @if ($yacht->discount_price)
                     <div>
                         <p class="text-xs text-base-content/60 mb-1">Regular Price</p>
                         <p class="text-2xl font-bold text-base-content/40 line-through">
-                            {{ currency_format($yatch->price) }}</p>
+                            {{ currency_format($yacht->price) }}</p>
                     </div>
                     <div>
                         <p class="text-xs text-base-content/60 mb-1">Discount Price</p>
                         <div class="flex items-baseline gap-2">
-                            <p class="text-3xl font-bold text-primary">{{ currency_format($yatch->discount_price) }}</p>
+                            <p class="text-3xl font-bold text-primary">{{ currency_format($yacht->discount_price) }}</p>
                             @php
                                 $discountPercent = round(
-                                    (($yatch->price - $yatch->discount_price) / $yatch->price) * 100,
+                                    (($yacht->price - $yacht->discount_price) / $yacht->price) * 100,
                                 );
                             @endphp
                             <x-badge :value="$discountPercent . '% OFF'" class="badge-success badge-sm" />
@@ -173,7 +173,7 @@ new class extends Component {
                 @else
                     <div>
                         <p class="text-xs text-base-content/60 mb-1">Price</p>
-                        <p class="text-3xl font-bold text-primary">{{ currency_format($yatch->price) }}</p>
+                        <p class="text-3xl font-bold text-primary">{{ currency_format($yacht->price) }}</p>
                     </div>
                 @endif
             </div>
@@ -181,13 +181,13 @@ new class extends Component {
     @endif
 
     {{-- Description --}}
-    @if ($yatch->description)
+    @if ($yacht->description)
         <x-card shadow>
             <x-slot:title class="flex items-center gap-2">
                 <x-icon name="o-document-text" class="w-5 h-5" />
                 <span>Description</span>
             </x-slot:title>
-            <p class="text-base-content/80 whitespace-pre-line">{{ $yatch->description }}</p>
+            <p class="text-base-content/80 whitespace-pre-line">{{ $yacht->description }}</p>
         </x-card>
     @endif
 
@@ -198,34 +198,34 @@ new class extends Component {
             <span>Specifications</span>
         </x-slot:title>
         <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            @if ($yatch->length)
+            @if ($yacht->length)
                 <div class="p-3 rounded-lg bg-base-200/50">
                     <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Length</p>
-                    <p class="text-sm font-semibold">{{ $yatch->length }}m</p>
+                    <p class="text-sm font-semibold">{{ $yacht->length }}m</p>
                 </div>
             @endif
-            @if ($yatch->max_guests)
+            @if ($yacht->max_guests)
                 <div class="p-3 rounded-lg bg-base-200/50">
                     <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Max Guests</p>
-                    <p class="text-sm font-semibold">{{ $yatch->max_guests }}</p>
+                    <p class="text-sm font-semibold">{{ $yacht->max_guests }}</p>
                 </div>
             @endif
-            @if ($yatch->max_crew)
+            @if ($yacht->max_crew)
                 <div class="p-3 rounded-lg bg-base-200/50">
                     <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Max Crew</p>
-                    <p class="text-sm font-semibold">{{ $yatch->max_crew }}</p>
+                    <p class="text-sm font-semibold">{{ $yacht->max_crew }}</p>
                 </div>
             @endif
-            @if ($yatch->max_capacity)
+            @if ($yacht->max_capacity)
                 <div class="p-3 rounded-lg bg-base-200/50">
                     <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Max Capacity</p>
-                    <p class="text-sm font-semibold">{{ $yatch->max_capacity }}</p>
+                    <p class="text-sm font-semibold">{{ $yacht->max_capacity }}</p>
                 </div>
             @endif
-            @if ($yatch->max_fuel_capacity)
+            @if ($yacht->max_fuel_capacity)
                 <div class="p-3 rounded-lg bg-base-200/50">
                     <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Fuel Capacity</p>
-                    <p class="text-sm font-semibold">{{ $yatch->max_fuel_capacity }}L</p>
+                    <p class="text-sm font-semibold">{{ $yacht->max_fuel_capacity }}L</p>
                 </div>
             @endif
         </div>
@@ -247,17 +247,17 @@ new class extends Component {
                     <div class="grid gap-4 md:grid-cols-3">
                         <div class="p-3 rounded-lg bg-base-200/50">
                             <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Slug</p>
-                            <code class="text-sm font-mono break-all">{{ $yatch->slug }}</code>
+                            <code class="text-sm font-mono break-all">{{ $yacht->slug }}</code>
                         </div>
-                        @if ($yatch->sku)
+                        @if ($yacht->sku)
                             <div class="p-3 rounded-lg bg-base-200/50">
                                 <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">SKU</p>
-                                <code class="text-sm font-mono">{{ $yatch->sku }}</code>
+                                <code class="text-sm font-mono">{{ $yacht->sku }}</code>
                             </div>
                         @endif
                         <div class="p-3 rounded-lg bg-base-200/50">
                             <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Record ID</p>
-                            <code class="text-sm font-mono">#{{ $yatch->id }}</code>
+                            <code class="text-sm font-mono">#{{ $yacht->id }}</code>
                         </div>
                     </div>
                 </x-slot:content>
@@ -272,13 +272,13 @@ new class extends Component {
                     <div class="grid gap-4 md:grid-cols-2">
                         <div class="p-3 rounded-lg bg-base-200/50">
                             <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Created</p>
-                            <p class="text-sm font-semibold">{{ $yatch->created_at->format('M d, Y') }}</p>
-                            <p class="text-xs text-base-content/50">{{ $yatch->created_at->format('h:i A') }}</p>
+                            <p class="text-sm font-semibold">{{ $yacht->created_at->format('M d, Y') }}</p>
+                            <p class="text-xs text-base-content/50">{{ $yacht->created_at->format('h:i A') }}</p>
                         </div>
                         <div class="p-3 rounded-lg bg-base-200/50">
                             <p class="text-xs text-base-content/60 uppercase mb-1 tracking-wide">Updated</p>
-                            <p class="text-sm font-semibold">{{ $yatch->updated_at->format('M d, Y') }}</p>
-                            <p class="text-xs text-base-content/50">{{ $yatch->updated_at->format('h:i A') }}</p>
+                            <p class="text-sm font-semibold">{{ $yacht->updated_at->format('M d, Y') }}</p>
+                            <p class="text-xs text-base-content/50">{{ $yacht->updated_at->format('h:i A') }}</p>
                         </div>
                     </div>
                 </x-slot:content>

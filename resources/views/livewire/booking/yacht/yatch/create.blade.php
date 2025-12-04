@@ -7,7 +7,7 @@ use Illuminate\Support\Str;
 use Livewire\WithPagination;
 use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Hash;
-use App\Models\{Booking, User, Yatch};
+use App\Models\{Booking, User, Yacht};
 use App\Enums\{BookingStatusEnum, RolesEnum};
 use App\Notifications\WelcomeCustomerNotification;
 
@@ -19,7 +19,7 @@ new class extends Component {
     public string $customer_email = '';
     public bool $createCustomerModal = false;
 
-    public ?int $yatch_id = null;
+    public ?int $yacht_id = null;
     public ?string $check_in = null;
     public ?string $check_out = null;
     public ?int $adults = 1;
@@ -29,7 +29,7 @@ new class extends Component {
     public string $payment_method = 'cash';
     public string $payment_status = 'pending';
     public ?string $notes = null;
-    public string $yatch_search = '';
+    public string $yacht_search = '';
     public int $perPage = 6;
 
     public function mount(): void
@@ -41,7 +41,7 @@ new class extends Component {
     public function updatedAdults(): void
     {
         $this->resetPage();
-        $this->yatch_id = null;
+        $this->yacht_id = null;
         if (!$this->amountManuallySet) {
             $this->amount = null;
         }
@@ -50,7 +50,7 @@ new class extends Component {
     public function updatedChildren(): void
     {
         $this->resetPage();
-        $this->yatch_id = null;
+        $this->yacht_id = null;
         if (!$this->amountManuallySet) {
             $this->amount = null;
         }
@@ -59,7 +59,7 @@ new class extends Component {
     public function updatedCheckIn(): void
     {
         $this->resetPage();
-        $this->yatch_id = null;
+        $this->yacht_id = null;
         if (!$this->amountManuallySet) {
             $this->amount = null;
         }
@@ -92,7 +92,7 @@ new class extends Component {
     public function updatedCheckOut(): void
     {
         $this->resetPage();
-        $this->yatch_id = null;
+        $this->yacht_id = null;
         if (!$this->amountManuallySet) {
             $this->amount = null;
         }
@@ -110,20 +110,20 @@ new class extends Component {
         }
     }
 
-    public function updatedYatchSearch(): void
+    public function updatedYachtSearch(): void
     {
         $this->resetPage();
     }
 
-    public function updatedYatchId(): void
+    public function updatedYachtId(): void
     {
         // When yacht changes, reset the manual flag so new price can auto-fill
         $this->amountManuallySet = false;
 
-        if ($this->yatch_id) {
-            $yatch = Yatch::find($this->yatch_id);
-            if ($yatch) {
-                $price = $yatch->discount_price ?? $yatch->price;
+        if ($this->yacht_id) {
+            $yacht = Yacht::find($this->yacht_id);
+            if ($yacht) {
+                $price = $yacht->discount_price ?? $yacht->price;
                 $newAmount = $price !== null ? (float) $price : null;
                 $this->amount = $newAmount;
                 // Force update to ensure Live Summary refreshes
@@ -161,7 +161,7 @@ new class extends Component {
     public function resetForm(): void
     {
         $this->user_id = null;
-        $this->yatch_id = null;
+        $this->yacht_id = null;
         $this->check_in = Carbon::now()->format('Y-m-d\TH:i');
         $this->check_out = Carbon::tomorrow()->format('Y-m-d\TH:i');
         $this->adults = 1;
@@ -171,7 +171,7 @@ new class extends Component {
         $this->payment_method = 'cash';
         $this->payment_status = 'pending';
         $this->notes = null;
-        $this->yatch_search = '';
+        $this->yacht_search = '';
         $this->resetPage();
         $this->success('Form has been reset.');
     }
@@ -208,7 +208,7 @@ new class extends Component {
         $this->validate(
             [
                 'user_id' => 'required|exists:users,id',
-                'yatch_id' => 'required|exists:yatches,id',
+                'yacht_id' => 'required|exists:yachts,id',
                 'check_in' => 'required|date|after_or_equal:today',
                 'check_out' => 'required|date|after:check_in',
                 'adults' => 'required|integer|min:1',
@@ -227,29 +227,29 @@ new class extends Component {
         $checkOut = Carbon::parse($this->check_out);
         $totalGuests = $this->adults + $this->children;
 
-        $yatch = Yatch::find($this->yatch_id);
+        $yacht = Yacht::find($this->yacht_id);
 
-        if (!$yatch) {
+        if (!$yacht) {
             $this->error('Selected yacht not found.');
             return;
         }
 
         // Check if yacht is available for the date range
-        $isAvailable = Yatch::available($checkIn, $checkOut)->where('id', $this->yatch_id)->exists();
+        $isAvailable = Yacht::available($checkIn, $checkOut)->where('id', $this->yacht_id)->exists();
         if (!$isAvailable) {
             $this->error('Selected yacht is not available for the chosen dates.');
             return;
         }
 
         // Check guest capacity
-        if ($yatch->max_guests && $totalGuests > $yatch->max_guests) {
-            $this->error("Selected yacht can accommodate maximum {$yatch->max_guests} guests, but you have selected {$totalGuests} guests.");
+        if ($yacht->max_guests && $totalGuests > $yacht->max_guests) {
+            $this->error("Selected yacht can accommodate maximum {$yacht->max_guests} guests, but you have selected {$totalGuests} guests.");
             return;
         }
 
         $booking = Booking::create([
-            'bookingable_type' => Yatch::class,
-            'bookingable_id' => $this->yatch_id,
+            'bookingable_type' => Yacht::class,
+            'bookingable_id' => $this->yacht_id,
             'user_id' => $this->user_id,
             'adults' => $this->adults,
             'children' => $this->children,
@@ -262,7 +262,7 @@ new class extends Component {
             'notes' => $this->notes,
         ]);
 
-        $this->success('Booking created successfully.', redirectTo: route('admin.bookings.yatch.show', $booking->id));
+        $this->success('Booking created successfully.', redirectTo: route('admin.bookings.yacht.show', $booking->id));
     }
 
     public function rendering(View $view)
@@ -274,7 +274,7 @@ new class extends Component {
 
         // Only query if we have valid dates
         if ($checkIn && $checkOut && $checkIn->lt($checkOut)) {
-            $query = Yatch::available($checkIn, $checkOut);
+            $query = Yacht::available($checkIn, $checkOut);
 
             // Filter by guest capacity
             if ($totalGuests > 0) {
@@ -284,8 +284,8 @@ new class extends Component {
             }
 
             // Filter by search term
-            if (!empty($this->yatch_search)) {
-                $search = $this->yatch_search;
+            if (!empty($this->yacht_search)) {
+                $search = $this->yacht_search;
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
                         ->orWhere('sku', 'like', "%{$search}%")
@@ -293,9 +293,9 @@ new class extends Component {
                 });
             }
 
-            $view->availableYatches = $query->orderBy('name')->paginate($this->perPage);
+            $view->availableYachtes = $query->orderBy('name')->paginate($this->perPage);
         } else {
-            $view->availableYatches = collect();
+            $view->availableYachtes = collect();
         }
 
         $view->customers = User::role(RolesEnum::CUSTOMER->value)->orderBy('name')->get();
@@ -313,7 +313,7 @@ new class extends Component {
                 'icon' => 's-home',
             ],
             [
-                'link' => route('admin.bookings.yatch.index'),
+                'link' => route('admin.bookings.yacht.index'),
                 'label' => 'Yacht Bookings',
             ],
             [
@@ -328,7 +328,7 @@ new class extends Component {
             <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
         </x-slot:subtitle>
         <x-slot:actions>
-            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.yatch.index') }}"
+            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.yacht.index') }}"
                 class="btn-ghost" />
         </x-slot:actions>
     </x-header>
@@ -448,7 +448,7 @@ new class extends Component {
                             @if ($check_in && $check_out && Carbon::parse($check_in)->lt(Carbon::parse($check_out)))
                                 {{-- Search Input --}}
                                 <div class="mt-4">
-                                    <x-input wire:model.live.debounce.300ms="yatch_search" label="Search Yachts"
+                                    <x-input wire:model.live.debounce.300ms="yacht_search" label="Search Yachts"
                                         placeholder="Search by name, SKU, or description..." icon="o-magnifying-glass"
                                         clearable hint="Filter yachts by name, SKU, or description" />
                                 </div>
@@ -459,47 +459,47 @@ new class extends Component {
                                 @endphp
                                 <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-base-content/70">
                                     {{-- Loading Indicator --}}
-                                    <div wire:loading wire:target="check_in,check_out,adults,children,yatch_search"
+                                    <div wire:loading wire:target="check_in,check_out,adults,children,yacht_search"
                                         class="flex items-center gap-2 text-primary">
                                         <span class="loading loading-spinner loading-sm"></span>
                                         <span>Loading yachts...</span>
                                     </div>
 
                                     <div wire:loading.remove
-                                        wire:target="check_in,check_out,adults,children,yatch_search,perPage"
+                                        wire:target="check_in,check_out,adults,children,yacht_search,perPage"
                                         class="flex items-center gap-2">
                                         <x-icon name="o-funnel" class="w-4 h-4" />
                                         <span>
-                                            <strong>{{ $availableYatches->total() }}</strong>
-                                            {{ $availableYatches->total() === 1 ? 'yacht' : 'yachts' }} available
-                                            @if ($availableYatches->total() > $availableYatches->count())
+                                            <strong>{{ $availableYachtes->total() }}</strong>
+                                            {{ $availableYachtes->total() === 1 ? 'yacht' : 'yachts' }} available
+                                            @if ($availableYachtes->total() > $availableYachtes->count())
                                                 (Showing
-                                                {{ $availableYatches->firstItem() }}-{{ $availableYatches->lastItem() }}
-                                                of {{ $availableYatches->total() }})
+                                                {{ $availableYachtes->firstItem() }}-{{ $availableYachtes->lastItem() }}
+                                                of {{ $availableYachtes->total() }})
                                             @endif
                                         </span>
                                     </div>
                                     @if ($totalGuests > 0)
                                         <div wire:loading.remove
-                                            wire:target="check_in,check_out,adults,children,yatch_search,perPage"
+                                            wire:target="check_in,check_out,adults,children,yacht_search,perPage"
                                             class="flex items-center gap-2">
                                             <x-icon name="o-user-group" class="w-4 h-4" />
                                             <span>Filtered for {{ $totalGuests }}
                                                 {{ $totalGuests === 1 ? 'guest' : 'guests' }}</span>
                                         </div>
                                     @endif
-                                    @if (!empty($yatch_search))
+                                    @if (!empty($yacht_search))
                                         <div wire:loading.remove
-                                            wire:target="check_in,check_out,adults,children,yatch_search,perPage"
+                                            wire:target="check_in,check_out,adults,children,yacht_search,perPage"
                                             class="flex items-center gap-2">
                                             <x-icon name="o-magnifying-glass" class="w-4 h-4" />
-                                            <span>Search: "{{ $yatch_search }}"</span>
+                                            <span>Search: "{{ $yacht_search }}"</span>
                                         </div>
                                     @endif
                                 </div>
 
                                 {{-- Loading Overlay for Yacht Grid --}}
-                                <div wire:loading wire:target="check_in,check_out,adults,children,yatch_search,perPage"
+                                <div wire:loading wire:target="check_in,check_out,adults,children,yacht_search,perPage"
                                     class="mt-4">
                                     <div
                                         class="flex items-center justify-center py-12 bg-base-200/50 rounded-xl border-2 border-dashed border-base-300">
@@ -512,24 +512,24 @@ new class extends Component {
                                 </div>
 
                                 <div wire:loading.remove
-                                    wire:target="check_in,check_out,adults,children,yatch_search,perPage">
-                                    @if ($availableYatches->count() > 0)
+                                    wire:target="check_in,check_out,adults,children,yacht_search,perPage">
+                                    @if ($availableYachtes->count() > 0)
                                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                                            @foreach ($availableYatches as $yatch)
+                                            @foreach ($availableYachtes as $yacht)
                                                 @php
-                                                    $isSelected = $yatch_id == $yatch->id;
+                                                    $isSelected = $yacht_id == $yacht->id;
                                                 @endphp
-                                                <label wire:click="$wire.yatch_id = {{ $yatch->id }}"
+                                                <label wire:click="$wire.yacht_id = {{ $yacht->id }}"
                                                     class="relative cursor-pointer group block">
-                                                    <input type="radio" wire:model.live="yatch_id"
-                                                        value="{{ $yatch->id }}" class="sr-only">
+                                                    <input type="radio" wire:model.live="yacht_id"
+                                                        value="{{ $yacht->id }}" class="sr-only">
                                                     <div
                                                         class="bg-base-100 border-2 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 h-full flex flex-col {{ $isSelected ? 'border-primary ring-2 ring-primary/20 shadow-lg' : 'border-base-300' }}">
                                                         {{-- Image Section --}}
                                                         <div class="relative aspect-4/3 bg-base-200 overflow-hidden">
-                                                            @if ($yatch->image)
-                                                                <img src="{{ asset($yatch->image) }}"
-                                                                    alt="{{ $yatch->name }}"
+                                                            @if ($yacht->image)
+                                                                <img src="{{ asset($yacht->image) }}"
+                                                                    alt="{{ $yacht->name }}"
                                                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                                                             @else
                                                                 <div
@@ -555,11 +555,11 @@ new class extends Component {
                                                             </div>
 
                                                             {{-- Discount Badge --}}
-                                                            @if ($yatch->discount_price && $yatch->price && $yatch->discount_price < $yatch->price)
+                                                            @if ($yacht->discount_price && $yacht->price && $yacht->discount_price < $yacht->price)
                                                                 <div class="absolute top-3 left-3">
                                                                     <div
                                                                         class="bg-primary text-primary-content px-2 py-1 rounded-md text-xs font-semibold shadow-md">
-                                                                        {{ number_format((($yatch->price - $yatch->discount_price) / $yatch->price) * 100, 0) }}%
+                                                                        {{ number_format((($yacht->price - $yacht->discount_price) / $yacht->price) * 100, 0) }}%
                                                                         OFF
                                                                     </div>
                                                                 </div>
@@ -572,42 +572,42 @@ new class extends Component {
                                                             <div class="mb-3">
                                                                 <h4
                                                                     class="font-semibold text-base text-base-content mb-1 line-clamp-1">
-                                                                    {{ $yatch->name }}
+                                                                    {{ $yacht->name }}
                                                                 </h4>
-                                                                @if ($yatch->sku)
+                                                                @if ($yacht->sku)
                                                                     <p class="text-xs text-base-content/50 font-mono">
-                                                                        SKU: {{ $yatch->sku }}
+                                                                        SKU: {{ $yacht->sku }}
                                                                     </p>
                                                                 @endif
                                                             </div>
 
                                                             {{-- Details Grid --}}
                                                             <div class="space-y-2 mb-4 flex-1">
-                                                                @if ($yatch->max_guests)
+                                                                @if ($yacht->max_guests)
                                                                     <div
                                                                         class="flex items-center gap-2 text-sm text-base-content/70">
                                                                         <x-icon name="o-user-group"
                                                                             class="w-4 h-4 text-base-content/50" />
-                                                                        <span>Max {{ $yatch->max_guests }}
+                                                                        <span>Max {{ $yacht->max_guests }}
                                                                             guests</span>
                                                                     </div>
                                                                 @endif
 
-                                                                @if ($yatch->length)
+                                                                @if ($yacht->length)
                                                                     <div
                                                                         class="flex items-center gap-2 text-sm text-base-content/70">
                                                                         <x-icon name="o-arrows-pointing-out"
                                                                             class="w-4 h-4 text-base-content/50" />
-                                                                        <span>{{ $yatch->length }}m length</span>
+                                                                        <span>{{ $yacht->length }}m length</span>
                                                                     </div>
                                                                 @endif
 
-                                                                @if ($yatch->max_crew)
+                                                                @if ($yacht->max_crew)
                                                                     <div
                                                                         class="flex items-center gap-2 text-sm text-base-content/70">
                                                                         <x-icon name="o-user"
                                                                             class="w-4 h-4 text-base-content/50" />
-                                                                        <span>Up to {{ $yatch->max_crew }} crew</span>
+                                                                        <span>Up to {{ $yacht->max_crew }} crew</span>
                                                                     </div>
                                                                 @endif
                                                             </div>
@@ -617,12 +617,12 @@ new class extends Component {
                                                                 <div class="flex items-baseline justify-between gap-2">
                                                                     <div class="flex-1">
                                                                         <div class="font-bold text-lg text-primary">
-                                                                            {{ currency_format($yatch->discount_price ?? ($yatch->price ?? 0)) }}
+                                                                            {{ currency_format($yacht->discount_price ?? ($yacht->price ?? 0)) }}
                                                                         </div>
-                                                                        @if ($yatch->discount_price && $yatch->price && $yatch->discount_price < $yatch->price)
+                                                                        @if ($yacht->discount_price && $yacht->price && $yacht->discount_price < $yacht->price)
                                                                             <div
                                                                                 class="text-xs text-base-content/50 line-through">
-                                                                                {{ currency_format($yatch->price) }}
+                                                                                {{ currency_format($yacht->price) }}
                                                                             </div>
                                                                         @endif
                                                                     </div>
@@ -635,26 +635,26 @@ new class extends Component {
                                         </div>
 
                                         {{-- Pagination --}}
-                                        @if ($availableYatches->hasPages())
+                                        @if ($availableYachtes->hasPages())
                                             <div
                                                 class="mt-6 flex items-center justify-between border-t border-base-300 pt-4">
                                                 <div class="text-sm text-base-content/70">
-                                                    Showing {{ $availableYatches->firstItem() }} to
-                                                    {{ $availableYatches->lastItem() }} of
-                                                    {{ $availableYatches->total() }} results
+                                                    Showing {{ $availableYachtes->firstItem() }} to
+                                                    {{ $availableYachtes->lastItem() }} of
+                                                    {{ $availableYachtes->total() }} results
                                                 </div>
                                                 <div class="flex items-center gap-2">
-                                                    {{ $availableYatches->links() }}
+                                                    {{ $availableYachtes->links() }}
                                                 </div>
                                             </div>
                                         @endif
 
-                                        @if ($yatch_id)
+                                        @if ($yacht_id)
                                             <div class="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
                                                 <div class="flex items-center gap-2 text-sm text-primary">
                                                     <x-icon name="o-check-circle" class="w-5 h-5" />
                                                     <span class="font-medium">Yacht selected:
-                                                        {{ $availableYatches->firstWhere('id', $yatch_id)?->name ?? Yatch::find($yatch_id)?->name }}</span>
+                                                        {{ $availableYachtes->firstWhere('id', $yacht_id)?->name ?? Yacht::find($yacht_id)?->name }}</span>
                                                 </div>
                                             </div>
                                         @endif
@@ -663,7 +663,7 @@ new class extends Component {
                                             <div>
                                                 <p class="font-semibold">No yachts available</p>
                                                 <p class="text-sm mt-1">
-                                                    @if (!empty($yatch_search))
+                                                    @if (!empty($yacht_search))
                                                         No yachts match your search criteria or are not available for
                                                         the
                                                         selected
@@ -739,9 +739,9 @@ new class extends Component {
                     {{-- Summary Column --}}
                     <div class="space-y-6">
                         @php
-                            $selectedYatch =
-                                $availableYatches->firstWhere('id', $yatch_id) ??
-                                ($yatch_id ? Yatch::find($yatch_id) : null);
+                            $selectedYacht =
+                                $availableYachtes->firstWhere('id', $yacht_id) ??
+                                ($yacht_id ? Yacht::find($yacht_id) : null);
                         @endphp
                         <div
                             class="rounded-2xl border border-base-300/80 bg-gradient-to-br from-base-100 to-base-200/50 p-4 shadow-lg sticky top-24 backdrop-blur-sm">
@@ -820,12 +820,12 @@ new class extends Component {
                                         <div class="flex-1 min-w-0">
                                             <p class="text-xs font-semibold text-base-content/60 mb-0.5">Selected Yacht
                                             </p>
-                                            @if ($selectedYatch)
+                                            @if ($selectedYacht)
                                                 <p class="text-xs font-bold text-base-content line-clamp-1">
-                                                    {{ $selectedYatch->name }}</p>
-                                                @if ($selectedYatch->sku)
+                                                    {{ $selectedYacht->name }}</p>
+                                                @if ($selectedYacht->sku)
                                                     <p class="text-xs text-base-content/60 font-mono">SKU:
-                                                        {{ $selectedYatch->sku }}</p>
+                                                        {{ $selectedYacht->sku }}</p>
                                                 @endif
                                             @else
                                                 <p class="text-xs text-base-content/50 italic">No yacht selected</p>
@@ -890,9 +890,9 @@ new class extends Component {
                                     </li>
                                     <li class="flex items-center gap-2" wire:key="checklist-yacht">
                                         <span
-                                            class="w-2.5 h-2.5 rounded-full transition-colors duration-200 {{ $yatch_id ? 'bg-success' : 'bg-base-400' }}"></span>
+                                            class="w-2.5 h-2.5 rounded-full transition-colors duration-200 {{ $yacht_id ? 'bg-success' : 'bg-base-400' }}"></span>
                                         <span
-                                            class="{{ $yatch_id ? 'text-success font-medium' : 'text-base-content/70' }}">Yacht
+                                            class="{{ $yacht_id ? 'text-success font-medium' : 'text-base-content/70' }}">Yacht
                                             selected</span>
                                     </li>
                                     <li class="flex items-center gap-2" wire:key="checklist-amount">
@@ -933,7 +933,7 @@ new class extends Component {
                 <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:justify-between">
                     <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
                         <x-button icon="o-arrow-left" label="Back"
-                            link="{{ route('admin.bookings.yatch.index') }}" class="btn-ghost w-full sm:w-auto"
+                            link="{{ route('admin.bookings.yacht.index') }}" class="btn-ghost w-full sm:w-auto"
                             responsive />
                         <x-button icon="o-arrow-path" label="Reset Form" type="button" wire:click="resetForm"
                             class="btn-outline w-full sm:w-auto" responsive />

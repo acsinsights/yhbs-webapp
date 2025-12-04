@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -27,9 +26,9 @@ return new class extends Migration
             $table->foreignId('room_id')->constrained('rooms');
         });
 
-        Schema::create('amenity_yatch', function (Blueprint $table) {
+        Schema::create('amenity_yacht', function (Blueprint $table) {
             $table->foreignId('amenity_id')->constrained('amenities');
-            $table->foreignId('yatch_id')->constrained('yatches');
+            $table->foreignId('yacht_id')->constrained('yachts');
         });
     }
 

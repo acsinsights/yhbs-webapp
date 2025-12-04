@@ -6,7 +6,7 @@ use Illuminate\View\View;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 use Livewire\Volt\Component;
-use App\Models\{Booking, Yatch};
+use App\Models\{Booking, Yacht};
 
 new class extends Component {
     use Toast, WithPagination;
@@ -19,7 +19,7 @@ new class extends Component {
 
     public function delete($id): void
     {
-        $booking = Booking::where('bookingable_type', Yatch::class)->findOrFail($id);
+        $booking = Booking::where('bookingable_type', Yacht::class)->findOrFail($id);
         $booking->delete();
 
         $this->success('Booking deleted successfully.');
@@ -28,7 +28,7 @@ new class extends Component {
     public function rendering(View $view)
     {
         $view->bookings = Booking::query()
-            ->where('bookingable_type', Yatch::class)
+            ->where('bookingable_type', Yacht::class)
             ->with(['bookingable', 'user'])
             ->when($this->search, function ($query) {
                 return $query
@@ -45,7 +45,7 @@ new class extends Component {
         $view->headers = [
             ['key' => 'id', 'label' => '#', 'class' => 'w-1'],
             ['key' => 'user.name', 'label' => 'Customer', 'sortable' => false, 'class' => 'whitespace-nowrap'],
-            ['key' => 'yatch', 'label' => 'Yacht', 'sortable' => false, 'class' => 'whitespace-nowrap'],
+            ['key' => 'yacht', 'label' => 'Yacht', 'sortable' => false, 'class' => 'whitespace-nowrap'],
             ['key' => 'check_in', 'label' => 'Check In', 'sortable' => true, 'class' => 'whitespace-nowrap'],
             ['key' => 'check_out', 'label' => 'Check Out', 'sortable' => true, 'class' => 'whitespace-nowrap'],
             ['key' => 'adults', 'label' => 'Adults', 'sortable' => false, 'class' => 'whitespace-nowrap'],
@@ -80,7 +80,7 @@ new class extends Component {
         <x-slot:actions>
             <x-input icon="o-magnifying-glass" placeholder="Search..." wire:model.live.debounce="search" clearable />
             <x-button icon="o-plus" class="btn-primary" label="New Booking"
-                link="{{ route('admin.bookings.yatch.create') }}" />
+                link="{{ route('admin.bookings.yacht.create') }}" />
         </x-slot:actions>
     </x-header>
 
@@ -91,7 +91,7 @@ new class extends Component {
                 <div class="font-semibold">{{ $booking->user->name ?? 'N/A' }}</div>
             @endscope
 
-            @scope('cell_yatch', $booking)
+            @scope('cell_yacht', $booking)
                 @if ($booking->bookingable)
                     <div class="flex flex-col">
                         <div class="font-semibold">{{ $booking->bookingable->name }}</div>
@@ -174,7 +174,7 @@ new class extends Component {
 
             @scope('actions', $booking)
                 <div class="flex items-center gap-2">
-                    <x-button icon="o-eye" link="{{ route('admin.bookings.yatch.show', $booking->id) }}"
+                    <x-button icon="o-eye" link="{{ route('admin.bookings.yacht.show', $booking->id) }}"
                         class="btn-ghost btn-sm" tooltip="View Details" />
                     <x-button icon="o-trash" wire:click="delete({{ $booking->id }})"
                         wire:confirm="Are you sure you want to delete this booking?" spinner
