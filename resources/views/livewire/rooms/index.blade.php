@@ -75,7 +75,7 @@ new class extends Component {
             ->orderBy(...array_values($this->sortBy))
             ->paginate($this->perPage);
 
-        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'name', 'label' => 'Name'], ['key' => 'room_number', 'label' => 'Room Number'], ['key' => 'house.name', 'label' => 'House', 'sortable' => false], ['key' => 'adults', 'label' => 'Adults'], ['key' => 'children', 'label' => 'Children'], ['key' => 'price', 'label' => 'Price', 'class' => 'whitespace-nowrap'], ['key' => 'discount_price', 'label' => 'Discount Price', 'class' => 'whitespace-nowrap']];
+        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'name', 'label' => 'Name'], ['key' => 'room_number', 'label' => 'Room Number'], ['key' => 'house.name', 'label' => 'House', 'sortable' => false], ['key' => 'adults', 'label' => 'Adults'], ['key' => 'children', 'label' => 'Children'], ['key' => 'price', 'label' => 'Price', 'class' => 'whitespace-nowrap']];
 
         $view->houses = House::latest()->get();
     }
@@ -141,26 +141,9 @@ new class extends Component {
             @endscope
 
             @scope('cell_price', $room)
-                <div class="font-semibold line-through">
+                <div class="font-semibold">
                     {{ currency_format($room->price) }}
                 </div>
-            @endscope
-
-            @scope('cell_discount_price', $room)
-                @if ($room->discount_price)
-                    <div class="flex items-center gap-2">
-                        <div class="font-semibold text-success">
-                            {{ currency_format($room->discount_price) }}
-                        </div>
-
-                        <div>
-                            <x-badge :value="number_format((($room->price - $room->discount_price) / $room->price) * 100, 2) .
-                                '% off'" class="badge-soft badge-sm badge-error" />
-                        </div>
-                    </div>
-                @else
-                    <span class="text-base-content/50">—</span>
-                @endif
             @endscope
 
             @scope('cell_categories', $room)

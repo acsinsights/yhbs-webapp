@@ -162,31 +162,10 @@ new class extends Component {
             </x-slot:title>
             <div class="grid gap-6">
                 <div class="flex items-baseline gap-4">
-                    @if ($room->discount_price)
-                        <div>
-                            <p class="text-xs text-base-content/60 mb-1">Regular Price</p>
-                            <p class="text-2xl font-bold text-base-content/40 line-through">
-                                {{ currency_format($room->price) }}</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-base-content/60 mb-1">Discount Price</p>
-                            <div class="flex items-baseline gap-2">
-                                <p class="text-3xl font-bold text-primary">{{ currency_format($room->discount_price) }}
-                                </p>
-                                @php
-                                    $discountPercent = round(
-                                        (($room->price - $room->discount_price) / $room->price) * 100,
-                                    );
-                                @endphp
-                                <x-badge :value="$discountPercent . '% OFF'" class="badge-success badge-sm" />
-                            </div>
-                        </div>
-                    @else
-                        <div>
-                            <p class="text-xs text-base-content/60 mb-1">Price</p>
-                            <p class="text-3xl font-bold text-primary">{{ currency_format($room->price) }}</p>
-                        </div>
-                    @endif
+                    <div>
+                        <p class="text-xs text-base-content/60 mb-1">Price</p>
+                        <p class="text-3xl font-bold text-primary">{{ currency_format($room->price) }}</p>
+                    </div>
                 </div>
 
                 @if ($room->price_per_night || $room->price_per_2night || $room->price_per_3night || $room->additional_night_price)

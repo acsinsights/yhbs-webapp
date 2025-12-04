@@ -22,7 +22,6 @@ new class extends Component {
     public ?string $existing_image = null;
     public ?string $description = null;
     public ?float $price = null;
-    public ?float $discount_price = null;
     public ?float $price_per_night = null;
     public ?float $price_per_2night = null;
     public ?float $price_per_3night = null;
@@ -69,7 +68,6 @@ new class extends Component {
         $this->image = null; // Keep null for file upload, use existing_image for display
         $this->description = $room->description;
         $this->price = $room->price;
-        $this->discount_price = $room->discount_price;
         $this->price_per_night = $room->price_per_night;
         $this->price_per_2night = $room->price_per_2night;
         $this->price_per_3night = $room->price_per_3night;
@@ -109,7 +107,6 @@ new class extends Component {
             'files.*' => 'image|max:5000',
             'description' => 'nullable|string',
             'price' => 'nullable|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0',
             'price_per_night' => 'nullable|numeric|min:0',
             'price_per_2night' => 'nullable|numeric|min:0',
             'price_per_3night' => 'nullable|numeric|min:0',
@@ -137,7 +134,6 @@ new class extends Component {
             'image' => $imagePath,
             'description' => $this->description,
             'price' => $this->price,
-            'discount_price' => $this->discount_price,
             'price_per_night' => $this->price_per_night,
             'price_per_2night' => $this->price_per_2night,
             'price_per_3night' => $this->price_per_3night,
@@ -286,9 +282,6 @@ new class extends Component {
 
                 <x-input wire:model="price" type="number" step="0.01" label="Price" placeholder="0.00"
                     icon="o-currency-dollar" hint="Regular room price" />
-
-                <x-input wire:model="discount_price" type="number" step="0.01" label="Discount Price"
-                    placeholder="0.00" icon="o-tag" hint="Discounted price (optional)" />
 
                 <x-input wire:model="price_per_night" type="number" step="0.01" label="Price Per Night"
                     placeholder="0.00" icon="o-currency-dollar" hint="Price for 1 night (optional)" />

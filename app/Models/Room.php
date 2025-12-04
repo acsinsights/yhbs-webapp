@@ -18,7 +18,6 @@ class Room extends Model
         'image',
         'description',
         'price',
-        'discount_price',
         'price_per_night',
         'price_per_2night',
         'price_per_3night',
