@@ -11,6 +11,21 @@ Route::get('/', function () {
     return view('frontend.home');
 })->name('home');
 
+// about page
+Route::get('/about', function () {
+    return view('frontend.about');
+})->name('about');
+
+// contact page
+Route::get('/contact', function () {
+    return view('frontend.contact');
+})->name('contact');
+
+Route::get('/job-application', function () {
+    return view('frontend.job-application');
+})->name('job-application');
+
+
 // Customer Routes
 Route::prefix('customer')->name('customer.')->group(function () {
     // Guest routes (Login, Register, Forgot Password)

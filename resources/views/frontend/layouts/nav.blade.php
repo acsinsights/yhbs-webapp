@@ -53,7 +53,7 @@
                         </div>
                         <div class="content">
                             <span>Need Help?</span>
-                            <a href="tel:91345533865">+91 345 533 865</a>
+                            <a href="tel:91345533865">+965 1808080</a>
                         </div>
                     </div>
                     <a href="#" class="primary-btn1 black-bg d-xl-none d-flex">

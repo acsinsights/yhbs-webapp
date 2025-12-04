@@ -11,7 +11,7 @@
                     </svg>
                     <div class="content">
                         <h6>To More Inquiry</h6>
-                        <span>Don’t hesitate Call  to GoFly.</span>
+                        <span>Don’t hesitate Call.</span>
                     </div>
                 </div>
                 <ul class="contact-area">
@@ -21,7 +21,7 @@
                         </div>
                         <div class="content">
                             <span>WhatsApp</span>
-                            <a href="https://wa.me/91345533865">+91 345 533 865</a>
+                            <a href="https://wa.me/+965 1808080">+965 1808080</a>
                         </div>
                     </li>
                     <li class="single-contact">
@@ -39,7 +39,7 @@
                         </div>
                         <div class="content">
                             <span>Call Us</span>
-                            <a href="tel:+91456453345">+91 456 453 345</a>
+                            <a href="tel:+965 1808080">+965 1808080</a>
                         </div>
                     </li>
                 </ul>
@@ -55,8 +55,9 @@
                                 <img src="{{ asset('frontend/img/footer-logo.svg') }}" alt="">
                             </a>
                             <div class="address-area">
-                                <span>GoFly Travel Agency</span>
-                                <a href="#">Skyline Plaza, 5th Floor, 123 Main Street Los Angeles, CA 90001, USA</a>
+                                <span>IKARUS United Marine Services
+</span>
+                                <a href="#">Block 5, Dayia Tower, Sharq Kuwait City, Kuwait</a>
                             </div>
                             <ul class="social-list">
                                 <li><a href="https://www.facebook.com/"><i class="bx bxl-facebook"></i></a></li>

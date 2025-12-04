@@ -75,6 +75,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Volt::route('/{booking}/show', 'booking.yacht.show')->name('bookings.yacht.show');
             Volt::route('/{booking}/edit', 'booking.yacht.edit')->name('bookings.yacht.edit');
         });
+        
+        
 
         Route::get('/logout', function () {
             Auth::logout();
@@ -83,4 +85,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             return redirect()->route('admin.login');
         })->name('logout');
     });
+
 });
+
+Route::post('/job-submit', function () {
+    return "Form submitted (frontend only).";
+})->name('job.submit');
