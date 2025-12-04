@@ -20,29 +20,29 @@
         <x-slot:brand>
             <a href="{{ route('admin.index') }}" wire:navigate="">
                 {{-- Logo section - commented out temporarily --}}
-                {{-- <div class="hidden-when-collapsed ">
+                <div class="hidden-when-collapsed ">
                     <div class="flex items-center gap-2">
-                        <img src="{{ asset('default/app_logo.png') }}" height="100" width="100" alt="logo"
+                        <img src="{{ asset('frontend/img/header-logo2.svg') }}" width="500" alt="logo"
                             class="light-logo" />
-                        <img src="{{ asset('default/app_logo.png') }}" height="100" width="100" alt="logo"
+                        <img src="{{ asset('frontend/img/header-logo2.svg') }}" width="500" alt="logo"
                             class="dark-logo" />
                     </div>
                 </div>
                 <div class="display-when-collapsed hidden mx-5 mt-4 lg:mb-6 h-[28px]">
-                    <img src="{{ asset('default/app_logo.png') }}" height="100" width="100" alt="logo"
+                    <img src="{{ asset('frontend/img/header-logo2.svg') }}" width="500" alt="logo"
                         class="light-logo" />
-                    <img src="{{ asset('default/app_logo.png') }}" height="100" width="100" alt="logo"
+                    <img src="{{ asset('frontend/img/header-logo2.svg') }}" width="500" alt="logo"
                         class="dark-logo" />
-                </div> --}}
+                </div>
                 {{-- Text Logo --}}
-                <div class="hidden-when-collapsed">
+                {{-- <div class="hidden-when-collapsed">
                     <div class="flex items gap-2">
                         <span class="text-3xl font-bold text-primary">YHBS</span>
                     </div>
                 </div>
                 <div class="display-when-collapsed hidden mx-5 mt-4 lg:mb-6">
                     <span class="text-2xl font-bold text-primary">YHBS</span>
-                </div>
+                </div> --}}
             </a>
         </x-slot:brand>
         <x-slot:actions>
@@ -55,14 +55,17 @@
     <x-main full-width>
         <x-slot:sidebar drawer="main-drawer" collapsible class="bg-base-100 lg:bg-inherit">
             <a href="{{ route('admin.index') }}" wire:navigate="">
-                <div class="hidden-when-collapsed p-5 pt-3 ">
-                    <div class="flex gap-2">
-                        <span class="text-4xl font-bold text-primary">YHBS</span>
+                <div class="p-5 pt-3 hidden-when-collapsed ">
+                    <div class="flex items-center gap-2 mt-2">
+                        <img src="{{ asset('frontend/img/admin-logo.svg') }}" width="250"
+                            alt="logo" class="light-logo" />
+                        <img src="{{ asset('frontend/img/admin-logo-light.svg') }}" width="250"
+                            alt="logo" class="dark-logo" />
                     </div>
                 </div>
 
                 <div class="display-when-collapsed hidden mx-2 mt-4 lg:mb-3">
-                    <span class="text-2xl font-bold text-primary">YHBS</span>
+                    <img src="{{ asset('frontend/img/fav-icon.svg') }}" width="50" alt="IKARUS Logo" />
                 </div>
             </a>
 
@@ -108,7 +111,8 @@
         </x-slot:sidebar>
         {{-- The `$slot` goes here --}}
         <x-slot:content class="lg:pt-0">
-            <div role="navigation" aria-label="Navbar" class="navbar topbar-wrapper z-10 border-b border-base-200 px-3">
+            <div role="navigation" aria-label="Navbar"
+                class="navbar topbar-wrapper z-10 border-b border-base-200 px-3">
                 <div class="gap-3 navbar-start">
 
                 </div>
@@ -177,6 +181,9 @@
                 class="flex justify-between pt-3 px-3 mt-3 border-t text-sm/relaxed text-base-content border-base-200">
                 <div>
                     © {{ date('Y') }} {{ config('app.name') }}. All Rights Reserved.
+                </div>
+                 <div>
+                    <span class="text-primary">v{{ config('app.version') }}</span>
                 </div>
             </div>
         </x-slot:content>

@@ -1,74 +1,112 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
-
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
-}
-
-
-
-/**
-    The lines above are intact.
-    The lines below were added by maryUI installer.
-*/
-
-/** daisyUI */
+/* daisyUI */
 @plugin "daisyui" {
     themes: light --default, dark --prefersdark;
+}
+
+@plugin "daisyui/theme" {
+    --color-base-content: oklch(21% 0.034 264.665);
+    --color-primary: oklch(25% 0.09 281.29);
+    --color-primary-content: oklch(0% 0 0);
+    --color-secondary: oklch(62% 0.214 259.815);
+    --color-secondary-content: oklch(97% 0.014 254.604);
+    --color-accent: oklch(55% 0.016 285.938);
+    --color-accent-content: oklch(98% 0 0);
+    --color-neutral: oklch(37% 0.034 259.733);
+    --color-neutral-content: oklch(98% 0.002 247.839);
+    --color-info: oklch(68% 0.169 237.323);
+    --color-info-content: oklch(97% 0.013 236.62);
+    --color-success: oklch(72% 0.219 149.579);
+    --color-success-content: oklch(98% 0.018 155.826);
+    --color-warning: oklch(76% 0.188 70.08);
+    --color-warning-content: oklch(98% 0.022 95.277);
+    --color-error: oklch(65% 0.241 354.308);
+    --color-error-content: oklch(97% 0.014 343.198);
+    --radius-selector: 0.5rem;
+    --radius-field: 1rem;
+    --radius-box: 1rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 0;
+    --noise: 1;
 }
 
 /* maryUI */
 @source "../../vendor/robsontenorio/mary/src/View/Components/**/*.php";
 
-/* Theme toggle */
+/* Dark theme variant support */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/**
-* Paginator - Traditional style
-* Because Laravel defaults does not match well the design of daisyUI.
-*/
+/* Laravel 12 defaults */
+@source "../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php";
+@source "../../storage/framework/views/*.php";
+@source "../**/*.blade.php";
+@source "../**/*.js";
+@source "../**/*.vue";
 
+.drawer-content .dashboard-content {
+    min-height: calc(95vh - 110px);
+}
+
+@media (max-width: 1024px) {
+    .drawer-content .dashboard-content {
+        min-height: calc(95vh - 207px);
+    }
+}
+
+/* Table pagination: active page highlight */
 .mary-table-pagination span[aria-current="page"]>span {
-    @apply bg-primary text-base-100
+    @apply bg-primary text-base-100;
 }
 
+/* Table pagination: for dark mode*/
+.mary-table-pagination span[aria-disabled="true"] span {
+    @apply bg-inherit;
+}
+
+/* Table pagination: for dark mode */
 .mary-table-pagination button {
-    @apply cursor-pointer
+    @apply bg-base-100;
 }
 
-
-/**
-    The lines above are intact.
-    The lines below were added by maryUI installer.
-*/
-
-/** daisyUI */
-@plugin "daisyui" {
-    themes: light --default, dark --prefersdark;
+.light table thead th {
+    @apply text-black;
 }
 
-/* maryUI */
-@source "../../vendor/robsontenorio/mary/src/View/Components/**/*.php";
-
-/* Theme toggle */
-@custom-variant dark (&:where(.dark, .dark *));
-
-/**
-* Paginator - Traditional style
-* Because Laravel defaults does not match well the design of daisyUI.
-*/
-
-.mary-table-pagination span[aria-current="page"]>span {
-    @apply bg-primary text-base-100
+.light .mary-table-pagination p,
+.light .mary-table-pagination button {
+    @apply text-black;
 }
 
-.mary-table-pagination button {
-    @apply cursor-pointer
+.product-attribute {
+    @apply inline-block py-1 mb-1 text-black rounded-full pe-2 me-2;
+    background-color: #f3f4f6;
+}
+
+.dark .product-attribute {
+    @apply text-white;
+    background-color: #313131;
+}
+
+.product-attribute .attribute-label {
+    @apply px-2 py-1 font-bold text-white rounded-full me-1;
+    background-color: #313131;
+}
+
+.dark .product-attribute .attribute-label {
+    @apply text-black;
+    background-color: #f3f4f6;
+}
+
+.product-attribute.color .attribute-label {
+    background-color: var(--attr-clr);
+    outline: 2px solid black;
+}
+
+.dark .product-attribute.color .attribute-label {
+    outline: 2px solid white;
 }
 
 .dark .dark-logo {
@@ -87,27 +125,117 @@
     display: none;
 }
 
-/* Custom scrollbar styles - reduced thumb and width */
+.input-field-actions button {
+    @apply rounded-none;
+}
+
+.input-field-actions button:first-child {
+    @apply rounded-bl-lg;
+}
+
+.form-builder-playground .input-item {
+    @apply rounded-none;
+    min-width: 400px;
+    user-select: none;
+}
+
+/* first child and last child */
+.form-builder-playground .input-item:first-child {
+    @apply rounded-t-lg;
+}
+
+.form-builder-playground .input-item:last-child {
+    @apply rounded-b-lg;
+}
+
+.marry-radio .join {
+    flex-wrap: wrap;
+}
+
+.form-builder-playground-loading {
+    background: linear-gradient(115deg, #0076ff, #00a849, #f26200);
+    background-size: 600% 600%;
+    height: 5px;
+    -webkit-animation: playground-gradient 2s ease infinite;
+    -moz-animation: playground-gradient 2s ease infinite;
+    -o-animation: playground-gradient 2s ease infinite;
+    animation: playground-gradient 2s ease infinite;
+}
+
+@-webkit-keyframes playground-gradient {
+    0% {
+        background-position: 0% 29%;
+    }
+
+    50% {
+        background-position: 100% 72%;
+    }
+
+    100% {
+        background-position: 0% 29%;
+    }
+}
+
+@-moz-keyframes playground-gradient {
+    0% {
+        background-position: 0% 29%;
+    }
+
+    50% {
+        background-position: 100% 72%;
+    }
+
+    100% {
+        background-position: 0% 29%;
+    }
+}
+
+@-o-keyframes playground-gradient {
+    0% {
+        background-position: 0% 29%;
+    }
+
+    50% {
+        background-position: 100% 72%;
+    }
+
+    100% {
+        background-position: 0% 29%;
+    }
+}
+
+@keyframes playground-gradient {
+    0% {
+        background-position: 0% 29%;
+    }
+
+    50% {
+        background-position: 100% 72%;
+    }
+
+    100% {
+        background-position: 0% 29%;
+    }
+}
+
+.form-builder-playground.draggable-container--is-dragging {
+    border: 1px dashed rgba(0, 153, 255, 0.719) !important;
+}
+
+input[type="radio"]:checked+span {
+    display: block;
+}
+
+/* Scrollbar - ultra thin */
+/* Webkit browsers */
 ::-webkit-scrollbar {
-    width: 3px;
-    height: 3px;
+    width: 2px;
+    /* or 1px, but not less */
+    height: 2px;
 }
 
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-    background: hsl(var(--bc) / 0.3);
-    border-radius: 2px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--bc) / 0.5);
-}
-
-/* Firefox scrollbar */
+/* Firefox */
 * {
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--bc) / 0.3) transparent;
+    scrollbar-color: #bababa transparent;
 }
