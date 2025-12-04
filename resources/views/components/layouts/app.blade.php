@@ -152,11 +152,22 @@
                                 </li>
                                 <hr class="my-1 -mx-2 border-base-content/10" />
                                 <li>
-                                    <a href="{{ route('admin.logout') }}" class="text-error">Logout</a>
+                                    <button onclick="logout_modal.showModal()" class="text-error w-full text-left">
+                                        Logout
+                                    </button>
                                 </li>
                             </ul>
                         </div>
                     @endauth
+
+                    <!-- Logout Confirmation Modal -->
+                    <x-modal id="logout_modal" title="Confirm Logout" subtitle="Are you sure you want to logout?"
+                        separator>
+                        <div class="flex justify-end gap-2 mt-4">
+                            <x-button label="Cancel" onclick="logout_modal.close()" />
+                            <x-button label="Yes, Logout" class="btn-error" link="{{ route('admin.logout') }}" />
+                        </div>
+                    </x-modal>
                 </div>
             </div>
             <div class="dashboard-content">
