@@ -1,4 +1,10 @@
 @extends('frontend.layouts.app')
+
+@section('styles')
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+@endsection
+
 @section('content')
     <!-- Breadcrumb section Start-->
     <div class="breadcrumb-section three"
@@ -275,4 +281,12 @@
             </div>
         </div>
     </div>
+@endsection
+
+@section('scripts')
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <!-- Room Booking JS -->
+    <script src="{{ asset('frontend/js/room-booking.js') }}"></script>
 @endsection

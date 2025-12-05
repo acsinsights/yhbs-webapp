@@ -1,4 +1,10 @@
 @extends('frontend.layouts.app')
+
+@section('styles')
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+@endsection
+
 @section('content')
     <!-- Breadcrumb section Start-->
     <div class="breadcrumb-section three"
@@ -238,15 +244,6 @@
                                     <span>Book Now</span>
                                 </button>
                             </form>
-
-                            <!-- Flatpickr CSS -->
-                            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-
-                            <!-- Flatpickr JS -->
-                            <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
-                            <!-- Yacht Booking JS -->
-                            <script src="{{ asset('frontend/js/yacht-booking.js') }}"></script>
                         </div>
 
                         <!-- Quick Info -->
@@ -302,3 +299,11 @@
         </div>
     </div>
 @endsection
+
+
+@section('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    
+    <script src="{{ asset('frontend/js/yacht-booking.js') }}"></script>
+@endsection
+

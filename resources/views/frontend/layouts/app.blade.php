@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="{{ asset('frontend/css/daterangepicker.css') }}">
     <link href="{{ asset('frontend/css/boxicons.min.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('frontend/css/style.css') }}">
+    @yield('styles')
     <title>
         @yield('title', 'Yachts & Hotels Booking System')
     </title>
