@@ -183,7 +183,7 @@
                                         <div class="nav-link active" id="pills-one-tab" data-bs-toggle="pill"
                                             data-bs-target="#pills-one" role="tab" aria-controls="pills-one"
                                             aria-selected="true">
-                                            <img src="{{ asset('frontend/img/innerpages/about-page-journey-img1.jpg') }}"
+                                            <img src="{{ asset('frontend/img/innerpages/2013.jpg') }}"
                                                 alt="" />
                                             <h4>2013</h4>
                                         </div>
@@ -195,7 +195,7 @@
                                         <div class="nav-link" id="pills-two-tab" data-bs-toggle="pill"
                                             data-bs-target="#pills-two" role="tab" aria-controls="pills-two"
                                             aria-selected="true">
-                                            <img src="{{ asset('frontend/img/innerpages/about-page-journey-img2.jpg') }}"
+                                            <img src="{{ asset('frontend/img/innerpages/2015.jpg') }}"
                                                 alt=""" />
                                             <h4>2015</h4>
                                         </div>
@@ -207,7 +207,7 @@
                                         <div class="nav-link" id="pills-three-tab" data-bs-toggle="pill"
                                             data-bs-target="#pills-three" role="tab" aria-controls="pills-three"
                                             aria-selected="true">
-                                            <img src="{{ asset('frontend/img/innerpages/about-page-journey-img3.jpg') }}"
+                                            <img src="{{ asset('frontend/img/innerpages/2018.jpg') }}"
                                                 alt="" />
                                             <h4>2018</h4>
                                         </div>
@@ -219,7 +219,7 @@
                                         <div class="nav-link" id="pills-four-tab" data-bs-toggle="pill"
                                             data-bs-target="#pills-four" role="tab" aria-controls="pills-four"
                                             aria-selected="true">
-                                            <img src="{{ asset('frontend/img/innerpages/about-page-journey-img4.jpg') }}"
+                                            <img src="{{ asset('frontend/img/innerpages/2021.jpg') }}"
                                                 alt="" />
                                             <h4>2021</h4>
                                         </div>
@@ -231,7 +231,7 @@
                                         <div class="nav-link" id="pills-five-tab" data-bs-toggle="pill"
                                             data-bs-target="#pills-five" role="tab" aria-controls="pills-five"
                                             aria-selected="true">
-                                            <img src="{{ asset('frontend/img/innerpages/about-page-journey-img5.jpg') }}"
+                                            <img src="{{ asset('frontend/img/innerpages/2023.jpg') }}"
                                                 alt="" />
                                             <h4>2023</h4>
                                         </div>
@@ -243,7 +243,7 @@
                                         <div class="nav-link" id="pills-six-tab" data-bs-toggle="pill"
                                             data-bs-target="#pills-six" role="tab" aria-controls="pills-six"
                                             aria-selected="true">
-                                            <img src="{{ asset('frontend/img/innerpages/about-page-journey-img6.jpg') }}"
+                                            <img src="{{ asset('frontend/img/innerpages/2024.jpg') }}"
                                                 alt="" />
                                             <h4>2024</h4>
                                         </div>
@@ -255,7 +255,7 @@
                                         <div class="nav-link" id="pills-seven-tab" data-bs-toggle="pill"
                                             data-bs-target="#pills-seven" role="tab" aria-controls="pills-seven"
                                             aria-selected="true">
-                                            <img src="{{ asset('frontend/img/innerpages/about-page-journey-img7.jpg') }}"
+                                            <img src="{{ asset('frontend/img/innerpages/2025.jpg') }}"
                                                 alt="" />
                                             <h4>2025</h4>
                                         </div>
@@ -357,8 +357,8 @@
                             </path>
                         </svg>
                         <h5>
-                            Expertly Curated <br />
-                            Tours.
+                           Expertly Managed  <br />
+                          Marine Tours
                         </h5>
                     </div>
                 </div>
@@ -376,8 +376,8 @@
                             </path>
                         </svg>
                         <h5>
-                            Affordable & Flexible <br />
-                            Packages.
+                           Flexible & Affordable<br />
+                            Marine Packages
                         </h5>
                     </div>
                 </div>
@@ -390,7 +390,7 @@
                         </svg>
                         <h5>
                             24/7 Customer <br />
-                            Support.
+                            Assistance
                         </h5>
                     </div>
                 </div>
@@ -409,7 +409,7 @@
                         </svg>
                         <h5>
                             Certified & <br />
-                            Experienced Guides.
+                           Experienced Crew
                         </h5>
                     </div>
                 </div>

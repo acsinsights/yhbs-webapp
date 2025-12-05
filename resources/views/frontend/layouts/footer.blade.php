@@ -143,7 +143,8 @@
                                 <li><a href="contact.html">Customize Tour</a></li>
                                 <li><a href="travel-inspiration-01.html">Travel Inspirations</a></li>
                                 <li><a href="#">Traveler Reviews</a></li>
-                                <li><a href="#">Terms & Condition</a></li>
+                                <li><a href="{{ route('terms-condition') }}">Terms & Condition</a></li>
+                                <li><a href="{{ route('privacy-policy') }}">Privacy Policy</a></li>
                                 <li><a href="https://www.google.com/maps">Sitemap</a></li>
                             </ul>
                         </div>

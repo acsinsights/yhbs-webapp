@@ -22,9 +22,22 @@ Route::get('/contact', function () {
     return view('frontend.contact');
 })->name('contact');
 
+// job application page
 Route::get('/job-application', function () {
     return view('frontend.job-application');
 })->name('job-application');
+
+// privacy policy page
+Route::get('/privacy-policy', function () {
+    return view('frontend.privacy-policy');
+})->name('privacy-policy');
+
+// terms and condition page
+Route::get('/terms-condition', function () {
+    return view('frontend.terms-condition');
+})->name('terms-condition');
+
+
 
 
 // Customer Routes
