@@ -10,10 +10,17 @@ new class extends Component {
     use Toast;
 
     public Booking $booking;
+    public bool $showPaymentModal = false;
+    public string $payment_status = '';
+    public string $payment_method = '';
+    public bool $showCancelModal = false;
+    public string $cancellation_reason = '';
 
     public function mount(Booking $booking): void
     {
         $this->booking = $booking->load(['bookingable.house', 'user']);
+        $this->payment_status = $booking->payment_status;
+        $this->payment_method = $booking->payment_method;
     }
 
     public function checkout(): void
@@ -23,6 +30,37 @@ new class extends Component {
         ]);
 
         $this->success('Booking checked out successfully.', redirectTo: route('admin.bookings.house.index'));
+    }
+
+    public function updatePayment(): void
+    {
+        $this->validate([
+            'payment_status' => 'required|in:pending,paid,failed',
+            'payment_method' => 'required|in:cash,card,online',
+        ]);
+
+        $this->booking->update([
+            'payment_status' => $this->payment_status,
+            'payment_method' => $this->payment_method,
+        ]);
+
+        $this->showPaymentModal = false;
+        $this->success('Payment details updated successfully.');
+    }
+
+    public function cancelBooking(): void
+    {
+        $this->validate([
+            'cancellation_reason' => 'required|min:10',
+        ]);
+
+        $this->booking->update([
+            'status' => 'cancelled',
+            'notes' => ($this->booking->notes ? $this->booking->notes . "\n\n" : '') . 'Cancellation Reason: ' . $this->cancellation_reason,
+        ]);
+
+        $this->showCancelModal = false;
+        $this->success('Booking cancelled successfully.', redirectTo: route('admin.bookings.house.index'));
     }
 
     public function rendering(View $view)
@@ -59,6 +97,8 @@ new class extends Component {
             @if ($booking->status !== 'checked_out' && $booking->status !== 'cancelled')
                 <x-button icon="o-pencil" label="Edit" link="{{ route('admin.bookings.house.edit', $booking->id) }}"
                     class="btn-primary" />
+                <x-button icon="o-x-circle" label="Cancel Booking" wire:click="$set('showCancelModal', true)"
+                    class="btn-error" />
                 <x-button icon="o-check-circle" label="Checkout" wire:click="checkout"
                     wire:confirm="Are you sure you want to checkout this booking?" class="btn-success"
                     spinner="checkout" />
@@ -228,6 +268,12 @@ new class extends Component {
                         <span>Payment</span>
                     </div>
                 </x-slot:title>
+                <x-slot:menu>
+                    @if ($booking->status !== 'checked_out' && $booking->status !== 'cancelled')
+                        <x-button icon="o-pencil" label="Update" wire:click="$set('showPaymentModal', true)"
+                            class="btn-ghost btn-sm" />
+                    @endif
+                </x-slot:menu>
 
                 <div class="space-y-4">
                     <div>
@@ -252,4 +298,45 @@ new class extends Component {
             </x-card>
         </div>
     </div>
+
+    {{-- Payment Update Modal --}}
+    <x-modal wire:model="showPaymentModal" title="Update Payment Details" class="backdrop-blur">
+        <div class="space-y-4">
+            <x-select label="Payment Status" wire:model="payment_status" :options="[
+                ['id' => 'pending', 'name' => 'Pending'],
+                ['id' => 'paid', 'name' => 'Paid'],
+                ['id' => 'failed', 'name' => 'Failed'],
+            ]" icon="o-credit-card" />
+
+            <x-select label="Payment Method" wire:model="payment_method" :options="[
+                ['id' => 'cash', 'name' => 'Cash'],
+                ['id' => 'card', 'name' => 'Card'],
+                ['id' => 'online', 'name' => 'Online'],
+            ]" icon="o-banknotes" />
+        </div>
+
+        <x-slot:actions>
+            <x-button label="Cancel" @click="$wire.showPaymentModal = false" />
+            <x-button label="Update" wire:click="updatePayment" class="btn-primary" spinner="updatePayment" />
+        </x-slot:actions>
+    </x-modal>
+
+    {{-- Cancel Booking Modal --}}
+    <x-modal wire:model="showCancelModal" title="Cancel Booking" class="backdrop-blur">
+        <div class="space-y-4">
+            <x-alert title="Warning!"
+                description="This action cannot be undone. Please provide a reason for cancellation."
+                icon="o-exclamation-triangle" class="alert-warning" />
+
+            <x-textarea label="Cancellation Reason" wire:model="cancellation_reason"
+                placeholder="Please provide a detailed reason for cancellation..." rows="4"
+                hint="Minimum 10 characters required" />
+        </div>
+
+        <x-slot:actions>
+            <x-button label="Cancel" @click="$wire.showCancelModal = false" />
+            <x-button label="Confirm Cancellation" wire:click="cancelBooking" class="btn-error"
+                spinner="cancelBooking" />
+        </x-slot:actions>
+    </x-modal>
 </div>

@@ -182,6 +182,10 @@ new class extends Component {
                 <div class="flex items-center gap-2">
                     <x-button icon="o-eye" link="{{ route('admin.bookings.house.show', $booking->id) }}"
                         class="btn-ghost btn-sm" tooltip="View Details" />
+                    @if ($booking->status !== 'checked_out' && $booking->status !== 'cancelled')
+                        <x-button icon="o-pencil" link="{{ route('admin.bookings.house.edit', $booking->id) }}"
+                            class="btn-ghost btn-sm" tooltip="Edit" />
+                    @endif
                     <x-button icon="o-trash" wire:click="delete({{ $booking->id }})"
                         wire:confirm="Are you sure you want to delete this booking?" spinner
                         class="btn-ghost btn-sm text-error" tooltip="Delete" />
