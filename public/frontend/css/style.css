@@ -1415,13 +1415,14 @@ body.tt-magic-cursor #magic-cursor {
 }
 
 .primary-btn1:hover > span {
-    transform: translateY(-150%);
-    opacity: 0;
+    transform: translateY(0);
+    opacity: 1;
 }
 
 .primary-btn1:hover > span:nth-child(2) {
-    opacity: 1;
-    transform: translate(0%, -50%);
+    opacity: 0;
+    transform: translate(0%, 0%);
+    display: none;
 }
 
 .primary-btn1:hover::after {
@@ -1440,10 +1441,16 @@ body.tt-magic-cursor #magic-cursor {
 
 .primary-btn1.white-bg:hover {
     color: var(--white-color);
+    background-color: var(--primary-color1);
 }
 
 .primary-btn1.black-bg {
     background-color: var(--black-color);
+    color: var(--white-color);
+}
+
+.primary-btn1.black-bg:hover {
+    background-color: var(--primary-color1);
     color: var(--white-color);
 }
 
@@ -6088,8 +6095,33 @@ header.style-2 .primary-btn1 {
     padding: 16px 28px;
 }
 
-header.style-2 .main-menu {
-    display: inline-block;
+@media (min-width: 1200px) {
+    header.style-2 .main-menu {
+        display: flex;
+        justify-content: center;
+        flex: 1;
+    }
+
+    header.style-2 .main-menu > ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 1199px) {
+    header.style-2 .main-menu {
+        display: block;
+    }
+
+    header.style-2 .main-menu > ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: block;
+    }
 }
 
 header.style-2 .main-menu > ul {
@@ -6106,7 +6138,8 @@ header.style-2 .main-menu > ul > li {
 
 @media (max-width: 1199px) {
     header.style-2 .main-menu > ul > li {
-        padding: 0px 12px;
+        padding: 0;
+        display: block;
     }
 }
 
@@ -6802,6 +6835,9 @@ header.style-2 .mobile-logo-area .menu-close-btn:hover i {
         float: none;
         text-align: left;
         padding: 5px 0px 20px 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
     }
 
     header.style-2 .main-menu > ul > li {
@@ -12491,7 +12527,8 @@ header.style-3.two .main-menu > ul > li.active > a i {
 
 .package-card .package-img-wrap .package-img img {
     border-radius: 10px;
-    min-height: 200px;
+    width: 100%;
+    height: 250px;
     -o-object-fit: cover;
     object-fit: cover;
     transition: all 0.5s ease-out;
@@ -17790,7 +17827,7 @@ header.style-3.two .main-menu > ul > li.active > a i {
 
 .home2-about-section .service-area .single-service a {
     display: flex;
-    gap: 15px;
+    gap: 25px;
     color: var(--title-color);
     font-family: var(--font-roboto);
     font-weight: 600;
@@ -43035,7 +43072,7 @@ header.style-3.two .main-menu > ul > li.active > a i {
 .contact-map-section iframe {
     width: 100%;
     height: 100%;
-    min-height: 650px;
+    min-height: 500px;
 }
 
 @media (max-width: 1399px) {

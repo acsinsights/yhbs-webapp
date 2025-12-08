@@ -1,7 +1,7 @@
     <!-- header Section Start-->
     <header class="header-area style-2">
-        <div class="container-fluid d-flex flex-nowrap align-items-center justify-content-between">
-            <div class="logo-and-menu-area">
+        <div class="container d-flex flex-nowrap align-items-center justify-content-between">
+            <div class="logo-and-menu-area" style="gap: 170px">
                 <a href="index.html" class="header-logo">
                     <img src="{{ asset('frontend/img/header-logo2.svg') }}" alt="">
                 </a>
@@ -92,10 +92,10 @@
                                 </g>
                             </svg>
                         </div>
-                        <div class="content">
+                        {{-- <div class="content">
                             <span>Need Help?</span>
                             <a href="tel:91345533865">+91 345 533 865</a>
-                        </div>
+                        </div> --}}
                     </div>
                     <div class="search-bar">
                         <div class="search-btn">
