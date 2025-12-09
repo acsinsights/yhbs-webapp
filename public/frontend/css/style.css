@@ -15342,7 +15342,7 @@ header.style-3.two .main-menu > ul > li.active > a i {
 .counter-section.two {
     background-color: transparent;
     border-bottom: 1px solid var(--borders-color);
-    padding: 72px 0;
+    padding: 135px 0;
 }
 
 @media (max-width: 991px) {
@@ -16692,6 +16692,16 @@ header.style-3.two .main-menu > ul > li.active > a i {
     object-fit: cover;
 }
 
+/* Ensure images inside video-area also fill and cover the banner */
+.home2-banner-section .banner-wrapper .banner-video-area img,
+.home2-banner-section .banner-wrapper .banner-img-area img {
+    width: 100%;
+    height: 680px;
+    display: block;
+    -o-object-fit: cover;
+    object-fit: cover;
+}
+
 @media (min-width: 1400px) and (max-width: 1599px) {
     .home2-banner-section .banner-wrapper .banner-img-area img {
         min-height: 550px;
@@ -17001,12 +17011,11 @@ header.style-3.two .main-menu > ul > li.active > a i {
   18. Home2 Package Slider Section CSS
 ========================================*/
 .home2-package-slider-section {
-    background-image: url(../img/home2/home2-package-slider-bg.png),
-        linear-gradient(180deg, #e7eeff 0%, #e7eeff 100%);
+    background-image: url(../img/home2/home2-package-slider-bg.png);
     background-size: cover;
     background-repeat: no-repeat;
-    padding: 190px 0 100px;
-    margin-top: -98px;
+    padding: 80px 0 50px;
+    margin-top: 0;
     position: relative;
 }
 
@@ -17814,9 +17823,15 @@ header.style-3.two .main-menu > ul > li.active > a i {
 }
 
 .home2-about-section .service-area .single-service {
-    padding: 16px 25px;
+    padding: 25px 20px;
     background-color: var(--white-color);
-    border-radius: 10px;
+    border-radius: 12px;
+    min-height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
 }
 
 @media (min-width: 1200px) and (max-width: 1399px) {
@@ -17827,13 +17842,17 @@ header.style-3.two .main-menu > ul > li.active > a i {
 
 .home2-about-section .service-area .single-service a {
     display: flex;
-    gap: 25px;
+    gap: 15px;
     color: var(--title-color);
     font-family: var(--font-roboto);
     font-weight: 600;
-    font-size: 18px;
-    line-height: 28px;
-    transition: 0.5s;
+    font-size: 17px;
+    line-height: 24px;
+    transition: 0.3s ease;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
 }
 
 @media (min-width: 1200px) and (max-width: 1399px) {
@@ -17853,9 +17872,10 @@ header.style-3.two .main-menu > ul > li.active > a i {
 
 .home2-about-section .service-area .single-service a svg {
     fill: var(--white-text-color);
-    margin-top: 8px;
-    min-width: 30px;
-    transition: 0.5s;
+    flex-shrink: 0;
+    width: 35px;
+    height: 35px;
+    transition: 0.3s ease;
 }
 
 .home2-about-section .service-area .single-service a:hover {
