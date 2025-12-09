@@ -158,24 +158,34 @@
                                 <p style="margin: 0; font-size: 13px; color: #6c757d;">{{ auth()->user()->email ?? '' }}
                                 </p>
                             </div>
-                            <a href="{{ route('customer.dashboard') }}"
-                                style="display: flex; align-items: center; padding: 12px 20px; color: #333; text-decoration: none; transition: all 0.3s;">
-                                <i class="bi bi-speedometer2"
-                                    style="font-size: 18px; margin-right: 10px; color: #667eea;"></i>
-                                Dashboard
-                            </a>
-                            <a href="{{ route('customer.bookings') }}"
-                                style="display: flex; align-items: center; padding: 12px 20px; color: #333; text-decoration: none; transition: all 0.3s;">
-                                <i class="bi bi-calendar-check"
-                                    style="font-size: 18px; margin-right: 10px; color: #667eea;"></i>
-                                My Bookings
-                            </a>
-                            <a href="{{ route('customer.profile') }}"
-                                style="display: flex; align-items: center; padding: 12px 20px; color: #333; text-decoration: none; transition: all 0.3s;">
-                                <i class="bi bi-person-circle"
-                                    style="font-size: 18px; margin-right: 10px; color: #667eea;"></i>
-                                My Profile
-                            </a>
+                            @role('admin|superadmin|reception')
+                                <a href="{{ route('admin.index') }}"
+                                    style="display: flex; align-items: center; padding: 12px 20px; color: #333; text-decoration: none; transition: all 0.3s;">
+                                    <i class="bi bi-speedometer2"
+                                        style="font-size: 18px; margin-right: 10px; color: #667eea;"></i>
+                                    Admin Dashboard
+                                </a>
+                            @endrole
+                            @role('customer')
+                                <a href="{{ route('customer.dashboard') }}"
+                                    style="display: flex; align-items: center; padding: 12px 20px; color: #333; text-decoration: none; transition: all 0.3s;">
+                                    <i class="bi bi-speedometer2"
+                                        style="font-size: 18px; margin-right: 10px; color: #667eea;"></i>
+                                    Dashboard
+                                </a>
+                                <a href="{{ route('customer.bookings') }}"
+                                    style="display: flex; align-items: center; padding: 12px 20px; color: #333; text-decoration: none; transition: all 0.3s;">
+                                    <i class="bi bi-calendar-check"
+                                        style="font-size: 18px; margin-right: 10px; color: #667eea;"></i>
+                                    My Bookings
+                                </a>
+                                <a href="{{ route('customer.profile') }}"
+                                    style="display: flex; align-items: center; padding: 12px 20px; color: #333; text-decoration: none; transition: all 0.3s;">
+                                    <i class="bi bi-person-circle"
+                                        style="font-size: 18px; margin-right: 10px; color: #667eea;"></i>
+                                    My Profile
+                                </a>
+                            @endrole
                             <div style="border-top: 2px solid #f0f0f0; margin: 10px 0;"></div>
                             <a href="{{ route('customer.logout') }}"
                                 onclick="event.preventDefault(); document.getElementById('logout-form').submit();"

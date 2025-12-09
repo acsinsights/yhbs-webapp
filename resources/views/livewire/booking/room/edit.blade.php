@@ -3,23 +3,17 @@
 use Carbon\Carbon;
 use Mary\Traits\Toast;
 use Illuminate\View\View;
-use Illuminate\Support\Str;
 use Livewire\WithPagination;
 use Livewire\Volt\Component;
-use Illuminate\Support\Facades\Hash;
-use App\Models\{Booking, Room, User, House};
-use App\Enums\{BookingStatusEnum, RolesEnum};
-use App\Notifications\WelcomeCustomerNotification;
+use App\Enums\RolesEnum;
+use App\Models\{Booking, Room, User};
 
 new class extends Component {
     use Toast, WithPagination;
 
-    public ?int $user_id = null;
-    public string $customer_name = '';
-    public string $customer_email = '';
-    public bool $createCustomerModal = false;
+    public Booking $booking;
 
-    public ?int $house_id = null;
+    public ?int $room_id = null;
     public ?string $check_in = null;
     public ?string $check_out = null;
     public int $adults = 1;
@@ -29,23 +23,29 @@ new class extends Component {
     public string $payment_method = 'cash';
     public string $payment_status = 'pending';
     public ?string $notes = null;
-    public string $house_search = '';
+    public string $room_search = '';
     public int $perPage = 6;
 
-    public function mount(): void
+    public function mount(Booking $booking): void
     {
-        // Set default dates
-        $this->check_in = Carbon::today()->format('Y-m-d\TH:i');
-        $this->check_out = Carbon::tomorrow()->format('Y-m-d\TH:i');
+        $this->booking = $booking->load(['bookingable.house', 'user']);
+
+        // Pre-fill form with existing booking data
+        $this->room_id = $booking->bookingable_id;
+        $this->check_in = $booking->check_in ? Carbon::parse($booking->check_in)->format('Y-m-d\TH:i') : null;
+        $this->check_out = $booking->check_out ? Carbon::parse($booking->check_out)->format('Y-m-d\TH:i') : null;
+        $this->adults = $booking->adults ?? 1;
+        $this->children = $booking->children ?? 0;
+        $this->amount = $booking->price;
+        $this->amountManuallySet = true; // Set to true since we're loading existing amount
+        $this->payment_method = $booking->payment_method ?? 'cash';
+        $this->payment_status = $booking->payment_status ?? 'pending';
+        $this->notes = $booking->notes;
     }
 
     public function updatedCheckIn(): void
     {
         $this->resetPage();
-        $this->house_id = null;
-        if (!$this->amountManuallySet) {
-            $this->amount = null;
-        }
 
         // Validate that check_in is not in the past
         if ($this->check_in) {
@@ -73,10 +73,6 @@ new class extends Component {
     public function updatedCheckOut(): void
     {
         $this->resetPage();
-        $this->house_id = null;
-        if (!$this->amountManuallySet) {
-            $this->amount = null;
-        }
 
         // Validate that check_out is after check_in
         if ($this->check_in && $this->check_out) {
@@ -90,31 +86,28 @@ new class extends Component {
         }
     }
 
-    public function updatedHouseSearch(): void
+    public function updatedRoomSearch(): void
     {
         $this->resetPage();
     }
 
-    public function updatedHouseId(): void
+    public function updatedRoomId(): void
     {
-        // When house changes, calculate total price of all rooms
+        // When room changes, reset the manual flag so new price can auto-fill
         $this->amountManuallySet = false;
 
-        if ($this->house_id) {
-            $house = House::with('rooms')->find($this->house_id);
-            if ($house && $house->rooms->count() > 0) {
-                // Calculate total price of all rooms in the house
-                $totalPrice = $house->rooms->sum(function ($room) {
-                    return $room->discount_price ?? ($room->price ?? 0);
-                });
-                $this->amount = $totalPrice > 0 ? (float) $totalPrice : null;
+        if ($this->room_id) {
+            $room = Room::find($this->room_id);
+            if ($room) {
+                $price = $room->discount_price ?? $room->price;
+                $newAmount = $price !== null ? (float) $price : null;
+                $this->amount = $newAmount;
                 $this->dispatch('amount-updated');
             } else {
                 $this->amount = null;
                 $this->dispatch('amount-updated');
             }
         } else {
-            // Reset amount when house selection is cleared
             $this->amount = null;
             $this->dispatch('amount-updated');
         }
@@ -124,14 +117,12 @@ new class extends Component {
     {
         // Validate and limit amount
         if ($this->amount !== null && $this->amount !== '') {
-            // Limit to maximum 999,999,999.99 (999 million)
             $maxAmount = 999999999.99;
             if ($this->amount > $maxAmount) {
                 $this->error('Amount cannot exceed ' . currency_format($maxAmount) . '.');
                 $this->amount = $maxAmount;
                 return;
             }
-            // Ensure amount is not negative
             if ($this->amount < 0) {
                 $this->amount = 0;
             }
@@ -139,59 +130,12 @@ new class extends Component {
         }
     }
 
-    public function resetForm(): void
-    {
-        $this->user_id = null;
-        $this->house_id = null;
-        $this->check_in = Carbon::now()->format('Y-m-d\TH:i');
-        $this->check_out = Carbon::tomorrow()->format('Y-m-d\TH:i');
-        $this->adults = 1;
-        $this->children = 0;
-        $this->amount = null;
-        $this->amountManuallySet = false;
-        $this->payment_method = 'cash';
-        $this->payment_status = 'pending';
-        $this->notes = null;
-        $this->house_search = '';
-        $this->resetPage();
-        $this->success('Form has been reset.');
-    }
-
-    public function createCustomer(): void
-    {
-        $this->validate([
-            'customer_name' => 'required|string|max:255',
-            'customer_email' => 'required|email|unique:users,email',
-        ]);
-
-        // Generate random password
-        $password = Hash::make(Str::random(12));
-
-        $user = User::create([
-            'name' => $this->customer_name,
-            'email' => $this->customer_email,
-            'password' => $password,
-        ]);
-
-        $user->assignRole(RolesEnum::CUSTOMER->value);
-
-        // Send welcome email with password reset link
-        $user->notify(new WelcomeCustomerNotification());
-
-        $this->user_id = $user->id;
-        $this->createCustomerModal = false;
-        $this->customer_name = '';
-        $this->customer_email = '';
-        $this->success('Customer created successfully. Welcome email with password reset link has been sent.');
-    }
-
-    public function store(): void
+    public function update(): void
     {
         $this->validate(
             [
-                'user_id' => 'required|exists:users,id',
-                'house_id' => 'required|exists:houses,id',
-                'check_in' => 'required|date|after_or_equal:today',
+                'room_id' => 'required|exists:rooms,id',
+                'check_in' => 'required|date',
                 'check_out' => 'required|date|after:check_in',
                 'adults' => 'required|integer|min:1',
                 'children' => 'required|integer|min:0',
@@ -205,45 +149,52 @@ new class extends Component {
             ],
         );
 
-        // Check if house is available for the selected dates
         $checkIn = Carbon::parse($this->check_in);
         $checkOut = Carbon::parse($this->check_out);
 
-        $availableHouses = House::available($checkIn, $checkOut)->where('id', $this->house_id)->exists();
+        $room = Room::find($this->room_id);
 
-        if (!$availableHouses) {
-            $this->error('Selected house is not available for the chosen dates. One or more rooms are already booked.');
+        if (!$room) {
+            $this->error('Selected room not found.');
             return;
         }
 
-        $house = House::with('rooms')->findOrFail($this->house_id);
+        // Check if room is available for the date range (excluding current booking)
+        // If it's the same room, we allow the update
+        if ($this->room_id != $this->booking->bookingable_id) {
+            // Check if the new room is available (excluding current booking)
+            $hasConflict = Booking::where('bookingable_type', Room::class)
+                ->where('bookingable_id', $this->room_id)
+                ->where('id', '!=', $this->booking->id)
+                ->whereIn('status', ['pending', 'booked', 'checked_in'])
+                ->where(function ($q) use ($checkIn, $checkOut) {
+                    $q->whereBetween('check_in', [$checkIn, $checkOut])
+                        ->orWhereBetween('check_out', [$checkIn, $checkOut])
+                        ->orWhere(function ($q2) use ($checkIn, $checkOut) {
+                            $q2->where('check_in', '<=', $checkIn)->where('check_out', '>=', $checkOut);
+                        });
+                })
+                ->exists();
 
-        if ($house->rooms->count() === 0) {
-            $this->error('This house has no rooms available for booking.');
-            return;
+            if ($hasConflict) {
+                $this->error('Selected room is not available for the chosen dates.');
+                return;
+            }
         }
 
-        // Create bookings for all rooms in the house
-        $createdBookings = [];
-        foreach ($house->rooms as $room) {
-            $booking = Booking::create([
-                'bookingable_type' => Room::class,
-                'bookingable_id' => $room->id,
-                'user_id' => $this->user_id,
-                'adults' => $this->adults,
-                'children' => $this->children,
-                'check_in' => $checkIn,
-                'check_out' => $checkOut,
-                'price' => $room->discount_price ?? $room->price,
-                'payment_method' => $this->payment_method,
-                'payment_status' => $this->payment_status,
-                'status' => BookingStatusEnum::BOOKED->value,
-                'notes' => $this->notes,
-            ]);
-            $createdBookings[] = $booking;
-        }
+        $this->booking->update([
+            'bookingable_id' => $this->room_id,
+            'adults' => $this->adults,
+            'children' => $this->children,
+            'check_in' => $checkIn,
+            'check_out' => $checkOut,
+            'price' => $this->amount,
+            'payment_method' => $this->payment_method,
+            'payment_status' => $this->payment_status,
+            'notes' => $this->notes,
+        ]);
 
-        $this->success('House booking created successfully. ' . count($createdBookings) . ' room(s) booked.', redirectTo: route('admin.bookings.house.index'));
+        $this->success('Booking updated successfully.', redirectTo: route('admin.bookings.house.show', $this->booking->id));
     }
 
     public function rendering(View $view)
@@ -251,23 +202,56 @@ new class extends Component {
         $checkIn = $this->check_in ? Carbon::parse($this->check_in) : null;
         $checkOut = $this->check_out ? Carbon::parse($this->check_out) : null;
 
+        // Get current room to include it even if not available for new dates
+        $currentRoom = $this->booking->bookingable;
+
         if ($checkIn && $checkOut && $checkIn->lt($checkOut)) {
-            $query = House::active()->available($checkIn, $checkOut)->with('rooms');
+            // Get available rooms excluding current booking
+            $query = Room::active()
+                ->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
+                    $q->where('id', '!=', $this->booking->id)
+                        ->whereIn('status', ['pending', 'booked', 'checked_in'])
+                        ->where(function ($query) use ($checkIn, $checkOut) {
+                            $query
+                                ->whereBetween('check_in', [$checkIn, $checkOut])
+                                ->orWhereBetween('check_out', [$checkIn, $checkOut])
+                                ->orWhere(function ($q) use ($checkIn, $checkOut) {
+                                    $q->where('check_in', '<=', $checkIn)->where('check_out', '>=', $checkOut);
+                                });
+                        });
+                })
+                ->with('house');
 
             // Filter by search term
-            if (!empty($this->house_search)) {
-                $search = $this->house_search;
+            if (!empty($this->room_search)) {
+                $search = $this->room_search;
                 $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")->orWhere('house_number', 'like', "%{$search}%");
+                    $q->where('room_number', 'like', "%{$search}%")
+                        ->orWhere('name', 'like', "%{$search}%")
+                        ->orWhereHas('house', function ($houseQuery) use ($search) {
+                            $houseQuery->where('name', 'like', "%{$search}%");
+                        });
                 });
             }
 
-            $view->availableHouses = $query->orderBy('name')->paginate($this->perPage);
-        } else {
-            $view->availableHouses = \Illuminate\Pagination\LengthAwarePaginator::empty();
-        }
+            $availableRooms = $query->orderBy('room_number')->get();
 
-        $view->customers = User::role(RolesEnum::CUSTOMER->value)->orderBy('name')->get();
+            // Include current room if it's not in the available list
+            if ($currentRoom && !$availableRooms->contains('id', $currentRoom->id)) {
+                $availableRooms->prepend($currentRoom);
+            }
+
+            // Manually paginate the collection
+            $currentPage = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage();
+            $items = $availableRooms->slice(($currentPage - 1) * $this->perPage, $this->perPage)->values();
+            $view->availableRooms = new \Illuminate\Pagination\LengthAwarePaginator($items, $availableRooms->count(), $this->perPage, $currentPage, ['path' => request()->url(), 'query' => request()->query()]);
+        } else {
+            // If dates are invalid, still show current room
+            $collection = $currentRoom ? collect([$currentRoom]) : collect();
+            $currentPage = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage();
+            $items = $collection->slice(($currentPage - 1) * $this->perPage, $this->perPage)->values();
+            $view->availableRooms = new \Illuminate\Pagination\LengthAwarePaginator($items, $collection->count(), $this->perPage, $currentPage, ['path' => request()->url(), 'query' => request()->query()]);
+        }
 
         // Set minimum date for check-in (current date/time)
         $view->minCheckInDate = Carbon::now()->format('Y-m-d\TH:i');
@@ -286,24 +270,28 @@ new class extends Component {
                 'label' => 'Room Bookings',
             ],
             [
-                'label' => 'Create Booking',
+                'link' => route('admin.bookings.house.show', $booking->id),
+                'label' => 'Booking Details',
+            ],
+            [
+                'label' => 'Edit Booking',
             ],
         ];
     @endphp
 
-    <x-header title="Create Room Booking" separator>
+    <x-header title="Edit Room Booking" separator>
         <x-slot:subtitle>
-            <p class="text-sm text-base-content/50 mb-2">Create a new house room booking</p>
+            <p class="text-sm text-base-content/50 mb-2">Update booking information</p>
             <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
         </x-slot:subtitle>
         <x-slot:actions>
-            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.house.index') }}"
+            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.house.show', $booking->id) }}"
                 class="btn-ghost" />
         </x-slot:actions>
     </x-header>
 
     <x-card shadow class="mx-auto">
-        <x-form wire:submit="store">
+        <x-form wire:submit="update">
             <div class="space-y-6">
                 <div class="grid gap-6 lg:grid-cols-3">
                     <div class="space-y-6 lg:col-span-2">
@@ -329,59 +317,23 @@ new class extends Component {
                             </div>
                         </div>
 
-                        {{-- Customer Section --}}
-                        <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
-                            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        {{-- Customer Section (Read-only) --}}
+                        <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm opacity-75">
+                            <div class="flex items-start justify-between gap-3">
                                 <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 2</p>
+                                    <p class="text-xs uppercase tracking-wide text-base-content/50 font-semibold">
+                                        Customer</p>
                                     <h3 class="text-xl font-semibold text-base-content mt-1">Customer Details</h3>
-                                    <p class="text-sm text-base-content/60 mt-1">Select or create a customer for this
-                                        booking
-                                    </p>
+                                    <p class="text-sm text-base-content/60 mt-1">Customer cannot be changed</p>
                                 </div>
-                                <x-button type="button" icon="o-plus" label="New Customer"
-                                    @click="$wire.createCustomerModal = true" class="btn-sm btn-primary" />
+                                <x-icon name="o-user" class="w-8 h-8 text-base-content/50" />
                             </div>
-
                             <div class="mt-6">
-                                <x-choices-offline wire:model.live="user_id" label="Select Customer"
-                                    placeholder="Choose a customer" :options="$customers" icon="o-user"
-                                    hint="Select existing customer or create a new one" single clearable searchable>
-                                    @scope('item', $customer)
-                                        <div
-                                            class="flex items-center gap-3 p-2 rounded-lg hover:bg-base-200/50 transition-colors">
-                                            <div class="shrink-0">
-                                                <div
-                                                    class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor"
-                                                        viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
-                                                        </path>
-                                                    </svg>
-                                                </div>
-                                            </div>
-                                            <div class="flex-1 min-w-0">
-                                                <div class="font-semibold text-base mb-1 truncate">{{ $customer->name }}
-                                                </div>
-                                                <div class="text-xs text-base-content/60 flex items-center gap-1">
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
-                                                        viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
-                                                        </path>
-                                                    </svg>
-                                                    <span class="truncate">{{ $customer->email }}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endscope
-                                    @scope('selection', $customer)
-                                        {{ $customer->name }}
-                                    @endscope
-                                </x-choices-offline>
+                                <div class="p-4 bg-base-200/50 rounded-lg">
+                                    <div class="font-semibold text-base">{{ $booking->user->name ?? 'N/A' }}</div>
+                                    <div class="text-sm text-base-content/60 mt-1">{{ $booking->user->email ?? 'N/A' }}
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -389,7 +341,7 @@ new class extends Component {
                         <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
                             <div class="flex items-start justify-between gap-3">
                                 <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 3</p>
+                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 2</p>
                                     <h3 class="text-xl font-semibold text-base-content mt-1">Guest Details</h3>
                                     <p class="text-sm text-base-content/60 mt-1">Number of guests for this booking</p>
                                 </div>
@@ -403,13 +355,13 @@ new class extends Component {
                             </div>
                         </div>
 
-                        {{-- House Selection Section --}}
+                        {{-- Room Selection Section --}}
                         <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
                             <div class="flex items-start justify-between gap-3">
                                 <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 4</p>
-                                    <h3 class="text-xl font-semibold text-base-content mt-1">House Selection</h3>
-                                    <p class="text-sm text-base-content/60 mt-1">Choose from available houses for your
+                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 3</p>
+                                    <h3 class="text-xl font-semibold text-base-content mt-1">Room Selection</h3>
+                                    <p class="text-sm text-base-content/60 mt-1">Choose from available rooms for your
                                         booking
                                     </p>
                                 </div>
@@ -419,85 +371,84 @@ new class extends Component {
                             @if ($check_in && $check_out && Carbon::parse($check_in)->lt(Carbon::parse($check_out)))
                                 {{-- Search Input --}}
                                 <div class="mt-4">
-                                    <x-input wire:model.live.debounce.300ms="house_search" label="Search Houses"
-                                        placeholder="Search by house name or number..." icon="o-magnifying-glass"
-                                        clearable hint="Filter houses by name or house number" />
+                                    <x-input wire:model.live.debounce.300ms="room_search" label="Search Rooms"
+                                        placeholder="Search by room number, name, or house..." icon="o-magnifying-glass"
+                                        clearable hint="Filter rooms by room number, name, or house" />
                                 </div>
 
                                 {{-- Filter Info --}}
                                 <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-base-content/70">
-                                    {{-- Loading Indicator --}}
-                                    <div wire:loading wire:target="check_in,check_out,house_search,perPage"
+                                    <div wire:loading wire:target="check_in,check_out,room_search,perPage"
                                         class="flex items-center gap-2 text-primary">
                                         <span class="loading loading-spinner loading-sm"></span>
-                                        <span>Loading houses...</span>
+                                        <span>Loading rooms...</span>
                                     </div>
 
-                                    <div wire:loading.remove wire:target="check_in,check_out,house_search,perPage"
+                                    <div wire:loading.remove wire:target="check_in,check_out,room_search,perPage"
                                         class="flex items-center gap-2">
                                         <x-icon name="o-funnel" class="w-4 h-4" />
                                         <span>
-                                            <strong>{{ $availableHouses->total() }}</strong>
-                                            {{ $availableHouses->total() === 1 ? 'house' : 'houses' }} available
-                                            @if ($availableHouses->total() > $availableHouses->count())
+                                            <strong>{{ $availableRooms->total() }}</strong>
+                                            {{ $availableRooms->total() === 1 ? 'room' : 'rooms' }} available
+                                            @if ($availableRooms->total() > $availableRooms->count())
                                                 (Showing
-                                                {{ $availableHouses->firstItem() }}-{{ $availableHouses->lastItem() }}
-                                                of
-                                                {{ $availableHouses->total() }})
+                                                {{ $availableRooms->firstItem() }}-{{ $availableRooms->lastItem() }} of
+                                                {{ $availableRooms->total() }})
                                             @endif
                                         </span>
                                     </div>
-                                    @if (!empty($house_search))
-                                        <div wire:loading.remove wire:target="check_in,check_out,house_search,perPage"
+                                    @if (!empty($room_search))
+                                        <div wire:loading.remove wire:target="check_in,check_out,room_search,perPage"
                                             class="flex items-center gap-2">
                                             <x-icon name="o-magnifying-glass" class="w-4 h-4" />
-                                            <span>Search: "{{ $house_search }}"</span>
+                                            <span>Search: "{{ $room_search }}"</span>
                                         </div>
                                     @endif
                                 </div>
 
-                                {{-- Loading Overlay for House Grid --}}
-                                <div wire:loading wire:target="check_in,check_out,house_search,perPage"
-                                    class="mt-4">
+                                {{-- Loading Overlay for Room Grid --}}
+                                <div wire:loading wire:target="check_in,check_out,room_search,perPage" class="mt-4">
                                     <div
                                         class="flex items-center justify-center py-12 bg-base-200/50 rounded-xl border-2 border-dashed border-base-300">
                                         <div class="text-center">
                                             <span class="loading loading-spinner loading-lg text-primary"></span>
-                                            <p class="mt-4 text-sm text-base-content/70">Filtering available houses...
+                                            <p class="mt-4 text-sm text-base-content/70">Filtering available rooms...
                                             </p>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div wire:loading.remove wire:target="check_in,check_out,house_search,perPage">
-                                    @if ($availableHouses->count() > 0)
+                                <div wire:loading.remove wire:target="check_in,check_out,room_search,perPage">
+                                    @if ($availableRooms->count() > 0)
                                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                                            @foreach ($availableHouses as $house)
+                                            @foreach ($availableRooms as $room)
                                                 @php
-                                                    $isSelected = $house_id == $house->id;
-                                                    $totalRooms = $house->rooms->count();
-                                                    $totalPrice = $house->rooms->sum(function ($room) {
-                                                        return $room->discount_price ?? ($room->price ?? 0);
-                                                    });
+                                                    $isSelected = $room_id == $room->id;
+                                                    $isCurrentRoom = $room->id == $booking->bookingable_id;
                                                 @endphp
-                                                <label wire:click="$wire.house_id = {{ $house->id }}"
+                                                <label wire:click="$wire.room_id = {{ $room->id }}"
                                                     class="relative cursor-pointer group block">
-                                                    <input type="radio" wire:model.live="house_id"
-                                                        value="{{ $house->id }}" class="sr-only">
+                                                    <input type="radio" wire:model.live="room_id"
+                                                        value="{{ $room->id }}" class="sr-only">
                                                     <div
-                                                        class="bg-base-100 border-2 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 h-full flex flex-col {{ $isSelected ? 'border-primary ring-2 ring-primary/20 shadow-lg' : 'border-base-300' }}">
+                                                        class="bg-base-100 border-2 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 h-full flex flex-col {{ $isSelected ? 'border-primary ring-2 ring-primary/20 shadow-lg' : 'border-base-300' }} {{ $isCurrentRoom ? 'ring-2 ring-info/30' : '' }}">
                                                         {{-- Header Section --}}
                                                         <div class="p-4 bg-base-200/50 border-b border-base-300">
                                                             <div class="flex items-start justify-between gap-2">
                                                                 <div class="flex-1 min-w-0">
                                                                     <h4
                                                                         class="font-bold text-lg text-base-content mb-1 line-clamp-1">
-                                                                        {{ $house->name }}
+                                                                        {{ $room->room_number }}
                                                                     </h4>
-                                                                    @if ($house->house_number)
+                                                                    @if ($room->name)
                                                                         <p
                                                                             class="text-xs text-base-content/60 line-clamp-1">
-                                                                            House #{{ $house->house_number }}</p>
+                                                                            {{ $room->name }}</p>
+                                                                    @endif
+                                                                    @if ($room->house)
+                                                                        <p
+                                                                            class="text-xs text-primary font-medium mt-1">
+                                                                            {{ $room->house->name }}</p>
                                                                     @endif
                                                                 </div>
                                                                 {{-- Selection Indicator --}}
@@ -513,25 +464,30 @@ new class extends Component {
                                                                     @endif
                                                                 </div>
                                                             </div>
+                                                            {{-- Current Room Badge --}}
+                                                            @if ($isCurrentRoom)
+                                                                <div class="mt-2">
+                                                                    <div
+                                                                        class="bg-info text-info-content px-2 py-1 rounded-md text-xs font-semibold shadow-md inline-block">
+                                                                        CURRENT
+                                                                    </div>
+                                                                </div>
+                                                            @endif
                                                         </div>
 
                                                         {{-- Content Section --}}
                                                         <div class="p-4 flex-1 flex flex-col">
                                                             {{-- Details --}}
                                                             <div class="space-y-2 mb-4 flex-1">
-                                                                <div
-                                                                    class="flex items-center gap-2 text-sm text-base-content/70">
-                                                                    <x-icon name="o-home"
-                                                                        class="w-4 h-4 text-base-content/50" />
-                                                                    <span><strong>{{ $totalRooms }}</strong>
-                                                                        {{ $totalRooms === 1 ? 'room' : 'rooms' }}
-                                                                        included</span>
-                                                                </div>
-                                                                @if ($house->description)
-                                                                    <p
-                                                                        class="text-xs text-base-content/60 line-clamp-2">
-                                                                        {{ $house->description }}
-                                                                    </p>
+                                                                @if ($room->adults || $room->children)
+                                                                    <div
+                                                                        class="flex items-center gap-2 text-sm text-base-content/70">
+                                                                        <x-icon name="o-user-group"
+                                                                            class="w-4 h-4 text-base-content/50" />
+                                                                        <span>Max
+                                                                            {{ ($room->adults ?? 0) + ($room->children ?? 0) }}
+                                                                            guests</span>
+                                                                    </div>
                                                                 @endif
                                                             </div>
 
@@ -539,16 +495,23 @@ new class extends Component {
                                                             <div class="pt-3 border-t border-base-300">
                                                                 <div class="flex items-baseline justify-between gap-2">
                                                                     <div class="flex-1">
-                                                                        <div class="text-xs text-base-content/60 mb-1">
-                                                                            Total Price</div>
                                                                         <div class="font-bold text-lg text-primary">
-                                                                            {{ currency_format($totalPrice) }}
+                                                                            {{ currency_format($room->discount_price ?? ($room->price ?? 0)) }}
                                                                         </div>
-                                                                        <div class="text-xs text-base-content/50 mt-1">
-                                                                            All {{ $totalRooms }}
-                                                                            {{ $totalRooms === 1 ? 'room' : 'rooms' }}
-                                                                        </div>
+                                                                        @if ($room->discount_price && $room->price && $room->discount_price < $room->price)
+                                                                            <div
+                                                                                class="text-xs text-base-content/50 line-through">
+                                                                                {{ currency_format($room->price) }}
+                                                                            </div>
+                                                                        @endif
                                                                     </div>
+                                                                    @if ($room->discount_price && $room->price && $room->discount_price < $room->price)
+                                                                        <div
+                                                                            class="bg-primary text-primary-content px-2 py-1 rounded-md text-xs font-semibold shadow-md">
+                                                                            {{ number_format((($room->price - $room->discount_price) / $room->price) * 100, 0) }}%
+                                                                            OFF
+                                                                        </div>
+                                                                    @endif
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -558,40 +521,43 @@ new class extends Component {
                                         </div>
 
                                         {{-- Pagination --}}
-                                        @if ($availableHouses->hasPages())
+                                        @if ($availableRooms->hasPages())
                                             <div
                                                 class="mt-6 flex items-center justify-between border-t border-base-300 pt-4">
                                                 <div class="text-sm text-base-content/70">
-                                                    Showing {{ $availableHouses->firstItem() }} to
-                                                    {{ $availableHouses->lastItem() }} of
-                                                    {{ $availableHouses->total() }} results
+                                                    Showing {{ $availableRooms->firstItem() }} to
+                                                    {{ $availableRooms->lastItem() }} of
+                                                    {{ $availableRooms->total() }} results
                                                 </div>
                                                 <div class="flex items-center gap-2">
-                                                    {{ $availableHouses->links() }}
+                                                    {{ $availableRooms->links() }}
                                                 </div>
                                             </div>
                                         @endif
 
-                                        @if ($house_id)
+                                        @if ($room_id)
                                             <div class="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
                                                 <div class="flex items-center gap-2 text-sm text-primary">
                                                     <x-icon name="o-check-circle" class="w-5 h-5" />
-                                                    <span class="font-medium">House selected:
-                                                        {{ $availableHouses->firstWhere('id', $house_id)?->name ?? House::find($house_id)?->name }}</span>
+                                                    <span class="font-medium">Room selected:
+                                                        {{ $availableRooms->firstWhere('id', $room_id)?->room_number ?? Room::find($room_id)?->room_number }}</span>
                                                 </div>
                                             </div>
                                         @endif
                                     @else
                                         <x-alert icon="o-exclamation-triangle" class="alert-warning mt-4">
                                             <div>
-                                                <p class="font-semibold">No houses available</p>
+                                                <p class="font-semibold">No rooms available</p>
                                                 <p class="text-sm mt-1">
-                                                    @if (!empty($house_search))
-                                                        No houses match your search criteria or are not available for
-                                                        the selected date range.
+                                                    @if (!empty($room_search))
+                                                        No rooms match your search criteria or are not available for
+                                                        the
+                                                        selected
+                                                        date range.
                                                     @else
-                                                        No houses are available for the selected date range.
-                                                        All houses have at least one room already booked.
+                                                        No rooms are available for the selected date range.
+                                                        Please
+                                                        choose different dates.
                                                     @endif
                                                 </p>
                                             </div>
@@ -603,7 +569,8 @@ new class extends Component {
                                     <div>
                                         <p class="font-semibold">Select dates first</p>
                                         <p class="text-sm mt-1">Please select check-in and check-out dates to see
-                                            available houses.</p>
+                                            available
+                                            rooms.</p>
                                     </div>
                                 </x-alert>
                             @endif
@@ -613,7 +580,7 @@ new class extends Component {
                         <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
                             <div class="flex items-start justify-between gap-3">
                                 <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 5</p>
+                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 4</p>
                                     <h3 class="text-xl font-semibold text-base-content mt-1">Payment Details</h3>
                                     <p class="text-sm text-base-content/60 mt-1">Payment information for this booking
                                     </p>
@@ -639,7 +606,7 @@ new class extends Component {
                         <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
                             <div class="flex items-start justify-between gap-3">
                                 <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 6</p>
+                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 5</p>
                                     <h3 class="text-xl font-semibold text-base-content mt-1">Additional Notes</h3>
                                     <p class="text-sm text-base-content/60 mt-1">Any special requests or additional
                                         information</p>
@@ -657,9 +624,8 @@ new class extends Component {
                     {{-- Summary Column --}}
                     <div class="space-y-6">
                         @php
-                            $selectedHouse =
-                                $availableHouses->firstWhere('id', $house_id) ??
-                                ($house_id ? House::with('rooms')->find($house_id) : null);
+                            $selectedRoom =
+                                $availableRooms->firstWhere('id', $room_id) ?? ($room_id ? Room::find($room_id) : null);
                         @endphp
                         <div
                             class="rounded-2xl border border-base-300/80 bg-gradient-to-br from-base-100 to-base-200/50 p-4 shadow-lg sticky top-24 backdrop-blur-sm">
@@ -687,7 +653,7 @@ new class extends Component {
                                             @if ($check_in && $check_out)
                                                 <div class="space-y-1 flex justify-between">
                                                     <div>
-                                                        <p class="text-xs font-semibold text-primary mb-0.5">Departure
+                                                        <p class="text-xs font-semibold text-primary mb-0.5">Check In
                                                         </p>
                                                         <p class="text-xs font-semibold text-base-content">
                                                             {{ \Carbon\Carbon::parse($check_in)->format('M d, Y') }} |
@@ -695,7 +661,8 @@ new class extends Component {
                                                         </p>
                                                     </div>
                                                     <div>
-                                                        <p class="text-xs font-semibold text-primary mb-0.5">Return</p>
+                                                        <p class="text-xs font-semibold text-primary mb-0.5">Check Out
+                                                        </p>
                                                         <p class="text-xs font-semibold text-base-content">
                                                             {{ \Carbon\Carbon::parse($check_out)->format('M d, Y') }} |
                                                             {{ \Carbon\Carbon::parse($check_out)->format('g:i A') }}
@@ -728,7 +695,7 @@ new class extends Component {
                                     </div>
                                 </div>
 
-                                {{-- Selected House --}}
+                                {{-- Selected Room --}}
                                 <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
                                     <div class="flex items-start gap-2">
                                         <div
@@ -736,18 +703,18 @@ new class extends Component {
                                             <x-icon name="o-home-modern" class="w-4 h-4 text-primary" />
                                         </div>
                                         <div class="flex-1 min-w-0">
-                                            <p class="text-xs font-semibold text-base-content/60 mb-0.5">Selected House
+                                            <p class="text-xs font-semibold text-base-content/60 mb-0.5">Selected Room
                                             </p>
-                                            @if ($selectedHouse)
+                                            @if ($selectedRoom)
                                                 <p class="text-xs font-bold text-base-content line-clamp-1">
-                                                    {{ $selectedHouse->name }}</p>
-                                                <p class="text-xs text-base-content/60">
-                                                    {{ $selectedHouse->rooms->count() }}
-                                                    {{ $selectedHouse->rooms->count() === 1 ? 'room' : 'rooms' }}
-                                                    included
-                                                </p>
+                                                    {{ $selectedRoom->room_number }}</p>
+                                                @if ($selectedRoom->house)
+                                                    <p class="text-xs text-base-content/60">
+                                                        {{ $selectedRoom->house->name }}
+                                                    </p>
+                                                @endif
                                             @else
-                                                <p class="text-xs text-base-content/50 italic">No house selected</p>
+                                                <p class="text-xs text-base-content/50 italic">No room selected</p>
                                             @endif
                                         </div>
                                     </div>
@@ -797,51 +764,6 @@ new class extends Component {
                                     </div>
                                 </div>
                             </div>
-                            <div class="mt-6 p-4 rounded-xl bg-base-200/80 border border-dashed border-base-300">
-                                <p class="text-xs uppercase tracking-wide text-base-content/60">Checklist</p>
-                                <ul class="mt-2 space-y-2 text-sm">
-                                    <li class="flex items-center gap-2" wire:key="checklist-customer">
-                                        <span
-                                            class="w-2.5 h-2.5 rounded-full transition-colors duration-200 {{ $user_id ? 'bg-success' : 'bg-base-400' }}"></span>
-                                        <span
-                                            class="{{ $user_id ? 'text-success font-medium' : 'text-base-content/70' }}">Customer
-                                            selected</span>
-                                    </li>
-                                    <li class="flex items-center gap-2" wire:key="checklist-house">
-                                        <span
-                                            class="w-2.5 h-2.5 rounded-full transition-colors duration-200 {{ $house_id ? 'bg-success' : 'bg-base-400' }}"></span>
-                                        <span
-                                            class="{{ $house_id ? 'text-success font-medium' : 'text-base-content/70' }}">House
-                                            selected</span>
-                                    </li>
-                                    <li class="flex items-center gap-2" wire:key="checklist-amount">
-                                        <span
-                                            class="w-2.5 h-2.5 rounded-full transition-colors duration-200 {{ $amount ? 'bg-success' : 'bg-base-400' }}"></span>
-                                        <span
-                                            class="{{ $amount ? 'text-success font-medium' : 'text-base-content/70' }}">Amount
-                                            filled</span>
-                                    </li>
-                                    <li class="flex items-center gap-2" wire:key="checklist-payment-method">
-                                        <span
-                                            class="w-2.5 h-2.5 rounded-full transition-colors duration-200 {{ $payment_method ? 'bg-success' : 'bg-base-400' }}"></span>
-                                        <span
-                                            class="{{ $payment_method ? 'text-success font-medium' : 'text-base-content/70' }}">Payment
-                                            method selected</span>
-                                    </li>
-                                    <li class="flex items-center gap-2" wire:key="checklist-payment-status">
-                                        <span
-                                            class="w-2.5 h-2.5 rounded-full transition-colors duration-200 {{ $payment_status ? 'bg-success' : 'bg-base-400' }}"></span>
-                                        <span
-                                            class="{{ $payment_status ? 'text-success font-medium' : 'text-base-content/70' }}">Payment
-                                            status selected</span>
-                                    </li>
-                                </ul>
-                            </div>
-                            <div class="rounded-2xl mt-6 border border-dashed border-base-300 bg-base-50/50 p-5">
-                                <p class="text-sm font-semibold text-base-content">Booking Entire House</p>
-                                <p class="text-sm text-base-content/60 mt-1">When you book a house, all rooms in that
-                                    house will be reserved for your selected dates.</p>
-                            </div>
                         </div>
 
                     </div>
@@ -852,36 +774,13 @@ new class extends Component {
                 <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:justify-between">
                     <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
                         <x-button icon="o-arrow-left" label="Back"
-                            link="{{ route('admin.bookings.house.index') }}" class="btn-ghost w-full sm:w-auto"
-                            responsive />
-                        <x-button icon="o-arrow-path" label="Reset Form" type="button" wire:click="resetForm"
-                            class="btn-outline w-full sm:w-auto" responsive />
+                            link="{{ route('admin.bookings.house.show', $booking->id) }}"
+                            class="btn-ghost w-full sm:w-auto" responsive />
                     </div>
-                    <x-button icon="o-check" label="Create Booking" type="submit"
-                        class="btn-primary w-full sm:w-auto" spinner="store" responsive />
+                    <x-button icon="o-check" label="Update Booking" type="submit"
+                        class="btn-primary w-full sm:w-auto" spinner="update" responsive />
                 </div>
             </x-slot:actions>
         </x-form>
     </x-card>
-
-    {{-- Create Customer Modal --}}
-    <x-modal wire:model="createCustomerModal" title="Create New Customer" class="backdrop-blur" max-width="md">
-        <x-form wire:submit="createCustomer">
-            <div class="space-y-4">
-                <x-input wire:model="customer_name" label="Customer Name" placeholder="Enter customer name"
-                    icon="o-user" hint="Full name of the customer" />
-                <x-input wire:model="customer_email" label="Email" type="email" placeholder="Enter email address"
-                    icon="o-envelope" hint="Unique email address" />
-            </div>
-
-            <x-slot:actions>
-                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-                    <x-button icon="o-x-mark" label="Cancel" @click="$wire.createCustomerModal = false"
-                        class="btn-ghost w-full sm:w-auto" responsive />
-                    <x-button icon="o-check" label="Create Customer" type="submit"
-                        class="btn-primary w-full sm:w-auto" spinner="createCustomer" responsive />
-                </div>
-            </x-slot:actions>
-        </x-form>
-    </x-modal>
 </div>

@@ -69,8 +69,8 @@ new class extends Component {
         // Total revenue (from paid bookings)
         $totalRevenue = Booking::where('payment_status', 'paid')->sum(DB::raw('COALESCE(discount_price, price)'));
 
-        // Hotel revenue
-        $hotelRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Room::class)->sum(DB::raw('COALESCE(discount_price, price)'));
+        // House Revenue
+        $houseRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Room::class)->sum(DB::raw('COALESCE(discount_price, price)'));
 
         // Yacht revenue
         $yachtRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Yacht::class)->sum(DB::raw('COALESCE(discount_price, price)'));
@@ -100,7 +100,7 @@ new class extends Component {
             'available_yachts' => max(0, $availableYachts),
             'total_yachts' => $totalYachts,
             'total_revenue' => $totalRevenue,
-            'hotel_revenue' => $hotelRevenue,
+            'hotel_revenue' => $houseRevenue,
             'yacht_revenue' => $yachtRevenue,
             'active_customers' => $activeCustomers,
         ];
@@ -150,11 +150,11 @@ new class extends Component {
         $monthlyLabels = [];
         for ($i = 5; $i >= 0; $i--) {
             $month = now()->subMonths($i);
-            $hotelRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Room::class)->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum(DB::raw('COALESCE(discount_price, price)'));
+            $houseRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Room::class)->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum(DB::raw('COALESCE(discount_price, price)'));
 
             $yachtRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Yacht::class)->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum(DB::raw('COALESCE(discount_price, price)'));
 
-            $monthlyHotelRevenue[] = $hotelRevenue;
+            $monthlyHotelRevenue[] = $houseRevenue;
             $monthlyYachtRevenue[] = $yachtRevenue;
             $monthlyLabels[] = $month->format('M Y');
         }
@@ -165,7 +165,7 @@ new class extends Component {
                 'labels' => $monthlyLabels,
                 'datasets' => [
                     [
-                        'label' => 'Hotel Revenue',
+                        'label' => 'House Revenue',
                         'data' => $monthlyHotelRevenue,
                         'backgroundColor' => 'rgb(59, 130, 246)',
                     ],
@@ -193,18 +193,50 @@ new class extends Component {
             ],
         ];
 
-        // Customer chart (line chart for customer growth)
-        $customerGrowth = [];
-        $customerLabels = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $month = now()->subMonths($i);
-            $monthStart = $month->copy()->startOfMonth();
-            $monthEnd = $month->copy()->endOfMonth();
+        // Active Customers chart (line chart for current month with 3-day grouping and previous month comparison)
+        $currentMonth = now();
+        $previousMonth = now()->subMonth();
 
-            // Count customers created up to and including this month (cumulative)
-            $customers = User::role(RolesEnum::CUSTOMER->value)->where('created_at', '<=', $monthEnd)->count();
-            $customerGrowth[] = $customers;
-            $customerLabels[] = $month->format('M Y');
+        $customerLabels = [];
+        $currentMonthActive = [];
+        $previousMonthActive = [];
+
+        // Get customers for current month grouped by 3-day intervals
+        for ($i = 0; $i < 10; $i++) {
+            $groupStart = $currentMonth
+                ->copy()
+                ->startOfMonth()
+                ->addDays($i * 3);
+            $groupEnd = $groupStart->copy()->addDays(2)->endOfDay();
+
+            // Skip if we're beyond current month
+            if ($groupStart->month != $currentMonth->month) {
+                break;
+            }
+
+            // Count active customers for this 3-day group in current month
+            $activeCount = Booking::whereIn('user_id', User::role(RolesEnum::CUSTOMER->value)->pluck('id'))
+                ->whereBetween('created_at', [$groupStart, $groupEnd])
+                ->pluck('user_id')
+                ->unique()
+                ->count();
+
+            $currentMonthActive[] = $activeCount;
+
+            // Count active customers for corresponding period in previous month
+            $prevGroupStart = $groupStart->copy()->subMonth();
+            $prevGroupEnd = $groupEnd->copy()->subMonth();
+
+            $prevActiveCount = Booking::whereIn('user_id', User::role(RolesEnum::CUSTOMER->value)->pluck('id'))
+                ->whereBetween('created_at', [$prevGroupStart, $prevGroupEnd])
+                ->pluck('user_id')
+                ->unique()
+                ->count();
+
+            $previousMonthActive[] = $prevActiveCount;
+
+            // Format label as "Day X-Y"
+            $customerLabels[] = 'Day ' . ($i * 3 + 1) . '-' . ($i * 3 + 3);
         }
 
         $this->customerChart = [
@@ -213,11 +245,23 @@ new class extends Component {
                 'labels' => $customerLabels,
                 'datasets' => [
                     [
-                        'label' => 'Total Customers',
-                        'data' => $customerGrowth,
-                        'borderColor' => 'rgb(16, 185, 129)',
-                        'backgroundColor' => 'rgba(16, 185, 129, 0.1)',
+                        'label' => 'Current Month',
+                        'data' => $currentMonthActive,
+                        'borderColor' => 'rgb(59, 130, 246)',
+                        'backgroundColor' => 'rgba(59, 130, 246, 0.1)',
+                        'borderWidth' => 2,
                         'fill' => true,
+                        'tension' => 0.4,
+                    ],
+                    [
+                        'label' => 'Previous Month',
+                        'data' => $previousMonthActive,
+                        'borderColor' => 'rgb(107, 114, 128)',
+                        'backgroundColor' => 'rgba(107, 114, 128, 0.05)',
+                        'borderWidth' => 2,
+                        'fill' => true,
+                        'tension' => 0.4,
+                        'borderDash' => [5, 5],
                     ],
                 ],
             ],
@@ -227,6 +271,12 @@ new class extends Component {
                 'scales' => [
                     'y' => [
                         'beginAtZero' => true,
+                    ],
+                ],
+                'plugins' => [
+                    'legend' => [
+                        'display' => true,
+                        'position' => 'top',
                     ],
                 ],
             ],
@@ -313,11 +363,11 @@ new class extends Component {
             </div>
         </x-card>
 
-        <!-- Hotel Revenue Card -->
-        <x-card shadow title="Hotel Revenue" separator>
+        <!-- House Revenue Card -->
+        <x-card shadow title="House Revenue" separator>
             <div class="flex items-center justify-between p-4 bg-primary/10 rounded-lg">
                 <div>
-                    <div class="text-sm text-base-content/60 mb-1">Hotel Revenue</div>
+                    <div class="text-sm text-base-content/60 mb-1">House Revenue</div>
                     <div class="text-3xl font-bold text-primary">
                         {{ currency_format($stats['hotel_revenue']) }}
                     </div>
@@ -340,44 +390,34 @@ new class extends Component {
         </x-card>
     </div>
 
-    <!-- Active Customers Section -->
-    <div class="mb-6">
-        <x-card shadow title="Active Customers" separator>
-            <div class="flex items-center justify-between p-4 bg-info/10 rounded-lg">
-                <div>
-                    <div class="text-sm text-base-content/60 mb-1">Active in Last 30 Days</div>
-                    <div class="text-4xl font-bold text-info">{{ $stats['active_customers'] }}</div>
-                </div>
-                <x-icon name="o-users" class="w-16 h-16 text-info/50" />
-            </div>
-        </x-card>
-    </div>
-
     <!-- Charts Section -->
     <div class="space-y-6">
-        <!-- Booking Distribution Chart -->
-        <x-card shadow title="Booking Distribution" separator>
-            <div class="p-4">
-                <div class="h-96">
-                    <x-chart wire:model="bookingChart" class="h-full" />
+        <!-- Booking Distribution & Active Customers Charts Side by Side -->
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 mb-6">
+            <!-- Booking Distribution Chart -->
+            <x-card shadow title="Booking Distribution" separator>
+                <div class="p-4">
+                    <div class="h-80">
+                        <x-chart wire:model="bookingChart" class="h-full" />
+                    </div>
                 </div>
-            </div>
-        </x-card>
+            </x-card>
+
+            <!-- Active Customers Chart -->
+            <x-card shadow title="Active Customers" separator>
+                <div class="p-4">
+                    <div class="h-80">
+                        <x-chart wire:model="customerChart" class="h-full" />
+                    </div>
+                </div>
+            </x-card>
+        </div>
 
         <!-- Revenue Chart -->
         <x-card shadow title="Monthly Revenue Comparison" separator>
             <div class="p-4">
                 <div class="h-96">
                     <x-chart wire:model="revenueChart" class="h-full" />
-                </div>
-            </div>
-        </x-card>
-
-        <!-- Customer Growth Chart -->
-        <x-card shadow title="Customer Growth" separator>
-            <div class="p-4">
-                <div class="h-96">
-                    <x-chart wire:model="customerChart" class="h-full" />
                 </div>
             </div>
         </x-card>

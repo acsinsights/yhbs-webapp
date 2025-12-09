@@ -22,6 +22,7 @@ new class extends Component {
     public ?int $sku = null;
     public ?float $price = null;
     public ?float $discount_price = null;
+    public bool $is_active = false;
     public ?int $length = null;
     public ?int $max_guests = null;
     public ?int $max_crew = null;
@@ -67,6 +68,7 @@ new class extends Component {
         $this->max_guests = $yacht->max_guests;
         $this->max_crew = $yacht->max_crew;
         $this->max_fuel_capacity = $yacht->max_fuel_capacity;
+        $this->is_active = $yacht->is_active;
         // Auto-calculate max_capacity from guests and crew
         $this->calculateMaxCapacity();
         $this->category_ids = $yacht->categories->pluck('id')->toArray();
@@ -118,6 +120,7 @@ new class extends Component {
             'sku' => 'nullable|integer',
             'price' => 'nullable|numeric|min:0',
             'discount_price' => 'nullable|numeric|min:0',
+            'is_active' => 'nullable|boolean',
             'length' => 'nullable|integer|min:0',
             'max_guests' => 'nullable|integer|min:0',
             'max_crew' => 'nullable|integer|min:0',
@@ -157,6 +160,7 @@ new class extends Component {
             'sku' => $this->sku,
             'price' => $this->price,
             'discount_price' => $this->discount_price,
+            'is_active' => $this->is_active,
             'length' => $this->length,
             'max_guests' => $this->max_guests,
             'max_crew' => $this->max_crew,
@@ -264,7 +268,7 @@ new class extends Component {
         </x-slot:subtitle>
         <x-slot:actions>
             <x-button icon="o-arrow-left" label="Back to Yachts" link="{{ route('admin.yacht.index') }}"
-                class="btn-primary btn-soft" responsive />
+                class="btn-ghost btn-outline" responsive />
         </x-slot:actions>
     </x-header>
 
@@ -287,6 +291,11 @@ new class extends Component {
                     label="Yacht Images Gallery" hint="Max 5MB per image" change-text="Change" crop-text="Crop"
                     remove-text="Remove" crop-title-text="Crop image" crop-cancel-text="Cancel" crop-save-text="Crop"
                     add-files-text="Add images" />
+
+                <div class="col-span-2">
+                    <x-toggle wire:model="is_active" label="Active Status"
+                        hint="Toggle to activate/deactivate this yacht" />
+                </div>
 
                 <x-input wire:model="price" type="number" step="0.01" label="Price" placeholder="0.00"
                     icon="o-currency-dollar" hint="Regular yacht price" />
@@ -344,12 +353,10 @@ new class extends Component {
             </div>
 
             <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-6 md:mt-8 pt-4 md:pt-6 border-t">
-                <x-button icon="o-arrow-left" label="Back to Yachts" link="{{ route('admin.yacht.index') }}"
-                    class="btn-ghost w-full sm:w-auto order-2 sm:order-1" responsive />
                 <x-button icon="o-x-mark" label="Cancel" link="{{ route('admin.yacht.index') }}"
-                    class="btn-ghost w-full sm:w-auto order-1 sm:order-2" responsive />
-                <x-button icon="o-check" label="Update Yacht" type="submit"
-                    class="btn-primary w-full sm:w-auto order-3" spinner="update" responsive />
+                    class="btn-error btn-outline" responsive />
+                <x-button icon="o-check" label="Update" type="submit" class="btn-primary btn-outline"
+                    spinner="update" responsive />
             </div>
         </x-form>
     </x-card>

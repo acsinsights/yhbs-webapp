@@ -57,10 +57,10 @@
             <a href="{{ route('admin.index') }}" wire:navigate="">
                 <div class="p-5 pt-3 hidden-when-collapsed ">
                     <div class="flex items-center gap-2 mt-2">
-                        <img src="{{ asset('frontend/img/admin-logo.svg') }}" width="250"
-                            alt="logo" class="light-logo" />
-                        <img src="{{ asset('frontend/img/admin-logo-light.svg') }}" width="250"
-                            alt="logo" class="dark-logo" />
+                        <img src="{{ asset('frontend/img/admin-logo.svg') }}" width="250" alt="logo"
+                            class="light-logo" />
+                        <img src="{{ asset('frontend/img/admin-logo-light.svg') }}" width="250" alt="logo"
+                            class="dark-logo" />
                     </div>
                 </div>
 
@@ -79,9 +79,10 @@
 
                     <x-menu-item title="Yacht Bookings" icon="o-sparkles"
                         link="{{ route('admin.bookings.yacht.index') }}" />
-                    <x-menu-item title="Room Bookings" icon="o-building-office"
+                    <x-menu-item title="Room Bookings" icon="o-home-modern"
+                        link="{{ route('admin.bookings.room.index') }}" />
+                    <x-menu-item title="House Bookings" icon="o-building-office"
                         link="{{ route('admin.bookings.house.index') }}" />
-                    <x-menu-item title="Room Enquiries" icon="o-envelope" link="###" />
                 @endrole
 
                 @role('admin|superadmin')
@@ -182,7 +183,7 @@
                 <div>
                     © {{ date('Y') }} {{ config('app.name') }}. All Rights Reserved.
                 </div>
-                 <div>
+                <div>
                     <span class="text-primary">v{{ config('app.version') }}</span>
                 </div>
             </div>

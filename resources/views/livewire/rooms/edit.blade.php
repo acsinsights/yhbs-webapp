@@ -261,13 +261,16 @@ new class extends Component {
                 <x-input wire:model="room_number" label="Room Number" placeholder="e.g., 101, 202, Suite A"
                     icon="o-hashtag" hint="Unique room identifier" />
 
+                <div class="flex items-center">
+                    <x-toggle wire:model="is_active" label="Active Status" hint="Enable or disable this room" />
+                </div>
+
                 <x-input wire:model="adults" type="number" label="Adults" placeholder="e.g., 2" icon="o-user"
                     hint="Maximum number of adults (optional)" min="0" />
 
                 <x-input wire:model="children" type="number" label="Children" placeholder="e.g., 1" icon="o-user"
                     hint="Maximum number of children (optional)" min="0" />
 
-                <x-toggle wire:model="is_active" label="Active Status" hint="Enable or disable this room" />
 
                 <x-file wire:model="image" label="Room Image" placeholder="Upload room image" crop-after-change
                     :crop-config="$config2" hint="Max: 5MB">
@@ -344,9 +347,9 @@ new class extends Component {
             {{-- Form Actions --}}
             <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-6 md:mt-8 pt-4 md:pt-6 border-t">
                 <x-button icon="o-x-mark" label="Cancel" link="{{ route('admin.rooms.index') }}"
-                    class="btn-warning btn-soft" responsive />
-                <x-button icon="o-check" label="Update Room" type="submit" class="btn-primary" spinner="update"
-                    responsive />
+                    class="btn-error btn-outline" responsive />
+                <x-button icon="o-check" label="Update" type="submit" class="btn-primary btn-outline"
+                    spinner="update" responsive />
             </div>
         </x-form>
     </x-card>

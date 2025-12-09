@@ -48,7 +48,7 @@ new class extends Component {
         $this->description = $house->description;
         $this->library = $house->library ?? new Collection();
     }
-    
+
     public function update(): void
     {
         $this->validate([
@@ -167,8 +167,8 @@ new class extends Component {
             {{-- Form Actions --}}
             <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-6 md:mt-8 pt-4 md:pt-6 border-t">
                 <x-button icon="o-x-mark" label="Cancel" link="{{ route('admin.houses.index') }}"
-                    class="btn-warning btn-soft" responsive />
-                <x-button icon="o-check" label="Update House" type="submit" class="btn-primary" spinner="update"
+                    class="btn-error btn-outline" responsive />
+                <x-button icon="o-check" label="Update" type="submit" class="btn-primary btn-outline" spinner="update"
                     responsive />
             </div>
         </x-form>
