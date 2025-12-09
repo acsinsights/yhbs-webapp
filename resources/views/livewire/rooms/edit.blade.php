@@ -21,7 +21,6 @@ new class extends Component {
     public ?UploadedFile $image = null;
     public ?string $existing_image = null;
     public ?string $description = null;
-    public ?float $price = null;
     public ?float $price_per_night = null;
     public ?float $price_per_2night = null;
     public ?float $price_per_3night = null;
@@ -67,7 +66,6 @@ new class extends Component {
         $this->existing_image = $room->image;
         $this->image = null; // Keep null for file upload, use existing_image for display
         $this->description = $room->description;
-        $this->price = $room->price;
         $this->price_per_night = $room->price_per_night;
         $this->price_per_2night = $room->price_per_2night;
         $this->price_per_3night = $room->price_per_3night;
@@ -106,7 +104,6 @@ new class extends Component {
             'image' => 'nullable|image|max:5000',
             'files.*' => 'image|max:5000',
             'description' => 'nullable|string',
-            'price' => 'nullable|numeric|min:0',
             'price_per_night' => 'nullable|numeric|min:0',
             'price_per_2night' => 'nullable|numeric|min:0',
             'price_per_3night' => 'nullable|numeric|min:0',
@@ -133,7 +130,6 @@ new class extends Component {
             'room_number' => $this->room_number,
             'image' => $imagePath,
             'description' => $this->description,
-            'price' => $this->price,
             'price_per_night' => $this->price_per_night,
             'price_per_2night' => $this->price_per_2night,
             'price_per_3night' => $this->price_per_3night,
@@ -261,13 +257,16 @@ new class extends Component {
                 <x-input wire:model="room_number" label="Room Number" placeholder="e.g., 101, 202, Suite A"
                     icon="o-hashtag" hint="Unique room identifier" />
 
+                <div class="flex items-center">
+                    <x-toggle wire:model="is_active" label="Active Status" hint="Enable or disable this room" />
+                </div>
+
                 <x-input wire:model="adults" type="number" label="Adults" placeholder="e.g., 2" icon="o-user"
                     hint="Maximum number of adults (optional)" min="0" />
 
                 <x-input wire:model="children" type="number" label="Children" placeholder="e.g., 1" icon="o-user"
                     hint="Maximum number of children (optional)" min="0" />
 
-                <x-toggle wire:model="is_active" label="Active Status" hint="Enable or disable this room" />
 
                 <x-file wire:model="image" label="Room Image" placeholder="Upload room image" crop-after-change
                     :crop-config="$config2" hint="Max: 5MB">
@@ -279,9 +278,6 @@ new class extends Component {
                     hint="Max 5MB per image" change-text="Change" crop-text="Crop" remove-text="Remove"
                     crop-title-text="Crop image" crop-cancel-text="Cancel" crop-save-text="Crop"
                     add-files-text="Add images" />
-
-                <x-input wire:model="price" type="number" step="0.01" label="Price" placeholder="0.00"
-                    icon="o-currency-dollar" hint="Regular room price" />
 
                 <x-input wire:model="price_per_night" type="number" step="0.01" label="Price Per Night"
                     placeholder="0.00" icon="o-currency-dollar" hint="Price for 1 night (optional)" />
@@ -344,9 +340,9 @@ new class extends Component {
             {{-- Form Actions --}}
             <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-6 md:mt-8 pt-4 md:pt-6 border-t">
                 <x-button icon="o-x-mark" label="Cancel" link="{{ route('admin.rooms.index') }}"
-                    class="btn-warning btn-soft" responsive />
-                <x-button icon="o-check" label="Update Room" type="submit" class="btn-primary" spinner="update"
-                    responsive />
+                    class="btn-error btn-outline" responsive />
+                <x-button icon="o-check" label="Update" type="submit" class="btn-primary btn-outline"
+                    spinner="update" responsive />
             </div>
         </x-form>
     </x-card>

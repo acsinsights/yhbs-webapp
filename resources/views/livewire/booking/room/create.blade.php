@@ -3,15 +3,21 @@
 use Carbon\Carbon;
 use Mary\Traits\Toast;
 use Illuminate\View\View;
+use Illuminate\Support\Str;
 use Livewire\WithPagination;
 use Livewire\Volt\Component;
-use App\Enums\RolesEnum;
+use Illuminate\Support\Facades\Hash;
 use App\Models\{Booking, Room, User};
+use App\Enums\{BookingStatusEnum, RolesEnum};
+use App\Notifications\WelcomeCustomerNotification;
 
 new class extends Component {
     use Toast, WithPagination;
 
-    public Booking $booking;
+    public ?int $user_id = null;
+    public string $customer_name = '';
+    public string $customer_email = '';
+    public bool $createCustomerModal = false;
 
     public ?int $room_id = null;
     public ?string $check_in = null;
@@ -26,26 +32,20 @@ new class extends Component {
     public string $room_search = '';
     public int $perPage = 6;
 
-    public function mount(Booking $booking): void
+    public function mount(): void
     {
-        $this->booking = $booking->load(['bookingable.house', 'user']);
-
-        // Pre-fill form with existing booking data
-        $this->room_id = $booking->bookingable_id;
-        $this->check_in = $booking->check_in ? Carbon::parse($booking->check_in)->format('Y-m-d\TH:i') : null;
-        $this->check_out = $booking->check_out ? Carbon::parse($booking->check_out)->format('Y-m-d\TH:i') : null;
-        $this->adults = $booking->adults ?? 1;
-        $this->children = $booking->children ?? 0;
-        $this->amount = $booking->price;
-        $this->amountManuallySet = true; // Set to true since we're loading existing amount
-        $this->payment_method = $booking->payment_method ?? 'cash';
-        $this->payment_status = $booking->payment_status ?? 'pending';
-        $this->notes = $booking->notes;
+        // Set default dates
+        $this->check_in = Carbon::today()->format('Y-m-d\TH:i');
+        $this->check_out = Carbon::tomorrow()->format('Y-m-d\TH:i');
     }
 
     public function updatedCheckIn(): void
     {
         $this->resetPage();
+        $this->room_id = null;
+        if (!$this->amountManuallySet) {
+            $this->amount = null;
+        }
 
         // Validate that check_in is not in the past
         if ($this->check_in) {
@@ -73,6 +73,10 @@ new class extends Component {
     public function updatedCheckOut(): void
     {
         $this->resetPage();
+        $this->room_id = null;
+        if (!$this->amountManuallySet) {
+            $this->amount = null;
+        }
 
         // Validate that check_out is after check_in
         if ($this->check_in && $this->check_out) {
@@ -102,12 +106,14 @@ new class extends Component {
                 $price = $room->discount_price ?? $room->price_per_night;
                 $newAmount = $price !== null ? (float) $price : null;
                 $this->amount = $newAmount;
+                // Force update to ensure Live Summary refreshes
                 $this->dispatch('amount-updated');
             } else {
                 $this->amount = null;
                 $this->dispatch('amount-updated');
             }
         } else {
+            // Reset amount when room selection is cleared
             $this->amount = null;
             $this->dispatch('amount-updated');
         }
@@ -117,12 +123,14 @@ new class extends Component {
     {
         // Validate and limit amount
         if ($this->amount !== null && $this->amount !== '') {
+            // Limit to maximum 999,999,999.99 (999 million)
             $maxAmount = 999999999.99;
             if ($this->amount > $maxAmount) {
                 $this->error('Amount cannot exceed ' . currency_format($maxAmount) . '.');
                 $this->amount = $maxAmount;
                 return;
             }
+            // Ensure amount is not negative
             if ($this->amount < 0) {
                 $this->amount = 0;
             }
@@ -130,12 +138,59 @@ new class extends Component {
         }
     }
 
-    public function update(): void
+    public function resetForm(): void
+    {
+        $this->user_id = null;
+        $this->room_id = null;
+        $this->check_in = Carbon::now()->format('Y-m-d\TH:i');
+        $this->check_out = Carbon::tomorrow()->format('Y-m-d\TH:i');
+        $this->adults = 1;
+        $this->children = 0;
+        $this->amount = null;
+        $this->amountManuallySet = false;
+        $this->payment_method = 'cash';
+        $this->payment_status = 'pending';
+        $this->notes = null;
+        $this->room_search = '';
+        $this->resetPage();
+        $this->success('Form has been reset.');
+    }
+
+    public function createCustomer(): void
+    {
+        $this->validate([
+            'customer_name' => 'required|string|max:255',
+            'customer_email' => 'required|email|unique:users,email',
+        ]);
+
+        // Generate random password
+        $password = Hash::make(Str::random(12));
+
+        $user = User::create([
+            'name' => $this->customer_name,
+            'email' => $this->customer_email,
+            'password' => $password,
+        ]);
+
+        $user->assignRole(RolesEnum::CUSTOMER->value);
+
+        // Send welcome email with password reset link
+        $user->notify(new WelcomeCustomerNotification());
+
+        $this->user_id = $user->id;
+        $this->createCustomerModal = false;
+        $this->customer_name = '';
+        $this->customer_email = '';
+        $this->success('Customer created successfully. Welcome email with password reset link has been sent.');
+    }
+
+    public function store(): void
     {
         $this->validate(
             [
+                'user_id' => 'required|exists:users,id',
                 'room_id' => 'required|exists:rooms,id',
-                'check_in' => 'required|date',
+                'check_in' => 'required|date|after_or_equal:today',
                 'check_out' => 'required|date|after:check_in',
                 'adults' => 'required|integer|min:1',
                 'children' => 'required|integer|min:0',
@@ -149,41 +204,23 @@ new class extends Component {
             ],
         );
 
+        // Check if room is available for the selected dates
         $checkIn = Carbon::parse($this->check_in);
         $checkOut = Carbon::parse($this->check_out);
 
-        $room = Room::find($this->room_id);
+        $availableRooms = Room::available($checkIn, $checkOut)->where('id', $this->room_id)->exists();
 
-        if (!$room) {
-            $this->error('Selected room not found.');
+        if (!$availableRooms) {
+            $this->error('Selected room is not available for the chosen dates.');
             return;
         }
 
-        // Check if room is available for the date range (excluding current booking)
-        // If it's the same room, we allow the update
-        if ($this->room_id != $this->booking->bookingable_id) {
-            // Check if the new room is available (excluding current booking)
-            $hasConflict = Booking::where('bookingable_type', Room::class)
-                ->where('bookingable_id', $this->room_id)
-                ->where('id', '!=', $this->booking->id)
-                ->whereIn('status', ['pending', 'booked', 'checked_in'])
-                ->where(function ($q) use ($checkIn, $checkOut) {
-                    $q->whereBetween('check_in', [$checkIn, $checkOut])
-                        ->orWhereBetween('check_out', [$checkIn, $checkOut])
-                        ->orWhere(function ($q2) use ($checkIn, $checkOut) {
-                            $q2->where('check_in', '<=', $checkIn)->where('check_out', '>=', $checkOut);
-                        });
-                })
-                ->exists();
+        $room = Room::findOrFail($this->room_id);
 
-            if ($hasConflict) {
-                $this->error('Selected room is not available for the chosen dates.');
-                return;
-            }
-        }
-
-        $this->booking->update([
+        $booking = Booking::create([
+            'bookingable_type' => Room::class,
             'bookingable_id' => $this->room_id,
+            'user_id' => $this->user_id,
             'adults' => $this->adults,
             'children' => $this->children,
             'check_in' => $checkIn,
@@ -191,10 +228,11 @@ new class extends Component {
             'price' => $this->amount,
             'payment_method' => $this->payment_method,
             'payment_status' => $this->payment_status,
+            'status' => BookingStatusEnum::BOOKED->value,
             'notes' => $this->notes,
         ]);
 
-        $this->success('Booking updated successfully.', redirectTo: route('admin.bookings.house.show', $this->booking->id));
+        $this->success('Booking created successfully.', redirectTo: route('admin.bookings.house.show', $booking->id));
     }
 
     public function rendering(View $view)
@@ -202,25 +240,8 @@ new class extends Component {
         $checkIn = $this->check_in ? Carbon::parse($this->check_in) : null;
         $checkOut = $this->check_out ? Carbon::parse($this->check_out) : null;
 
-        // Get current room to include it even if not available for new dates
-        $currentRoom = $this->booking->bookingable;
-
         if ($checkIn && $checkOut && $checkIn->lt($checkOut)) {
-            // Get available rooms excluding current booking
-            $query = Room::active()
-                ->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
-                    $q->where('id', '!=', $this->booking->id)
-                        ->whereIn('status', ['pending', 'booked', 'checked_in'])
-                        ->where(function ($query) use ($checkIn, $checkOut) {
-                            $query
-                                ->whereBetween('check_in', [$checkIn, $checkOut])
-                                ->orWhereBetween('check_out', [$checkIn, $checkOut])
-                                ->orWhere(function ($q) use ($checkIn, $checkOut) {
-                                    $q->where('check_in', '<=', $checkIn)->where('check_out', '>=', $checkOut);
-                                });
-                        });
-                })
-                ->with('house');
+            $query = Room::active()->available($checkIn, $checkOut)->with('house');
 
             // Filter by search term
             if (!empty($this->room_search)) {
@@ -234,24 +255,12 @@ new class extends Component {
                 });
             }
 
-            $availableRooms = $query->orderBy('room_number')->get();
-
-            // Include current room if it's not in the available list
-            if ($currentRoom && !$availableRooms->contains('id', $currentRoom->id)) {
-                $availableRooms->prepend($currentRoom);
-            }
-
-            // Manually paginate the collection
-            $currentPage = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage();
-            $items = $availableRooms->slice(($currentPage - 1) * $this->perPage, $this->perPage)->values();
-            $view->availableRooms = new \Illuminate\Pagination\LengthAwarePaginator($items, $availableRooms->count(), $this->perPage, $currentPage, ['path' => request()->url(), 'query' => request()->query()]);
+            $view->availableRooms = $query->orderBy('room_number')->paginate($this->perPage);
         } else {
-            // If dates are invalid, still show current room
-            $collection = $currentRoom ? collect([$currentRoom]) : collect();
-            $currentPage = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage();
-            $items = $collection->slice(($currentPage - 1) * $this->perPage, $this->perPage)->values();
-            $view->availableRooms = new \Illuminate\Pagination\LengthAwarePaginator($items, $collection->count(), $this->perPage, $currentPage, ['path' => request()->url(), 'query' => request()->query()]);
+            $view->availableRooms = \Illuminate\Pagination\LengthAwarePaginator::empty();
         }
+
+        $view->customers = User::role(RolesEnum::CUSTOMER->value)->orderBy('name')->get();
 
         // Set minimum date for check-in (current date/time)
         $view->minCheckInDate = Carbon::now()->format('Y-m-d\TH:i');
@@ -270,28 +279,24 @@ new class extends Component {
                 'label' => 'Room Bookings',
             ],
             [
-                'link' => route('admin.bookings.house.show', $booking->id),
-                'label' => 'Booking Details',
-            ],
-            [
-                'label' => 'Edit Booking',
+                'label' => 'Create Booking',
             ],
         ];
     @endphp
 
-    <x-header title="Edit Room Booking" separator>
+    <x-header title="Create Room Booking" separator>
         <x-slot:subtitle>
-            <p class="text-sm text-base-content/50 mb-2">Update booking information</p>
+            <p class="text-sm text-base-content/50 mb-2">Create a new house room booking</p>
             <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
         </x-slot:subtitle>
         <x-slot:actions>
-            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.house.show', $booking->id) }}"
+            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.house.index') }}"
                 class="btn-ghost" />
         </x-slot:actions>
     </x-header>
 
     <x-card shadow class="mx-auto">
-        <x-form wire:submit="update">
+        <x-form wire:submit="store">
             <div class="space-y-6">
                 <div class="grid gap-6 lg:grid-cols-3">
                     <div class="space-y-6 lg:col-span-2">
@@ -317,23 +322,59 @@ new class extends Component {
                             </div>
                         </div>
 
-                        {{-- Customer Section (Read-only) --}}
-                        <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm opacity-75">
-                            <div class="flex items-start justify-between gap-3">
+                        {{-- Customer Section --}}
+                        <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
+                            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                                 <div>
-                                    <p class="text-xs uppercase tracking-wide text-base-content/50 font-semibold">
-                                        Customer</p>
+                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 2</p>
                                     <h3 class="text-xl font-semibold text-base-content mt-1">Customer Details</h3>
-                                    <p class="text-sm text-base-content/60 mt-1">Customer cannot be changed</p>
+                                    <p class="text-sm text-base-content/60 mt-1">Select or create a customer for this
+                                        booking
+                                    </p>
                                 </div>
-                                <x-icon name="o-user" class="w-8 h-8 text-base-content/50" />
+                                <x-button type="button" icon="o-plus" label="New Customer"
+                                    @click="$wire.createCustomerModal = true" class="btn-sm btn-primary" />
                             </div>
+
                             <div class="mt-6">
-                                <div class="p-4 bg-base-200/50 rounded-lg">
-                                    <div class="font-semibold text-base">{{ $booking->user->name ?? 'N/A' }}</div>
-                                    <div class="text-sm text-base-content/60 mt-1">{{ $booking->user->email ?? 'N/A' }}
-                                    </div>
-                                </div>
+                                <x-choices-offline wire:model.live="user_id" label="Select Customer"
+                                    placeholder="Choose a customer" :options="$customers" icon="o-user"
+                                    hint="Select existing customer or create a new one" single clearable searchable>
+                                    @scope('item', $customer)
+                                        <div
+                                            class="flex items-center gap-3 p-2 rounded-lg hover:bg-base-200/50 transition-colors">
+                                            <div class="shrink-0">
+                                                <div
+                                                    class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
+                                                        </path>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="font-semibold text-base mb-1 truncate">{{ $customer->name }}
+                                                </div>
+                                                <div class="text-xs text-base-content/60 flex items-center gap-1">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                                        </path>
+                                                    </svg>
+                                                    <span class="truncate">{{ $customer->email }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endscope
+                                    @scope('selection', $customer)
+                                        {{ $customer->name }}
+                                    @endscope
+                                </x-choices-offline>
                             </div>
                         </div>
 
@@ -341,7 +382,7 @@ new class extends Component {
                         <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
                             <div class="flex items-start justify-between gap-3">
                                 <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 2</p>
+                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 3</p>
                                     <h3 class="text-xl font-semibold text-base-content mt-1">Guest Details</h3>
                                     <p class="text-sm text-base-content/60 mt-1">Number of guests for this booking</p>
                                 </div>
@@ -359,7 +400,7 @@ new class extends Component {
                         <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
                             <div class="flex items-start justify-between gap-3">
                                 <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 3</p>
+                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 4</p>
                                     <h3 class="text-xl font-semibold text-base-content mt-1">Room Selection</h3>
                                     <p class="text-sm text-base-content/60 mt-1">Choose from available rooms for your
                                         booking
@@ -378,6 +419,7 @@ new class extends Component {
 
                                 {{-- Filter Info --}}
                                 <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-base-content/70">
+                                    {{-- Loading Indicator --}}
                                     <div wire:loading wire:target="check_in,check_out,room_search,perPage"
                                         class="flex items-center gap-2 text-primary">
                                         <span class="loading loading-spinner loading-sm"></span>
@@ -424,14 +466,13 @@ new class extends Component {
                                             @foreach ($availableRooms as $room)
                                                 @php
                                                     $isSelected = $room_id == $room->id;
-                                                    $isCurrentRoom = $room->id == $booking->bookingable_id;
                                                 @endphp
                                                 <label wire:click="$wire.room_id = {{ $room->id }}"
                                                     class="relative cursor-pointer group block">
                                                     <input type="radio" wire:model.live="room_id"
                                                         value="{{ $room->id }}" class="sr-only">
                                                     <div
-                                                        class="bg-base-100 border-2 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 h-full flex flex-col {{ $isSelected ? 'border-primary ring-2 ring-primary/20 shadow-lg' : 'border-base-300' }} {{ $isCurrentRoom ? 'ring-2 ring-info/30' : '' }}">
+                                                        class="bg-base-100 border-2 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 h-full flex flex-col {{ $isSelected ? 'border-primary ring-2 ring-primary/20 shadow-lg' : 'border-base-300' }}">
                                                         {{-- Header Section --}}
                                                         <div class="p-4 bg-base-200/50 border-b border-base-300">
                                                             <div class="flex items-start justify-between gap-2">
@@ -464,15 +505,6 @@ new class extends Component {
                                                                     @endif
                                                                 </div>
                                                             </div>
-                                                            {{-- Current Room Badge --}}
-                                                            @if ($isCurrentRoom)
-                                                                <div class="mt-2">
-                                                                    <div
-                                                                        class="bg-info text-info-content px-2 py-1 rounded-md text-xs font-semibold shadow-md inline-block">
-                                                                        CURRENT
-                                                                    </div>
-                                                                </div>
-                                                            @endif
                                                         </div>
 
                                                         {{-- Content Section --}}
@@ -580,7 +612,7 @@ new class extends Component {
                         <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
                             <div class="flex items-start justify-between gap-3">
                                 <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 4</p>
+                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 5</p>
                                     <h3 class="text-xl font-semibold text-base-content mt-1">Payment Details</h3>
                                     <p class="text-sm text-base-content/60 mt-1">Payment information for this booking
                                     </p>
@@ -606,7 +638,7 @@ new class extends Component {
                         <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
                             <div class="flex items-start justify-between gap-3">
                                 <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 5</p>
+                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 6</p>
                                     <h3 class="text-xl font-semibold text-base-content mt-1">Additional Notes</h3>
                                     <p class="text-sm text-base-content/60 mt-1">Any special requests or additional
                                         information</p>
@@ -653,7 +685,7 @@ new class extends Component {
                                             @if ($check_in && $check_out)
                                                 <div class="space-y-1 flex justify-between">
                                                     <div>
-                                                        <p class="text-xs font-semibold text-primary mb-0.5">Check In
+                                                        <p class="text-xs font-semibold text-primary mb-0.5">Departure
                                                         </p>
                                                         <p class="text-xs font-semibold text-base-content">
                                                             {{ \Carbon\Carbon::parse($check_in)->format('M d, Y') }} |
@@ -661,8 +693,7 @@ new class extends Component {
                                                         </p>
                                                     </div>
                                                     <div>
-                                                        <p class="text-xs font-semibold text-primary mb-0.5">Check Out
-                                                        </p>
+                                                        <p class="text-xs font-semibold text-primary mb-0.5">Return</p>
                                                         <p class="text-xs font-semibold text-base-content">
                                                             {{ \Carbon\Carbon::parse($check_out)->format('M d, Y') }} |
                                                             {{ \Carbon\Carbon::parse($check_out)->format('g:i A') }}
@@ -764,6 +795,51 @@ new class extends Component {
                                     </div>
                                 </div>
                             </div>
+                            <div class="mt-6 p-4 rounded-xl bg-base-200/80 border border-dashed border-base-300">
+                                <p class="text-xs uppercase tracking-wide text-base-content/60">Checklist</p>
+                                <ul class="mt-2 space-y-2 text-sm">
+                                    <li class="flex items-center gap-2" wire:key="checklist-customer">
+                                        <span
+                                            class="w-2.5 h-2.5 rounded-full transition-colors duration-200 {{ $user_id ? 'bg-success' : 'bg-base-400' }}"></span>
+                                        <span
+                                            class="{{ $user_id ? 'text-success font-medium' : 'text-base-content/70' }}">Customer
+                                            selected</span>
+                                    </li>
+                                    <li class="flex items-center gap-2" wire:key="checklist-room">
+                                        <span
+                                            class="w-2.5 h-2.5 rounded-full transition-colors duration-200 {{ $room_id ? 'bg-success' : 'bg-base-400' }}"></span>
+                                        <span
+                                            class="{{ $room_id ? 'text-success font-medium' : 'text-base-content/70' }}">Room
+                                            selected</span>
+                                    </li>
+                                    <li class="flex items-center gap-2" wire:key="checklist-amount">
+                                        <span
+                                            class="w-2.5 h-2.5 rounded-full transition-colors duration-200 {{ $amount ? 'bg-success' : 'bg-base-400' }}"></span>
+                                        <span
+                                            class="{{ $amount ? 'text-success font-medium' : 'text-base-content/70' }}">Amount
+                                            filled</span>
+                                    </li>
+                                    <li class="flex items-center gap-2" wire:key="checklist-payment-method">
+                                        <span
+                                            class="w-2.5 h-2.5 rounded-full transition-colors duration-200 {{ $payment_method ? 'bg-success' : 'bg-base-400' }}"></span>
+                                        <span
+                                            class="{{ $payment_method ? 'text-success font-medium' : 'text-base-content/70' }}">Payment
+                                            method selected</span>
+                                    </li>
+                                    <li class="flex items-center gap-2" wire:key="checklist-payment-status">
+                                        <span
+                                            class="w-2.5 h-2.5 rounded-full transition-colors duration-200 {{ $payment_status ? 'bg-success' : 'bg-base-400' }}"></span>
+                                        <span
+                                            class="{{ $payment_status ? 'text-success font-medium' : 'text-base-content/70' }}">Payment
+                                            status selected</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="rounded-2xl mt-6 border border-dashed border-base-300 bg-base-50/50 p-5">
+                                <p class="text-sm font-semibold text-base-content">Need inspiration?</p>
+                                <p class="text-sm text-base-content/60 mt-1">Use the notes section to capture special
+                                    requests, preferences, or additional information for the house staff.</p>
+                            </div>
                         </div>
 
                     </div>
@@ -774,13 +850,36 @@ new class extends Component {
                 <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:justify-between">
                     <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
                         <x-button icon="o-arrow-left" label="Back"
-                            link="{{ route('admin.bookings.house.show', $booking->id) }}"
-                            class="btn-ghost w-full sm:w-auto" responsive />
+                            link="{{ route('admin.bookings.house.index') }}" class="btn-ghost w-full sm:w-auto"
+                            responsive />
+                        <x-button icon="o-arrow-path" label="Reset Form" type="button" wire:click="resetForm"
+                            class="btn-outline w-full sm:w-auto" responsive />
                     </div>
-                    <x-button icon="o-check" label="Update Booking" type="submit"
-                        class="btn-primary w-full sm:w-auto" spinner="update" responsive />
+                    <x-button icon="o-check" label="Create Booking" type="submit"
+                        class="btn-primary w-full sm:w-auto" spinner="store" responsive />
                 </div>
             </x-slot:actions>
         </x-form>
     </x-card>
+
+    {{-- Create Customer Modal --}}
+    <x-modal wire:model="createCustomerModal" title="Create New Customer" class="backdrop-blur" max-width="md">
+        <x-form wire:submit="createCustomer">
+            <div class="space-y-4">
+                <x-input wire:model="customer_name" label="Customer Name" placeholder="Enter customer name"
+                    icon="o-user" hint="Full name of the customer" />
+                <x-input wire:model="customer_email" label="Email" type="email" placeholder="Enter email address"
+                    icon="o-envelope" hint="Unique email address" />
+            </div>
+
+            <x-slot:actions>
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+                    <x-button icon="o-x-mark" label="Cancel" @click="$wire.createCustomerModal = false"
+                        class="btn-ghost w-full sm:w-auto" responsive />
+                    <x-button icon="o-check" label="Create Customer" type="submit"
+                        class="btn-primary w-full sm:w-auto" spinner="createCustomer" responsive />
+                </div>
+            </x-slot:actions>
+        </x-form>
+    </x-modal>
 </div>

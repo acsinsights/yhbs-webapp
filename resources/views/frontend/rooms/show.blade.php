@@ -1,5 +1,5 @@
 @extends('frontend.layouts.app')
-
+@section('title', $room->name)
 @section('styles')
     <!-- Flatpickr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -143,7 +143,7 @@
                                                         href="{{ route('rooms.show', $similar->id) }}">{{ $similar->name }}</a>
                                                 </h6>
                                                 <div class="price-area">
-                                                    <span>{{ currency_format($similar->price) }}</span>
+                                                    <span>{{ currency_format($similar->price_per_night) }}</span>
                                                     <small>/ night</small>
                                                 </div>
                                             </div>
@@ -162,7 +162,7 @@
                         <div class="booking-form-wrap mb-4 p-4 border rounded">
                             <h4 class="mb-3">Book This Room</h4>
                             <div class="price-display mb-3 text-center">
-                                <h2 class="text-primary">{{ currency_format($room->price) }}</h2>
+                                <h2 class="text-primary">{{ currency_format($room->price_per_night) }}</h2>
                                 <p class="text-muted">per night</p>
                             </div>
 

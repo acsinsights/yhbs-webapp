@@ -55,7 +55,7 @@ Route::prefix('customer')->name('customer.')->group(function () {
     });
 
     // Authenticated customer routes
-    Route::middleware('auth')->group(function () {
+    Route::middleware(['auth', 'role:customer'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
         Route::get('/profile', [DashboardController::class, 'profile'])->name('profile');
@@ -64,10 +64,10 @@ Route::prefix('customer')->name('customer.')->group(function () {
 
         Route::get('/bookings', [DashboardController::class, 'bookings'])->name('bookings');
         Route::get('/bookings/{id}', [DashboardController::class, 'bookingDetails'])->name('booking.details');
-
-        Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-        Route::get('/logout', [AuthController::class, 'logout'])->name('logout.get');
     });
+
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::get('/logout', [AuthController::class, 'logout'])->name('logout.get');
 });
 
 // Booking Routes (accessible to guests and authenticated users)
@@ -77,8 +77,12 @@ Route::get('/booking/confirmation/{id}', [BookingController::class, 'confirmatio
 
 // Rooms Routes
 Route::get('/rooms', [RoomController::class, 'index'])->name('rooms.index');
-Route::get('/rooms/{id}', [RoomController::class, 'show'])->name('rooms.show');
+Route::get('/rooms/{slug}', [RoomController::class, 'show'])->name('rooms.show');
 
 // Yachts Routes
 Route::get('/yachts', [YachtController::class, 'index'])->name('yachts.index');
 Route::get('/yachts/{id}', [YachtController::class, 'show'])->name('yachts.show');
+
+// Password Reset Routes (handled by Customer AuthController)
+Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');

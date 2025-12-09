@@ -75,7 +75,7 @@ new class extends Component {
             ->orderBy(...array_values($this->sortBy))
             ->paginate($this->perPage);
 
-        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'name', 'label' => 'Name'], ['key' => 'room_number', 'label' => 'Room Number'], ['key' => 'house.name', 'label' => 'House', 'sortable' => false], ['key' => 'adults', 'label' => 'Adults'], ['key' => 'children', 'label' => 'Children'], ['key' => 'price', 'label' => 'Price', 'class' => 'whitespace-nowrap']];
+        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'name', 'label' => 'Name'], ['key' => 'room_number', 'label' => 'Room Number'], ['key' => 'house.name', 'label' => 'House', 'sortable' => false], ['key' => 'adults', 'label' => 'Adults'], ['key' => 'children', 'label' => 'Children'], ['key' => 'price_per_night', 'label' => 'Price Per Night', 'class' => 'whitespace-nowrap']];
 
         $view->houses = House::latest()->get();
     }
@@ -140,9 +140,9 @@ new class extends Component {
                 <x-badge :value="$room->children ?? 'N/A'" class="badge-soft badge-warning badge-sm" />
             @endscope
 
-            @scope('cell_price', $room)
+            @scope('cell_price_per_night', $room)
                 <div class="font-semibold">
-                    {{ currency_format($room->price) }}
+                    {{ currency_format($room->price_per_night) }}
                 </div>
             @endscope
 

@@ -62,10 +62,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Room Bookings routes
         Route::group(['prefix' => 'bookings/rooms'], function () {
-            Volt::route('/', 'booking.house.index')->name('bookings.house.index');
-            Volt::route('/create', 'booking.house.create')->name('bookings.house.create');
-            Volt::route('/{booking}/show', 'booking.house.show')->name('bookings.house.show');
-            Volt::route('/{booking}/edit', 'booking.house.edit')->name('bookings.house.edit');
+            Volt::route('/', 'booking.room.index')->name('bookings.room.index');
+            Volt::route('/create', 'booking.room.create')->name('bookings.room.create');
+            Volt::route('/{booking}/show', 'booking.room.show')->name('bookings.room.show');
+            Volt::route('/{booking}/edit', 'booking.room.edit')->name('bookings.room.edit');
         });
 
         // Yacht Bookings routes
@@ -75,9 +75,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Volt::route('/{booking}/show', 'booking.yacht.show')->name('bookings.yacht.show');
             Volt::route('/{booking}/edit', 'booking.yacht.edit')->name('bookings.yacht.edit');
         });
-        
-        
 
+        Route::group(['prefix' => 'bookings/house'], function () {
+            Volt::route('/', 'booking.house.index')->name('bookings.house.index');
+            Volt::route('/create', 'booking.house.create')->name('bookings.house.create');
+            Volt::route('/{booking}/show', 'booking.house.show')->name('bookings.house.show');
+            Volt::route('/{booking}/edit', 'booking.house.edit')->name('bookings.house.edit');
+        });
+
+        // Logout route
         Route::get('/logout', function () {
             Auth::logout();
             request()->session()->invalidate();
@@ -85,7 +91,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
             return redirect()->route('admin.login');
         })->name('logout');
     });
-
 });
 
 Route::post('/job-submit', function () {

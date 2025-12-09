@@ -19,7 +19,6 @@ return new class extends Migration {
             $table->string('room_number');
             $table->string('image')->nullable();
             $table->text('description')->nullable();
-            $table->decimal('price', 10, 2)->nullable();
             $table->decimal('price_per_night', 10, 2)->nullable();
             $table->decimal('price_per_2night', 10, 2)->nullable();
             $table->decimal('price_per_3night', 10, 2)->nullable();

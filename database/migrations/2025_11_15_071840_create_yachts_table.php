@@ -27,6 +27,7 @@ return new class extends Migration {
             $table->integer('max_fuel_capacity')->nullable();
             $table->integer('max_capacity')->nullable();
             $table->json('library')->nullable();
+            $table->boolean('is_active')->default(false);
 
             $table->timestamps();
         });

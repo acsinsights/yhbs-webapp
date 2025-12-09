@@ -6,7 +6,7 @@ use Illuminate\View\View;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 use Livewire\Volt\Component;
-use App\Models\{Booking, Room, House};
+use App\Models\{Booking, Room};
 
 new class extends Component {
     use Toast, WithPagination;
@@ -29,7 +29,7 @@ new class extends Component {
     public function rendering(View $view)
     {
         $view->bookings = Booking::query()
-            ->where('bookingable_type', House::class)
+            ->where('bookingable_type', Room::class)
             ->with(['bookingable.house', 'user'])
             ->when($this->search, function ($query) {
                 return $query
@@ -49,8 +49,7 @@ new class extends Component {
         $view->headers = [
             ['key' => 'id', 'label' => '#', 'class' => 'w-1'],
             ['key' => 'user.name', 'label' => 'Customer', 'sortable' => false, 'class' => 'whitespace-nowrap'],
-            ['key' => 'house_name', 'label' => 'House', 'sortable' => false, 'class' => 'whitespace-nowrap'],
-            ['key' => 'room_number', 'label' => 'Room', 'sortable' => false, 'class' => 'w-32'],
+            ['key' => 'room_number', 'label' => 'Room', 'sortable' => false, 'class' => 'w-64'],
             ['key' => 'check_in', 'label' => 'Check In', 'sortable' => true, 'class' => 'whitespace-nowrap'],
             ['key' => 'check_out', 'label' => 'Check Out', 'sortable' => true, 'class' => 'whitespace-nowrap'],
             ['key' => 'adults', 'label' => 'Adults', 'sortable' => false, 'class' => 'whitespace-nowrap'],
@@ -96,25 +95,15 @@ new class extends Component {
                 <div class="font-semibold">{{ $booking->user->name ?? 'N/A' }}</div>
             @endscope
 
-            @scope('cell_house_name', $booking)
-                @if ($booking->bookingable && $booking->bookingable->house)
-                    <div class="flex gap-2 items-center">
-                        <x-button tooltip="View House Details"
-                            link="{{ route('admin.houses.edit', $booking->bookingable->house->id) }}"
-                            class="btn-ghost btn-sm">
-                            <x-icon name="o-building-office-2" class="w-4 h-4" />
-                            <span class="font-semibold">{{ $booking->bookingable->house->name }}</span>
-                        </x-button>
-                    </div>
-                @else
-                    <span class="text-base-content/50">—</span>
-                @endif
-            @endscope
-
             @scope('cell_room_number', $booking)
                 @if ($booking->bookingable)
                     <div class="flex gap-2 items-center">
-                        <x-badge value="{{ $booking->bookingable->room_number }}" class="badge-soft badge-primary" />
+                        <x-button tooltip="{{ $booking->bookingable->house->name }}"
+                            link="{{ route('admin.houses.edit', $booking->bookingable->house->id) }}"
+                            class="btn-ghost btn-sm">
+                            <x-icon name="o-building-office-2" class="w-4 h-4" />
+                            <span class="font-semibold">{{ $booking->bookingable->room_number }}</span>
+                        </x-button>
                     </div>
                 @else
                     <span class="text-base-content/50">—</span>

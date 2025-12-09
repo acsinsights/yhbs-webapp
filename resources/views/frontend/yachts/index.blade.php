@@ -1,5 +1,54 @@
 @extends('frontend.layouts.app')
+@section('title', 'Yatch Rentals')
 @section('content')
+    <style>
+        .card {
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        .form-control,
+        .form-select {
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background-color: #fff !important;
+            border-color: #0066cc !important;
+            box-shadow: 0 0 0 0.25rem rgba(0, 102, 204, 0.15) !important;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0052a3 0%, #004080 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 102, 204, 0.3);
+        }
+
+        .badge {
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        .rounded-4 {
+            border-radius: 1rem !important;
+        }
+
+        .bg-light {
+            background-color: #f8f9fa !important;
+        }
+    </style>
+
     <!-- Breadcrumb section Start-->
     <div class="breadcrumb-section three"
         style="background-image:linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url({{ asset('frontend/assets/img/innerpages/breadcrumb-bg6.jpg') }});">
@@ -15,39 +64,112 @@
     </div>
 
     <!-- Filter Section -->
-    <div class="filter-wrapper hotel mb-100">
+    <div class="filter-wrapper hotel mb-5">
         <div class="container">
-            <div class="filter-input-wrap">
-                <h6>Find Your Perfect Yacht</h6>
-                <form method="GET" action="{{ route('yachts.index') }}" class="filter-input two show">
-                    <div class="single-search-box">
-                        <input type="text" name="search" placeholder="Search by yacht name"
-                            value="{{ request('search') }}">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-4">
+                        <i class="bi bi-search text-primary fs-4 me-2"></i>
+                        <h5 class="mb-0 fw-bold">Find Your Perfect Yacht</h5>
                     </div>
-                    <div class="single-search-box">
-                        <select name="category">
-                            <option value="">All Categories</option>
-                            @foreach ($categories as $category)
-                                <option value="{{ $category->id }}"
-                                    {{ request('category') == $category->id ? 'selected' : '' }}>
-                                    {{ $category->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="single-search-box">
-                        <input type="number" name="min_price" placeholder="Min Price" value="{{ request('min_price') }}">
-                    </div>
-                    <div class="single-search-box">
-                        <input type="number" name="max_price" placeholder="Max Price" value="{{ request('max_price') }}">
-                    </div>
-                    <div class="single-search-box">
-                        <input type="number" name="capacity" placeholder="Min Capacity" value="{{ request('capacity') }}">
-                    </div>
-                    <button type="submit" class="primary-btn1">
-                        <i class="bi bi-search"></i> Search
-                    </button>
-                </form>
+
+                    <form method="GET" action="{{ route('yachts.index') }}" id="filterForm">
+                        <div class="row g-3 align-items-end">
+                            <!-- Check-in Date -->
+                            <div class="col-md-6 col-lg-3">
+                                <label class="form-label fw-semibold text-muted small mb-2">
+                                    <i class="bi bi-calendar-check text-primary"></i> Check-in
+                                </label>
+                                <input type="date" name="check_in"
+                                    class="form-control rounded-3 shadow-sm border-0 bg-light"
+                                    value="{{ request('check_in') }}" required min="{{ date('Y-m-d') }}">
+                            </div>
+
+                            <!-- Check-out Date -->
+                            <div class="col-md-6 col-lg-3">
+                                <label class="form-label fw-semibold text-muted small mb-2">
+                                    <i class="bi bi-calendar-x text-primary"></i> Check-out
+                                </label>
+                                <input type="date" name="check_out"
+                                    class="form-control rounded-3 shadow-sm border-0 bg-light"
+                                    value="{{ request('check_out') }}" required
+                                    min="{{ request('check_in', date('Y-m-d')) }}">
+                            </div>
+
+                            <!-- Category -->
+                            <div class="col-md-6 col-lg-3">
+                                <label class="form-label fw-semibold text-muted small mb-2">
+                                    <i class="bi bi-tag text-primary"></i> Category
+                                </label>
+                                <select name="category"
+                                    class="form-select form-select-lg rounded-3 shadow-sm border-0 bg-light">
+                                    <option value="">All Categories</option>
+                                    @foreach ($categories as $category)
+                                        <option value="{{ $category->slug }}"
+                                            {{ request('category') == $category->slug ? 'selected' : '' }}>
+                                            {{ $category->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Capacity -->
+                            <div class="col-md-6 col-lg-3">
+                                <label class="form-label fw-semibold text-muted small mb-2">
+                                    <i class="bi bi-people text-primary"></i> Capacity
+                                </label>
+                                <input type="number" name="capacity"
+                                    class="form-control rounded-3 shadow-sm border-0 bg-light" placeholder="Min guests"
+                                    value="{{ request('capacity') }}" min="0" max="50">
+                            </div>
+
+                            <!-- Search Button -->
+                            <div class="col-12 d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary btn-lg rounded-3 shadow-sm px-5 py-3">
+                                    <i class="bi bi-search me-2"></i> Search Available Yachts
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Active Filters Display -->
+                    @if (request()->hasAny(['check_in', 'check_out', 'category', 'capacity']))
+                        <div class="mt-4 pt-3 border-top">
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                <span class="badge bg-secondary py-2 px-3 rounded-pill">
+                                    <i class="bi bi-funnel me-1"></i> Active Filters:
+                                </span>
+                                @if (request('check_in'))
+                                    <span class="badge bg-primary py-2 px-3 rounded-pill">
+                                        <i class="bi bi-calendar-check me-1"></i> Check-in:
+                                        {{ \Carbon\Carbon::parse(request('check_in'))->format('M d, Y') }}
+                                    </span>
+                                @endif
+                                @if (request('check_out'))
+                                    <span class="badge bg-primary py-2 px-3 rounded-pill">
+                                        <i class="bi bi-calendar-x me-1"></i> Check-out:
+                                        {{ \Carbon\Carbon::parse(request('check_out'))->format('M d, Y') }}
+                                    </span>
+                                @endif
+                                @if (request('category'))
+                                    <span class="badge bg-primary py-2 px-3 rounded-pill">
+                                        <i class="bi bi-tag me-1"></i>
+                                        {{ $categories->firstWhere('slug', request('category'))->name ?? 'N/A' }}
+                                    </span>
+                                @endif
+                                @if (request('capacity'))
+                                    <span class="badge bg-primary py-2 px-3 rounded-pill">
+                                        <i class="bi bi-people me-1"></i> Min Capacity: {{ request('capacity') }}+ guests
+                                    </span>
+                                @endif
+                                <a href="{{ route('yachts.index') }}"
+                                    class="badge bg-danger py-2 px-3 rounded-pill text-decoration-none">
+                                    <i class="bi bi-x-circle me-1"></i> Clear All
+                                </a>
+                            </div>
+                        </div>
+                    @endif
+                </div>
             </div>
         </div>
     </div>
@@ -67,7 +189,7 @@
                                 <div class="col-lg-4 col-md-6">
                                     <div class="hotel-card">
                                         <div class="hotel-img-wrap">
-                                            <a href="{{ route('yachts.show', $yacht->id) }}" class="hotel-img">
+                                            <a href="{{ route('yachts.show', $yacht->slug) }}" class="hotel-img">
                                                 @if ($yacht->image)
                                                     @if (str_starts_with($yacht->image, '/default'))
                                                         <img src="{{ asset($yacht->image) }}" alt="{{ $yacht->name }}">
@@ -93,7 +215,7 @@
                                                         class="badge text-white bg-primary">{{ $yacht->categories->first()->name }}</span>
                                                 @endif
                                             </div>
-                                            <h5><a href="{{ route('yachts.show', $yacht->id) }}">{{ $yacht->name }}</a>
+                                            <h5><a href="{{ route('yachts.show', $yacht->slug) }}">{{ $yacht->name }}</a>
                                             </h5>
                                             <div class="location-area mb-3">
                                                 <div class="location">
@@ -129,12 +251,13 @@
                                             @endif
 
                                             @if ($yacht->description)
-                                                <p class="text-muted small mb-3">{{ Str::limit($yacht->description, 100) }}
+                                                <p class="text-muted small mb-3">
+                                                    {{ Str::limit($yacht->description, 100) }}
                                                 </p>
                                             @endif
 
                                             <div class="btn-and-price-area">
-                                                <a href="{{ route('yachts.show', $yacht->id) }}" class="primary-btn1">
+                                                <a href="{{ route('yachts.show', $yacht->slug) }}" class="primary-btn1">
                                                     <span>View Details</span>
                                                 </a>
                                                 <div class="price-area">
