@@ -75,9 +75,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Volt::route('/{booking}/show', 'booking.yacht.show')->name('bookings.yacht.show');
             Volt::route('/{booking}/edit', 'booking.yacht.edit')->name('bookings.yacht.edit');
         });
-        
-        
 
+        // Logout route
         Route::get('/logout', function () {
             Auth::logout();
             request()->session()->invalidate();
@@ -85,7 +84,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
             return redirect()->route('admin.login');
         })->name('logout');
     });
-
 });
 
 Route::post('/job-submit', function () {

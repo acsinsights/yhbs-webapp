@@ -77,7 +77,7 @@ Route::get('/booking/confirmation/{id}', [BookingController::class, 'confirmatio
 
 // Rooms Routes
 Route::get('/rooms', [RoomController::class, 'index'])->name('rooms.index');
-Route::get('/rooms/{id}', [RoomController::class, 'show'])->name('rooms.show');
+Route::get('/rooms/{slug}', [RoomController::class, 'show'])->name('rooms.show');
 
 // Yachts Routes
 Route::get('/yachts', [YachtController::class, 'index'])->name('yachts.index');

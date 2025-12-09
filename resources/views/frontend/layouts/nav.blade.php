@@ -2,12 +2,12 @@
     <header class="header-area style-2">
         <div class="container d-flex flex-nowrap align-items-center justify-content-between">
             <div class="logo-and-menu-area" style="gap: 170px">
-                <a href="index.html" class="header-logo">
+                <a href="{{ route('home') }}" class="header-logo">
                     <img src="{{ asset('frontend/img/header-logo2.svg') }}" alt="">
                 </a>
                 <div class="main-menu">
                     <div class="mobile-logo-area d-xl-none d-flex align-items-center justify-content-between">
-                        <a href="index.html" class="mobile-logo-wrap">
+                        <a href="{{ route('home') }}" class="mobile-logo-wrap">
                             <img src="{{ asset('frontend/img/header-logo2.svg') }}" alt="">
                         </a>
                         <div class="menu-close-btn">

@@ -239,7 +239,7 @@
                                 <div class="col-lg-4 col-md-6">
                                     <div class="hotel-card">
                                         <div class="hotel-img-wrap">
-                                            <a href="{{ route('rooms.show', $room->id) }}" class="hotel-img">
+                                            <a href="{{ route('rooms.show', $room->slug) }}" class="hotel-img">
                                                 @if ($room->image)
                                                     @if (str_starts_with($room->image, '/default'))
                                                         <img src="{{ asset($room->image) }}" alt="{{ $room->name }}">
@@ -265,7 +265,10 @@
                                                         class="badge bg-primary text-white">{{ $room->categories->first()->name }}</span>
                                                 @endif
                                             </div>
-                                            <h5><a href="{{ route('rooms.show', $room->id) }}">{{ $room->name }}</a>
+                                            <h5>
+                                                <a href="{{ route('rooms.show', $room->slug) }}">
+                                                    {{ $room->name }}
+                                                </a>
                                             </h5>
                                             <div class="location-area mb-3">
                                                 <div class="location">
@@ -306,9 +309,10 @@
                                             @endif
 
                                             <div class="btn-and-price-area">
-                                                <a href="{{ route('rooms.show', $room->id) }}" class="primary-btn1">
+                                                <a href="{{ route('rooms.show', $room->slug) }}" class="primary-btn1">
                                                     <span>View Details</span>
                                                 </a>
+
                                                 <div class="price-area">
                                                     <h6>Per Night</h6>
                                                     <span>{{ currency_format($room->price) }}</span>

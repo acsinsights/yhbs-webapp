@@ -25,11 +25,11 @@
                             value="{{ request('search') }}">
                     </div>
                     <div class="single-search-box">
-                        <select name="category">
+                        <select name="category" class="form-select">
                             <option value="">All Categories</option>
                             @foreach ($categories as $category)
-                                <option value="{{ $category->id }}"
-                                    {{ request('category') == $category->id ? 'selected' : '' }}>
+                                <option value="{{ $category->slug }}"
+                                    {{ request('category') == $category->slug ? 'selected' : '' }}>
                                     {{ $category->name }}
                                 </option>
                             @endforeach
@@ -45,7 +45,7 @@
                         <input type="number" name="capacity" placeholder="Min Capacity" value="{{ request('capacity') }}">
                     </div>
                     <button type="submit" class="primary-btn1">
-                        <i class="bi bi-search"></i> Search
+                        <i class="bi bi-search me-2"></i> Search
                     </button>
                 </form>
             </div>
@@ -67,7 +67,7 @@
                                 <div class="col-lg-4 col-md-6">
                                     <div class="hotel-card">
                                         <div class="hotel-img-wrap">
-                                            <a href="{{ route('yachts.show', $yacht->id) }}" class="hotel-img">
+                                            <a href="{{ route('yachts.show', $yacht->slug) }}" class="hotel-img">
                                                 @if ($yacht->image)
                                                     @if (str_starts_with($yacht->image, '/default'))
                                                         <img src="{{ asset($yacht->image) }}" alt="{{ $yacht->name }}">
@@ -93,7 +93,7 @@
                                                         class="badge text-white bg-primary">{{ $yacht->categories->first()->name }}</span>
                                                 @endif
                                             </div>
-                                            <h5><a href="{{ route('yachts.show', $yacht->id) }}">{{ $yacht->name }}</a>
+                                            <h5><a href="{{ route('yachts.show', $yacht->slug) }}">{{ $yacht->name }}</a>
                                             </h5>
                                             <div class="location-area mb-3">
                                                 <div class="location">
@@ -134,7 +134,7 @@
                                             @endif
 
                                             <div class="btn-and-price-area">
-                                                <a href="{{ route('yachts.show', $yacht->id) }}" class="primary-btn1">
+                                                <a href="{{ route('yachts.show', $yacht->slug) }}" class="primary-btn1">
                                                     <span>View Details</span>
                                                 </a>
                                                 <div class="price-area">

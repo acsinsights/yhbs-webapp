@@ -38,6 +38,7 @@ class YachtSeeder extends Seeder
                 'max_crew' => 6,
                 'max_fuel_capacity' => 5000,
                 'max_capacity' => 18,
+                'is_active' => true,
             ],
             [
                 'name' => 'Royal Sea Voyager',
@@ -52,6 +53,7 @@ class YachtSeeder extends Seeder
                 'max_crew' => 8,
                 'max_fuel_capacity' => 8000,
                 'max_capacity' => 28,
+                'is_active' => true,
             ],
             [
                 'name' => 'Sunset Cruiser',
@@ -66,6 +68,7 @@ class YachtSeeder extends Seeder
                 'max_crew' => 4,
                 'max_fuel_capacity' => 3000,
                 'max_capacity' => 12,
+                'is_active' => true,
             ],
             [
                 'name' => 'Adventure Seeker',
@@ -80,6 +83,7 @@ class YachtSeeder extends Seeder
                 'max_crew' => 5,
                 'max_fuel_capacity' => 4000,
                 'max_capacity' => 15,
+                'is_active' => true,
             ],
             [
                 'name' => 'Executive Business Class',
@@ -94,6 +98,7 @@ class YachtSeeder extends Seeder
                 'max_crew' => 7,
                 'max_fuel_capacity' => 6000,
                 'max_capacity' => 23,
+                'is_active' => true,
             ],
         ];
 

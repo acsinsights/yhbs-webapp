@@ -1,20 +1,6 @@
 @extends('frontend.layouts.app')
 @section('title', 'Login - YHBS')
 @section('content')
-    <!-- Breadcrumb section Start-->
-    <div class="breadcrumb-section"
-        style="background-image:linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url({{ asset('frontend/img/innerpages/breadcrumb-bg6.jpg') }});">
-        <div class="container">
-            <div class="banner-content">
-                <h1>Customer Login</h1>
-                <ul class="breadcrumb-list">
-                    <li><a href="{{ url('/') }}">Home</a></li>
-                    <li>Login</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
     <!-- Login Section Start -->
     <div class="authentication-section pt-100 pb-100">
         <div class="container">

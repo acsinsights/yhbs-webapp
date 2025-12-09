@@ -26,10 +26,12 @@ class Yacht extends Model
         'max_fuel_capacity',
         'max_capacity',
         'library',
+        'is_active',
     ];
 
     protected $casts = [
         'library' => AsCollection::class,
+        'is_active' => 'boolean',
     ];
 
     /**
@@ -56,6 +58,11 @@ class Yacht extends Model
     public function bookings(): MorphMany
     {
         return $this->morphMany(Booking::class, 'bookingable');
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
     }
 
     /**

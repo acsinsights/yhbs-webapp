@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Room;
 use App\Models\Category;
 use App\Models\Amenity;
+use App\Models\Booking;
 use Illuminate\Http\Request;
 
 class RoomController extends Controller
@@ -20,7 +21,7 @@ class RoomController extends Controller
         // Filter by category
         if ($request->filled('category')) {
             $query->whereHas('categories', function ($q) use ($request) {
-                $q->where('categories.id', $request->category);
+                $q->where('categories.slug', $request->category);
             });
         }
 
@@ -80,7 +81,7 @@ class RoomController extends Controller
                 break;
         }
 
-        $rooms = $query->where('is_active', true)
+        $rooms = $query->active()
             ->paginate(12)
             ->appends($request->all());
 
@@ -93,20 +94,20 @@ class RoomController extends Controller
     /**
      * Display the specified room
      */
-    public function show($id)
+    public function show($slug)
     {
-        $room = Room::with(['categories', 'amenities', 'house'])->findOrFail($id);
+        $room = Room::with(['categories', 'amenities', 'house'])->where('slug', $slug)->active()->firstOrFail();
 
         // Get similar rooms (rooms from same house)
         $similarRooms = Room::where('house_id', $room->house_id)
             ->where('id', '!=', $room->id)
-            ->where('is_active', true)
+            ->active()
             ->take(3)
             ->get();
 
         // Get booked dates for this room
-        $bookedDates = \App\Models\Booking::where('bookingable_type', Room::class)
-            ->where('bookingable_id', $id)
+        $bookedDates = Booking::where('bookingable_type', Room::class)
+            ->where('bookingable_id', $room->id)
             ->whereIn('status', ['pending', 'booked', 'checked_in'])
             ->get(['check_in', 'check_out'])
             ->flatMap(function ($booking) {

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Yacht;
 use App\Models\Category;
 use App\Models\Amenity;
+use App\Models\Booking;
 use Illuminate\Http\Request;
 
 class YachtController extends Controller
@@ -20,7 +21,7 @@ class YachtController extends Controller
         // Filter by category
         if ($request->filled('category')) {
             $query->whereHas('categories', function ($q) use ($request) {
-                $q->where('categories.id', $request->category);
+                $q->where('categories.slug', $request->category);
             });
         }
 
@@ -45,7 +46,7 @@ class YachtController extends Controller
             });
         }
 
-        $yachts = $query->paginate(12);
+        $yachts = $query->active()->paginate(12);
 
         $categories = Category::all();
         $amenities = Amenity::all();
@@ -56,9 +57,9 @@ class YachtController extends Controller
     /**
      * Display the specified yacht
      */
-    public function show($id)
+    public function show($slug)
     {
-        $yacht = Yacht::with(['categories', 'amenities'])->findOrFail($id);
+        $yacht = Yacht::with(['categories', 'amenities'])->where('slug', $slug)->active()->firstOrFail();
 
         // Get similar yachts (yachts with similar category)
         $categoryIds = $yacht->categories->pluck('id');
@@ -66,12 +67,13 @@ class YachtController extends Controller
             $q->whereIn('categories.id', $categoryIds);
         })
             ->where('id', '!=', $yacht->id)
+            ->active()
             ->take(3)
             ->get();
 
         // Get booked dates for this yacht
-        $bookedDates = \App\Models\Booking::where('bookingable_type', Yacht::class)
-            ->where('bookingable_id', $id)
+        $bookedDates = Booking::where('bookingable_type', Yacht::class)
+            ->where('bookingable_id', $yacht->id)
             ->whereIn('status', ['pending', 'booked', 'checked_in'])
             ->get(['check_in', 'check_out'])
             ->flatMap(function ($booking) {
