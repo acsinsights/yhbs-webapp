@@ -105,7 +105,7 @@ new class extends Component {
             if ($house && $house->rooms->count() > 0) {
                 // Calculate total price of all rooms in the house
                 $totalPrice = $house->rooms->sum(function ($room) {
-                    return $room->discount_price ?? ($room->price ?? 0);
+                    return $room->discount_price ?? ($room->price_per_night ?? 0);
                 });
                 $this->amount = $totalPrice > 0 ? (float) $totalPrice : null;
                 $this->dispatch('amount-updated');
@@ -234,7 +234,7 @@ new class extends Component {
                 'children' => $this->children,
                 'check_in' => $checkIn,
                 'check_out' => $checkOut,
-                'price' => $room->discount_price ?? $room->price,
+                'price' => $room->discount_price ?? $room->price_per_night,
                 'payment_method' => $this->payment_method,
                 'payment_status' => $this->payment_status,
                 'status' => BookingStatusEnum::BOOKED->value,
@@ -477,7 +477,7 @@ new class extends Component {
                                                     $isSelected = $house_id == $house->id;
                                                     $totalRooms = $house->rooms->count();
                                                     $totalPrice = $house->rooms->sum(function ($room) {
-                                                        return $room->discount_price ?? ($room->price ?? 0);
+                                                        return $room->discount_price ?? ($room->price_per_night ?? 0);
                                                     });
                                                 @endphp
                                                 <label wire:click="$wire.house_id = {{ $house->id }}"

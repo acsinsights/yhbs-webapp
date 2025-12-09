@@ -40,7 +40,7 @@ class BookingSeeder extends Seeder
                     'user_id' => $users->random()->id,
                     'check_in' => $checkIn,
                     'check_out' => $checkOut,
-                    'price' => $room->price,
+                    'price' => $room->price_per_night,
                     'discount_price' => $room->discount_price,
                     'status' => BookingStatusEnum::cases()[array_rand(BookingStatusEnum::cases())]->value,
                     'payment_status' => ['pending', 'paid', 'failed'][array_rand(['pending', 'paid', 'failed'])],

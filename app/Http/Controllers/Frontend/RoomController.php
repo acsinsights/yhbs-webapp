@@ -65,10 +65,10 @@ class RoomController extends Controller
         $sortBy = $request->get('sort_by', 'latest');
         switch ($sortBy) {
             case 'price_low':
-                $query->orderBy('price', 'asc');
+                $query->orderBy('price_per_night', 'asc');
                 break;
             case 'price_high':
-                $query->orderBy('price', 'desc');
+                $query->orderBy('price_per_night', 'desc');
                 break;
             case 'name':
                 $query->orderBy('name', 'asc');

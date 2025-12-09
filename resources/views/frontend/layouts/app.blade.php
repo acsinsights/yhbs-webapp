@@ -5,6 +5,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <link rel="icon" href="{{ asset('frontend/img/fav-icon.svg') }}" type="image/gif" sizes="20x20">
+    <title>
+        @yield('title', 'Yachts & Hotels Booking System') - {{ config('app.name') }}
+    </title>
+
     <link href="{{ asset('frontend/css/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ asset('frontend/css/jquery-ui.css') }}" rel="stylesheet">
     <link href="{{ asset('frontend/css/bootstrap-icons.css') }}" rel="stylesheet">
@@ -17,10 +22,6 @@
     <link href="{{ asset('frontend/css/boxicons.min.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('frontend/css/style.css') }}">
     @yield('styles')
-    <title>
-        @yield('title', 'Yachts & Hotels Booking System')
-    </title>
-    <link rel="icon" href="{{ asset('frontend/img/fav-icon.svg') }}" type="image/gif" sizes="20x20">
 </head>
 
 <body class="tt-magic-cursor">

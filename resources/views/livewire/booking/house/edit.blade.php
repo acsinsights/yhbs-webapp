@@ -99,7 +99,7 @@ new class extends Component {
         if ($this->room_id) {
             $room = Room::find($this->room_id);
             if ($room) {
-                $price = $room->discount_price ?? $room->price;
+                $price = $room->discount_price ?? $room->price_per_night;
                 $newAmount = $price !== null ? (float) $price : null;
                 $this->amount = $newAmount;
                 $this->dispatch('amount-updated');
@@ -496,19 +496,19 @@ new class extends Component {
                                                                 <div class="flex items-baseline justify-between gap-2">
                                                                     <div class="flex-1">
                                                                         <div class="font-bold text-lg text-primary">
-                                                                            {{ currency_format($room->discount_price ?? ($room->price ?? 0)) }}
+                                                                            {{ currency_format($room->discount_price ?? ($room->price_per_night ?? 0)) }}
                                                                         </div>
-                                                                        @if ($room->discount_price && $room->price && $room->discount_price < $room->price)
+                                                                        @if ($room->discount_price && $room->price_per_night && $room->discount_price < $room->price_per_night)
                                                                             <div
                                                                                 class="text-xs text-base-content/50 line-through">
-                                                                                {{ currency_format($room->price) }}
+                                                                                {{ currency_format($room->price_per_night) }}
                                                                             </div>
                                                                         @endif
                                                                     </div>
-                                                                    @if ($room->discount_price && $room->price && $room->discount_price < $room->price)
+                                                                    @if ($room->discount_price && $room->price_per_night && $room->discount_price < $room->price_per_night)
                                                                         <div
                                                                             class="bg-primary text-primary-content px-2 py-1 rounded-md text-xs font-semibold shadow-md">
-                                                                            {{ number_format((($room->price - $room->discount_price) / $room->price) * 100, 0) }}%
+                                                                            {{ number_format((($room->price_per_night - $room->discount_price) / $room->price_per_night) * 100, 0) }}%
                                                                             OFF
                                                                         </div>
                                                                     @endif

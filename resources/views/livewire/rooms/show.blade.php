@@ -154,7 +154,7 @@ new class extends Component {
     </div>
 
     {{-- Pricing Card --}}
-    @if ($room->price)
+    @if ($room->price_per_night)
         <x-card shadow>
             <x-slot:title class="flex items-center gap-2">
                 <x-icon name="o-currency-dollar" class="w-5 h-5" />
@@ -163,8 +163,8 @@ new class extends Component {
             <div class="grid gap-6">
                 <div class="flex items-baseline gap-4">
                     <div>
-                        <p class="text-xs text-base-content/60 mb-1">Price</p>
-                        <p class="text-3xl font-bold text-primary">{{ currency_format($room->price) }}</p>
+                        <p class="text-xs text-base-content/60 mb-1">Price Per Night</p>
+                        <p class="text-3xl font-bold text-primary">{{ currency_format($room->price_per_night) }}</p>
                     </div>
                 </div>
 

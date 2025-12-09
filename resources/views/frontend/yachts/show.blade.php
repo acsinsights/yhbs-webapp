@@ -1,5 +1,5 @@
 @extends('frontend.layouts.app')
-
+@section('title', $yacht->name)
 @section('styles')
     <!-- Flatpickr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -303,7 +303,6 @@
 
 @section('scripts')
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    
+
     <script src="{{ asset('frontend/js/yacht-booking.js') }}"></script>
 @endsection
-

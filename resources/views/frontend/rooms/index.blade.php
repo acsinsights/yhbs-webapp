@@ -1,5 +1,54 @@
 @extends('frontend.layouts.app')
+@section('title', 'Hotel Rooms')
 @section('content')
+    <style>
+        .card {
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        .form-control,
+        .form-select {
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background-color: #fff !important;
+            border-color: #0066cc !important;
+            box-shadow: 0 0 0 0.25rem rgba(0, 102, 204, 0.15) !important;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0052a3 0%, #004080 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 102, 204, 0.3);
+        }
+
+        .badge {
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        .rounded-4 {
+            border-radius: 1rem !important;
+        }
+
+        .bg-light {
+            background-color: #f8f9fa !important;
+        }
+    </style>
+
     <!-- Breadcrumb section Start-->
     <div class="breadcrumb-section three"
         style="background-image:linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url({{ asset('frontend/assets/img/innerpages/breadcrumb-bg6.jpg') }});">
@@ -15,214 +64,133 @@
     </div>
 
     <!-- Filter Section -->
-    <div class="filter-wrapper hotel mb-100">
+    <div class="filter-wrapper hotel mb-5">
         <div class="container">
-            <div class="filter-input-wrap">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="mb-0">Find Your Perfect Room</h6>
-                    <button type="button" class="btn btn-sm btn-outline-primary" id="toggleAdvancedFilters">
-                        <i class="bi bi-funnel"></i> Advanced Filters
-                    </button>
-                </div>
-
-                <form method="GET" action="{{ route('rooms.index') }}" id="filterForm">
-                    <!-- Basic Filters -->
-                    <div class="filter-input two show">
-                        <div class="single-search-box">
-                            <input type="text" name="search" placeholder="Search by room name or number"
-                                value="{{ request('search') }}">
-                        </div>
-                        <div class="single-search-box">
-                            <select name="category" class="form-select">
-                                <option value="">All Categories</option>
-                                @foreach ($categories as $category)
-                                    <option value="{{ $category->id }}"
-                                        {{ request('category') == $category->id ? 'selected' : '' }}>
-                                        {{ $category->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="single-search-box">
-                            <input type="number" name="min_price" placeholder="Min Price"
-                                value="{{ request('min_price') }}" min="0">
-                        </div>
-                        <div class="single-search-box">
-                            <input type="number" name="max_price" placeholder="Max Price"
-                                value="{{ request('max_price') }}" min="0">
-                        </div>
-                        <div class="single-search-box">
-                            <select name="sort_by" class="form-select">
-                                <option value="latest" {{ request('sort_by') == 'latest' ? 'selected' : '' }}>Latest
-                                </option>
-                                <option value="price_low" {{ request('sort_by') == 'price_low' ? 'selected' : '' }}>Price:
-                                    Low to High</option>
-                                <option value="price_high" {{ request('sort_by') == 'price_high' ? 'selected' : '' }}>
-                                    Price: High to Low</option>
-                                <option value="name" {{ request('sort_by') == 'name' ? 'selected' : '' }}>Name (A-Z)
-                                </option>
-                                <option value="capacity" {{ request('sort_by') == 'capacity' ? 'selected' : '' }}>Capacity
-                                </option>
-                            </select>
-                        </div>
-                        <button type="submit" class="primary-btn1 gap-2">
-                            <i class="bi bi-search"></i> Search
-                        </button>
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-4">
+                        <i class="bi bi-search text-primary fs-4 me-3"></i>
+                        <h5 class="mb-0 fw-bold">Find Your Perfect Room</h5>
                     </div>
 
-                    <!-- Advanced Filters (Collapsible) -->
-                    <div id="advancedFilters" class="advanced-filters mt-4" style="display: none;">
-                        <div class="row g-3">
-                            <div class="col-md-3">
-                                <label class="form-label"><i class="bi bi-people"></i> Adults</label>
-                                <input type="number" name="capacity" class="form-control" placeholder="Min adults"
-                                    value="{{ request('capacity') }}" min="0">
+                    <form method="GET" action="{{ route('rooms.index') }}" id="filterForm">
+                        <div class="row g-3 align-items-end">
+                            <!-- Check-in Date -->
+                            <div class="col-md-6 col-lg-3">
+                                <label class="form-label fw-semibold text-muted small mb-2">
+                                    <i class="bi bi-calendar-check text-primary"></i> Check-in
+                                </label>
+                                <input type="date" name="check_in"
+                                    class="form-control rounded-3 shadow-sm border-0 bg-light"
+                                    value="{{ request('check_in') }}" required min="{{ date('Y-m-d') }}">
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label"><i class="bi bi-person"></i> Children</label>
-                                <input type="number" name="children" class="form-control" placeholder="Min children"
-                                    value="{{ request('children') }}" min="0">
+
+                            <!-- Check-out Date -->
+                            <div class="col-md-6 col-lg-3">
+                                <label class="form-label fw-semibold text-muted small mb-2">
+                                    <i class="bi bi-calendar-x text-primary"></i> Check-out
+                                </label>
+                                <input type="date" name="check_out"
+                                    class="form-control rounded-3 shadow-sm border-0 bg-light"
+                                    value="{{ request('check_out') }}" required
+                                    min="{{ request('check_in', date('Y-m-d')) }}">
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label"><i class="bi bi-star"></i> Amenities</label>
-                                <div class="amenities-filter-grid">
-                                    @foreach ($amenities as $amenity)
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" name="amenities[]"
-                                                value="{{ $amenity->id }}" id="amenity{{ $amenity->id }}"
-                                                {{ in_array($amenity->id, request('amenities', [])) ? 'checked' : '' }}>
-                                            <label class="form-check-label" for="amenity{{ $amenity->id }}">
-                                                {{ $amenity->name }}
-                                            </label>
-                                        </div>
+
+                            <!-- Category -->
+                            <div class="col-md-6 col-lg-3">
+                                <label class="form-label fw-semibold text-muted small mb-2">
+                                    <i class="bi bi-tag text-primary"></i> Category
+                                </label>
+                                <select name="category"
+                                    class="form-select form-select-lg rounded-3 shadow-sm border-0 bg-light">
+                                    <option value="">All Categories</option>
+                                    @foreach ($categories as $category)
+                                        <option value="{{ $category->id }}"
+                                            {{ request('category') == $category->id ? 'selected' : '' }}>
+                                            {{ $category->name }}
+                                        </option>
                                     @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Adults and Children -->
+                            <div class="col-md-6 col-lg-3">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <label class="form-label fw-semibold text-muted small mb-2">
+                                            <i class="bi bi-people text-primary"></i> Adults
+                                        </label>
+                                        <input type="number" name="adults"
+                                            class="form-control rounded-3 shadow-sm border-0 bg-light" placeholder="Adults"
+                                            value="{{ request('adults', 1) }}" min="0" max="20">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label fw-semibold text-muted small mb-2">
+                                            <i class="bi bi-person text-primary"></i> Children
+                                        </label>
+                                        <input type="number" name="children"
+                                            class="form-control rounded-3 shadow-sm border-0 bg-light"
+                                            placeholder="Children" value="{{ request('children', 0) }}" min="0"
+                                            max="20">
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="row mt-3">
-                            <div class="col-12">
-                                <button type="submit" class="btn btn-primary me-2">
-                                    <i class="bi bi-check-circle"></i> Apply Filters
+
+                            <!-- Search Button -->
+                            <div class="col-12 d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary btn-lg rounded-3 shadow-sm px-5 py-3">
+                                    <i class="bi bi-search me-2"></i> Search Available Rooms
                                 </button>
-                                <a href="{{ route('rooms.index') }}" class="btn btn-outline-secondary">
-                                    <i class="bi bi-x-circle"></i> Clear All
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Active Filters Display -->
+                    @if (request()->hasAny(['check_in', 'check_out', 'category', 'adults', 'children']))
+                        <div class="mt-4 pt-3 border-top">
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                <span class="badge bg-secondary py-2 px-3 rounded-pill">
+                                    <i class="bi bi-funnel me-1"></i> Active Filters:
+                                </span>
+                                @if (request('check_in'))
+                                    <span class="badge bg-primary py-2 px-3 rounded-pill">
+                                        <i class="bi bi-calendar-check me-1"></i> Check-in:
+                                        {{ \Carbon\Carbon::parse(request('check_in'))->format('M d, Y') }}
+                                    </span>
+                                @endif
+                                @if (request('check_out'))
+                                    <span class="badge bg-primary py-2 px-3 rounded-pill">
+                                        <i class="bi bi-calendar-x me-1"></i> Check-out:
+                                        {{ \Carbon\Carbon::parse(request('check_out'))->format('M d, Y') }}
+                                    </span>
+                                @endif
+                                @if (request('category'))
+                                    <span class="badge bg-primary py-2 px-3 rounded-pill">
+                                        <i class="bi bi-tag me-1"></i>
+                                        {{ $categories->find(request('category'))->name ?? 'N/A' }}
+                                    </span>
+                                @endif
+                                @if (request('adults'))
+                                    <span class="badge bg-primary py-2 px-3 rounded-pill">
+                                        <i class="bi bi-people me-1"></i> {{ request('adults') }} Adult(s)
+                                    </span>
+                                @endif
+                                @if (request('children'))
+                                    <span class="badge bg-primary py-2 px-3 rounded-pill">
+                                        <i class="bi bi-person me-1"></i> {{ request('children') }} Child(ren)
+                                    </span>
+                                @endif
+                                <a href="{{ route('rooms.index') }}"
+                                    class="badge bg-danger py-2 px-3 rounded-pill text-decoration-none">
+                                    <i class="bi bi-x-circle me-1"></i> Clear All
                                 </a>
                             </div>
                         </div>
-                    </div>
-                </form>
-
-                <!-- Active Filters Display -->
-                @if (request()->hasAny(['search', 'category', 'min_price', 'max_price', 'capacity', 'children', 'amenities', 'sort_by']))
-                    <div class="active-filters mt-3">
-                        <span class="badge bg-secondary me-2">Active Filters:</span>
-                        @if (request('search'))
-                            <span class="badge bg-primary me-1">Search: {{ request('search') }}</span>
-                        @endif
-                        @if (request('category'))
-                            <span class="badge bg-primary me-1">Category:
-                                {{ $categories->find(request('category'))->name ?? 'N/A' }}</span>
-                        @endif
-                        @if (request('min_price'))
-                            <span class="badge bg-primary me-1">Min Price:
-                                {{ currency_format(request('min_price')) }}</span>
-                        @endif
-                        @if (request('max_price'))
-                            <span class="badge bg-primary me-1">Max Price:
-                                {{ currency_format(request('max_price')) }}</span>
-                        @endif
-                        @if (request('capacity'))
-                            <span class="badge bg-primary me-1">Adults: {{ request('capacity') }}+</span>
-                        @endif
-                        @if (request('children'))
-                            <span class="badge bg-primary me-1">Children: {{ request('children') }}+</span>
-                        @endif
-                        @if (request('amenities'))
-                            <span class="badge bg-primary me-1">Amenities: {{ count(request('amenities')) }}
-                                selected</span>
-                        @endif
-                        <a href="{{ route('rooms.index') }}" class="badge bg-danger text-decoration-none">
-                            <i class="bi bi-x"></i> Clear All
-                        </a>
-                    </div>
-                @endif
+                    @endif
+                </div>
             </div>
         </div>
     </div>
-
-    <style>
-        .advanced-filters {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            border: 1px solid #e0e0e0;
-        }
-
-        .amenities-filter-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 10px;
-            max-height: 150px;
-            overflow-y: auto;
-            padding: 10px;
-            background: white;
-            border-radius: 5px;
-            border: 1px solid #dee2e6;
-        }
-
-        .form-check {
-            margin-bottom: 0;
-        }
-
-        .active-filters {
-            padding: 10px;
-            background: #fff;
-            border-radius: 5px;
-            border: 1px solid #e0e0e0;
-        }
-
-        .filter-input-wrap h6 {
-            color: #333;
-            font-size: 1.2rem;
-        }
-
-        .single-search-box input,
-        .single-search-box select {
-            border: 0px;
-            border-radius: 5px;
-        }
-
-        .single-search-box input:focus,
-        .single-search-box select:focus {
-            border-color: #0066cc;
-            box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.25);
-        }
-    </style>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const toggleBtn = document.getElementById('toggleAdvancedFilters');
-            const advancedFilters = document.getElementById('advancedFilters');
-
-            toggleBtn.addEventListener('click', function() {
-                if (advancedFilters.style.display === 'none') {
-                    advancedFilters.style.display = 'block';
-                    toggleBtn.innerHTML = '<i class="bi bi-funnel-fill"></i> Hide Advanced Filters';
-                } else {
-                    advancedFilters.style.display = 'none';
-                    toggleBtn.innerHTML = '<i class="bi bi-funnel"></i> Advanced Filters';
-                }
-            });
-
-            // Auto-expand if advanced filters are active
-            const hasAdvancedFilters =
-                {{ request()->hasAny(['capacity', 'children', 'amenities']) ? 'true' : 'false' }};
-            if (hasAdvancedFilters) {
-                advancedFilters.style.display = 'block';
-                toggleBtn.innerHTML = '<i class="bi bi-funnel-fill"></i> Hide Advanced Filters';
-            }
-        });
-    </script>
 
     <!-- Rooms Grid Section -->
     <div class="package-grid-section pt-50 pb-100">
@@ -315,7 +283,7 @@
 
                                                 <div class="price-area">
                                                     <h6>Per Night</h6>
-                                                    <span>{{ currency_format($room->price) }}</span>
+                                                    <span>{{ currency_format($room->price_per_night) }}</span>
                                                 </div>
                                             </div>
                                         </div>
