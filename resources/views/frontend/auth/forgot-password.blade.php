@@ -2,7 +2,7 @@
 @section('title', 'Forgot Password - YHBS')
 @section('content')
     <!-- Breadcrumb section Start-->
-    <div class="breadcrumb-section"
+    {{-- <div class="breadcrumb-section"
         style="background-image:linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url({{ asset('frontend/img/innerpages/breadcrumb-bg6.jpg') }});">
         <div class="container">
             <div class="banner-content">
@@ -13,7 +13,7 @@
                 </ul>
             </div>
         </div>
-    </div>
+    </div> --}}
 
     <!-- Forgot Password Section Start -->
     <div class="authentication-section pt-100 pb-100">
