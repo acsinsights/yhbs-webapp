@@ -368,7 +368,7 @@ new class extends Component {
             @endscope
 
             @scope('actions', $booking)
-                <x-button icon="o-eye" link="{{ route('admin.bookings.hotel.show', $booking->id) }}"
+                <x-button icon="o-eye" link="{{ route('admin.bookings.house.show', $booking->id) }}"
                     class="btn-ghost btn-sm" tooltip="View Booking" />
             @endscope
 

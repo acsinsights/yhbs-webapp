@@ -55,7 +55,7 @@ Route::prefix('customer')->name('customer.')->group(function () {
     });
 
     // Authenticated customer routes
-    Route::middleware('auth')->group(function () {
+    Route::middleware(['auth', 'role:customer'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
         Route::get('/profile', [DashboardController::class, 'profile'])->name('profile');
@@ -64,10 +64,10 @@ Route::prefix('customer')->name('customer.')->group(function () {
 
         Route::get('/bookings', [DashboardController::class, 'bookings'])->name('bookings');
         Route::get('/bookings/{id}', [DashboardController::class, 'bookingDetails'])->name('booking.details');
-
-        Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-        Route::get('/logout', [AuthController::class, 'logout'])->name('logout.get');
     });
+
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::get('/logout', [AuthController::class, 'logout'])->name('logout.get');
 });
 
 // Booking Routes (accessible to guests and authenticated users)
