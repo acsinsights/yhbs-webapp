@@ -82,3 +82,7 @@ Route::get('/rooms/{slug}', [RoomController::class, 'show'])->name('rooms.show')
 // Yachts Routes
 Route::get('/yachts', [YachtController::class, 'index'])->name('yachts.index');
 Route::get('/yachts/{id}', [YachtController::class, 'show'])->name('yachts.show');
+
+// Password Reset Routes (handled by Customer AuthController)
+Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
