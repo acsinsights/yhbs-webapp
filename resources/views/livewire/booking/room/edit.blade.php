@@ -564,34 +564,37 @@ new class extends Component {
                         $checkOutDate = $check_out ? \Carbon\Carbon::parse($check_out) : null;
                     @endphp
 
-                    <x-booking.booking-summary :adults="$adults" :children="$children" :checkInDate="$checkInDate" :checkOutDate="$checkOutDate"
-                        :amount="$amount" :paymentMethod="$payment_method" :paymentStatus="$payment_status">
-                        <x-slot:selection>
-                            {{-- Selected Room --}}
-                            <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
-                                <div class="flex items-start gap-2">
-                                    <div
-                                        class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                                        <x-icon name="o-home-modern" class="w-4 h-4 text-primary" />
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-xs font-semibold text-base-content/60 mb-0.5">Selected Room</p>
-                                        @if ($selectedRoom)
-                                            <p class="text-xs font-bold text-base-content line-clamp-1">
-                                                {{ $selectedRoom->room_number }}</p>
-                                            @if ($selectedRoom->house)
-                                                <p class="text-xs text-base-content/60">
-                                                    {{ $selectedRoom->house->name }}
-                                                </p>
+                    <div class="sticky top-24">
+                        <x-booking.booking-summary :adults="$adults" :children="$children" :checkInDate="$checkInDate"
+                            :checkOutDate="$checkOutDate" :amount="$amount" :paymentMethod="$payment_method" :paymentStatus="$payment_status">
+                            <x-slot:selection>
+                                {{-- Selected Room --}}
+                                <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
+                                    <div class="flex items-start gap-2">
+                                        <div
+                                            class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                                            <x-icon name="o-home-modern" class="w-4 h-4 text-primary" />
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-xs font-semibold text-base-content/60 mb-0.5">Selected Room
+                                            </p>
+                                            @if ($selectedRoom)
+                                                <p class="text-xs font-bold text-base-content line-clamp-1">
+                                                    {{ $selectedRoom->room_number }}</p>
+                                                @if ($selectedRoom->house)
+                                                    <p class="text-xs text-base-content/60">
+                                                        {{ $selectedRoom->house->name }}
+                                                    </p>
+                                                @endif
+                                            @else
+                                                <p class="text-xs text-base-content/50 italic">No room selected</p>
                                             @endif
-                                        @else
-                                            <p class="text-xs text-base-content/50 italic">No room selected</p>
-                                        @endif
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </x-slot:selection>
-                    </x-booking.booking-summary>
+                            </x-slot:selection>
+                        </x-booking.booking-summary>
+                    </div>
                 </div>
             </div>
 

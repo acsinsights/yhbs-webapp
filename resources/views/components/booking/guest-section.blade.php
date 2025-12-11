@@ -1,5 +1,7 @@
 @props([
     'stepNumber' => '3',
+    'maxAdults',
+    'maxChildren',
 ])
 
 <x-card class="bg-base-200">
@@ -12,9 +14,9 @@
         <x-icon name="o-user-group" class="w-8 h-8 text-primary/70" />
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-        <x-input wire:model.live.debounce.300ms="adults" label="Adults" type="number" min="1"
-            icon="o-user-group" />
-        <x-input wire:model.live.debounce.300ms="children" label="Children" type="number" min="0"
-            icon="o-face-smile" />
+        <x-input wire:model.live.debounce.350ms="adults" label="Adults" type="number" min="1" icon="o-user-group"
+            :max="$maxAdults" />
+        <x-input wire:model.live.debounce.350ms="children" label="Children" type="number" min="0"
+            icon="o-face-smile" :max="$maxChildren" />
     </div>
 </x-card>

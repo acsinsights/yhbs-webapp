@@ -357,8 +357,15 @@ new class extends Component {
                         {{-- Customer Section --}}
                         <x-booking.customer-section stepNumber="2" :customers="$customers" />
 
+                        @php
+                            $selectedRoom =
+                                $availableRooms->firstWhere('id', $room_id) ?? ($room_id ? Room::find($room_id) : null);
+                            $maxAdults = $selectedRoom?->adults ?? 2;
+                            $maxChildren = $selectedRoom?->children ?? 5;
+                        @endphp
+
                         {{-- Guest Details Section --}}
-                        <x-booking.guest-section stepNumber="3" />
+                        <x-booking.guest-section stepNumber="3" :maxAdults="$maxAdults" :maxChildren="$maxChildren" />
 
                         {{-- Room Selection Section --}}
                         <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
@@ -580,114 +587,115 @@ new class extends Component {
                     </div>
 
                     {{-- Summary Column --}}
-                    @php
-                        $selectedRoom =
-                            $availableRooms->firstWhere('id', $room_id) ?? ($room_id ? Room::find($room_id) : null);
-                    @endphp
-
-                    <x-booking.booking-summary :adults="$adults" :children="$children" :checkInDate="$checkInDate" :checkOutDate="$checkOutDate"
-                        :amount="$amount" :paymentMethod="$payment_method" :paymentStatus="$payment_status">
-                        <x-slot:selection>
-                            {{-- Selected Room --}}
-                            <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
-                                <div class="flex items-start gap-2">
-                                    <div
-                                        class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                                        <x-icon name="o-home-modern" class="w-4 h-4 text-primary" />
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-xs font-semibold text-base-content/60 mb-0.5">Selected Room</p>
-                                        @if ($selectedRoom)
-                                            <p class="text-xs font-bold text-base-content line-clamp-1">
-                                                {{ $selectedRoom->room_number }}</p>
-                                            @if ($selectedRoom->house)
-                                                <p class="text-xs text-base-content/60">
-                                                    {{ $selectedRoom->house->name }}
-                                                </p>
-                                            @endif
-                                        @else
-                                            <p class="text-xs text-base-content/50 italic">No room selected</p>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        </x-slot:selection>
-
-                        <x-slot:extraSections>
-                            {{-- Price Breakdown (for more than 3 nights) --}}
-                            @if ($baseNightCharge && $additionalNights && $additionalNightRate)
+                    <div class="sticky top-24">
+                        <x-booking.booking-summary :adults="$adults" :children="$children" :checkInDate="$checkInDate"
+                            :checkOutDate="$checkOutDate" :amount="$amount" :paymentMethod="$payment_method" :paymentStatus="$payment_status">
+                            <x-slot:selection>
+                                {{-- Selected Room --}}
                                 <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
                                     <div class="flex items-start gap-2">
                                         <div
                                             class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                                            <x-icon name="o-calculator" class="w-4 h-4 text-primary" />
+                                            <x-icon name="o-home-modern" class="w-4 h-4 text-primary" />
                                         </div>
-                                        <div class="flex-1">
-                                            <p class="text-xs font-semibold text-base-content/60 mb-1.5">Price
-                                                Breakdown</p>
-                                            <div class="space-y-1">
-                                                <div class="flex items-center justify-between">
-                                                    <span class="text-xs text-base-content/70">3 Night Charges</span>
-                                                    <span
-                                                        class="text-xs font-semibold text-base-content">{{ currency_format($baseNightCharge) }}</span>
-                                                </div>
-                                                <div class="flex items-center justify-between">
-                                                    <span class="text-xs text-base-content/70">Additional Night
-                                                        Charges</span>
-                                                    <span
-                                                        class="text-xs font-semibold text-base-content">{{ $additionalNights }}
-                                                        × {{ currency_format($additionalNightRate) }}</span>
-                                                </div>
-                                                <div class="border-t border-base-300/50 pt-1 mt-1"></div>
-                                                <div class="flex items-center justify-between">
-                                                    <span class="text-xs font-semibold text-primary">Subtotal</span>
-                                                    <span
-                                                        class="text-xs font-bold text-primary">{{ currency_format($baseNightCharge + $additionalNights * $additionalNightRate) }}</span>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-xs font-semibold text-base-content/60 mb-0.5">Selected Room
+                                            </p>
+                                            @if ($selectedRoom)
+                                                <p class="text-xs font-bold text-base-content line-clamp-1">
+                                                    {{ $selectedRoom->room_number }}</p>
+                                                @if ($selectedRoom->house)
+                                                    <p class="text-xs text-base-content/60">
+                                                        {{ $selectedRoom->house->name }}
+                                                    </p>
+                                                @endif
+                                            @else
+                                                <p class="text-xs text-base-content/50 italic">No room selected</p>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </x-slot:selection>
+
+                            <x-slot:extraSections>
+                                {{-- Price Breakdown (for more than 3 nights) --}}
+                                @if ($baseNightCharge && $additionalNights && $additionalNightRate)
+                                    <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
+                                        <div class="flex items-start gap-2">
+                                            <div
+                                                class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                                                <x-icon name="o-calculator" class="w-4 h-4 text-primary" />
+                                            </div>
+                                            <div class="flex-1">
+                                                <p class="text-xs font-semibold text-base-content/60 mb-1.5">Price
+                                                    Breakdown</p>
+                                                <div class="space-y-1">
+                                                    <div class="flex items-center justify-between">
+                                                        <span class="text-xs text-base-content/70">3 Night
+                                                            Charges</span>
+                                                        <span
+                                                            class="text-xs font-semibold text-base-content">{{ currency_format($baseNightCharge) }}</span>
+                                                    </div>
+                                                    <div class="flex items-center justify-between">
+                                                        <span class="text-xs text-base-content/70">Additional Night
+                                                            Charges</span>
+                                                        <span
+                                                            class="text-xs font-semibold text-base-content">{{ $additionalNights }}
+                                                            × {{ currency_format($additionalNightRate) }}</span>
+                                                    </div>
+                                                    <div class="border-t border-base-300/50 pt-1 mt-1"></div>
+                                                    <div class="flex items-center justify-between">
+                                                        <span
+                                                            class="text-xs font-semibold text-primary">Subtotal</span>
+                                                        <span
+                                                            class="text-xs font-bold text-primary">{{ currency_format($baseNightCharge + $additionalNights * $additionalNightRate) }}</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            @endif
+                                @endif
 
-                            {{-- Discount (if amount manually lowered) --}}
-                            @if ($amountManuallySet && $calculatedAmount && $amount && $amount < $calculatedAmount)
-                                <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
-                                    <div class="flex items-start gap-2">
-                                        <div
-                                            class="w-7 h-7 rounded-md bg-success/10 flex items-center justify-center shrink-0">
-                                            <x-icon name="o-tag" class="w-4 h-4 text-success" />
-                                        </div>
-                                        <div class="flex-1">
-                                            <p class="text-xs font-semibold text-base-content/60 mb-0.5">Discount
-                                                Applied</p>
-                                            <p class="text-sm font-bold text-success">
-                                                - {{ currency_format($calculatedAmount - $amount) }}
-                                            </p>
+                                {{-- Discount (if amount manually lowered) --}}
+                                @if ($amountManuallySet && $calculatedAmount && $amount && $amount < $calculatedAmount)
+                                    <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
+                                        <div class="flex items-start gap-2">
+                                            <div
+                                                class="w-7 h-7 rounded-md bg-success/10 flex items-center justify-center shrink-0">
+                                                <x-icon name="o-tag" class="w-4 h-4 text-success" />
+                                            </div>
+                                            <div class="flex-1">
+                                                <p class="text-xs font-semibold text-base-content/60 mb-0.5">Discount
+                                                    Applied</p>
+                                                <p class="text-sm font-bold text-success">
+                                                    - {{ currency_format($calculatedAmount - $amount) }}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            @endif
+                                @endif
 
-                            {{-- Raised Amount (if amount manually increased) --}}
-                            @if ($amountManuallySet && $calculatedAmount && $amount && $amount > $calculatedAmount)
-                                <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
-                                    <div class="flex items-start gap-2">
-                                        <div
-                                            class="w-7 h-7 rounded-md bg-warning/10 flex items-center justify-center shrink-0">
-                                            <x-icon name="o-arrow-trending-up" class="w-4 h-4 text-warning" />
-                                        </div>
-                                        <div class="flex-1">
-                                            <p class="text-xs font-semibold text-base-content/60 mb-0.5">Raised By</p>
-                                            <p class="text-sm font-bold text-warning">
-                                                + {{ currency_format($amount - $calculatedAmount) }}
-                                            </p>
+                                {{-- Raised Amount (if amount manually increased) --}}
+                                @if ($amountManuallySet && $calculatedAmount && $amount && $amount > $calculatedAmount)
+                                    <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
+                                        <div class="flex items-start gap-2">
+                                            <div
+                                                class="w-7 h-7 rounded-md bg-warning/10 flex items-center justify-center shrink-0">
+                                                <x-icon name="o-arrow-trending-up" class="w-4 h-4 text-warning" />
+                                            </div>
+                                            <div class="flex-1">
+                                                <p class="text-xs font-semibold text-base-content/60 mb-0.5">Raised By
+                                                </p>
+                                                <p class="text-sm font-bold text-warning">
+                                                    + {{ currency_format($amount - $calculatedAmount) }}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            @endif
-                        </x-slot:extraSections>
-                    </x-booking.booking-summary>
+                                @endif
+                            </x-slot:extraSections>
+                        </x-booking.booking-summary>
+                    </div>
 
                     <div class="space-y-6">
                         <div

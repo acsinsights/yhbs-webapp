@@ -13,7 +13,7 @@
         <x-icon name="o-credit-card" class="w-8 h-8 text-primary/70" />
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-        <x-input wire:model.live.debounce.500ms="amount" wire:change="$wire.updatedAmount()" label="Amount" type="number"
+        <x-input wire:model.live.debounce.350ms="amount" wire:change="$wire.updatedAmount()" label="Amount" type="number"
             step="0.01" min="0" :max="$maxAmount" icon="o-currency-dollar" :hint="'Total booking amount (auto-filled from price)'" />
         <x-select wire:model.live="payment_method" label="Payment Method" :options="[['id' => 'cash', 'name' => 'Cash'], ['id' => 'card', 'name' => 'Card']]" option-value="id"
             option-label="name" icon="o-credit-card" />

@@ -398,8 +398,16 @@ new class extends Component {
                         {{-- Customer Section --}}
                         <x-booking.customer-section stepNumber="2" :customers="$customers" />
 
+                        @php
+                            $selectedHouse =
+                                $availableHouses->firstWhere('id', $house_id) ??
+                                ($house_id ? House::with('rooms')->find($house_id) : null);
+                            $maxAdults = $selectedHouse?->adults ?? 10;
+                            $maxChildren = $selectedHouse?->children ?? 10;
+                        @endphp
+
                         {{-- Guest Details Section --}}
-                        <x-booking.guest-section stepNumber="3" />
+                        <x-booking.guest-section stepNumber="3" :maxAdults="$maxAdults" :maxChildren="$maxChildren" />
 
                         {{-- House Selection Section --}}
                         <x-card class="bg-base-200">
@@ -613,119 +621,117 @@ new class extends Component {
                     </div>
 
                     {{-- Summary Column --}}
-                    @php
-                        $selectedHouse =
-                            $availableHouses->firstWhere('id', $house_id) ??
-                            ($house_id ? House::with('rooms')->find($house_id) : null);
-                    @endphp
-                    <x-booking.booking-summary :adults="$adults" :children="$children" :checkInDate="$checkInDate" :checkOutDate="$checkOutDate"
-                        :amount="$amount" :paymentMethod="$payment_method" :paymentStatus="$payment_status" :showChecklist="true" :customerSelected="!!$user_id"
-                        :selectionSelected="!!$house_id" :selectionLabel="'House'" :amountFilled="!!$amount" :paymentMethodSelected="!!$payment_method" :paymentStatusSelected="!!$payment_status"
-                        :showInfoMessage="true" :infoTitle="'Booking Entire House'" :infoMessage="'When you book a house, all rooms in that house will be reserved for your selected dates.'">
-                        <x-slot:selection>
-                            {{-- Selected House --}}
-                            <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
-                                <div class="flex items-start gap-2">
-                                    <div
-                                        class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                                        <x-icon name="o-home-modern" class="w-4 h-4 text-primary" />
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-xs font-semibold text-base-content/60 mb-0.5">Selected House
-                                        </p>
-                                        @if ($selectedHouse)
-                                            <p class="text-xs font-bold text-base-content line-clamp-1">
-                                                {{ $selectedHouse->name }}</p>
-                                            <p class="text-xs text-base-content/60">
-                                                {{ $selectedHouse->rooms->count() }}
-                                                {{ $selectedHouse->rooms->count() === 1 ? 'room' : 'rooms' }}
-                                                included
+                    <div class="sticky top-24">
+                        <x-booking.booking-summary :adults="$adults" :children="$children" :checkInDate="$checkInDate"
+                            :checkOutDate="$checkOutDate" :amount="$amount" :paymentMethod="$payment_method" :paymentStatus="$payment_status" :showChecklist="true"
+                            :customerSelected="!!$user_id" :selectionSelected="!!$house_id" :selectionLabel="'House'" :amountFilled="!!$amount"
+                            :paymentMethodSelected="!!$payment_method" :paymentStatusSelected="!!$payment_status" :showInfoMessage="true" :infoTitle="'Booking Entire House'"
+                            :infoMessage="'When you book a house, all rooms in that house will be reserved for your selected dates.'">
+                            <x-slot:selection>
+                                {{-- Selected House --}}
+                                <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
+                                    <div class="flex items-start gap-2">
+                                        <div
+                                            class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                                            <x-icon name="o-home-modern" class="w-4 h-4 text-primary" />
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-xs font-semibold text-base-content/60 mb-0.5">Selected House
                                             </p>
-                                        @else
-                                            <p class="text-xs text-base-content/50 italic">No house selected</p>
-                                        @endif
+                                            @if ($selectedHouse)
+                                                <p class="text-xs font-bold text-base-content line-clamp-1">
+                                                    {{ $selectedHouse->name }}</p>
+                                                <p class="text-xs text-base-content/60">
+                                                    {{ $selectedHouse->rooms->count() }}
+                                                    {{ $selectedHouse->rooms->count() === 1 ? 'room' : 'rooms' }}
+                                                    included
+                                                </p>
+                                            @else
+                                                <p class="text-xs text-base-content/50 italic">No house selected</p>
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </x-slot:selection>
+                            </x-slot:selection>
 
-                        {{-- Price Breakdown --}}
-                        <x-slot:extraSections>
-                            @if ($totalNights && $baseCharges !== null)
-                                <x-card class="p-4 bg-base-100 mb-4">
-                                    <p class="text-xs uppercase tracking-wide text-base-content/60 mb-3">Price
-                                        Breakdown</p>
-                                    <div class="space-y-2 text-sm">
-                                        {{-- Base Charges --}}
-                                        <div class="flex justify-between items-center">
-                                            <span class="text-base-content/70">
-                                                @if ($totalNights == 1)
-                                                    1 Night Charge:
-                                                @elseif ($totalNights == 2)
-                                                    2 Nights Charge:
-                                                @elseif ($totalNights == 3)
-                                                    3 Nights Charge:
-                                                @else
-                                                    3 Nights Charge:
-                                                @endif
-                                            </span>
-                                            <span
-                                                class="font-semibold text-base-content">{{ currency_format($baseCharges) }}</span>
-                                        </div>
-
-                                        {{-- Additional Charges --}}
-                                        @if ($additionalNights > 0 && $additionalCharges > 0)
+                            {{-- Price Breakdown --}}
+                            <x-slot:extraSections>
+                                @if ($totalNights && $baseCharges !== null)
+                                    <x-card class="p-4 bg-base-100 mb-4">
+                                        <p class="text-xs uppercase tracking-wide text-base-content/60 mb-3">Price
+                                            Breakdown</p>
+                                        <div class="space-y-2 text-sm">
+                                            {{-- Base Charges --}}
                                             <div class="flex justify-between items-center">
-                                                <span class="text-base-content/70">Additional Charges:
-                                                    {{ $additionalNights }} x
-                                                    {{ currency_format($additionalCharges / $additionalNights) }}</span>
+                                                <span class="text-base-content/70">
+                                                    @if ($totalNights == 1)
+                                                        1 Night Charge:
+                                                    @elseif ($totalNights == 2)
+                                                        2 Nights Charge:
+                                                    @elseif ($totalNights == 3)
+                                                        3 Nights Charge:
+                                                    @else
+                                                        3 Nights Charge:
+                                                    @endif
+                                                </span>
                                                 <span
-                                                    class="font-semibold text-base-content">{{ currency_format($additionalCharges) }}</span>
+                                                    class="font-semibold text-base-content">{{ currency_format($baseCharges) }}</span>
                                             </div>
-                                        @endif
 
-                                        {{-- Subtotal --}}
-                                        @if ($calculatedAmount)
-                                            <div
-                                                class="flex justify-between items-center pt-2 border-t border-base-300">
-                                                <span class="text-base-content/70">Calculated Total:</span>
-                                                <span
-                                                    class="font-semibold text-base-content">{{ currency_format($calculatedAmount) }}</span>
-                                            </div>
-                                        @endif
+                                            {{-- Additional Charges --}}
+                                            @if ($additionalNights > 0 && $additionalCharges > 0)
+                                                <div class="flex justify-between items-center">
+                                                    <span class="text-base-content/70">Additional Charges:
+                                                        {{ $additionalNights }} x
+                                                        {{ currency_format($additionalCharges / $additionalNights) }}</span>
+                                                    <span
+                                                        class="font-semibold text-base-content">{{ currency_format($additionalCharges) }}</span>
+                                                </div>
+                                            @endif
 
-                                        {{-- Discount --}}
-                                        @if ($discount && $discount > 0)
-                                            <div class="flex justify-between items-center text-success">
-                                                <span>Discount:</span>
-                                                <span class="font-semibold">-
-                                                    {{ currency_format($discount) }}</span>
-                                            </div>
-                                        @endif
+                                            {{-- Subtotal --}}
+                                            @if ($calculatedAmount)
+                                                <div
+                                                    class="flex justify-between items-center pt-2 border-t border-base-300">
+                                                    <span class="text-base-content/70">Calculated Total:</span>
+                                                    <span
+                                                        class="font-semibold text-base-content">{{ currency_format($calculatedAmount) }}</span>
+                                                </div>
+                                            @endif
 
-                                        {{-- Raised Amount --}}
-                                        @if ($raisedAmount && $raisedAmount > 0)
-                                            <div class="flex justify-between items-center text-warning">
-                                                <span>Raised by:</span>
-                                                <span class="font-semibold">+
-                                                    {{ currency_format($raisedAmount) }}</span>
-                                            </div>
-                                        @endif
+                                            {{-- Discount --}}
+                                            @if ($discount && $discount > 0)
+                                                <div class="flex justify-between items-center text-success">
+                                                    <span>Discount:</span>
+                                                    <span class="font-semibold">-
+                                                        {{ currency_format($discount) }}</span>
+                                                </div>
+                                            @endif
 
-                                        {{-- Final Total --}}
-                                        @if ($amount)
-                                            <div
-                                                class="flex justify-between items-center pt-2 border-t border-base-300">
-                                                <span class="font-bold text-base-content">Final Total:</span>
-                                                <span
-                                                    class="font-bold text-lg text-primary">{{ currency_format($amount) }}</span>
-                                            </div>
-                                        @endif
-                                    </div>
-                                </x-card>
-                            @endif
-                        </x-slot:extraSections>
-                    </x-booking.booking-summary>
+                                            {{-- Raised Amount --}}
+                                            @if ($raisedAmount && $raisedAmount > 0)
+                                                <div class="flex justify-between items-center text-warning">
+                                                    <span>Raised by:</span>
+                                                    <span class="font-semibold">+
+                                                        {{ currency_format($raisedAmount) }}</span>
+                                                </div>
+                                            @endif
+
+                                            {{-- Final Total --}}
+                                            @if ($amount)
+                                                <div
+                                                    class="flex justify-between items-center pt-2 border-t border-base-300">
+                                                    <span class="font-bold text-base-content">Final Total:</span>
+                                                    <span
+                                                        class="font-bold text-lg text-primary">{{ currency_format($amount) }}</span>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </x-card>
+                                @endif
+                            </x-slot:extraSections>
+                        </x-booking.booking-summary>
+                    </div>
                 </div>
             </div>
 

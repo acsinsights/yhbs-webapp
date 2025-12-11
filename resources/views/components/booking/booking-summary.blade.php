@@ -23,8 +23,8 @@
     'infoMessage' => '',
 ])
 
-<div class="space-y-6">
-    <div class="bg-base-200 p-4">
+<div class="space-y-4">
+    <div class="bg-base-200 p-4 rounded-2xl">
         <div class="flex items-center justify-between mb-4 pb-3 border-b border-base-300/60">
             <div>
                 <p class="text-xs uppercase tracking-wider text-primary font-bold">Live Summary</p>
@@ -142,7 +142,7 @@
 
     {{-- Checklist --}}
     @if ($showChecklist)
-        <div class="bg-base-200 p-4">
+        <div class="bg-base-200 p-4 rounded-2xl">
             <div class="p-4 bg-base-100 rounded-lg">
                 <p class="text-xs uppercase tracking-wide text-base-content/60">Checklist</p>
                 <ul class="mt-2 space-y-2 text-sm">
