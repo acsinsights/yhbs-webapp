@@ -347,23 +347,13 @@ new class extends Component {
             @endscope
 
             @scope('cell_status', $booking)
-                @php
-                    $statusColors = [
-                        'pending' => 'badge-warning',
-                        'booked' => 'badge-primary',
-                        'checked_in' => 'badge-info',
-                        'cancelled' => 'badge-error',
-                        'checked_out' => 'badge-success',
-                    ];
-                    $color = $statusColors[$booking->status] ?? 'badge-ghost';
-                @endphp
-                <x-badge :value="ucfirst(str_replace('_', ' ', $booking->status))" class="badge-soft {{ $color }}" />
+                <x-badge :value="$booking->status->label()" class="{{ $booking->status->badgeColor() }}" />
             @endscope
 
             @scope('cell_payment', $booking)
-                <div class="flex flex-col gap-1">
-                    <x-badge :value="ucfirst($booking->payment_status)" class="badge-soft badge-sm badge-info" />
-                    <span class="text-xs text-base-content/50">{{ ucfirst($booking->payment_method ?? '—') }}</span>
+                <div class="flex items-center gap-1">
+                    <x-badge :value="$booking->payment_status->label()" class="{{ $booking->payment_status->badgeColor() }} badge-sm" />
+                    <x-badge :value="$booking->payment_method->label()" class="{{ $booking->payment_method->badgeColor() }} badge-sm" />
                 </div>
             @endscope
 

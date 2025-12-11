@@ -21,6 +21,12 @@ new class extends Component {
     public ?UploadedFile $image = null;
     public ?string $existing_image = null;
     public ?string $description = null;
+    public ?float $price_per_night = null;
+    public ?float $price_per_2night = null;
+    public ?float $price_per_3night = null;
+    public ?float $additional_night_price = null;
+    public ?int $adults = null;
+    public ?int $children = null;
 
     // Image library properties
     public array $files = [];
@@ -46,6 +52,12 @@ new class extends Component {
         $this->existing_image = $house->image;
         $this->image = null; // Keep null for file upload, use existing_image for display
         $this->description = $house->description;
+        $this->price_per_night = $house->price_per_night;
+        $this->price_per_2night = $house->price_per_2night;
+        $this->price_per_3night = $house->price_per_3night;
+        $this->additional_night_price = $house->additional_night_price;
+        $this->adults = $house->adults;
+        $this->children = $house->children;
         $this->library = $house->library ?? new Collection();
     }
 
@@ -59,6 +71,12 @@ new class extends Component {
             'image' => 'nullable|image|max:5000',
             'files.*' => 'image|max:5000',
             'description' => 'nullable|string',
+            'price_per_night' => 'nullable|numeric|min:0|max:999999999.99',
+            'price_per_2night' => 'nullable|numeric|min:0|max:999999999.99',
+            'price_per_3night' => 'nullable|numeric|min:0|max:999999999.99',
+            'additional_night_price' => 'nullable|numeric|min:0|max:999999999.99',
+            'adults' => 'nullable|integer|min:0|max:999',
+            'children' => 'nullable|integer|min:0|max:999',
             'library' => 'nullable',
         ]);
 
@@ -76,6 +94,12 @@ new class extends Component {
             'is_active' => $this->is_active,
             'image' => $imagePath,
             'description' => $this->description,
+            'price_per_night' => $this->price_per_night,
+            'price_per_2night' => $this->price_per_2night,
+            'price_per_3night' => $this->price_per_3night,
+            'additional_night_price' => $this->additional_night_price,
+            'adults' => $this->adults,
+            'children' => $this->children,
         ]);
 
         // Sync media files and update library metadata
@@ -149,6 +173,34 @@ new class extends Component {
                     add-files-text="Add images" />
             </div>
 
+            {{-- Pricing Section --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-4 md:mt-6">
+                <x-input wire:model="price_per_night" label="Price Per Night" placeholder="0.00"
+                    icon="o-currency-dollar" type="number" step="0.01" min="0"
+                    hint="Base price for 1 night" />
+
+                <x-input wire:model="price_per_2night" label="Price Per 2 Nights" placeholder="0.00"
+                    icon="o-currency-dollar" type="number" step="0.01" min="0"
+                    hint="Special price for 2 nights" />
+
+                <x-input wire:model="price_per_3night" label="Price Per 3 Nights" placeholder="0.00"
+                    icon="o-currency-dollar" type="number" step="0.01" min="0"
+                    hint="Special price for 3 nights" />
+
+                <x-input wire:model="additional_night_price" label="Additional Night Price" placeholder="0.00"
+                    icon="o-currency-dollar" type="number" step="0.01" min="0"
+                    hint="Price per night after 3 nights" />
+            </div>
+
+            {{-- Capacity Section --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-4 md:mt-6">
+                <x-input wire:model="adults" label="Maximum Adults" placeholder="0" icon="o-user" type="number"
+                    min="0" hint="Maximum number of adults" />
+
+                <x-input wire:model="children" label="Maximum Children" placeholder="0" icon="o-user-group"
+                    type="number" min="0" hint="Maximum number of children" />
+            </div>
+
             {{-- Description Editor --}}
             <div class="mt-4 md:mt-6">
                 @php
@@ -168,8 +220,8 @@ new class extends Component {
             <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-6 md:mt-8 pt-4 md:pt-6 border-t">
                 <x-button icon="o-x-mark" label="Cancel" link="{{ route('admin.houses.index') }}"
                     class="btn-error btn-outline" responsive />
-                <x-button icon="o-check" label="Update" type="submit" class="btn-primary btn-outline" spinner="update"
-                    responsive />
+                <x-button icon="o-check" label="Update" type="submit" class="btn-primary btn-outline"
+                    spinner="update" responsive />
             </div>
         </x-form>
     </x-card>

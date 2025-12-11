@@ -20,6 +20,12 @@ return new class extends Migration
             $table->boolean('is_active')->default(false);
             $table->string('image')->nullable();
             $table->text('description')->nullable();
+            $table->decimal('price_per_night', 10, 2)->nullable();
+            $table->decimal('price_per_2night', 10, 2)->nullable();
+            $table->decimal('price_per_3night', 10, 2)->nullable();
+            $table->decimal('additional_night_price', 10, 2)->nullable();
+            $table->integer('adults')->nullable();
+            $table->integer('children')->nullable();
             $table->json('library')->nullable();
 
             $table->timestamps();

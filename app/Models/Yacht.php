@@ -72,16 +72,11 @@ class Yacht extends Model
     {
         return $query->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
             $q->where(function ($query) use ($checkIn, $checkOut) {
-                $query->where(function ($q) use ($checkIn, $checkOut) {
-                    $q->whereBetween('check_in', [$checkIn, $checkOut])
-                        ->orWhereBetween('check_out', [$checkIn, $checkOut])
-                        ->orWhere(function ($q) use ($checkIn, $checkOut) {
-                            $q->where('check_in', '<=', $checkIn)
-                                ->where('check_out', '>=', $checkOut);
-                        });
-                })
-                    ->whereIn('status', ['pending', 'booked', 'checked_in']);
-            });
+                // Two ranges overlap if: booking_check_in < new_check_out AND booking_check_out > new_check_in
+                $query->where('check_in', '<', $checkOut)
+                    ->where('check_out', '>', $checkIn);
+            })
+                ->whereIn('status', ['pending', 'booked', 'checked_in']);
         });
     }
 }

@@ -31,7 +31,7 @@ class BookingSeeder extends Seeder
         // Create room bookings
         if ($rooms->isNotEmpty()) {
             foreach ($rooms->take(5) as $room) {
-                $checkIn = Carbon::now()->addDays(rand(1, 30));
+                $checkIn = Carbon::now();
                 $checkOut = $checkIn->copy()->addDays(rand(1, 7));
 
                 $bookings[] = [

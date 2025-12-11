@@ -46,19 +46,7 @@ new class extends Component {
             ->orderBy(...array_values($this->sortBy))
             ->paginate($this->perPage);
 
-        $view->headers = [
-            ['key' => 'id', 'label' => '#', 'class' => 'w-1'],
-            ['key' => 'user.name', 'label' => 'Customer', 'sortable' => false, 'class' => 'whitespace-nowrap'],
-            ['key' => 'room_number', 'label' => 'Room', 'sortable' => false, 'class' => 'w-64'],
-            ['key' => 'check_in', 'label' => 'Check In', 'sortable' => true, 'class' => 'whitespace-nowrap'],
-            ['key' => 'check_out', 'label' => 'Check Out', 'sortable' => true, 'class' => 'whitespace-nowrap'],
-            ['key' => 'adults', 'label' => 'Adults', 'sortable' => false, 'class' => 'whitespace-nowrap'],
-            ['key' => 'children', 'label' => 'Children', 'sortable' => false, 'class' => 'whitespace-nowrap'],
-            ['key' => 'price', 'label' => 'Amount', 'sortable' => true, 'class' => 'whitespace-nowrap'],
-            ['key' => 'payment_status', 'label' => 'Payment Status', 'class' => 'whitespace-nowrap'],
-            ['key' => 'payment_method', 'label' => 'Payment Method', 'class' => 'whitespace-nowrap'],
-            ['key' => 'status', 'label' => 'Status', 'class' => 'whitespace-nowrap'],
-        ];
+        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'user.name', 'label' => 'Customer', 'sortable' => false, 'class' => 'whitespace-nowrap'], ['key' => 'room_number', 'label' => 'Room', 'sortable' => false, 'class' => 'w-64'], ['key' => 'check_in', 'label' => 'Check In', 'sortable' => true, 'class' => 'whitespace-nowrap'], ['key' => 'check_out', 'label' => 'Check Out', 'sortable' => true, 'class' => 'whitespace-nowrap'], ['key' => 'price', 'label' => 'Amount', 'sortable' => true, 'class' => 'whitespace-nowrap'], ['key' => 'payment_status', 'label' => 'Payment Status', 'class' => 'whitespace-nowrap'], ['key' => 'payment_method', 'label' => 'Payment Method', 'class' => 'whitespace-nowrap'], ['key' => 'status', 'label' => 'Status', 'class' => 'whitespace-nowrap']];
     }
 }; ?>
 
@@ -84,7 +72,7 @@ new class extends Component {
         <x-slot:actions>
             <x-input icon="o-magnifying-glass" placeholder="Search..." wire:model.live.debounce="search" clearable />
             <x-button icon="o-plus" class="btn-primary" label="New Booking"
-                link="{{ route('admin.bookings.house.create') }}" />
+                link="{{ route('admin.bookings.room.create') }}" />
         </x-slot:actions>
     </x-header>
 
@@ -113,9 +101,8 @@ new class extends Component {
             @scope('cell_check_in', $booking)
                 @if ($booking->check_in)
                     <div class="flex flex-col">
-                        <span>{{ Carbon::parse($booking->check_in)->format('M d, Y') }}</span>
-                        <span
-                            class="text-xs text-base-content/50">{{ Carbon::parse($booking->check_in)->format('h:i A') }}</span>
+                        <span>{{ $booking->check_in->format('M d, Y') }}</span>
+                        <span class="text-xs text-base-content/50">{{ $booking->check_in->format('h:i A') }}</span>
                     </div>
                 @else
                     <span class="text-base-content/50">—</span>
@@ -125,9 +112,8 @@ new class extends Component {
             @scope('cell_check_out', $booking)
                 @if ($booking->check_out)
                     <div class="flex flex-col">
-                        <span>{{ Carbon::parse($booking->check_out)->format('M d, Y') }}</span>
-                        <span
-                            class="text-xs text-base-content/50">{{ Carbon::parse($booking->check_out)->format('h:i A') }}</span>
+                        <span>{{ $booking->check_out->format('M d, Y') }}</span>
+                        <span class="text-xs text-base-content/50">{{ $booking->check_out->format('h:i A') }}</span>
                     </div>
                 @else
                     <span class="text-base-content/50">—</span>
@@ -149,43 +135,29 @@ new class extends Component {
             @endscope
 
             @scope('cell_payment_status', $booking)
-                @php
-                    $statusColors = [
-                        'paid' => 'badge-success',
-                        'pending' => 'badge-warning',
-                        'failed' => 'badge-error',
-                    ];
-                    $color = $statusColors[$booking->payment_status] ?? 'badge-ghost';
-                @endphp
-                <x-badge :value="ucfirst($booking->payment_status)" class="badge-soft {{ $color }}" />
+                <div class="text-center">
+                    <x-badge :value="$booking->payment_status->label()" class="{{ $booking->payment_status->badgeColor() }}" />
+                </div>
             @endscope
 
             @scope('cell_payment_method', $booking)
-                <x-badge :value="ucfirst($booking->payment_method)" class="badge-soft badge-info" />
+                <div class="text-center">
+                    <x-badge :value="$booking->payment_method->label()" class="{{ $booking->payment_method->badgeColor() }}" />
+                </div>
             @endscope
 
             @scope('cell_status', $booking)
-                @php
-                    $statusColors = [
-                        'pending' => 'badge-warning',
-                        'booked' => 'badge-primary',
-                        'checked_in' => 'badge-info',
-                        'cancelled' => 'badge-error',
-                        'checked_out' => 'badge-success',
-                    ];
-                    $color = $statusColors[$booking->status] ?? 'badge-ghost';
-                @endphp
-                <x-badge :value="ucfirst(str_replace('_', ' ', $booking->status))" class="badge-soft {{ $color }}" />
+                <x-badge :value="$booking->status->label()" class="{{ $booking->status->badgeColor() }}" />
             @endscope
 
             @scope('actions', $booking)
-                <div class="flex items-center gap-2">
-                    <x-button icon="o-eye" link="{{ route('admin.bookings.house.show', $booking->id) }}"
-                        class="btn-ghost btn-sm" tooltip="View Details" />
-                    @if ($booking->status !== 'checked_out' && $booking->status !== 'cancelled')
-                        <x-button icon="o-pencil" link="{{ route('admin.bookings.house.edit', $booking->id) }}"
+                <div class="flex items-center gap-2 justify-end">
+                    @if ($booking->canBeEdited())
+                        <x-button icon="o-pencil" link="{{ route('admin.bookings.room.edit', $booking->id) }}"
                             class="btn-ghost btn-sm" tooltip="Edit" />
                     @endif
+                    <x-button icon="o-eye" link="{{ route('admin.bookings.room.show', $booking->id) }}"
+                        class="btn-ghost btn-sm" tooltip="View Details" />
                     <x-button icon="o-trash" wire:click="delete({{ $booking->id }})"
                         wire:confirm="Are you sure you want to delete this booking?" spinner
                         class="btn-ghost btn-sm text-error" tooltip="Delete" />

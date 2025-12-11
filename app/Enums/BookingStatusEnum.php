@@ -20,4 +20,15 @@ enum BookingStatusEnum: string
             self::CHECKED_OUT => 'Checked Out',
         };
     }
+
+    public function badgeColor(): string
+    {
+        return match ($this) {
+            self::PENDING => 'badge-soft badge-warning',
+            self::BOOKED => 'badge-soft badge-info',
+            self::CHECKED_IN => 'badge-soft badge-success',
+            self::CANCELLED => 'badge-soft badge-error',
+            self::CHECKED_OUT => 'badge-soft badge-primary',
+        };
+    }
 }

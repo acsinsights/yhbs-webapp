@@ -28,18 +28,24 @@ new class extends Component {
 
     public function mount(Booking $booking): void
     {
-        $this->booking = $booking->load(['bookingable.house', 'user']);
+        $this->booking = $booking->load(['bookingable', 'user']);
+
+        // Check if booking can be edited
+        if (!$booking->canBeEdited()) {
+            $this->warning('This booking cannot be edited.', redirectTo: route('admin.bookings.room.index'));
+            return;
+        }
 
         // Pre-fill form with existing booking data
         $this->room_id = $booking->bookingable_id;
-        $this->check_in = $booking->check_in ? Carbon::parse($booking->check_in)->format('Y-m-d\TH:i') : null;
-        $this->check_out = $booking->check_out ? Carbon::parse($booking->check_out)->format('Y-m-d\TH:i') : null;
+        $this->check_in = $booking->check_in ? $booking->check_in->format('Y-m-d\TH:i') : null;
+        $this->check_out = $booking->check_out ? $booking->check_out->format('Y-m-d\TH:i') : null;
         $this->adults = $booking->adults ?? 1;
         $this->children = $booking->children ?? 0;
         $this->amount = $booking->price;
         $this->amountManuallySet = true; // Set to true since we're loading existing amount
-        $this->payment_method = $booking->payment_method ?? 'cash';
-        $this->payment_status = $booking->payment_status ?? 'pending';
+        $this->payment_method = $booking->payment_method->value ?? 'cash';
+        $this->payment_status = $booking->payment_status->value ?? 'pending';
         $this->notes = $booking->notes;
     }
 
@@ -286,7 +292,7 @@ new class extends Component {
         </x-slot:subtitle>
         <x-slot:actions>
             <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.house.show', $booking->id) }}"
-                class="btn-ghost" />
+                class="btn-ghost btn-outline" />
         </x-slot:actions>
     </x-header>
 
@@ -296,26 +302,8 @@ new class extends Component {
                 <div class="grid gap-6 lg:grid-cols-3">
                     <div class="space-y-6 lg:col-span-2">
                         {{-- Date Range Section --}}
-                        <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 1</p>
-                                    <h3 class="text-xl font-semibold text-base-content mt-1">Booking Dates</h3>
-                                    <p class="text-sm text-base-content/60 mt-1">Select your check-in and check-out
-                                        dates
-                                    </p>
-                                </div>
-                                <x-icon name="o-calendar" class="w-8 h-8 text-primary/70" />
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                                <x-input wire:model.live.debounce.300ms="check_in" label="Check In"
-                                    type="datetime-local" icon="o-calendar" :min="$minCheckInDate"
-                                    hint="Check-in must be today or later" />
-                                <x-input wire:model.live.debounce.300ms="check_out" label="Check Out"
-                                    type="datetime-local" icon="o-calendar" :min="$check_in"
-                                    hint="Check-out must be after check-in" />
-                            </div>
-                        </div>
+                        <x-booking.date-range-section stepNumber="1" checkInLabel="Check In" checkOutLabel="Check Out"
+                            :minCheckInDate="$minCheckInDate" checkIn="check_in" checkOut="check_out" />
 
                         {{-- Customer Section (Read-only) --}}
                         <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm opacity-75">
@@ -338,22 +326,7 @@ new class extends Component {
                         </div>
 
                         {{-- Guest Details Section --}}
-                        <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 2</p>
-                                    <h3 class="text-xl font-semibold text-base-content mt-1">Guest Details</h3>
-                                    <p class="text-sm text-base-content/60 mt-1">Number of guests for this booking</p>
-                                </div>
-                                <x-icon name="o-user-group" class="w-8 h-8 text-primary/70" />
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                                <x-input wire:model.live.debounce.300ms="adults" label="Adults" type="number"
-                                    min="1" icon="o-user-group" />
-                                <x-input wire:model.live.debounce.300ms="children" label="Children" type="number"
-                                    min="0" icon="o-face-smile" />
-                            </div>
-                        </div>
+                        <x-booking.guest-section stepNumber="2" />
 
                         {{-- Room Selection Section --}}
                         <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
@@ -380,7 +353,7 @@ new class extends Component {
                                 <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-base-content/70">
                                     <div wire:loading wire:target="check_in,check_out,room_search,perPage"
                                         class="flex items-center gap-2 text-primary">
-                                        <span class="loading loading-spinner loading-sm"></span>
+                                        <x-loading class="loading-dots" />
                                         <span>Loading rooms...</span>
                                     </div>
 
@@ -411,7 +384,7 @@ new class extends Component {
                                     <div
                                         class="flex items-center justify-center py-12 bg-base-200/50 rounded-xl border-2 border-dashed border-base-300">
                                         <div class="text-center">
-                                            <span class="loading loading-spinner loading-lg text-primary"></span>
+                                            <x-loading class="loading-dots" />
                                             <p class="mt-4 text-sm text-base-content/70">Filtering available rooms...
                                             </p>
                                         </div>
@@ -577,208 +550,55 @@ new class extends Component {
                         </div>
 
                         {{-- Payment Section --}}
-                        <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 4</p>
-                                    <h3 class="text-xl font-semibold text-base-content mt-1">Payment Details</h3>
-                                    <p class="text-sm text-base-content/60 mt-1">Payment information for this booking
-                                    </p>
-                                </div>
-                                <x-icon name="o-credit-card" class="w-8 h-8 text-primary/70" />
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                                <x-input wire:model.live.debounce.500ms="amount" wire:change="$wire.updatedAmount()"
-                                    label="Amount" type="number" step="0.01" min="0" max="999999999.99"
-                                    icon="o-currency-dollar"
-                                    hint="Total booking amount (auto-filled from room price, max: 999,999,999.99)" />
-                                <x-select wire:model.live="payment_method" label="Payment Method" :options="[['id' => 'cash', 'name' => 'Cash'], ['id' => 'card', 'name' => 'Card']]"
-                                    option-value="id" option-label="name" icon="o-credit-card" />
-                                <x-select wire:model.live="payment_status" label="Payment Status" :options="[
-                                    ['id' => 'paid', 'name' => 'Paid'],
-                                    ['id' => 'pending', 'name' => 'Pending'],
-                                ]"
-                                    option-value="id" option-label="name" icon="o-check-circle" />
-                            </div>
-                        </div>
+                        <x-booking.payment-section stepNumber="4" />
 
                         {{-- Notes Section --}}
-                        <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 5</p>
-                                    <h3 class="text-xl font-semibold text-base-content mt-1">Additional Notes</h3>
-                                    <p class="text-sm text-base-content/60 mt-1">Any special requests or additional
-                                        information</p>
-                                </div>
-                                <x-icon name="o-document-text" class="w-8 h-8 text-primary/70" />
-                            </div>
-                            <div class="mt-6">
-                                <x-textarea wire:model="notes" label="Notes"
-                                    placeholder="Additional notes (optional)" icon="o-document-text"
-                                    rows="3" />
-                            </div>
-                        </div>
+                        <x-booking.notes-section stepNumber="5" />
                     </div>
 
                     {{-- Summary Column --}}
-                    <div class="space-y-6">
-                        @php
-                            $selectedRoom =
-                                $availableRooms->firstWhere('id', $room_id) ?? ($room_id ? Room::find($room_id) : null);
-                        @endphp
-                        <div
-                            class="rounded-2xl border border-base-300/80 bg-gradient-to-br from-base-100 to-base-200/50 p-4 shadow-lg sticky top-24 backdrop-blur-sm">
-                            <div class="flex items-center justify-between mb-4 pb-3 border-b border-base-300/60">
-                                <div>
-                                    <p class="text-xs uppercase tracking-wider text-primary font-bold">Live Summary</p>
-                                    <h4 class="text-lg font-bold text-base-content">Booking Overview</h4>
-                                </div>
-                                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                                    <x-icon name="o-clipboard-document-check" class="w-5 h-5 text-primary" />
-                                </div>
-                            </div>
+                    @php
+                        $selectedRoom =
+                            $availableRooms->firstWhere('id', $room_id) ?? ($room_id ? Room::find($room_id) : null);
+                        $checkInDate = $check_in ? \Carbon\Carbon::parse($check_in) : null;
+                        $checkOutDate = $check_out ? \Carbon\Carbon::parse($check_out) : null;
+                    @endphp
 
-                            <div class="space-y-2.5">
-                                {{-- Booking Window --}}
-                                <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
-                                    <div class="flex items-start gap-2">
-                                        <div
-                                            class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                                            <x-icon name="o-calendar" class="w-4 h-4 text-primary" />
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <p class="text-xs font-semibold text-base-content/60 mb-1">Booking Window
-                                            </p>
-                                            @if ($check_in && $check_out)
-                                                <div class="space-y-1 flex justify-between">
-                                                    <div>
-                                                        <p class="text-xs font-semibold text-primary mb-0.5">Check In
-                                                        </p>
-                                                        <p class="text-xs font-semibold text-base-content">
-                                                            {{ \Carbon\Carbon::parse($check_in)->format('M d, Y') }} |
-                                                            {{ \Carbon\Carbon::parse($check_in)->format('g:i A') }}
-                                                        </p>
-                                                    </div>
-                                                    <div>
-                                                        <p class="text-xs font-semibold text-primary mb-0.5">Check Out
-                                                        </p>
-                                                        <p class="text-xs font-semibold text-base-content">
-                                                            {{ \Carbon\Carbon::parse($check_out)->format('M d, Y') }} |
-                                                            {{ \Carbon\Carbon::parse($check_out)->format('g:i A') }}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            @else
-                                                <p class="text-xs text-base-content/50 italic">Select dates</p>
+                    <x-booking.booking-summary :adults="$adults" :children="$children" :checkInDate="$checkInDate" :checkOutDate="$checkOutDate"
+                        :amount="$amount" :paymentMethod="$payment_method" :paymentStatus="$payment_status">
+                        <x-slot:selection>
+                            {{-- Selected Room --}}
+                            <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
+                                <div class="flex items-start gap-2">
+                                    <div
+                                        class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                                        <x-icon name="o-home-modern" class="w-4 h-4 text-primary" />
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-xs font-semibold text-base-content/60 mb-0.5">Selected Room</p>
+                                        @if ($selectedRoom)
+                                            <p class="text-xs font-bold text-base-content line-clamp-1">
+                                                {{ $selectedRoom->room_number }}</p>
+                                            @if ($selectedRoom->house)
+                                                <p class="text-xs text-base-content/60">
+                                                    {{ $selectedRoom->house->name }}
+                                                </p>
                                             @endif
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Guests --}}
-                                <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
-                                    <div class="flex items-center gap-2">
-                                        <div
-                                            class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                                            <x-icon name="o-user-group" class="w-4 h-4 text-primary" />
-                                        </div>
-                                        <div class="flex-1">
-                                            <p class="text-xs font-semibold text-base-content/60 mb-0.5">Guests</p>
-                                            <p class="text-sm font-bold text-base-content">
-                                                {{ $adults + $children }}
-                                                <span class="text-xs font-normal text-base-content/70">
-                                                    ({{ $adults }}A{{ $children > 0 ? ', ' . $children . 'C' : '' }})
-                                                </span>
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Selected Room --}}
-                                <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
-                                    <div class="flex items-start gap-2">
-                                        <div
-                                            class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                                            <x-icon name="o-home-modern" class="w-4 h-4 text-primary" />
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <p class="text-xs font-semibold text-base-content/60 mb-0.5">Selected Room
-                                            </p>
-                                            @if ($selectedRoom)
-                                                <p class="text-xs font-bold text-base-content line-clamp-1">
-                                                    {{ $selectedRoom->room_number }}</p>
-                                                @if ($selectedRoom->house)
-                                                    <p class="text-xs text-base-content/60">
-                                                        {{ $selectedRoom->house->name }}
-                                                    </p>
-                                                @endif
-                                            @else
-                                                <p class="text-xs text-base-content/50 italic">No room selected</p>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Amount --}}
-                                <div class="bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg p-2.5 border-2 border-primary/20"
-                                    wire:key="summary-amount-{{ $amount }}">
-                                    <div class="flex items-center gap-2">
-                                        <div
-                                            class="w-7 h-7 rounded-md bg-primary/20 flex items-center justify-center shrink-0">
-                                            <x-icon name="o-currency-dollar" class="w-4 h-4 text-primary" />
-                                        </div>
-                                        <div class="flex-1">
-                                            <p class="text-xs font-semibold text-primary/80 mb-0.5">Total Amount</p>
-                                            <p class="text-lg font-bold text-primary">
-                                                {{ $amount ? currency_format($amount) : '—' }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Payment Details --}}
-                                <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
-                                    <div class="flex items-start gap-2">
-                                        <div
-                                            class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                                            <x-icon name="o-credit-card" class="w-4 h-4 text-primary" />
-                                        </div>
-                                        <div class="flex-1">
-                                            <p class="text-xs font-semibold text-base-content/60 mb-1.5">Payment</p>
-                                            <div class="space-y-1">
-                                                <div class="flex items-center justify-between">
-                                                    <span class="text-xs text-base-content/70">Method</span>
-                                                    <span
-                                                        class="text-xs font-semibold text-base-content capitalize">{{ $payment_method }}</span>
-                                                </div>
-                                                <div class="flex items-center justify-between">
-                                                    <span class="text-xs text-base-content/70">Status</span>
-                                                    <span
-                                                        class="px-2 py-0.5 text-xs font-semibold rounded-full {{ $payment_status === 'paid' ? 'bg-success/20 text-success border border-success/30' : 'bg-warning/20 text-warning border border-warning/30' }}">
-                                                        {{ ucfirst($payment_status) }}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        @else
+                                            <p class="text-xs text-base-content/50 italic">No room selected</p>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                    </div>
+                        </x-slot:selection>
+                    </x-booking.booking-summary>
                 </div>
             </div>
 
             <x-slot:actions>
-                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:justify-between">
-                    <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                        <x-button icon="o-arrow-left" label="Back"
-                            link="{{ route('admin.bookings.house.show', $booking->id) }}"
-                            class="btn-ghost w-full sm:w-auto" responsive />
-                    </div>
-                    <x-button icon="o-check" label="Update Booking" type="submit"
-                        class="btn-primary w-full sm:w-auto" spinner="update" responsive />
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:justify-end">
+                    <x-button icon="o-check" label="Update" type="submit" class="btn-primary w-full sm:w-auto"
+                        spinner="update" responsive />
                 </div>
             </x-slot:actions>
         </x-form>

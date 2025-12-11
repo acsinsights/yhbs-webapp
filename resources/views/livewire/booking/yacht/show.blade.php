@@ -19,8 +19,8 @@ new class extends Component {
     public function mount(Booking $booking): void
     {
         $this->booking = $booking->load(['bookingable', 'user']);
-        $this->payment_status = $booking->payment_status;
-        $this->payment_method = $booking->payment_method;
+        $this->payment_status = $booking->payment_status->value;
+        $this->payment_method = $booking->payment_method->value;
     }
 
     public function checkout(): void
@@ -36,7 +36,7 @@ new class extends Component {
     {
         $this->validate([
             'payment_status' => 'required|in:pending,paid,failed',
-            'payment_method' => 'required|in:cash,card,online',
+            'payment_method' => 'required|in:cash,card,online,other',
         ]);
 
         $this->booking->update([
@@ -93,8 +93,8 @@ new class extends Component {
         </x-slot:subtitle>
         <x-slot:actions>
             <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.yacht.index') }}"
-                class="btn-ghost" />
-            @if ($booking->status !== 'checked_out' && $booking->status !== 'cancelled')
+                class="btn-ghost btn-outline" />
+            @if ($booking->canBeEdited())
                 <x-button icon="o-pencil" label="Edit" link="{{ route('admin.bookings.yacht.edit', $booking->id) }}"
                     class="btn-primary" />
                 <x-button icon="o-x-circle" label="Cancel Booking" wire:click="$set('showCancelModal', true)"
@@ -118,15 +118,7 @@ new class extends Component {
                     </div>
                 </x-slot:title>
                 <x-slot:menu>
-                    <x-badge :value="ucfirst(str_replace('_', ' ', $booking->status))"
-                        class="badge-soft {{ match ($booking->status) {
-                            'pending' => 'badge-warning',
-                            'booked' => 'badge-primary',
-                            'checked_in' => 'badge-info',
-                            'cancelled' => 'badge-error',
-                            'checked_out' => 'badge-success',
-                            default => 'badge-ghost',
-                        } }}" />
+                    <x-badge :value="$booking->status->label()" class="{{ $booking->status->badgeColor() }}" />
                 </x-slot:menu>
 
                 <div class="space-y-4">
@@ -146,19 +138,19 @@ new class extends Component {
                             <div>
                                 <div class="text-sm text-base-content/50 mb-1">Departure</div>
                                 <div class="font-semibold">
-                                    {{ Carbon::parse($booking->check_in)->format('M d, Y') }}
+                                    {{ $booking->check_in->format('M d, Y') }}
                                 </div>
                                 <div class="text-xs text-base-content/50">
-                                    {{ Carbon::parse($booking->check_in)->format('h:i A') }}
+                                    {{ $booking->check_in->format('h:i A') }}
                                 </div>
                             </div>
                             <div>
                                 <div class="text-sm text-base-content/50 mb-1">Return</div>
                                 <div class="font-semibold">
-                                    {{ Carbon::parse($booking->check_out)->format('M d, Y') }}
+                                    {{ $booking->check_out->format('M d, Y') }}
                                 </div>
                                 <div class="text-xs text-base-content/50">
-                                    {{ Carbon::parse($booking->check_out)->format('h:i A') }}
+                                    {{ $booking->check_out->format('h:i A') }}
                                 </div>
                             </div>
                         </div>
@@ -166,8 +158,8 @@ new class extends Component {
 
                     @if ($booking->check_in && $booking->check_out)
                         @php
-                            $checkIn = Carbon::parse($booking->check_in);
-                            $checkOut = Carbon::parse($booking->check_out);
+                            $checkIn = $booking->check_in;
+                            $checkOut = $booking->check_out;
                             $days = round($checkIn->diffInDays($checkOut));
                             $durationText = $days . ' ' . ($days === 1 ? 'night' : 'nights');
                         @endphp
@@ -281,7 +273,7 @@ new class extends Component {
                     </div>
                 </x-slot:title>
                 <x-slot:menu>
-                    @if ($booking->status !== 'checked_out' && $booking->status !== 'cancelled')
+                    @if ($booking->canBeEdited())
                         <x-button icon="o-pencil" label="Update" wire:click="$set('showPaymentModal', true)"
                             class="btn-ghost btn-sm" />
                     @endif
@@ -294,17 +286,11 @@ new class extends Component {
                     </div>
                     <div>
                         <div class="text-sm text-base-content/50 mb-1">Payment Method</div>
-                        <x-badge :value="ucfirst($booking->payment_method)" class="badge-soft badge-info" />
+                        <x-badge :value="$booking->payment_method->label()" class="{{ $booking->payment_method->badgeColor() }}" />
                     </div>
                     <div>
                         <div class="text-sm text-base-content/50 mb-1">Payment Status</div>
-                        <x-badge :value="ucfirst($booking->payment_status)"
-                            class="badge-soft {{ match ($booking->payment_status) {
-                                'paid' => 'badge-success',
-                                'pending' => 'badge-warning',
-                                'failed' => 'badge-error',
-                                default => 'badge-ghost',
-                            } }}" />
+                        <x-badge :value="$booking->payment_status->label()" class="{{ $booking->payment_status->badgeColor() }}" />
                     </div>
                 </div>
             </x-card>
@@ -324,6 +310,7 @@ new class extends Component {
                 ['id' => 'cash', 'name' => 'Cash'],
                 ['id' => 'card', 'name' => 'Card'],
                 ['id' => 'online', 'name' => 'Online'],
+                ['id' => 'other', 'name' => 'Other'],
             ]" icon="o-banknotes" />
         </div>
 

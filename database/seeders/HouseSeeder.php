@@ -18,6 +18,14 @@ class HouseSeeder extends Seeder
                 'name' => 'Grand Luxury House',
                 'slug' => 'grand-luxury-house',
                 'description' => 'A luxurious 5-star house with world-class amenities and exceptional service.',
+                'house_number' => 'H001',
+                'is_active' => true,
+                'price_per_night' => 500.00,
+                'price_per_2night' => 950.00,
+                'price_per_3night' => 1350.00,
+                'additional_night_price' => 400.00,
+                'adults' => 10,
+                'children' => 5,
             ],
         ];
 

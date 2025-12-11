@@ -6,11 +6,12 @@ use Illuminate\View\View;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 use Livewire\Volt\Component;
+use Livewire\Attributes\Title;
 use App\Models\{Booking, Room, House};
 
 new class extends Component {
     use Toast, WithPagination;
-
+    #[Title('House Bookings')]
     #[Url]
     public string $search = '';
 
@@ -30,36 +31,20 @@ new class extends Component {
     {
         $view->bookings = Booking::query()
             ->where('bookingable_type', House::class)
-            ->with(['bookingable.house', 'user'])
+            ->with(['bookingable', 'user'])
             ->when($this->search, function ($query) {
                 return $query
                     ->whereHas('user', function ($q) {
                         $q->where('name', 'like', "%{$this->search}%")->orWhere('email', 'like', "%{$this->search}%");
                     })
                     ->orWhereHas('bookingable', function ($q) {
-                        $q->where('room_number', 'like', "%{$this->search}%");
-                    })
-                    ->orWhereHas('bookingable.house', function ($q) {
-                        $q->where('name', 'like', "%{$this->search}%");
+                        $q->where('name', 'like', "%{$this->search}%")->orWhere('house_number', 'like', "%{$this->search}%");
                     });
             })
             ->orderBy(...array_values($this->sortBy))
             ->paginate($this->perPage);
 
-        $view->headers = [
-            ['key' => 'id', 'label' => '#', 'class' => 'w-1'],
-            ['key' => 'user.name', 'label' => 'Customer', 'sortable' => false, 'class' => 'whitespace-nowrap'],
-            ['key' => 'house_name', 'label' => 'House', 'sortable' => false, 'class' => 'whitespace-nowrap'],
-            ['key' => 'room_number', 'label' => 'Room', 'sortable' => false, 'class' => 'w-32'],
-            ['key' => 'check_in', 'label' => 'Check In', 'sortable' => true, 'class' => 'whitespace-nowrap'],
-            ['key' => 'check_out', 'label' => 'Check Out', 'sortable' => true, 'class' => 'whitespace-nowrap'],
-            ['key' => 'adults', 'label' => 'Adults', 'sortable' => false, 'class' => 'whitespace-nowrap'],
-            ['key' => 'children', 'label' => 'Children', 'sortable' => false, 'class' => 'whitespace-nowrap'],
-            ['key' => 'price', 'label' => 'Amount', 'sortable' => true, 'class' => 'whitespace-nowrap'],
-            ['key' => 'payment_status', 'label' => 'Payment Status', 'class' => 'whitespace-nowrap'],
-            ['key' => 'payment_method', 'label' => 'Payment Method', 'class' => 'whitespace-nowrap'],
-            ['key' => 'status', 'label' => 'Status', 'class' => 'whitespace-nowrap'],
-        ];
+        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'user.name', 'label' => 'Customer', 'sortable' => false, 'class' => 'whitespace-nowrap'], ['key' => 'house_name', 'label' => 'House', 'sortable' => false, 'class' => 'whitespace-nowrap'], ['key' => 'check_in', 'label' => 'Check In', 'sortable' => true, 'class' => 'whitespace-nowrap'], ['key' => 'check_out', 'label' => 'Check Out', 'sortable' => true, 'class' => 'whitespace-nowrap'], ['key' => 'price', 'label' => 'Amount', 'sortable' => true, 'class' => 'whitespace-nowrap'], ['key' => 'payment_status', 'label' => 'Payment Status', 'class' => 'whitespace-nowrap'], ['key' => 'payment_method', 'label' => 'Payment Method', 'class' => 'whitespace-nowrap'], ['key' => 'status', 'label' => 'Status', 'class' => 'whitespace-nowrap']];
     }
 }; ?>
 
@@ -71,15 +56,15 @@ new class extends Component {
                 'icon' => 's-home',
             ],
             [
-                'label' => 'Room Bookings',
+                'label' => 'House Bookings',
                 'icon' => 'o-building-office',
             ],
         ];
     @endphp
 
-    <x-header title="Room Bookings" separator>
+    <x-header title="House Bookings" separator>
         <x-slot:subtitle>
-            <p class="text-sm text-base-content/50 mb-2">Manage all house room bookings</p>
+            <p class="text-sm text-base-content/50 mb-2">Manage all house bookings</p>
             <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
         </x-slot:subtitle>
         <x-slot:actions>
@@ -97,36 +82,20 @@ new class extends Component {
             @endscope
 
             @scope('cell_house_name', $booking)
-                @if ($booking->bookingable && $booking->bookingable->house)
-                    <div class="flex gap-2 items-center">
-                        <x-button tooltip="View House Details"
-                            link="{{ route('admin.houses.edit', $booking->bookingable->house->id) }}"
-                            class="btn-ghost btn-sm">
-                            <x-icon name="o-building-office-2" class="w-4 h-4" />
-                            <span class="font-semibold">{{ $booking->bookingable->house->name }}</span>
-                        </x-button>
-                    </div>
-                @else
-                    <span class="text-base-content/50">—</span>
-                @endif
-            @endscope
-
-            @scope('cell_room_number', $booking)
-                @if ($booking->bookingable)
-                    <div class="flex gap-2 items-center">
-                        <x-badge value="{{ $booking->bookingable->room_number }}" class="badge-soft badge-primary" />
-                    </div>
-                @else
-                    <span class="text-base-content/50">—</span>
-                @endif
+                <div class="flex gap-2 items-center">
+                    <x-button tooltip="View House Details"
+                        link="{{ route('admin.houses.edit', $booking->bookingable->id) }}" class="btn-ghost btn-sm">
+                        <x-icon name="o-building-office-2" class="w-4 h-4" />
+                        <span class="font-semibold">{{ $booking->bookingable->name }}</span>
+                    </x-button>
+                </div>
             @endscope
 
             @scope('cell_check_in', $booking)
                 @if ($booking->check_in)
                     <div class="flex flex-col">
-                        <span>{{ Carbon::parse($booking->check_in)->format('M d, Y') }}</span>
-                        <span
-                            class="text-xs text-base-content/50">{{ Carbon::parse($booking->check_in)->format('h:i A') }}</span>
+                        <span>{{ $booking->check_in->format('M d, Y') }}</span>
+                        <span class="text-xs text-base-content/50">{{ $booking->check_in->format('h:i A') }}</span>
                     </div>
                 @else
                     <span class="text-base-content/50">—</span>
@@ -136,9 +105,8 @@ new class extends Component {
             @scope('cell_check_out', $booking)
                 @if ($booking->check_out)
                     <div class="flex flex-col">
-                        <span>{{ Carbon::parse($booking->check_out)->format('M d, Y') }}</span>
-                        <span
-                            class="text-xs text-base-content/50">{{ Carbon::parse($booking->check_out)->format('h:i A') }}</span>
+                        <span>{{ $booking->check_out->format('M d, Y') }}</span>
+                        <span class="text-xs text-base-content/50">{{ $booking->check_out->format('h:i A') }}</span>
                     </div>
                 @else
                     <span class="text-base-content/50">—</span>
@@ -160,43 +128,25 @@ new class extends Component {
             @endscope
 
             @scope('cell_payment_status', $booking)
-                @php
-                    $statusColors = [
-                        'paid' => 'badge-success',
-                        'pending' => 'badge-warning',
-                        'failed' => 'badge-error',
-                    ];
-                    $color = $statusColors[$booking->payment_status] ?? 'badge-ghost';
-                @endphp
-                <x-badge :value="ucfirst($booking->payment_status)" class="badge-soft {{ $color }}" />
+                <x-badge :value="$booking->payment_status->label()" class="{{ $booking->payment_status->badgeColor() }}" />
             @endscope
 
             @scope('cell_payment_method', $booking)
-                <x-badge :value="ucfirst($booking->payment_method)" class="badge-soft badge-info" />
+                <x-badge :value="$booking->payment_method->label()" class="{{ $booking->payment_method->badgeColor() }}" />
             @endscope
 
             @scope('cell_status', $booking)
-                @php
-                    $statusColors = [
-                        'pending' => 'badge-warning',
-                        'booked' => 'badge-primary',
-                        'checked_in' => 'badge-info',
-                        'cancelled' => 'badge-error',
-                        'checked_out' => 'badge-success',
-                    ];
-                    $color = $statusColors[$booking->status] ?? 'badge-ghost';
-                @endphp
-                <x-badge :value="ucfirst(str_replace('_', ' ', $booking->status))" class="badge-soft {{ $color }}" />
+                <x-badge :value="$booking->status->label()" class="{{ $booking->status->badgeColor() }}" />
             @endscope
 
             @scope('actions', $booking)
-                <div class="flex items-center gap-2">
-                    <x-button icon="o-eye" link="{{ route('admin.bookings.house.show', $booking->id) }}"
-                        class="btn-ghost btn-sm" tooltip="View Details" />
-                    @if ($booking->status !== 'checked_out' && $booking->status !== 'cancelled')
+                <div class="flex items-center gap-2 justify-end">
+                    @if ($booking->canBeEdited())
                         <x-button icon="o-pencil" link="{{ route('admin.bookings.house.edit', $booking->id) }}"
                             class="btn-ghost btn-sm" tooltip="Edit" />
                     @endif
+                    <x-button icon="o-eye" link="{{ route('admin.bookings.house.show', $booking->id) }}"
+                        class="btn-ghost btn-sm" tooltip="View Details" />
                     <x-button icon="o-trash" wire:click="delete({{ $booking->id }})"
                         wire:confirm="Are you sure you want to delete this booking?" spinner
                         class="btn-ghost btn-sm text-error" tooltip="Delete" />

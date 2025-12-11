@@ -339,101 +339,18 @@ new class extends Component {
                 <div class="grid gap-6 lg:grid-cols-3">
                     <div class="space-y-6 lg:col-span-2">
                         {{-- Date Range Section --}}
-                        <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 1</p>
-                                    <h3 class="text-xl font-semibold text-base-content mt-1">Charter Dates</h3>
-                                    <p class="text-sm text-base-content/60 mt-1">Select your departure and return dates
-                                    </p>
-                                </div>
-                                <x-icon name="o-calendar" class="w-8 h-8 text-primary/70" />
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                                <x-input wire:model.live.debounce.300ms="check_in" label="Departure"
-                                    type="datetime-local" icon="o-calendar" :min="$minDepartureDate"
-                                    hint="Departure must be today or later" />
-                                <x-input wire:model.live.debounce.300ms="check_out" label="Return" type="datetime-local"
-                                    icon="o-calendar" :min="$check_in" hint="Return must be after departure" />
-                            </div>
-                        </div>
+                        <x-booking.date-range-section stepNumber="1" checkInLabel="Departure" checkOutLabel="Return"
+                            checkInHint="Departure must be today or later" checkOutHint="Return must be after departure"
+                            :minCheckInDate="$minDepartureDate" />
 
                         {{-- Customer Section --}}
-                        <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
-                            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                                <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 2</p>
-                                    <h3 class="text-xl font-semibold text-base-content mt-1">Customer Details</h3>
-                                    <p class="text-sm text-base-content/60 mt-1">Select or create a customer for this
-                                        booking
-                                    </p>
-                                </div>
-                                <x-button type="button" icon="o-plus" label="New Customer"
-                                    @click="$wire.createCustomerModal = true" class="btn-sm btn-primary" />
-                            </div>
-
-                            <div class="mt-6">
-                                <x-choices-offline wire:model.live="user_id" label="Select Customer"
-                                    placeholder="Choose a customer" :options="$customers" icon="o-user"
-                                    hint="Select existing customer or create a new one" single clearable searchable>
-                                    @scope('item', $customer)
-                                        <div
-                                            class="flex items-center gap-3 p-2 rounded-lg hover:bg-base-200/50 transition-colors">
-                                            <div class="shrink-0">
-                                                <div
-                                                    class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor"
-                                                        viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
-                                                        </path>
-                                                    </svg>
-                                                </div>
-                                            </div>
-                                            <div class="flex-1 min-w-0">
-                                                <div class="font-semibold text-base mb-1 truncate">{{ $customer->name }}
-                                                </div>
-                                                <div class="text-xs text-base-content/60 flex items-center gap-1">
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
-                                                        viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
-                                                        </path>
-                                                    </svg>
-                                                    <span class="truncate">{{ $customer->email }}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endscope
-                                    @scope('selection', $customer)
-                                        {{ $customer->name }}
-                                    @endscope
-                                </x-choices-offline>
-                            </div>
-                        </div>
+                        <x-booking.customer-section stepNumber="2" :customers="$customers" />
 
                         {{-- Guest Details Section --}}
-                        <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 3</p>
-                                    <h3 class="text-xl font-semibold text-base-content mt-1">Guest Details</h3>
-                                    <p class="text-sm text-base-content/60 mt-1">Number of guests for this charter</p>
-                                </div>
-                                <x-icon name="o-user-group" class="w-8 h-8 text-primary/70" />
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                                <x-input wire:model.live.debounce.300ms="adults" label="Adults" type="number"
-                                    min="1" icon="o-user-group" />
-                                <x-input wire:model.live.debounce.300ms="children" label="Children" type="number"
-                                    min="0" icon="o-face-smile" />
-                            </div>
-                        </div>
+                        <x-booking.guest-section stepNumber="3" />
 
                         {{-- Yacht Selection Section --}}
-                        <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
+                        <x-card class="bg-base-200">
                             <div class="flex items-start justify-between gap-3">
                                 <div>
                                     <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 4</p>
@@ -461,7 +378,7 @@ new class extends Component {
                                     {{-- Loading Indicator --}}
                                     <div wire:loading wire:target="check_in,check_out,adults,children,yacht_search"
                                         class="flex items-center gap-2 text-primary">
-                                        <span class="loading loading-spinner loading-sm"></span>
+                                        <x-loading class="loading-dots" />
                                         <span>Loading yachts...</span>
                                     </div>
 
@@ -504,7 +421,7 @@ new class extends Component {
                                     <div
                                         class="flex items-center justify-center py-12 bg-base-200/50 rounded-xl border-2 border-dashed border-base-300">
                                         <div class="text-center">
-                                            <span class="loading loading-spinner loading-lg text-primary"></span>
+                                            <x-loading class="loading-dots" />
                                             <p class="mt-4 text-sm text-base-content/70">Filtering available yachts...
                                             </p>
                                         </div>
@@ -689,196 +606,56 @@ new class extends Component {
                                     </div>
                                 </x-alert>
                             @endif
-                        </div>
+                        </x-card>
 
                         {{-- Payment Section --}}
-                        <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 5</p>
-                                    <h3 class="text-xl font-semibold text-base-content mt-1">Payment Details</h3>
-                                    <p class="text-sm text-base-content/60 mt-1">Payment information for this booking
-                                    </p>
-                                </div>
-                                <x-icon name="o-credit-card" class="w-8 h-8 text-primary/70" />
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                                <x-input wire:model.live.debounce.500ms="amount" wire:change="$wire.updatedAmount()"
-                                    label="Amount" type="number" step="0.01" min="0" max="999999999.99"
-                                    icon="o-currency-dollar"
-                                    hint="Total charter amount (auto-filled from yacht price, max: 999,999,999.99)" />
-                                <x-select wire:model.live="payment_method" label="Payment Method" :options="[['id' => 'cash', 'name' => 'Cash'], ['id' => 'card', 'name' => 'Card']]"
-                                    option-value="id" option-label="name" icon="o-credit-card" />
-                                <x-select wire:model.live="payment_status" label="Payment Status" :options="[
-                                    ['id' => 'paid', 'name' => 'Paid'],
-                                    ['id' => 'pending', 'name' => 'Pending'],
-                                ]"
-                                    option-value="id" option-label="name" icon="o-check-circle" />
-                            </div>
-                        </div>
+                        <x-booking.payment-section stepNumber="5" />
 
                         {{-- Notes Section --}}
-                        <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 6</p>
-                                    <h3 class="text-xl font-semibold text-base-content mt-1">Additional Notes</h3>
-                                    <p class="text-sm text-base-content/60 mt-1">Any special requests or additional
-                                        information</p>
-                                </div>
-                                <x-icon name="o-document-text" class="w-8 h-8 text-primary/70" />
-                            </div>
-                            <div class="mt-6">
-                                <x-textarea wire:model="notes" label="Notes"
-                                    placeholder="Additional notes (optional)" icon="o-document-text"
-                                    rows="3" />
-                            </div>
-                        </div>
+                        <x-booking.notes-section stepNumber="6" />
                     </div>
 
                     {{-- Summary Column --}}
+                    @php
+                        $selectedYacht =
+                            $availableYachtes->firstWhere('id', $yacht_id) ??
+                            ($yacht_id ? Yacht::find($yacht_id) : null);
+                        $checkInDate = $check_in ? \Carbon\Carbon::parse($check_in) : null;
+                        $checkOutDate = $check_out ? \Carbon\Carbon::parse($check_out) : null;
+                    @endphp
+
+                    <x-booking.booking-summary :adults="$adults" :children="$children" :checkInDate="$checkInDate" :checkOutDate="$checkOutDate"
+                        checkInLabel="Departure" checkOutLabel="Return" windowLabel="Charter Window"
+                        :amount="$amount" :paymentMethod="$payment_method" :paymentStatus="$payment_status">
+                        <x-slot:selection>
+                            {{-- Selected Yacht --}}
+                            <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
+                                <div class="flex items-start gap-2">
+                                    <div
+                                        class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                                        <x-icon name="o-sparkles" class="w-4 h-4 text-primary" />
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-xs font-semibold text-base-content/60 mb-0.5">Selected Yacht</p>
+                                        @if ($selectedYacht)
+                                            <p class="text-xs font-bold text-base-content line-clamp-1">
+                                                {{ $selectedYacht->name }}</p>
+                                            @if ($selectedYacht->sku)
+                                                <p class="text-xs text-base-content/60 font-mono">SKU:
+                                                    {{ $selectedYacht->sku }}</p>
+                                            @endif
+                                        @else
+                                            <p class="text-xs text-base-content/50 italic">No yacht selected</p>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </x-slot:selection>
+                    </x-booking.booking-summary>
+
                     <div class="space-y-6">
-                        @php
-                            $selectedYacht =
-                                $availableYachtes->firstWhere('id', $yacht_id) ??
-                                ($yacht_id ? Yacht::find($yacht_id) : null);
-                        @endphp
-                        <div
-                            class="rounded-2xl border border-base-300/80 bg-gradient-to-br from-base-100 to-base-200/50 p-4 shadow-lg sticky top-24 backdrop-blur-sm">
-                            <div class="flex items-center justify-between mb-4 pb-3 border-b border-base-300/60">
-                                <div>
-                                    <p class="text-xs uppercase tracking-wider text-primary font-bold">Live Summary</p>
-                                    <h4 class="text-lg font-bold text-base-content">Booking Overview</h4>
-                                </div>
-                                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                                    <x-icon name="o-clipboard-document-check" class="w-5 h-5 text-primary" />
-                                </div>
-                            </div>
-
-                            <div class="space-y-2.5">
-                                {{-- Charter Window --}}
-                                <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
-                                    <div class="flex items-start gap-2">
-                                        <div
-                                            class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                                            <x-icon name="o-calendar" class="w-4 h-4 text-primary" />
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <p class="text-xs font-semibold text-base-content/60 mb-1">Charter Window
-                                            </p>
-                                            @if ($check_in && $check_out)
-                                                <div class="space-y-1 flex justify-between">
-                                                    <div>
-                                                        <p class="text-xs font-semibold text-primary mb-0.5">Departure
-                                                        </p>
-                                                        <p class="text-xs font-semibold text-base-content">
-                                                            {{ \Carbon\Carbon::parse($check_in)->format('M d, Y') }} |
-                                                            {{ \Carbon\Carbon::parse($check_in)->format('g:i A') }}
-                                                        </p>
-                                                    </div>
-                                                    <div>
-                                                        <p class="text-xs font-semibold text-primary mb-0.5">Return</p>
-                                                        <p class="text-xs font-semibold text-base-content">
-                                                            {{ \Carbon\Carbon::parse($check_out)->format('M d, Y') }} |
-                                                            {{ \Carbon\Carbon::parse($check_out)->format('g:i A') }}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            @else
-                                                <p class="text-xs text-base-content/50 italic">Select dates</p>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Guests --}}
-                                <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
-                                    <div class="flex items-center gap-2">
-                                        <div
-                                            class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                                            <x-icon name="o-user-group" class="w-4 h-4 text-primary" />
-                                        </div>
-                                        <div class="flex-1">
-                                            <p class="text-xs font-semibold text-base-content/60 mb-0.5">Guests</p>
-                                            <p class="text-sm font-bold text-base-content">
-                                                {{ $adults + $children }}
-                                                <span class="text-xs font-normal text-base-content/70">
-                                                    ({{ $adults }}A{{ $children > 0 ? ', ' . $children . 'C' : '' }})
-                                                </span>
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Selected Yacht --}}
-                                <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
-                                    <div class="flex items-start gap-2">
-                                        <div
-                                            class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                                            <x-icon name="o-sparkles" class="w-4 h-4 text-primary" />
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <p class="text-xs font-semibold text-base-content/60 mb-0.5">Selected Yacht
-                                            </p>
-                                            @if ($selectedYacht)
-                                                <p class="text-xs font-bold text-base-content line-clamp-1">
-                                                    {{ $selectedYacht->name }}</p>
-                                                @if ($selectedYacht->sku)
-                                                    <p class="text-xs text-base-content/60 font-mono">SKU:
-                                                        {{ $selectedYacht->sku }}</p>
-                                                @endif
-                                            @else
-                                                <p class="text-xs text-base-content/50 italic">No yacht selected</p>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Amount --}}
-                                <div class="bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg p-2.5 border-2 border-primary/20"
-                                    wire:key="summary-amount-{{ $amount }}">
-                                    <div class="flex items-center gap-2">
-                                        <div
-                                            class="w-7 h-7 rounded-md bg-primary/20 flex items-center justify-center shrink-0">
-                                            <x-icon name="o-currency-dollar" class="w-4 h-4 text-primary" />
-                                        </div>
-                                        <div class="flex-1">
-                                            <p class="text-xs font-semibold text-primary/80 mb-0.5">Total Amount</p>
-                                            <p class="text-lg font-bold text-primary">
-                                                {{ $amount ? currency_format($amount) : '—' }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Payment Details --}}
-                                <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
-                                    <div class="flex items-start gap-2">
-                                        <div
-                                            class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                                            <x-icon name="o-credit-card" class="w-4 h-4 text-primary" />
-                                        </div>
-                                        <div class="flex-1">
-                                            <p class="text-xs font-semibold text-base-content/60 mb-1.5">Payment</p>
-                                            <div class="space-y-1">
-                                                <div class="flex items-center justify-between">
-                                                    <span class="text-xs text-base-content/70">Method</span>
-                                                    <span
-                                                        class="text-xs font-semibold text-base-content capitalize">{{ $payment_method }}</span>
-                                                </div>
-                                                <div class="flex items-center justify-between">
-                                                    <span class="text-xs text-base-content/70">Status</span>
-                                                    <span
-                                                        class="px-2 py-0.5 text-xs font-semibold rounded-full {{ $payment_status === 'paid' ? 'bg-success/20 text-success border border-success/30' : 'bg-warning/20 text-warning border border-warning/30' }}">
-                                                        {{ ucfirst($payment_status) }}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mt-6 p-4 rounded-xl bg-base-200/80 border border-dashed border-base-300">
+                        <x-card class="bg-base-200 p-4 sticky top-[450px] backdrop-blur-sm">
+                            <div class="p-4 rounded-xl bg-base-200/80 border border-dashed border-base-300">
                                 <p class="text-xs uppercase tracking-wide text-base-content/60">Checklist</p>
                                 <ul class="mt-2 space-y-2 text-sm">
                                     <li class="flex items-center gap-2" wire:key="checklist-customer">
@@ -923,21 +700,16 @@ new class extends Component {
                                 <p class="text-sm text-base-content/60 mt-1">Use the notes section to capture special
                                     requests, catering preferences, or transfer details so the crew is prepared.</p>
                             </div>
-                        </div>
+                        </x-card>
 
                     </div>
                 </div>
             </div>
 
             <x-slot:actions>
-                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:justify-between">
-                    <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                        <x-button icon="o-arrow-left" label="Back"
-                            link="{{ route('admin.bookings.yacht.index') }}" class="btn-ghost w-full sm:w-auto"
-                            responsive />
-                        <x-button icon="o-arrow-path" label="Reset Form" type="button" wire:click="resetForm"
-                            class="btn-outline w-full sm:w-auto" responsive />
-                    </div>
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:justify-end">
+                    <x-button icon="o-arrow-path" label="Reset Form" type="button" wire:click="resetForm"
+                        class="btn-outline w-full sm:w-auto" responsive />
                     <x-button icon="o-check" label="Create Booking" type="submit"
                         class="btn-primary w-full sm:w-auto" spinner="store" responsive />
                 </div>
@@ -946,23 +718,5 @@ new class extends Component {
     </x-card>
 
     {{-- Create Customer Modal --}}
-    <x-modal wire:model="createCustomerModal" title="Create New Customer" class="backdrop-blur" max-width="md">
-        <x-form wire:submit="createCustomer">
-            <div class="space-y-4">
-                <x-input wire:model="customer_name" label="Customer Name" placeholder="Enter customer name"
-                    icon="o-user" hint="Full name of the customer" />
-                <x-input wire:model="customer_email" label="Email" type="email" placeholder="Enter email address"
-                    icon="o-envelope" hint="Unique email address" />
-            </div>
-
-            <x-slot:actions>
-                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-                    <x-button icon="o-x-mark" label="Cancel" @click="$wire.createCustomerModal = false"
-                        class="btn-ghost w-full sm:w-auto" responsive />
-                    <x-button icon="o-check" label="Create Customer" type="submit"
-                        class="btn-primary w-full sm:w-auto" spinner="createCustomer" responsive />
-                </div>
-            </x-slot:actions>
-        </x-form>
-    </x-modal>
+    <x-booking.create-customer-modal />
 </div>

@@ -190,7 +190,7 @@
         </x-slot:content>
     </x-main>
     <x-toast />
-    @stack('scripts')
+    @yield('scripts')
 </body>
 
 </html>

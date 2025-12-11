@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class House extends Model
 {
@@ -15,6 +16,12 @@ class House extends Model
         'is_active',
         'image',
         'description',
+        'price_per_night',
+        'price_per_2night',
+        'price_per_3night',
+        'additional_night_price',
+        'adults',
+        'children',
         'library',
     ];
 
@@ -28,6 +35,14 @@ class House extends Model
     public function rooms(): HasMany
     {
         return $this->hasMany(Room::class);
+    }
+
+    /**
+     * Get bookings for this house.
+     */
+    public function bookings(): MorphMany
+    {
+        return $this->morphMany(Booking::class, 'bookingable');
     }
 
     /**
@@ -47,16 +62,11 @@ class House extends Model
         return $query->whereDoesntHave('rooms.bookings', function ($q) use ($checkIn, $checkOut) {
             $q->where(function ($query) use ($checkIn, $checkOut) {
                 // Check if any booking overlaps with the date range
-                $query->where(function ($q) use ($checkIn, $checkOut) {
-                    $q->whereBetween('check_in', [$checkIn, $checkOut])
-                        ->orWhereBetween('check_out', [$checkIn, $checkOut])
-                        ->orWhere(function ($q) use ($checkIn, $checkOut) {
-                            $q->where('check_in', '<=', $checkIn)
-                                ->where('check_out', '>=', $checkOut);
-                        });
-                })
-                    ->whereIn('status', ['pending', 'booked', 'checked_in']); // Only consider active bookings
-            });
+                // Two ranges overlap if: booking_check_in < new_check_out AND booking_check_out > new_check_in
+                $query->where('check_in', '<', $checkOut)
+                    ->where('check_out', '>', $checkIn);
+            })
+                ->whereIn('status', ['pending', 'booked', 'checked_in']); // Only consider active bookings
         })->whereHas('rooms'); // Ensure the house has at least one room
     }
 }

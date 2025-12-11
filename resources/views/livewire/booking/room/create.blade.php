@@ -26,6 +26,10 @@ new class extends Component {
     public int $children = 0;
     public ?float $amount = null;
     public bool $amountManuallySet = false;
+    public ?float $calculatedAmount = null;
+    public ?float $baseNightCharge = null;
+    public ?int $additionalNights = null;
+    public ?float $additionalNightRate = null;
     public string $payment_method = 'cash';
     public string $payment_status = 'pending';
     public ?string $notes = null;
@@ -43,9 +47,6 @@ new class extends Component {
     {
         $this->resetPage();
         $this->room_id = null;
-        if (!$this->amountManuallySet) {
-            $this->amount = null;
-        }
 
         // Validate that check_in is not in the past
         if ($this->check_in) {
@@ -68,15 +69,17 @@ new class extends Component {
                 $this->check_out = $checkIn->copy()->addHour()->format('Y-m-d\TH:i');
             }
         }
+
+        // Recalculate price when dates change
+        if (!$this->amountManuallySet) {
+            $this->calculatePrice();
+        }
     }
 
     public function updatedCheckOut(): void
     {
         $this->resetPage();
         $this->room_id = null;
-        if (!$this->amountManuallySet) {
-            $this->amount = null;
-        }
 
         // Validate that check_out is after check_in
         if ($this->check_in && $this->check_out) {
@@ -87,6 +90,11 @@ new class extends Component {
                 $this->error('Check-out date and time must be after check-in date and time.');
                 $this->check_out = $checkIn->copy()->addHour()->format('Y-m-d\TH:i');
             }
+        }
+
+        // Recalculate price when dates change
+        if (!$this->amountManuallySet) {
+            $this->calculatePrice();
         }
     }
 
@@ -99,14 +107,52 @@ new class extends Component {
     {
         // When room changes, reset the manual flag so new price can auto-fill
         $this->amountManuallySet = false;
+        $this->calculatePrice();
+    }
 
-        if ($this->room_id) {
+    public function calculatePrice(): void
+    {
+        if ($this->room_id && $this->check_in && $this->check_out) {
             $room = Room::find($this->room_id);
             if ($room) {
-                $price = $room->discount_price ?? $room->price_per_night;
-                $newAmount = $price !== null ? (float) $price : null;
-                $this->amount = $newAmount;
-                // Force update to ensure Live Summary refreshes
+                $checkIn = Carbon::parse($this->check_in);
+                $checkOut = Carbon::parse($this->check_out);
+                $nights = (int) $checkIn->diffInDays($checkOut);
+
+                // Calculate price based on number of nights
+                if ($nights == 1) {
+                    $this->calculatedAmount = round((float) $room->price_per_night, 2);
+                    $this->amount = $this->calculatedAmount;
+                    $this->baseNightCharge = null;
+                    $this->additionalNights = null;
+                    $this->additionalNightRate = null;
+                } elseif ($nights == 2) {
+                    $this->calculatedAmount = round((float) $room->price_per_2night, 2);
+                    $this->amount = $this->calculatedAmount;
+                    $this->baseNightCharge = null;
+                    $this->additionalNights = null;
+                    $this->additionalNightRate = null;
+                } elseif ($nights == 3) {
+                    $this->calculatedAmount = round((float) $room->price_per_3night, 2);
+                    $this->amount = $this->calculatedAmount;
+                    $this->baseNightCharge = null;
+                    $this->additionalNights = null;
+                    $this->additionalNightRate = null;
+                } elseif ($nights > 3) {
+                    $this->additionalNights = $nights - 3;
+                    $this->baseNightCharge = round((float) $room->price_per_3night, 2);
+                    $this->additionalNightRate = round((float) $room->additional_night_price, 2);
+                    $this->calculatedAmount = round($this->baseNightCharge + $this->additionalNights * $this->additionalNightRate, 2);
+                    $this->amount = $this->calculatedAmount;
+                } else {
+                    // For 0 or invalid nights, use 1 night price
+                    $this->calculatedAmount = round((float) $room->price_per_night, 2);
+                    $this->amount = $this->calculatedAmount;
+                    $this->baseNightCharge = null;
+                    $this->additionalNights = null;
+                    $this->additionalNightRate = null;
+                }
+
                 $this->dispatch('amount-updated');
             } else {
                 $this->amount = null;
@@ -114,8 +160,10 @@ new class extends Component {
             }
         } else {
             // Reset amount when room selection is cleared
-            $this->amount = null;
-            $this->dispatch('amount-updated');
+            if (!$this->amountManuallySet) {
+                $this->amount = null;
+                $this->dispatch('amount-updated');
+            }
         }
     }
 
@@ -262,6 +310,10 @@ new class extends Component {
 
         $view->customers = User::role(RolesEnum::CUSTOMER->value)->orderBy('name')->get();
 
+        // Pass parsed dates to view
+        $view->checkInDate = $checkIn;
+        $view->checkOutDate = $checkOut;
+
         // Set minimum date for check-in (current date/time)
         $view->minCheckInDate = Carbon::now()->format('Y-m-d\TH:i');
     }
@@ -291,7 +343,7 @@ new class extends Component {
         </x-slot:subtitle>
         <x-slot:actions>
             <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.house.index') }}"
-                class="btn-ghost" />
+                class="btn-ghost btn-outline" />
         </x-slot:actions>
     </x-header>
 
@@ -301,100 +353,12 @@ new class extends Component {
                 <div class="grid gap-6 lg:grid-cols-3">
                     <div class="space-y-6 lg:col-span-2">
                         {{-- Date Range Section --}}
-                        <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 1</p>
-                                    <h3 class="text-xl font-semibold text-base-content mt-1">Booking Dates</h3>
-                                    <p class="text-sm text-base-content/60 mt-1">Select your check-in and check-out
-                                        dates
-                                    </p>
-                                </div>
-                                <x-icon name="o-calendar" class="w-8 h-8 text-primary/70" />
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                                <x-input wire:model.live.debounce.300ms="check_in" label="Check In"
-                                    type="datetime-local" icon="o-calendar" :min="$minCheckInDate"
-                                    hint="Check-in must be today or later" />
-                                <x-input wire:model.live.debounce.300ms="check_out" label="Check Out"
-                                    type="datetime-local" icon="o-calendar" :min="$check_in"
-                                    hint="Check-out must be after check-in" />
-                            </div>
-                        </div>
-
+                        <x-booking.date-range-section stepNumber="1" :minCheckInDate="$minCheckInDate" />
                         {{-- Customer Section --}}
-                        <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
-                            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                                <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 2</p>
-                                    <h3 class="text-xl font-semibold text-base-content mt-1">Customer Details</h3>
-                                    <p class="text-sm text-base-content/60 mt-1">Select or create a customer for this
-                                        booking
-                                    </p>
-                                </div>
-                                <x-button type="button" icon="o-plus" label="New Customer"
-                                    @click="$wire.createCustomerModal = true" class="btn-sm btn-primary" />
-                            </div>
-
-                            <div class="mt-6">
-                                <x-choices-offline wire:model.live="user_id" label="Select Customer"
-                                    placeholder="Choose a customer" :options="$customers" icon="o-user"
-                                    hint="Select existing customer or create a new one" single clearable searchable>
-                                    @scope('item', $customer)
-                                        <div
-                                            class="flex items-center gap-3 p-2 rounded-lg hover:bg-base-200/50 transition-colors">
-                                            <div class="shrink-0">
-                                                <div
-                                                    class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor"
-                                                        viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
-                                                        </path>
-                                                    </svg>
-                                                </div>
-                                            </div>
-                                            <div class="flex-1 min-w-0">
-                                                <div class="font-semibold text-base mb-1 truncate">{{ $customer->name }}
-                                                </div>
-                                                <div class="text-xs text-base-content/60 flex items-center gap-1">
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
-                                                        viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
-                                                        </path>
-                                                    </svg>
-                                                    <span class="truncate">{{ $customer->email }}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endscope
-                                    @scope('selection', $customer)
-                                        {{ $customer->name }}
-                                    @endscope
-                                </x-choices-offline>
-                            </div>
-                        </div>
+                        <x-booking.customer-section stepNumber="2" :customers="$customers" />
 
                         {{-- Guest Details Section --}}
-                        <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 3</p>
-                                    <h3 class="text-xl font-semibold text-base-content mt-1">Guest Details</h3>
-                                    <p class="text-sm text-base-content/60 mt-1">Number of guests for this booking</p>
-                                </div>
-                                <x-icon name="o-user-group" class="w-8 h-8 text-primary/70" />
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                                <x-input wire:model.live.debounce.300ms="adults" label="Adults" type="number"
-                                    min="1" icon="o-user-group" />
-                                <x-input wire:model.live.debounce.300ms="children" label="Children" type="number"
-                                    min="0" icon="o-face-smile" />
-                            </div>
-                        </div>
+                        <x-booking.guest-section stepNumber="3" />
 
                         {{-- Room Selection Section --}}
                         <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
@@ -422,7 +386,7 @@ new class extends Component {
                                     {{-- Loading Indicator --}}
                                     <div wire:loading wire:target="check_in,check_out,room_search,perPage"
                                         class="flex items-center gap-2 text-primary">
-                                        <span class="loading loading-spinner loading-sm"></span>
+                                        <x-loading class="loading-dots" />
                                         <span>Loading rooms...</span>
                                     </div>
 
@@ -453,7 +417,7 @@ new class extends Component {
                                     <div
                                         class="flex items-center justify-center py-12 bg-base-200/50 rounded-xl border-2 border-dashed border-base-300">
                                         <div class="text-center">
-                                            <span class="loading loading-spinner loading-lg text-primary"></span>
+                                            <x-loading class="loading-dots" />
                                             <p class="mt-4 text-sm text-base-content/70">Filtering available rooms...
                                             </p>
                                         </div>
@@ -609,192 +573,125 @@ new class extends Component {
                         </div>
 
                         {{-- Payment Section --}}
-                        <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 5</p>
-                                    <h3 class="text-xl font-semibold text-base-content mt-1">Payment Details</h3>
-                                    <p class="text-sm text-base-content/60 mt-1">Payment information for this booking
-                                    </p>
-                                </div>
-                                <x-icon name="o-credit-card" class="w-8 h-8 text-primary/70" />
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                                <x-input wire:model.live.debounce.500ms="amount" wire:change="$wire.updatedAmount()"
-                                    label="Amount" type="number" step="0.01" min="0" max="999999999.99"
-                                    icon="o-currency-dollar"
-                                    hint="Total booking amount (auto-filled from room price, max: 999,999,999.99)" />
-                                <x-select wire:model.live="payment_method" label="Payment Method" :options="[['id' => 'cash', 'name' => 'Cash'], ['id' => 'card', 'name' => 'Card']]"
-                                    option-value="id" option-label="name" icon="o-credit-card" />
-                                <x-select wire:model.live="payment_status" label="Payment Status" :options="[
-                                    ['id' => 'paid', 'name' => 'Paid'],
-                                    ['id' => 'pending', 'name' => 'Pending'],
-                                ]"
-                                    option-value="id" option-label="name" icon="o-check-circle" />
-                            </div>
-                        </div>
+                        <x-booking.payment-section stepNumber="5" />
 
                         {{-- Notes Section --}}
-                        <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 6</p>
-                                    <h3 class="text-xl font-semibold text-base-content mt-1">Additional Notes</h3>
-                                    <p class="text-sm text-base-content/60 mt-1">Any special requests or additional
-                                        information</p>
-                                </div>
-                                <x-icon name="o-document-text" class="w-8 h-8 text-primary/70" />
-                            </div>
-                            <div class="mt-6">
-                                <x-textarea wire:model="notes" label="Notes"
-                                    placeholder="Additional notes (optional)" icon="o-document-text"
-                                    rows="3" />
-                            </div>
-                        </div>
+                        <x-booking.notes-section stepNumber="6" />
                     </div>
 
                     {{-- Summary Column --}}
-                    <div class="space-y-6">
-                        @php
-                            $selectedRoom =
-                                $availableRooms->firstWhere('id', $room_id) ?? ($room_id ? Room::find($room_id) : null);
-                        @endphp
-                        <div
-                            class="rounded-2xl border border-base-300/80 bg-gradient-to-br from-base-100 to-base-200/50 p-4 shadow-lg sticky top-24 backdrop-blur-sm">
-                            <div class="flex items-center justify-between mb-4 pb-3 border-b border-base-300/60">
-                                <div>
-                                    <p class="text-xs uppercase tracking-wider text-primary font-bold">Live Summary</p>
-                                    <h4 class="text-lg font-bold text-base-content">Booking Overview</h4>
-                                </div>
-                                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                                    <x-icon name="o-clipboard-document-check" class="w-5 h-5 text-primary" />
+                    @php
+                        $selectedRoom =
+                            $availableRooms->firstWhere('id', $room_id) ?? ($room_id ? Room::find($room_id) : null);
+                    @endphp
+
+                    <x-booking.booking-summary :adults="$adults" :children="$children" :checkInDate="$checkInDate" :checkOutDate="$checkOutDate"
+                        :amount="$amount" :paymentMethod="$payment_method" :paymentStatus="$payment_status">
+                        <x-slot:selection>
+                            {{-- Selected Room --}}
+                            <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
+                                <div class="flex items-start gap-2">
+                                    <div
+                                        class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                                        <x-icon name="o-home-modern" class="w-4 h-4 text-primary" />
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-xs font-semibold text-base-content/60 mb-0.5">Selected Room</p>
+                                        @if ($selectedRoom)
+                                            <p class="text-xs font-bold text-base-content line-clamp-1">
+                                                {{ $selectedRoom->room_number }}</p>
+                                            @if ($selectedRoom->house)
+                                                <p class="text-xs text-base-content/60">
+                                                    {{ $selectedRoom->house->name }}
+                                                </p>
+                                            @endif
+                                        @else
+                                            <p class="text-xs text-base-content/50 italic">No room selected</p>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
+                        </x-slot:selection>
 
-                            <div class="space-y-2.5">
-                                {{-- Booking Window --}}
+                        <x-slot:extraSections>
+                            {{-- Price Breakdown (for more than 3 nights) --}}
+                            @if ($baseNightCharge && $additionalNights && $additionalNightRate)
                                 <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
                                     <div class="flex items-start gap-2">
                                         <div
                                             class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                                            <x-icon name="o-calendar" class="w-4 h-4 text-primary" />
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <p class="text-xs font-semibold text-base-content/60 mb-1">Booking Window
-                                            </p>
-                                            @if ($check_in && $check_out)
-                                                <div class="space-y-1 flex justify-between">
-                                                    <div>
-                                                        <p class="text-xs font-semibold text-primary mb-0.5">Departure
-                                                        </p>
-                                                        <p class="text-xs font-semibold text-base-content">
-                                                            {{ \Carbon\Carbon::parse($check_in)->format('M d, Y') }} |
-                                                            {{ \Carbon\Carbon::parse($check_in)->format('g:i A') }}
-                                                        </p>
-                                                    </div>
-                                                    <div>
-                                                        <p class="text-xs font-semibold text-primary mb-0.5">Return</p>
-                                                        <p class="text-xs font-semibold text-base-content">
-                                                            {{ \Carbon\Carbon::parse($check_out)->format('M d, Y') }} |
-                                                            {{ \Carbon\Carbon::parse($check_out)->format('g:i A') }}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            @else
-                                                <p class="text-xs text-base-content/50 italic">Select dates</p>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Guests --}}
-                                <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
-                                    <div class="flex items-center gap-2">
-                                        <div
-                                            class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                                            <x-icon name="o-user-group" class="w-4 h-4 text-primary" />
+                                            <x-icon name="o-calculator" class="w-4 h-4 text-primary" />
                                         </div>
                                         <div class="flex-1">
-                                            <p class="text-xs font-semibold text-base-content/60 mb-0.5">Guests</p>
-                                            <p class="text-sm font-bold text-base-content">
-                                                {{ $adults + $children }}
-                                                <span class="text-xs font-normal text-base-content/70">
-                                                    ({{ $adults }}A{{ $children > 0 ? ', ' . $children . 'C' : '' }})
-                                                </span>
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Selected Room --}}
-                                <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
-                                    <div class="flex items-start gap-2">
-                                        <div
-                                            class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                                            <x-icon name="o-home-modern" class="w-4 h-4 text-primary" />
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <p class="text-xs font-semibold text-base-content/60 mb-0.5">Selected Room
-                                            </p>
-                                            @if ($selectedRoom)
-                                                <p class="text-xs font-bold text-base-content line-clamp-1">
-                                                    {{ $selectedRoom->room_number }}</p>
-                                                @if ($selectedRoom->house)
-                                                    <p class="text-xs text-base-content/60">
-                                                        {{ $selectedRoom->house->name }}
-                                                    </p>
-                                                @endif
-                                            @else
-                                                <p class="text-xs text-base-content/50 italic">No room selected</p>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Amount --}}
-                                <div class="bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg p-2.5 border-2 border-primary/20"
-                                    wire:key="summary-amount-{{ $amount }}">
-                                    <div class="flex items-center gap-2">
-                                        <div
-                                            class="w-7 h-7 rounded-md bg-primary/20 flex items-center justify-center shrink-0">
-                                            <x-icon name="o-currency-dollar" class="w-4 h-4 text-primary" />
-                                        </div>
-                                        <div class="flex-1">
-                                            <p class="text-xs font-semibold text-primary/80 mb-0.5">Total Amount</p>
-                                            <p class="text-lg font-bold text-primary">
-                                                {{ $amount ? currency_format($amount) : '—' }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Payment Details --}}
-                                <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
-                                    <div class="flex items-start gap-2">
-                                        <div
-                                            class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                                            <x-icon name="o-credit-card" class="w-4 h-4 text-primary" />
-                                        </div>
-                                        <div class="flex-1">
-                                            <p class="text-xs font-semibold text-base-content/60 mb-1.5">Payment</p>
+                                            <p class="text-xs font-semibold text-base-content/60 mb-1.5">Price
+                                                Breakdown</p>
                                             <div class="space-y-1">
                                                 <div class="flex items-center justify-between">
-                                                    <span class="text-xs text-base-content/70">Method</span>
+                                                    <span class="text-xs text-base-content/70">3 Night Charges</span>
                                                     <span
-                                                        class="text-xs font-semibold text-base-content capitalize">{{ $payment_method }}</span>
+                                                        class="text-xs font-semibold text-base-content">{{ currency_format($baseNightCharge) }}</span>
                                                 </div>
                                                 <div class="flex items-center justify-between">
-                                                    <span class="text-xs text-base-content/70">Status</span>
+                                                    <span class="text-xs text-base-content/70">Additional Night
+                                                        Charges</span>
                                                     <span
-                                                        class="px-2 py-0.5 text-xs font-semibold rounded-full {{ $payment_status === 'paid' ? 'bg-success/20 text-success border border-success/30' : 'bg-warning/20 text-warning border border-warning/30' }}">
-                                                        {{ ucfirst($payment_status) }}
-                                                    </span>
+                                                        class="text-xs font-semibold text-base-content">{{ $additionalNights }}
+                                                        × {{ currency_format($additionalNightRate) }}</span>
+                                                </div>
+                                                <div class="border-t border-base-300/50 pt-1 mt-1"></div>
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-xs font-semibold text-primary">Subtotal</span>
+                                                    <span
+                                                        class="text-xs font-bold text-primary">{{ currency_format($baseNightCharge + $additionalNights * $additionalNightRate) }}</span>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            @endif
+
+                            {{-- Discount (if amount manually lowered) --}}
+                            @if ($amountManuallySet && $calculatedAmount && $amount && $amount < $calculatedAmount)
+                                <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
+                                    <div class="flex items-start gap-2">
+                                        <div
+                                            class="w-7 h-7 rounded-md bg-success/10 flex items-center justify-center shrink-0">
+                                            <x-icon name="o-tag" class="w-4 h-4 text-success" />
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-xs font-semibold text-base-content/60 mb-0.5">Discount
+                                                Applied</p>
+                                            <p class="text-sm font-bold text-success">
+                                                - {{ currency_format($calculatedAmount - $amount) }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- Raised Amount (if amount manually increased) --}}
+                            @if ($amountManuallySet && $calculatedAmount && $amount && $amount > $calculatedAmount)
+                                <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
+                                    <div class="flex items-start gap-2">
+                                        <div
+                                            class="w-7 h-7 rounded-md bg-warning/10 flex items-center justify-center shrink-0">
+                                            <x-icon name="o-arrow-trending-up" class="w-4 h-4 text-warning" />
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-xs font-semibold text-base-content/60 mb-0.5">Raised By</p>
+                                            <p class="text-sm font-bold text-warning">
+                                                + {{ currency_format($amount - $calculatedAmount) }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                        </x-slot:extraSections>
+                    </x-booking.booking-summary>
+
+                    <div class="space-y-6">
+                        <div
+                            class="rounded-2xl border border-base-300/80 bg-gradient-to-br from-base-100 to-base-200/50 p-4 shadow-lg sticky top-[450px] backdrop-blur-sm">
                             <div class="mt-6 p-4 rounded-xl bg-base-200/80 border border-dashed border-base-300">
                                 <p class="text-xs uppercase tracking-wide text-base-content/60">Checklist</p>
                                 <ul class="mt-2 space-y-2 text-sm">
@@ -863,23 +760,5 @@ new class extends Component {
     </x-card>
 
     {{-- Create Customer Modal --}}
-    <x-modal wire:model="createCustomerModal" title="Create New Customer" class="backdrop-blur" max-width="md">
-        <x-form wire:submit="createCustomer">
-            <div class="space-y-4">
-                <x-input wire:model="customer_name" label="Customer Name" placeholder="Enter customer name"
-                    icon="o-user" hint="Full name of the customer" />
-                <x-input wire:model="customer_email" label="Email" type="email" placeholder="Enter email address"
-                    icon="o-envelope" hint="Unique email address" />
-            </div>
-
-            <x-slot:actions>
-                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-                    <x-button icon="o-x-mark" label="Cancel" @click="$wire.createCustomerModal = false"
-                        class="btn-ghost w-full sm:w-auto" responsive />
-                    <x-button icon="o-check" label="Create Customer" type="submit"
-                        class="btn-primary w-full sm:w-auto" spinner="createCustomer" responsive />
-                </div>
-            </x-slot:actions>
-        </x-form>
-    </x-modal>
+    <x-booking.create-customer-modal />
 </div>

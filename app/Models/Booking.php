@@ -3,8 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Enums\{BookingStatusEnum, PaymentMethodEnum, PaymentStatusEnum};
 
 class Booking extends Model
 {
@@ -30,7 +31,11 @@ class Booking extends Model
         'guest_details' => 'array',
         'check_in' => 'datetime',
         'check_out' => 'datetime',
+        'status' => BookingStatusEnum::class,
+        'payment_status' => PaymentStatusEnum::class,
+        'payment_method' => PaymentMethodEnum::class,
     ];
+
     /**
      * Get the parent bookingable model (room or yacht).
      */
@@ -45,5 +50,15 @@ class Booking extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Check if the booking can be edited.
+     */
+    public function canBeEdited(): bool
+    {
+        return $this->status !== BookingStatusEnum::CHECKED_OUT
+            && $this->status !== BookingStatusEnum::CANCELLED
+            && $this->payment_status !== PaymentStatusEnum::FAILED;
     }
 }

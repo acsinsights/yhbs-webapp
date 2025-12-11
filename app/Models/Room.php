@@ -79,16 +79,18 @@ class Room extends Model
         return $query->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
             $q->where(function ($query) use ($checkIn, $checkOut) {
                 // Check if new booking overlaps with existing bookings
-                $query->where(function ($q) use ($checkIn, $checkOut) {
-                    $q->whereBetween('check_in', [$checkIn, $checkOut])
-                        ->orWhereBetween('check_out', [$checkIn, $checkOut])
-                        ->orWhere(function ($q) use ($checkIn, $checkOut) {
-                            $q->where('check_in', '<=', $checkIn)
-                                ->where('check_out', '>=', $checkOut);
-                        });
-                })
-                    ->whereIn('status', ['pending', 'booked', 'checked_in']); // Only consider active bookings
-            });
+                // Two ranges overlap if: booking_check_in < new_check_out AND booking_check_out > new_check_in
+                $query->where('check_in', '<', $checkOut)
+                    ->where('check_out', '>', $checkIn);
+            })
+                ->whereIn('status', ['pending', 'booked', 'checked_in']); // Only consider active bookings
+        })->whereDoesntHave('house.bookings', function ($q) use ($checkIn, $checkOut) {
+            $q->where(function ($query) use ($checkIn, $checkOut) {
+                // Also check if the house that owns this room has bookings
+                $query->where('check_in', '<', $checkOut)
+                    ->where('check_out', '>', $checkIn);
+            })
+                ->whereIn('status', ['pending', 'booked', 'checked_in']);
         });
     }
 
