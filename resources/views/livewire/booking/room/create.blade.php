@@ -26,15 +26,20 @@ new class extends Component {
     public int $children = 0;
     public ?float $amount = null;
     public bool $amountManuallySet = false;
-    public ?float $calculatedAmount = null;
-    public ?float $baseNightCharge = null;
-    public ?int $additionalNights = null;
-    public ?float $additionalNightRate = null;
     public string $payment_method = 'cash';
     public string $payment_status = 'pending';
     public ?string $notes = null;
     public string $room_search = '';
     public int $perPage = 6;
+
+    // Price breakdown properties
+    public ?int $totalNights = null;
+    public ?float $calculatedAmount = null;
+    public ?float $baseCharges = null;
+    public ?int $additionalNights = null;
+    public ?float $additionalCharges = null;
+    public ?float $discount = null;
+    public ?float $raisedAmount = null;
 
     public function mount(): void
     {
@@ -105,66 +110,70 @@ new class extends Component {
 
     public function updatedRoomId(): void
     {
-        // When room changes, reset the manual flag so new price can auto-fill
+        // When room changes, calculate price based on nights
         $this->amountManuallySet = false;
-        $this->calculatePrice();
+
+        if ($this->room_id) {
+            $this->calculatePrice();
+        } else {
+            // Reset amount when room selection is cleared
+            $this->amount = null;
+            $this->calculatedAmount = null;
+            $this->baseCharges = null;
+            $this->additionalNights = null;
+            $this->additionalCharges = null;
+            $this->discount = null;
+            $this->raisedAmount = null;
+            $this->totalNights = null;
+            $this->dispatch('amount-updated');
+        }
     }
 
     public function calculatePrice(): void
     {
-        if ($this->room_id && $this->check_in && $this->check_out) {
-            $room = Room::find($this->room_id);
-            if ($room) {
-                $checkIn = Carbon::parse($this->check_in);
-                $checkOut = Carbon::parse($this->check_out);
-                $nights = (int) $checkIn->diffInDays($checkOut);
-
-                // Calculate price based on number of nights
-                if ($nights == 1) {
-                    $this->calculatedAmount = round((float) $room->price_per_night, 2);
-                    $this->amount = $this->calculatedAmount;
-                    $this->baseNightCharge = null;
-                    $this->additionalNights = null;
-                    $this->additionalNightRate = null;
-                } elseif ($nights == 2) {
-                    $this->calculatedAmount = round((float) $room->price_per_2night, 2);
-                    $this->amount = $this->calculatedAmount;
-                    $this->baseNightCharge = null;
-                    $this->additionalNights = null;
-                    $this->additionalNightRate = null;
-                } elseif ($nights == 3) {
-                    $this->calculatedAmount = round((float) $room->price_per_3night, 2);
-                    $this->amount = $this->calculatedAmount;
-                    $this->baseNightCharge = null;
-                    $this->additionalNights = null;
-                    $this->additionalNightRate = null;
-                } elseif ($nights > 3) {
-                    $this->additionalNights = $nights - 3;
-                    $this->baseNightCharge = round((float) $room->price_per_3night, 2);
-                    $this->additionalNightRate = round((float) $room->additional_night_price, 2);
-                    $this->calculatedAmount = round($this->baseNightCharge + $this->additionalNights * $this->additionalNightRate, 2);
-                    $this->amount = $this->calculatedAmount;
-                } else {
-                    // For 0 or invalid nights, use 1 night price
-                    $this->calculatedAmount = round((float) $room->price_per_night, 2);
-                    $this->amount = $this->calculatedAmount;
-                    $this->baseNightCharge = null;
-                    $this->additionalNights = null;
-                    $this->additionalNightRate = null;
-                }
-
-                $this->dispatch('amount-updated');
-            } else {
-                $this->amount = null;
-                $this->dispatch('amount-updated');
-            }
-        } else {
-            // Reset amount when room selection is cleared
-            if (!$this->amountManuallySet) {
-                $this->amount = null;
-                $this->dispatch('amount-updated');
-            }
+        if (!$this->room_id || !$this->check_in || !$this->check_out) {
+            return;
         }
+
+        $room = Room::find($this->room_id);
+        if (!$room) {
+            return;
+        }
+
+        $checkIn = Carbon::parse($this->check_in);
+        $checkOut = Carbon::parse($this->check_out);
+        $nights = $checkIn->diffInDays($checkOut);
+
+        if ($nights <= 0) {
+            return;
+        }
+
+        $this->totalNights = $nights;
+        $this->baseCharges = 0;
+        $this->additionalNights = 0;
+        $this->additionalCharges = 0;
+
+        // Calculate base charges based on nights
+        if ($nights == 1 && $room->price_per_night) {
+            $this->baseCharges = $room->price_per_night;
+        } elseif ($nights == 2 && $room->price_per_2night) {
+            $this->baseCharges = $room->price_per_2night;
+        } elseif ($nights == 3 && $room->price_per_3night) {
+            $this->baseCharges = $room->price_per_3night;
+        } elseif ($nights > 3 && $room->price_per_3night) {
+            // Use 3-night price + additional nights
+            $this->baseCharges = $room->price_per_3night;
+            $this->additionalNights = $nights - 3;
+            $this->additionalCharges = $this->additionalNights * ($room->additional_night_price ?? 0);
+        } else {
+            // Fallback: calculate based on price_per_night
+            $this->baseCharges = $nights * ($room->price_per_night ?? 0);
+        }
+
+        // Calculate total
+        $this->calculatedAmount = $this->baseCharges + $this->additionalCharges;
+        $this->amount = $this->calculatedAmount;
+        $this->dispatch('amount-updated');
     }
 
     public function updatedAmount(): void
@@ -183,6 +192,20 @@ new class extends Component {
                 $this->amount = 0;
             }
             $this->amountManuallySet = true;
+
+            // Calculate discount or raised amount if we have a calculated amount
+            if ($this->calculatedAmount !== null && $this->amount != $this->calculatedAmount) {
+                if ($this->amount < $this->calculatedAmount) {
+                    $this->discount = $this->calculatedAmount - $this->amount;
+                    $this->raisedAmount = null;
+                } else {
+                    $this->raisedAmount = $this->amount - $this->calculatedAmount;
+                    $this->discount = null;
+                }
+            } else {
+                $this->discount = null;
+                $this->raisedAmount = null;
+            }
         }
     }
 
@@ -316,6 +339,15 @@ new class extends Component {
 
         // Set minimum date for check-in (current date/time)
         $view->minCheckInDate = Carbon::now()->format('Y-m-d\TH:i');
+
+        // Pass breakdown data to view
+        $view->totalNights = $this->totalNights;
+        $view->baseCharges = $this->baseCharges;
+        $view->additionalNights = $this->additionalNights;
+        $view->additionalCharges = $this->additionalCharges;
+        $view->calculatedAmount = $this->calculatedAmount;
+        $view->discount = $this->discount;
+        $view->raisedAmount = $this->raisedAmount;
     }
 }; ?>
 
@@ -589,7 +621,9 @@ new class extends Component {
                     {{-- Summary Column --}}
                     <div class="sticky top-24">
                         <x-booking.booking-summary :adults="$adults" :children="$children" :checkInDate="$checkInDate"
-                            :checkOutDate="$checkOutDate" :amount="$amount" :paymentMethod="$payment_method" :paymentStatus="$payment_status">
+                            :checkOutDate="$checkOutDate" :amount="$amount" :paymentMethod="$payment_method" :paymentStatus="$payment_status" :showChecklist="true"
+                            :customerSelected="!!$user_id" :selectionSelected="!!$room_id" :selectionLabel="'Room'" :amountFilled="!!$amount"
+                            :paymentMethodSelected="!!$payment_method" :paymentStatusSelected="!!$payment_status">
                             <x-slot:selection>
                                 {{-- Selected Room --}}
                                 <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
@@ -617,136 +651,83 @@ new class extends Component {
                                 </div>
                             </x-slot:selection>
 
+                            {{-- Price Breakdown --}}
                             <x-slot:extraSections>
-                                {{-- Price Breakdown (for more than 3 nights) --}}
-                                @if ($baseNightCharge && $additionalNights && $additionalNightRate)
-                                    <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
-                                        <div class="flex items-start gap-2">
-                                            <div
-                                                class="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                                                <x-icon name="o-calculator" class="w-4 h-4 text-primary" />
+                                @if ($totalNights && $baseCharges !== null)
+                                    <x-card class="p-4 bg-base-100 mb-4">
+                                        <p class="text-xs uppercase tracking-wide text-base-content/60 mb-3">Price
+                                            Breakdown</p>
+                                        <div class="space-y-2 text-sm">
+                                            {{-- Base Charges --}}
+                                            <div class="flex justify-between items-center">
+                                                <span class="text-base-content/70">
+                                                    @if ($totalNights == 1)
+                                                        1 Night Charge:
+                                                    @elseif ($totalNights == 2)
+                                                        2 Nights Charge:
+                                                    @elseif ($totalNights == 3)
+                                                        3 Nights Charge:
+                                                    @else
+                                                        3 Nights Charge:
+                                                    @endif
+                                                </span>
+                                                <span
+                                                    class="font-semibold text-base-content">{{ currency_format($baseCharges) }}</span>
                                             </div>
-                                            <div class="flex-1">
-                                                <p class="text-xs font-semibold text-base-content/60 mb-1.5">Price
-                                                    Breakdown</p>
-                                                <div class="space-y-1">
-                                                    <div class="flex items-center justify-between">
-                                                        <span class="text-xs text-base-content/70">3 Night
-                                                            Charges</span>
-                                                        <span
-                                                            class="text-xs font-semibold text-base-content">{{ currency_format($baseNightCharge) }}</span>
-                                                    </div>
-                                                    <div class="flex items-center justify-between">
-                                                        <span class="text-xs text-base-content/70">Additional Night
-                                                            Charges</span>
-                                                        <span
-                                                            class="text-xs font-semibold text-base-content">{{ $additionalNights }}
-                                                            × {{ currency_format($additionalNightRate) }}</span>
-                                                    </div>
-                                                    <div class="border-t border-base-300/50 pt-1 mt-1"></div>
-                                                    <div class="flex items-center justify-between">
-                                                        <span
-                                                            class="text-xs font-semibold text-primary">Subtotal</span>
-                                                        <span
-                                                            class="text-xs font-bold text-primary">{{ currency_format($baseNightCharge + $additionalNights * $additionalNightRate) }}</span>
-                                                    </div>
+
+                                            {{-- Additional Charges --}}
+                                            @if ($additionalNights > 0 && $additionalCharges > 0)
+                                                <div class="flex justify-between items-center">
+                                                    <span class="text-base-content/70">Additional Charges:
+                                                        {{ $additionalNights }} x
+                                                        {{ currency_format($additionalCharges / $additionalNights) }}</span>
+                                                    <span
+                                                        class="font-semibold text-base-content">{{ currency_format($additionalCharges) }}</span>
                                                 </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
+                                            @endif
 
-                                {{-- Discount (if amount manually lowered) --}}
-                                @if ($amountManuallySet && $calculatedAmount && $amount && $amount < $calculatedAmount)
-                                    <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
-                                        <div class="flex items-start gap-2">
-                                            <div
-                                                class="w-7 h-7 rounded-md bg-success/10 flex items-center justify-center shrink-0">
-                                                <x-icon name="o-tag" class="w-4 h-4 text-success" />
-                                            </div>
-                                            <div class="flex-1">
-                                                <p class="text-xs font-semibold text-base-content/60 mb-0.5">Discount
-                                                    Applied</p>
-                                                <p class="text-sm font-bold text-success">
-                                                    - {{ currency_format($calculatedAmount - $amount) }}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
+                                            {{-- Subtotal --}}
+                                            @if ($calculatedAmount)
+                                                <div
+                                                    class="flex justify-between items-center pt-2 border-t border-base-300">
+                                                    <span class="text-base-content/70">Calculated Total:</span>
+                                                    <span
+                                                        class="font-semibold text-base-content">{{ currency_format($calculatedAmount) }}</span>
+                                                </div>
+                                            @endif
 
-                                {{-- Raised Amount (if amount manually increased) --}}
-                                @if ($amountManuallySet && $calculatedAmount && $amount && $amount > $calculatedAmount)
-                                    <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
-                                        <div class="flex items-start gap-2">
-                                            <div
-                                                class="w-7 h-7 rounded-md bg-warning/10 flex items-center justify-center shrink-0">
-                                                <x-icon name="o-arrow-trending-up" class="w-4 h-4 text-warning" />
-                                            </div>
-                                            <div class="flex-1">
-                                                <p class="text-xs font-semibold text-base-content/60 mb-0.5">Raised By
-                                                </p>
-                                                <p class="text-sm font-bold text-warning">
-                                                    + {{ currency_format($amount - $calculatedAmount) }}
-                                                </p>
-                                            </div>
+                                            {{-- Discount --}}
+                                            @if ($discount && $discount > 0)
+                                                <div class="flex justify-between items-center text-success">
+                                                    <span>Discount:</span>
+                                                    <span class="font-semibold">-
+                                                        {{ currency_format($discount) }}</span>
+                                                </div>
+                                            @endif
+
+                                            {{-- Raised Amount --}}
+                                            @if ($raisedAmount && $raisedAmount > 0)
+                                                <div class="flex justify-between items-center text-warning">
+                                                    <span>Raised by:</span>
+                                                    <span class="font-semibold">+
+                                                        {{ currency_format($raisedAmount) }}</span>
+                                                </div>
+                                            @endif
+
+                                            {{-- Final Total --}}
+                                            @if ($amount)
+                                                <div
+                                                    class="flex justify-between items-center pt-2 border-t border-base-300">
+                                                    <span class="font-bold text-base-content">Final Total:</span>
+                                                    <span
+                                                        class="font-bold text-lg text-primary">{{ currency_format($amount) }}</span>
+                                                </div>
+                                            @endif
                                         </div>
-                                    </div>
+                                    </x-card>
                                 @endif
                             </x-slot:extraSections>
                         </x-booking.booking-summary>
-                    </div>
-
-                    <div class="space-y-6">
-                        <div
-                            class="rounded-2xl border border-base-300/80 bg-gradient-to-br from-base-100 to-base-200/50 p-4 shadow-lg sticky top-[450px] backdrop-blur-sm">
-                            <div class="mt-6 p-4 rounded-xl bg-base-200/80 border border-dashed border-base-300">
-                                <p class="text-xs uppercase tracking-wide text-base-content/60">Checklist</p>
-                                <ul class="mt-2 space-y-2 text-sm">
-                                    <li class="flex items-center gap-2" wire:key="checklist-customer">
-                                        <span
-                                            class="w-2.5 h-2.5 rounded-full transition-colors duration-200 {{ $user_id ? 'bg-success' : 'bg-base-400' }}"></span>
-                                        <span
-                                            class="{{ $user_id ? 'text-success font-medium' : 'text-base-content/70' }}">Customer
-                                            selected</span>
-                                    </li>
-                                    <li class="flex items-center gap-2" wire:key="checklist-room">
-                                        <span
-                                            class="w-2.5 h-2.5 rounded-full transition-colors duration-200 {{ $room_id ? 'bg-success' : 'bg-base-400' }}"></span>
-                                        <span
-                                            class="{{ $room_id ? 'text-success font-medium' : 'text-base-content/70' }}">Room
-                                            selected</span>
-                                    </li>
-                                    <li class="flex items-center gap-2" wire:key="checklist-amount">
-                                        <span
-                                            class="w-2.5 h-2.5 rounded-full transition-colors duration-200 {{ $amount ? 'bg-success' : 'bg-base-400' }}"></span>
-                                        <span
-                                            class="{{ $amount ? 'text-success font-medium' : 'text-base-content/70' }}">Amount
-                                            filled</span>
-                                    </li>
-                                    <li class="flex items-center gap-2" wire:key="checklist-payment-method">
-                                        <span
-                                            class="w-2.5 h-2.5 rounded-full transition-colors duration-200 {{ $payment_method ? 'bg-success' : 'bg-base-400' }}"></span>
-                                        <span
-                                            class="{{ $payment_method ? 'text-success font-medium' : 'text-base-content/70' }}">Payment
-                                            method selected</span>
-                                    </li>
-                                    <li class="flex items-center gap-2" wire:key="checklist-payment-status">
-                                        <span
-                                            class="w-2.5 h-2.5 rounded-full transition-colors duration-200 {{ $payment_status ? 'bg-success' : 'bg-base-400' }}"></span>
-                                        <span
-                                            class="{{ $payment_status ? 'text-success font-medium' : 'text-base-content/70' }}">Payment
-                                            status selected</span>
-                                    </li>
-                                </ul>
-                            </div>
-                            <div class="rounded-2xl mt-6 border border-dashed border-base-300 bg-base-50/50 p-5">
-                                <p class="text-sm font-semibold text-base-content">Need inspiration?</p>
-                                <p class="text-sm text-base-content/60 mt-1">Use the notes section to capture special
-                                    requests, preferences, or additional information for the house staff.</p>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
             </div>
@@ -754,9 +735,8 @@ new class extends Component {
             <x-slot:actions>
                 <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:justify-between">
                     <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                        <x-button icon="o-arrow-left" label="Back"
-                            link="{{ route('admin.bookings.house.index') }}" class="btn-ghost w-full sm:w-auto"
-                            responsive />
+                        <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.room.index') }}"
+                            class="btn-ghost w-full sm:w-auto" responsive />
                         <x-button icon="o-arrow-path" label="Reset Form" type="button" wire:click="resetForm"
                             class="btn-outline w-full sm:w-auto" responsive />
                     </div>

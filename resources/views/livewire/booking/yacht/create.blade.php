@@ -32,6 +32,13 @@ new class extends Component {
     public string $yacht_search = '';
     public int $perPage = 6;
 
+    // Price breakdown properties
+    public ?int $totalDays = null;
+    public ?float $calculatedAmount = null;
+    public ?float $basePrice = null;
+    public ?float $discount = null;
+    public ?float $raisedAmount = null;
+
     public function mount(): void
     {
         $this->check_in = Carbon::now()->format('Y-m-d\TH:i');
@@ -87,6 +94,11 @@ new class extends Component {
                 $this->check_out = $checkIn->copy()->addHour()->format('Y-m-d\TH:i');
             }
         }
+
+        // Recalculate price if yacht is selected
+        if ($this->yacht_id && !$this->amountManuallySet) {
+            $this->calculatePrice();
+        }
     }
 
     public function updatedCheckOut(): void
@@ -108,6 +120,11 @@ new class extends Component {
                 $this->check_out = $checkIn->copy()->addHour()->format('Y-m-d\TH:i');
             }
         }
+
+        // Recalculate price if yacht is selected
+        if ($this->yacht_id && !$this->amountManuallySet) {
+            $this->calculatePrice();
+        }
     }
 
     public function updatedYachtSearch(): void
@@ -117,26 +134,49 @@ new class extends Component {
 
     public function updatedYachtId(): void
     {
-        // When yacht changes, reset the manual flag so new price can auto-fill
+        // When yacht changes, calculate price based on days
         $this->amountManuallySet = false;
 
         if ($this->yacht_id) {
-            $yacht = Yacht::find($this->yacht_id);
-            if ($yacht) {
-                $price = $yacht->discount_price ?? $yacht->price;
-                $newAmount = $price !== null ? (float) $price : null;
-                $this->amount = $newAmount;
-                // Force update to ensure Live Summary refreshes
-                $this->dispatch('amount-updated');
-            } else {
-                $this->amount = null;
-                $this->dispatch('amount-updated');
-            }
+            $this->calculatePrice();
         } else {
             // Reset amount when yacht selection is cleared
             $this->amount = null;
+            $this->calculatedAmount = null;
+            $this->basePrice = null;
+            $this->discount = null;
+            $this->raisedAmount = null;
+            $this->totalDays = null;
             $this->dispatch('amount-updated');
         }
+    }
+
+    public function calculatePrice(): void
+    {
+        if (!$this->yacht_id || !$this->check_in || !$this->check_out) {
+            return;
+        }
+
+        $yacht = Yacht::find($this->yacht_id);
+        if (!$yacht) {
+            return;
+        }
+
+        $checkIn = Carbon::parse($this->check_in);
+        $checkOut = Carbon::parse($this->check_out);
+        $days = $checkIn->diffInDays($checkOut);
+
+        if ($days <= 0) {
+            $days = 1; // Minimum 1 day for yacht charters
+        }
+
+        $this->totalDays = $days;
+        $this->basePrice = $yacht->discount_price ?? ($yacht->price ?? 0);
+
+        // For yachts, multiply base price by number of days
+        $this->calculatedAmount = $this->basePrice * $days;
+        $this->amount = $this->calculatedAmount;
+        $this->dispatch('amount-updated');
     }
 
     public function updatedAmount(): void
@@ -155,6 +195,20 @@ new class extends Component {
                 $this->amount = 0;
             }
             $this->amountManuallySet = true;
+
+            // Calculate discount or raised amount if we have a calculated amount
+            if ($this->calculatedAmount !== null && $this->amount != $this->calculatedAmount) {
+                if ($this->amount < $this->calculatedAmount) {
+                    $this->discount = $this->calculatedAmount - $this->amount;
+                    $this->raisedAmount = null;
+                } else {
+                    $this->raisedAmount = $this->amount - $this->calculatedAmount;
+                    $this->discount = null;
+                }
+            } else {
+                $this->discount = null;
+                $this->raisedAmount = null;
+            }
         }
     }
 
@@ -300,8 +354,19 @@ new class extends Component {
 
         $view->customers = User::role(RolesEnum::CUSTOMER->value)->orderBy('name')->get();
 
+        // Pass parsed dates to view
+        $view->checkInDate = $checkIn;
+        $view->checkOutDate = $checkOut;
+
         // Set minimum date for departure (current date/time)
         $view->minDepartureDate = Carbon::now()->format('Y-m-d\TH:i');
+
+        // Pass breakdown data to view
+        $view->totalDays = $this->totalDays;
+        $view->basePrice = $this->basePrice;
+        $view->calculatedAmount = $this->calculatedAmount;
+        $view->discount = $this->discount;
+        $view->raisedAmount = $this->raisedAmount;
     }
 }; ?>
 
@@ -632,7 +697,9 @@ new class extends Component {
                     <div class="sticky top-24">
                         <x-booking.booking-summary :adults="$adults" :children="$children" :checkInDate="$checkInDate"
                             :checkOutDate="$checkOutDate" checkInLabel="Departure" checkOutLabel="Return"
-                            windowLabel="Charter Window" :amount="$amount" :paymentMethod="$payment_method" :paymentStatus="$payment_status">
+                            windowLabel="Charter Window" :amount="$amount" :paymentMethod="$payment_method" :paymentStatus="$payment_status"
+                            :showChecklist="true" :customerSelected="!!$user_id" :selectionSelected="!!$yacht_id" :selectionLabel="'Yacht'"
+                            :amountFilled="!!$amount" :paymentMethodSelected="!!$payment_method" :paymentStatusSelected="!!$payment_status">
                             <x-slot:selection>
                                 {{-- Selected Yacht --}}
                                 <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">
@@ -658,58 +725,70 @@ new class extends Component {
                                     </div>
                                 </div>
                             </x-slot:selection>
+
+                            {{-- Price Breakdown --}}
+                            <x-slot:extraSections>
+                                @if ($totalDays && $basePrice !== null)
+                                    <x-card class="p-4 bg-base-100 mb-4">
+                                        <p class="text-xs uppercase tracking-wide text-base-content/60 mb-3">Price
+                                            Breakdown</p>
+                                        <div class="space-y-2 text-sm">
+                                            {{-- Base Price per Day --}}
+                                            <div class="flex justify-between items-center">
+                                                <span class="text-base-content/70">Base Price per Day:</span>
+                                                <span
+                                                    class="font-semibold text-base-content">{{ currency_format($basePrice) }}</span>
+                                            </div>
+
+                                            {{-- Number of Days --}}
+                                            <div class="flex justify-between items-center">
+                                                <span class="text-base-content/70">Number of Days:</span>
+                                                <span class="font-semibold text-base-content">{{ $totalDays }}
+                                                    {{ $totalDays === 1 ? 'day' : 'days' }}</span>
+                                            </div>
+
+                                            {{-- Subtotal --}}
+                                            @if ($calculatedAmount)
+                                                <div
+                                                    class="flex justify-between items-center pt-2 border-t border-base-300">
+                                                    <span class="text-base-content/70">Calculated Total:</span>
+                                                    <span
+                                                        class="font-semibold text-base-content">{{ currency_format($calculatedAmount) }}</span>
+                                                </div>
+                                            @endif
+
+                                            {{-- Discount --}}
+                                            @if ($discount && $discount > 0)
+                                                <div class="flex justify-between items-center text-success">
+                                                    <span>Discount:</span>
+                                                    <span class="font-semibold">-
+                                                        {{ currency_format($discount) }}</span>
+                                                </div>
+                                            @endif
+
+                                            {{-- Raised Amount --}}
+                                            @if ($raisedAmount && $raisedAmount > 0)
+                                                <div class="flex justify-between items-center text-warning">
+                                                    <span>Raised by:</span>
+                                                    <span class="font-semibold">+
+                                                        {{ currency_format($raisedAmount) }}</span>
+                                                </div>
+                                            @endif
+
+                                            {{-- Final Total --}}
+                                            @if ($amount)
+                                                <div
+                                                    class="flex justify-between items-center pt-2 border-t border-base-300">
+                                                    <span class="font-bold text-base-content">Final Total:</span>
+                                                    <span
+                                                        class="font-bold text-lg text-primary">{{ currency_format($amount) }}</span>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </x-card>
+                                @endif
+                            </x-slot:extraSections>
                         </x-booking.booking-summary>
-                    </div>
-
-                    <div class="space-y-6">
-                        <x-card class="bg-base-200 p-4 sticky top-[450px] backdrop-blur-sm">
-                            <div class="p-4 rounded-xl bg-base-200/80 border border-dashed border-base-300">
-                                <p class="text-xs uppercase tracking-wide text-base-content/60">Checklist</p>
-                                <ul class="mt-2 space-y-2 text-sm">
-                                    <li class="flex items-center gap-2" wire:key="checklist-customer">
-                                        <span
-                                            class="w-2.5 h-2.5 rounded-full transition-colors duration-200 {{ $user_id ? 'bg-success' : 'bg-base-400' }}"></span>
-                                        <span
-                                            class="{{ $user_id ? 'text-success font-medium' : 'text-base-content/70' }}">Customer
-                                            selected</span>
-                                    </li>
-                                    <li class="flex items-center gap-2" wire:key="checklist-yacht">
-                                        <span
-                                            class="w-2.5 h-2.5 rounded-full transition-colors duration-200 {{ $yacht_id ? 'bg-success' : 'bg-base-400' }}"></span>
-                                        <span
-                                            class="{{ $yacht_id ? 'text-success font-medium' : 'text-base-content/70' }}">Yacht
-                                            selected</span>
-                                    </li>
-                                    <li class="flex items-center gap-2" wire:key="checklist-amount">
-                                        <span
-                                            class="w-2.5 h-2.5 rounded-full transition-colors duration-200 {{ $amount ? 'bg-success' : 'bg-base-400' }}"></span>
-                                        <span
-                                            class="{{ $amount ? 'text-success font-medium' : 'text-base-content/70' }}">Amount
-                                            filled</span>
-                                    </li>
-                                    <li class="flex items-center gap-2" wire:key="checklist-payment-method">
-                                        <span
-                                            class="w-2.5 h-2.5 rounded-full transition-colors duration-200 {{ $payment_method ? 'bg-success' : 'bg-base-400' }}"></span>
-                                        <span
-                                            class="{{ $payment_method ? 'text-success font-medium' : 'text-base-content/70' }}">Payment
-                                            method selected</span>
-                                    </li>
-                                    <li class="flex items-center gap-2" wire:key="checklist-payment-status">
-                                        <span
-                                            class="w-2.5 h-2.5 rounded-full transition-colors duration-200 {{ $payment_status ? 'bg-success' : 'bg-base-400' }}"></span>
-                                        <span
-                                            class="{{ $payment_status ? 'text-success font-medium' : 'text-base-content/70' }}">Payment
-                                            status selected</span>
-                                    </li>
-                                </ul>
-                            </div>
-                            <div class="rounded-2xl mt-6 border border-dashed border-base-300 bg-base-50/50 p-5">
-                                <p class="text-sm font-semibold text-base-content">Need inspiration?</p>
-                                <p class="text-sm text-base-content/60 mt-1">Use the notes section to capture special
-                                    requests, catering preferences, or transfer details so the crew is prepared.</p>
-                            </div>
-                        </x-card>
-
                     </div>
                 </div>
             </div>

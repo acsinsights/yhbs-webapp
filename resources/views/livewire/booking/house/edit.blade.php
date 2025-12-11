@@ -796,11 +796,6 @@ new class extends Component {
 
             <x-slot:actions>
                 <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:justify-between">
-                    <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                        <x-button icon="o-arrow-left" label="Back"
-                            link="{{ route('admin.bookings.house.show', $booking->id) }}"
-                            class="btn-ghost w-full sm:w-auto" responsive />
-                    </div>
                     <x-button icon="o-check" label="Update Booking" type="submit"
                         class="btn-primary w-full sm:w-auto" spinner="update" responsive />
                 </div>

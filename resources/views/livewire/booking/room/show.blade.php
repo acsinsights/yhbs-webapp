@@ -92,10 +92,10 @@ new class extends Component {
             <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
         </x-slot:subtitle>
         <x-slot:actions>
-            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.house.index') }}"
+            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.room.index') }}"
                 class="btn-ghost btn-outline" />
             @if ($booking->canBeEdited())
-                <x-button icon="o-pencil" label="Edit" link="{{ route('admin.bookings.house.edit', $booking->id) }}"
+                <x-button icon="o-pencil" label="Edit" link="{{ route('admin.bookings.room.edit', $booking->id) }}"
                     class="btn-primary" />
                 <x-button icon="o-x-circle" label="Cancel Booking" wire:click="$set('showCancelModal', true)"
                     class="btn-error" />
