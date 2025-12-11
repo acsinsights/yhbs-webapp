@@ -439,8 +439,16 @@ new class extends Component {
                             </div>
                         </x-card>
 
+                        @php
+                            $selectedHouse =
+                                $availableHouses->firstWhere('id', $house_id) ??
+                                ($house_id ? House::with('rooms')->find($house_id) : null);
+                            $maxAdults = $selectedHouse?->adults ?? 10;
+                            $maxChildren = $selectedHouse?->children ?? 10;
+                        @endphp
+
                         {{-- Guest Details Section --}}
-                        <x-booking.guest-section stepNumber="2" />
+                        <x-booking.guest-section stepNumber="2" :maxAdults="$maxAdults" :maxChildren="$maxChildren" />
 
                         {{-- Room Selection Section --}}
                         <x-card class="bg-base-200">

@@ -6,7 +6,7 @@ use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Enums\RolesEnum;
-use App\Models\{Booking, Room, User, Yacht};
+use App\Models\{Booking, House, Room, User, Yacht};
 
 new class extends Component {
     #[Title('Admin Dashboard')]
@@ -28,8 +28,16 @@ new class extends Component {
     {
         $now = now();
 
-        // Current bookings for hotel/rooms
-        $currentHotelBookings = Booking::where('bookingable_type', Room::class)
+        // Current bookings for houses
+        $currentHouseBookings = Booking::where('bookingable_type', House::class)
+            ->whereIn('status', ['pending', 'booked', 'checked_in'])
+            ->where(function ($query) use ($now) {
+                $query->where('check_in', '<=', $now)->where('check_out', '>=', $now);
+            })
+            ->count();
+
+        // Current bookings for rooms
+        $currentRoomBookings = Booking::where('bookingable_type', Room::class)
             ->whereIn('status', ['pending', 'booked', 'checked_in'])
             ->where(function ($query) use ($now) {
                 $query->where('check_in', '<=', $now)->where('check_out', '>=', $now);
@@ -55,6 +63,17 @@ new class extends Component {
             ->unique();
         $availableRooms = $totalRooms - $bookedRoomIds->count();
 
+        // Available houses
+        $totalHouses = House::where('is_active', true)->count();
+        $bookedHouseIds = Booking::where('bookingable_type', House::class)
+            ->whereIn('status', ['pending', 'booked', 'checked_in'])
+            ->where(function ($query) use ($now) {
+                $query->where('check_in', '<=', $now)->where('check_out', '>=', $now);
+            })
+            ->pluck('bookingable_id')
+            ->unique();
+        $availableHouses = $totalHouses - $bookedHouseIds->count();
+
         // Available yachts
         $totalYachts = Yacht::count();
         $bookedYachtIds = Booking::where('bookingable_type', Yacht::class)
@@ -70,7 +89,10 @@ new class extends Component {
         $totalRevenue = Booking::where('payment_status', 'paid')->sum(DB::raw('COALESCE(discount_price, price)'));
 
         // House Revenue
-        $houseRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Room::class)->sum(DB::raw('COALESCE(discount_price, price)'));
+        $houseRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', House::class)->sum(DB::raw('COALESCE(discount_price, price)'));
+
+        // Room Revenue
+        $roomRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Room::class)->sum(DB::raw('COALESCE(discount_price, price)'));
 
         // Yacht revenue
         $yachtRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Yacht::class)->sum(DB::raw('COALESCE(discount_price, price)'));
@@ -93,14 +115,18 @@ new class extends Component {
         }
 
         $this->stats = [
-            'current_hotel_bookings' => $currentHotelBookings,
+            'current_house_bookings' => $currentHouseBookings,
+            'current_room_bookings' => $currentRoomBookings,
             'current_yacht_bookings' => $currentYachtBookings,
+            'available_houses' => max(0, $availableHouses),
+            'total_houses' => $totalHouses,
             'available_rooms' => max(0, $availableRooms),
             'total_rooms' => $totalRooms,
             'available_yachts' => max(0, $availableYachts),
             'total_yachts' => $totalYachts,
             'total_revenue' => $totalRevenue,
-            'hotel_revenue' => $houseRevenue,
+            'house_revenue' => $houseRevenue,
+            'room_revenue' => $roomRevenue,
             'yacht_revenue' => $yachtRevenue,
             'active_customers' => $activeCustomers,
         ];
@@ -111,7 +137,14 @@ new class extends Component {
         $now = now();
 
         // Get current bookings for chart
-        $currentHotelBookings = Booking::where('bookingable_type', Room::class)
+        $currentHouseBookings = Booking::where('bookingable_type', House::class)
+            ->whereIn('status', ['pending', 'booked', 'checked_in'])
+            ->where(function ($query) use ($now) {
+                $query->where('check_in', '<=', $now)->where('check_out', '>=', $now);
+            })
+            ->count();
+
+        $currentRoomBookings = Booking::where('bookingable_type', Room::class)
             ->whereIn('status', ['pending', 'booked', 'checked_in'])
             ->where(function ($query) use ($now) {
                 $query->where('check_in', '<=', $now)->where('check_out', '>=', $now);
@@ -129,12 +162,12 @@ new class extends Component {
         $this->bookingChart = [
             'type' => 'pie',
             'data' => [
-                'labels' => ['Hotel Bookings', 'Yacht Bookings'],
+                'labels' => ['House Bookings', 'Room Bookings', 'Yacht Bookings'],
                 'datasets' => [
                     [
                         'label' => 'Current Bookings',
-                        'data' => [$currentHotelBookings, $currentYachtBookings],
-                        'backgroundColor' => ['rgb(59, 130, 246)', 'rgb(16, 185, 129)'],
+                        'data' => [$currentHouseBookings, $currentRoomBookings, $currentYachtBookings],
+                        'backgroundColor' => ['rgb(245, 158, 11)', 'rgb(59, 130, 246)', 'rgb(16, 185, 129)'],
                     ],
                 ],
             ],
@@ -144,35 +177,53 @@ new class extends Component {
             ],
         ];
 
-        // Revenue chart (bar chart for monthly revenue - separated by hotel and yacht)
-        $monthlyHotelRevenue = [];
+        // Revenue chart (line chart for monthly revenue - separated by House, Room, and Yacht)
+        $monthlyHouseRevenue = [];
+        $monthlyRoomRevenue = [];
         $monthlyYachtRevenue = [];
         $monthlyLabels = [];
         for ($i = 5; $i >= 0; $i--) {
             $month = now()->subMonths($i);
-            $houseRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Room::class)->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum(DB::raw('COALESCE(discount_price, price)'));
+            $houseRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', House::class)->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum(DB::raw('COALESCE(discount_price, price)'));
+
+            $roomRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Room::class)->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum(DB::raw('COALESCE(discount_price, price)'));
 
             $yachtRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Yacht::class)->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum(DB::raw('COALESCE(discount_price, price)'));
 
-            $monthlyHotelRevenue[] = $houseRevenue;
+            $monthlyHouseRevenue[] = $houseRevenue;
+            $monthlyRoomRevenue[] = $roomRevenue;
             $monthlyYachtRevenue[] = $yachtRevenue;
             $monthlyLabels[] = $month->format('M Y');
         }
 
         $this->revenueChart = [
-            'type' => 'bar',
+            'type' => 'line',
             'data' => [
                 'labels' => $monthlyLabels,
                 'datasets' => [
                     [
                         'label' => 'House Revenue',
-                        'data' => $monthlyHotelRevenue,
-                        'backgroundColor' => 'rgb(59, 130, 246)',
+                        'data' => $monthlyHouseRevenue,
+                        'borderColor' => 'rgb(245, 158, 11)',
+                        'backgroundColor' => 'rgba(245, 158, 11, 0.1)',
+                        'fill' => true,
+                        'tension' => 0.4,
+                    ],
+                    [
+                        'label' => 'Room Revenue',
+                        'data' => $monthlyRoomRevenue,
+                        'borderColor' => 'rgb(59, 130, 246)',
+                        'backgroundColor' => 'rgba(59, 130, 246, 0.1)',
+                        'fill' => true,
+                        'tension' => 0.4,
                     ],
                     [
                         'label' => 'Yacht Revenue',
                         'data' => $monthlyYachtRevenue,
-                        'backgroundColor' => 'rgb(16, 185, 129)',
+                        'borderColor' => 'rgb(16, 185, 129)',
+                        'backgroundColor' => 'rgba(16, 185, 129, 0.1)',
+                        'fill' => true,
+                        'tension' => 0.4,
                     ],
                 ],
             ],
@@ -302,14 +353,36 @@ new class extends Component {
     </x-header>
 
     <!-- Current Bookings Section -->
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 mb-6">
-        <!-- Hotel Bookings Card -->
-        <x-card shadow title="Hotel Bookings" separator>
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3 mb-6">
+        <!-- House Bookings Card -->
+        <x-card shadow title="House Bookings" separator>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between p-4 bg-warning/10 rounded-lg">
+                    <div>
+                        <div class="text-sm text-base-content/60 mb-1">Current Bookings</div>
+                        <div class="text-4xl font-bold text-warning">{{ $stats['current_house_bookings'] }}</div>
+                    </div>
+                    <x-icon name="o-home-modern" class="w-16 h-16 text-warning/50" />
+                </div>
+                <div class="flex items-center justify-between p-4 bg-info/10 rounded-lg">
+                    <div>
+                        <div class="text-sm text-base-content/60 mb-1">Available Houses</div>
+                        <div class="text-2xl font-bold text-info">
+                            {{ $stats['available_houses'] }} / {{ $stats['total_houses'] }}
+                        </div>
+                    </div>
+                    <x-icon name="o-home-modern" class="w-12 h-12 text-info/50" />
+                </div>
+            </div>
+        </x-card>
+
+        <!-- Room Bookings Card -->
+        <x-card shadow title="Room Bookings" separator>
             <div class="space-y-4">
                 <div class="flex items-center justify-between p-4 bg-primary/10 rounded-lg">
                     <div>
                         <div class="text-sm text-base-content/60 mb-1">Current Bookings</div>
-                        <div class="text-4xl font-bold text-primary">{{ $stats['current_hotel_bookings'] }}</div>
+                        <div class="text-4xl font-bold text-primary">{{ $stats['current_room_bookings'] }}</div>
                     </div>
                     <x-icon name="o-building-office" class="w-16 h-16 text-primary/50" />
                 </div>
@@ -349,30 +422,43 @@ new class extends Component {
     </div>
 
     <!-- Revenue Section -->
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-3 mb-6">
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-4 mb-6">
         <!-- Total Revenue Card -->
         <x-card shadow title="Total Revenue" separator>
-            <div class="flex items-center justify-between p-4 bg-warning/10 rounded-lg">
+            <div class="flex items-center justify-between p-4 bg-secondary/10 rounded-lg">
                 <div>
-                    <div class="text-sm text-base-content/60 mb-1">All Time Revenue</div>
-                    <div class="text-3xl font-bold text-warning">
+                    <div class="text-sm text-base-content/60 mb-1">All Time</div>
+                    <div class="text-2xl font-bold text-secondary">
                         {{ currency_format($stats['total_revenue']) }}
                     </div>
                 </div>
-                <x-icon name="o-banknotes" class="w-14 h-14 text-warning/50" />
+                <x-icon name="o-banknotes" class="w-12 h-12 text-secondary/50" />
             </div>
         </x-card>
 
         <!-- House Revenue Card -->
         <x-card shadow title="House Revenue" separator>
-            <div class="flex items-center justify-between p-4 bg-primary/10 rounded-lg">
+            <div class="flex items-center justify-between p-4 bg-warning/10 rounded-lg">
                 <div>
-                    <div class="text-sm text-base-content/60 mb-1">House Revenue</div>
-                    <div class="text-3xl font-bold text-primary">
-                        {{ currency_format($stats['hotel_revenue']) }}
+                    <div class="text-sm text-base-content/60 mb-1">Houses</div>
+                    <div class="text-2xl font-bold text-warning">
+                        {{ currency_format($stats['house_revenue']) }}
                     </div>
                 </div>
-                <x-icon name="o-building-office" class="w-14 h-14 text-primary/50" />
+                <x-icon name="o-home-modern" class="w-12 h-12 text-warning/50" />
+            </div>
+        </x-card>
+
+        <!-- Room Revenue Card -->
+        <x-card shadow title="Room Revenue" separator>
+            <div class="flex items-center justify-between p-4 bg-primary/10 rounded-lg">
+                <div>
+                    <div class="text-sm text-base-content/60 mb-1">Rooms</div>
+                    <div class="text-2xl font-bold text-primary">
+                        {{ currency_format($stats['room_revenue']) }}
+                    </div>
+                </div>
+                <x-icon name="o-building-office" class="w-12 h-12 text-primary/50" />
             </div>
         </x-card>
 
@@ -380,12 +466,12 @@ new class extends Component {
         <x-card shadow title="Yacht Revenue" separator>
             <div class="flex items-center justify-between p-4 bg-success/10 rounded-lg">
                 <div>
-                    <div class="text-sm text-base-content/60 mb-1">Yacht Revenue</div>
-                    <div class="text-3xl font-bold text-success">
+                    <div class="text-sm text-base-content/60 mb-1">Yachts</div>
+                    <div class="text-2xl font-bold text-success">
                         {{ currency_format($stats['yacht_revenue']) }}
                     </div>
                 </div>
-                <x-icon name="o-sparkles" class="w-14 h-14 text-success/50" />
+                <x-icon name="o-sparkles" class="w-12 h-12 text-success/50" />
             </div>
         </x-card>
     </div>

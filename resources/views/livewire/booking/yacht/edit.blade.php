@@ -354,8 +354,16 @@ new class extends Component {
                             </div>
                         </x-card>
 
+                        @php
+                            $selectedYacht =
+                                $availableYachtes->firstWhere('id', $yacht_id) ??
+                                ($yacht_id ? Yacht::find($yacht_id) : null);
+                            $maxAdults = $selectedYacht?->max_guests ?? 20;
+                            $maxChildren = $selectedYacht?->max_guests ?? 20;
+                        @endphp
+
                         {{-- Guest Details Section --}}
-                        <x-booking.guest-section stepNumber="2" />
+                        <x-booking.guest-section stepNumber="2" :maxAdults="$maxAdults" :maxChildren="$maxChildren" />
 
                         {{-- Yacht Selection Section --}}
                         <x-card class="bg-base-200">

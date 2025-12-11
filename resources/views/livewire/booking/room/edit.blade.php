@@ -325,8 +325,15 @@ new class extends Component {
                             </div>
                         </div>
 
+                        @php
+                            $selectedRoom =
+                                $availableRooms->firstWhere('id', $room_id) ?? ($room_id ? Room::find($room_id) : null);
+                            $maxAdults = $selectedRoom?->adults ?? 2;
+                            $maxChildren = $selectedRoom?->children ?? 5;
+                        @endphp
+
                         {{-- Guest Details Section --}}
-                        <x-booking.guest-section stepNumber="2" />
+                        <x-booking.guest-section stepNumber="2" :maxAdults="$maxAdults" :maxChildren="$maxChildren" />
 
                         {{-- Room Selection Section --}}
                         <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">

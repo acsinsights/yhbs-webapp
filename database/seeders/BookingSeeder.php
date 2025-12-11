@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Booking;
 use App\Models\User;
 use App\Models\Room;
+use App\Models\House;
 use App\Models\Yacht;
 use App\Enums\BookingStatusEnum;
 use Illuminate\Database\Seeder;
@@ -19,6 +20,7 @@ class BookingSeeder extends Seeder
     {
         $users = User::all();
         $rooms = Room::all();
+        $houses = House::all();
         $yachts = Yacht::all();
 
         if ($users->isEmpty()) {
@@ -50,10 +52,54 @@ class BookingSeeder extends Seeder
             }
         }
 
+        // Create house bookings
+        if ($houses->isNotEmpty()) {
+            // Create multiple bookings per house with varied dates
+            foreach ($houses as $house) {
+                // Create 2-3 bookings per house with different date ranges
+                $bookingsCount = rand(2, 3);
+
+                for ($i = 0; $i < $bookingsCount; $i++) {
+                    $daysOffset = rand(1, 30);
+                    $checkIn = Carbon::now()->addDays($daysOffset);
+                    $nights = rand(1, 7);
+                    $checkOut = $checkIn->copy()->addDays($nights);
+
+                    // Calculate price based on nights
+                    $price = $house->price_per_night;
+                    if ($nights == 2 && $house->price_per_2night) {
+                        $price = $house->price_per_2night;
+                    } elseif ($nights == 3 && $house->price_per_3night) {
+                        $price = $house->price_per_3night;
+                    } elseif ($nights > 3 && $house->price_per_3night && $house->additional_night_price) {
+                        $price = $house->price_per_3night + (($nights - 3) * $house->additional_night_price);
+                    } elseif ($nights > 1) {
+                        $price = $price * $nights;
+                    }
+
+                    $bookings[] = [
+                        'bookingable_type' => House::class,
+                        'bookingable_id' => $house->id,
+                        'user_id' => $users->random()->id,
+                        'adults' => rand(1, $house->adults ?? 10),
+                        'children' => rand(0, $house->children ?? 5),
+                        'check_in' => $checkIn,
+                        'check_out' => $checkOut,
+                        'price' => $price,
+                        'discount_price' => $house->discount_price,
+                        'status' => BookingStatusEnum::cases()[array_rand(BookingStatusEnum::cases())]->value,
+                        'payment_status' => ['pending', 'paid'][array_rand(['pending', 'paid'])],
+                        'payment_method' => ['cash', 'card'][array_rand(['cash', 'card'])],
+                        'notes' => 'House booking created via seeder for ' . $nights . ' night(s).',
+                    ];
+                }
+            }
+        }
+
         // Create yacht bookings
         if ($yachts->isNotEmpty()) {
             foreach ($yachts->take(3) as $yacht) {
-                $checkIn = Carbon::now()->addDays(rand(1, 30));
+                $checkIn = Carbon::now();
                 $checkOut = $checkIn->copy()->addDays(rand(1, 3));
 
                 $bookings[] = [
