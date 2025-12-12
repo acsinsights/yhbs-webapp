@@ -293,8 +293,8 @@
                         </div>
 
                         <!-- Pagination -->
-                        <div class="pagination-area mt-60">
-                            {{ $rooms->links() }}
+                        <div class="mt-60">
+                            {{ $rooms->links('pagination::bootstrap-5') }}
                         </div>
                     @else
                         <div class="alert alert-info">

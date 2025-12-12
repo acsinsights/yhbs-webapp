@@ -272,8 +272,8 @@
                         </div>
 
                         <!-- Pagination -->
-                        <div class="pagination-area mt-60">
-                            {{ $yachts->links() }}
+                        <div class="mt-60">
+                            {{ $yachts->links('pagination::bootstrap-5') }}
                         </div>
                     @else
                         <div class="alert alert-info">
