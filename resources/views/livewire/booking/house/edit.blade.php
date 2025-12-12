@@ -405,7 +405,7 @@ new class extends Component {
             <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
         </x-slot:subtitle>
         <x-slot:actions>
-            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.house.show', $booking->id) }}"
+            <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.house.index') }}"
                 class="btn-ghost btn-outline" />
         </x-slot:actions>
     </x-header>

@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\BookingStatusEnum;
+use App\Enums\PaymentStatusEnum;
 use App\Models\Booking;
 use App\Services\OttuService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
 
 class OttuCheckoutController extends Controller
 {
@@ -30,12 +33,12 @@ class OttuCheckoutController extends Controller
         $booking = Booking::with(['user', 'yacht', 'house', 'room'])->findOrFail($bookingId);
 
         // Check if booking belongs to authenticated user or is authorized
-        if ($booking->user_id !== auth()->id() && !auth()->user()->hasRole('admin')) {
+        if ($booking->user_id !== Auth::id() && !hasAuthRole('admin')) {
             abort(403, 'Unauthorized access to this booking');
         }
 
         // Check if booking is already paid
-        if ($booking->payment_status === \App\Enums\PaymentStatusEnum::PAID) {
+        if ($booking->payment_status === PaymentStatusEnum::PAID) {
             return redirect()->route('bookings.show', $bookingId)
                 ->with('info', 'This booking has already been paid.');
         }
@@ -111,8 +114,8 @@ class OttuCheckoutController extends Controller
                 if (in_array($paymentData['state'], ['paid', 'authorized'])) {
                     // Update booking payment status
                     $booking->update([
-                        'payment_status' => \App\Enums\PaymentStatusEnum::PAID,
-                        'booking_status' => \App\Enums\BookingStatusEnum::CONFIRMED,
+                        'payment_status' => PaymentStatusEnum::PAID,
+                        'booking_status' => BookingStatusEnum::BOOKED,
                         'payment_reference' => $referenceNumber,
                         'paid_at' => now(),
                     ]);
@@ -202,8 +205,8 @@ class OttuCheckoutController extends Controller
                 case 'paid':
                 case 'authorized':
                     $booking->update([
-                        'payment_status' => \App\Enums\PaymentStatusEnum::PAID,
-                        'booking_status' => \App\Enums\BookingStatusEnum::CONFIRMED,
+                        'payment_status' => PaymentStatusEnum::PAID,
+                        'booking_status' => BookingStatusEnum::BOOKED,
                         'payment_reference' => $data['reference_number'] ?? null,
                         'paid_at' => now(),
                     ]);
@@ -212,19 +215,19 @@ class OttuCheckoutController extends Controller
                 case 'failed':
                 case 'error':
                     $booking->update([
-                        'payment_status' => \App\Enums\PaymentStatusEnum::FAILED,
+                        'payment_status' => PaymentStatusEnum::FAILED,
                     ]);
                     break;
 
                 case 'canceled':
                     $booking->update([
-                        'payment_status' => \App\Enums\PaymentStatusEnum::CANCELLED,
+                        'payment_status' => PaymentStatusEnum::CANCELLED,
                     ]);
                     break;
 
                 case 'pending':
                     $booking->update([
-                        'payment_status' => \App\Enums\PaymentStatusEnum::PENDING,
+                        'payment_status' => PaymentStatusEnum::PENDING,
                     ]);
                     break;
             }

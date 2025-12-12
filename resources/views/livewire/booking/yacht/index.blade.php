@@ -25,6 +25,22 @@ new class extends Component {
         $this->success('Booking deleted successfully.');
     }
 
+    public function checkin($id): void
+    {
+        $booking = Booking::where('bookingable_type', Yacht::class)->findOrFail($id);
+        $booking->update(['status' => 'checked_in']);
+
+        $this->success('Booking checked in successfully.');
+    }
+
+    public function checkout($id): void
+    {
+        $booking = Booking::where('bookingable_type', Yacht::class)->findOrFail($id);
+        $booking->update(['status' => 'checked_out']);
+
+        $this->success('Booking checked out successfully.');
+    }
+
     public function rendering(View $view)
     {
         $view->bookings = Booking::query()
@@ -142,15 +158,33 @@ new class extends Component {
 
             @scope('actions', $booking)
                 <div class="flex items-center gap-2 justify-end">
-                    @if ($booking->canBeEdited())
-                        <x-button icon="o-pencil" link="{{ route('admin.bookings.yacht.edit', $booking->id) }}"
-                            class="btn-ghost btn-sm" tooltip="Edit" />
-                    @endif
-                    <x-button icon="o-eye" link="{{ route('admin.bookings.yacht.show', $booking->id) }}"
-                        class="btn-ghost btn-sm" tooltip="View Details" />
-                    <x-button icon="o-trash" wire:click="delete({{ $booking->id }})"
-                        wire:confirm="Are you sure you want to delete this booking?" spinner
-                        class="btn-ghost btn-sm text-error" tooltip="Delete" />
+                    <x-dropdown label="Custom Scroll" scroll max-height="max-h-64">
+                        <x-slot:trigger>
+                            <x-button icon="o-bars-arrow-down" class="btn-circle" />
+                        </x-slot:trigger>
+
+                        @if ($booking->canCheckIn())
+                            <x-menu-item icon="o-pencil" title="Edit Booking" class="btn-ghost btn-sm"
+                                link="{{ route('admin.bookings.yacht.edit', $booking->id) }}" />
+                            <x-menu-item icon="o-arrow-right-end-on-rectangle" title="Check In"
+                                wire:click="checkin({{ $booking->id }})" spinner class="text-info"
+                                wire:confirm="Are you sure you want to check in this booking?" />
+                        @elseif ($booking->canCheckOut())
+                            <x-menu-item icon="o-arrow-right-start-on-rectangle" title="Check Out"
+                                wire:click="checkout({{ $booking->id }})" class="btn-ghost btn-sm text-success"
+                                wire:confirm="Are you sure you want to checkout this booking?" spinner />
+                        @elseif ($booking->canBeEdited())
+                            <x-menu-item icon="o-pencil" title="Edit Booking"
+                                link="{{ route('admin.bookings.yacht.edit', $booking->id) }}" class="btn-ghost btn-sm" />
+                        @endif
+                        <x-menu-item icon="o-eye" link="{{ route('admin.bookings.yacht.show', $booking->id) }}"
+                            class="btn-ghost btn-sm" title="View Details" />
+                        @if ($booking->canBeDeleted())
+                            <x-menu-item icon="o-trash" wire:click="delete({{ $booking->id }})"
+                                wire:confirm="Are you sure you want to delete this booking?" spinner
+                                class="btn-ghost btn-sm text-error" title="Delete" />
+                        @endif
+                    </x-dropdown>
                 </div>
             @endscope
 

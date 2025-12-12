@@ -23,6 +23,16 @@ new class extends Component {
         $this->payment_method = $booking->payment_method->value;
     }
 
+    public function checkin(): void
+    {
+        $this->booking->update([
+            'status' => 'checked_in',
+        ]);
+
+        $this->success('Booking checked in successfully.');
+        $this->booking->refresh();
+    }
+
     public function checkout(): void
     {
         $this->booking->update([
@@ -50,6 +60,13 @@ new class extends Component {
 
     public function cancelBooking(): void
     {
+        // Prevent cancellation if already checked in
+        if ($this->booking->isCheckedIn()) {
+            $this->error('Cannot cancel a booking that is already checked in.');
+            $this->showCancelModal = false;
+            return;
+        }
+
         $this->validate([
             'cancellation_reason' => 'required|min:10',
         ]);
@@ -94,14 +111,23 @@ new class extends Component {
         <x-slot:actions>
             <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.yacht.index') }}"
                 class="btn-ghost btn-outline" />
-            @if ($booking->canBeEdited())
+
+            @if ($booking->status === \App\Enums\BookingStatusEnum::BOOKED)
+                <x-button icon="o-pencil" label="Edit" link="{{ route('admin.bookings.yacht.edit', $booking->id) }}"
+                    class="btn-primary" />
+                <x-button icon="o-arrow-right-end-on-rectangle" label="Check In" wire:click="checkin"
+                    wire:confirm="Are you sure you want to check in this booking?" class="btn-info" spinner="checkin" />
+                <x-button icon="o-x-circle" label="Cancel Booking" wire:click="$set('showCancelModal', true)"
+                    class="btn-error" />
+            @elseif ($booking->canCheckOut())
+                <x-button icon="o-arrow-right-start-on-rectangle" label="Check Out" wire:click="checkout"
+                    wire:confirm="Are you sure you want to checkout this booking?" class="btn-success"
+                    spinner="checkout" />
+            @elseif ($booking->canBeEdited())
                 <x-button icon="o-pencil" label="Edit" link="{{ route('admin.bookings.yacht.edit', $booking->id) }}"
                     class="btn-primary" />
                 <x-button icon="o-x-circle" label="Cancel Booking" wire:click="$set('showCancelModal', true)"
                     class="btn-error" />
-                <x-button icon="o-check-circle" label="Checkout" wire:click="checkout"
-                    wire:confirm="Are you sure you want to checkout this booking?" class="btn-success"
-                    spinner="checkout" />
             @endif
         </x-slot:actions>
     </x-header>

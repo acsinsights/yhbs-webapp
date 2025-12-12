@@ -6,6 +6,7 @@ enum PaymentStatusEnum: string
 {
     case PAID = 'paid';
     case PENDING = 'pending';
+    case CANCELLED = 'cancelled';
     case FAILED = 'failed';
 
     public function label(): string
@@ -13,6 +14,7 @@ enum PaymentStatusEnum: string
         return match ($this) {
             self::PAID => 'Paid',
             self::PENDING => 'Pending',
+            self::CANCELLED => 'Cancelled',
             self::FAILED => 'Failed',
         };
     }
@@ -22,6 +24,7 @@ enum PaymentStatusEnum: string
         return match ($this) {
             self::PAID => 'badge-soft badge-success',
             self::PENDING => 'badge-soft badge-warning',
+            self::CANCELLED => 'badge-error',
             self::FAILED => 'badge-soft badge-error',
         };
     }

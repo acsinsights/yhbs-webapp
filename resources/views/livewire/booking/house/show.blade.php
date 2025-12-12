@@ -5,6 +5,7 @@ use Mary\Traits\Toast;
 use Illuminate\View\View;
 use Livewire\Volt\Component;
 use App\Models\{Booking, Room};
+use App\Enums\BookingStatusEnum;
 
 new class extends Component {
     use Toast;
@@ -18,9 +19,19 @@ new class extends Component {
 
     public function mount(Booking $booking): void
     {
-        $this->booking = $booking->load(['bookingable.house', 'user']);
+        $this->booking = $booking->load(['bookingable', 'user']);
         $this->payment_status = $booking->payment_status->value;
         $this->payment_method = $booking->payment_method->value;
+    }
+
+    public function checkin(): void
+    {
+        $this->booking->update([
+            'status' => 'checked_in',
+        ]);
+
+        $this->success('Booking checked in successfully.');
+        $this->booking->refresh();
     }
 
     public function checkout(): void
@@ -50,6 +61,13 @@ new class extends Component {
 
     public function cancelBooking(): void
     {
+        // Prevent cancellation if already checked in
+        if ($this->booking->isCheckedIn()) {
+            $this->error('Cannot cancel a booking that is already checked in.');
+            $this->showCancelModal = false;
+            return;
+        }
+
         $this->validate([
             'cancellation_reason' => 'required|min:10',
         ]);
@@ -94,14 +112,23 @@ new class extends Component {
         <x-slot:actions>
             <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.house.index') }}"
                 class="btn-ghost btn-outline" />
-            @if ($booking->canBeEdited())
+
+            @if ($booking->status === \App\Enums\BookingStatusEnum::BOOKED)
+                <x-button icon="o-pencil" label="Edit" link="{{ route('admin.bookings.house.edit', $booking->id) }}"
+                    class="btn-primary" />
+                <x-button icon="o-arrow-right-end-on-rectangle" label="Check In" wire:click="checkin"
+                    wire:confirm="Are you sure you want to check in this booking?" class="btn-info" spinner="checkin" />
+                <x-button icon="o-x-circle" label="Cancel Booking" wire:click="$set('showCancelModal', true)"
+                    class="btn-error" />
+            @elseif ($booking->canCheckOut())
+                <x-button icon="o-arrow-right-start-on-rectangle" label="Check Out" wire:click="checkout"
+                    wire:confirm="Are you sure you want to checkout this booking?" class="btn-success"
+                    spinner="checkout" />
+            @elseif ($booking->canBeEdited())
                 <x-button icon="o-pencil" label="Edit" link="{{ route('admin.bookings.house.edit', $booking->id) }}"
                     class="btn-primary" />
                 <x-button icon="o-x-circle" label="Cancel Booking" wire:click="$set('showCancelModal', true)"
                     class="btn-error" />
-                <x-button icon="o-check-circle" label="Checkout" wire:click="checkout"
-                    wire:confirm="Are you sure you want to checkout this booking?" class="btn-success"
-                    spinner="checkout" />
             @endif
         </x-slot:actions>
     </x-header>
@@ -178,31 +205,27 @@ new class extends Component {
                 </div>
             </x-card>
 
-            {{-- Room Information --}}
+            {{-- House Information --}}
             @if ($booking->bookingable)
                 <x-card shadow>
                     <x-slot:title>
                         <div class="flex items-center gap-2">
                             <x-icon name="o-home-modern" class="w-5 h-5" />
-                            <span>Room Information</span>
+                            <span>House Information</span>
                         </div>
                     </x-slot:title>
 
                     <div class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <div class="text-sm text-base-content/50 mb-1">Room Number</div>
-                                <div class="font-semibold text-lg">{{ $booking->bookingable->room_number }}</div>
-                            </div>
-                            <div>
-                                <div class="text-sm text-base-content/50 mb-1">Room Name</div>
-                                <div class="font-semibold">{{ $booking->bookingable->name }}</div>
-                            </div>
-                        </div>
                         <div>
-                            <div class="text-sm text-base-content/50 mb-1">House</div>
-                            <div class="font-semibold">{{ $booking->bookingable->house->name ?? 'N/A' }}</div>
+                            <div class="text-sm text-base-content/50 mb-1">House Name</div>
+                            <div class="font-semibold text-lg">{{ $booking->bookingable->name }}</div>
                         </div>
+                        @if ($booking->bookingable->sku)
+                            <div>
+                                <div class="text-sm text-base-content/50 mb-1">SKU</div>
+                                <div class="font-semibold">{{ $booking->bookingable->sku }}</div>
+                            </div>
+                        @endif
                         @if ($booking->bookingable->description)
                             <div>
                                 <div class="text-sm text-base-content/50 mb-1">Description</div>

@@ -61,4 +61,62 @@ class Booking extends Model
             && $this->status !== BookingStatusEnum::CANCELLED
             && $this->payment_status !== PaymentStatusEnum::FAILED;
     }
+
+    /**
+     * Check if the booking status is BOOKED.
+     */
+    public function isBooked(): bool
+    {
+        return $this->status === BookingStatusEnum::BOOKED;
+    }
+
+    /**
+     * Check if the booking status is CHECKED_IN.
+     */
+    public function isCheckedIn(): bool
+    {
+        return $this->status === BookingStatusEnum::CHECKED_IN;
+    }
+
+    /**
+     * Check if the booking status is CHECKED_OUT.
+     */
+    public function isCheckedOut(): bool
+    {
+        return $this->status === BookingStatusEnum::CHECKED_OUT;
+    }
+
+    /**
+     * Check if the booking can be checked in.
+     */
+    public function canCheckIn(): bool
+    {
+        return $this->status === BookingStatusEnum::BOOKED;
+    }
+
+    /**
+     * Check if the booking can be checked out.
+     */
+    public function canCheckOut(): bool
+    {
+        return $this->status === BookingStatusEnum::CHECKED_IN;
+    }
+
+    /**
+     * Check if the booking can be cancelled.
+     */
+    public function canBeCancelled(): bool
+    {
+        return $this->status !== BookingStatusEnum::CHECKED_IN
+            && $this->status !== BookingStatusEnum::CHECKED_OUT
+            && $this->status !== BookingStatusEnum::CANCELLED;
+    }
+
+    /**
+     * Check if the booking can be deleted.
+     */
+    public function canBeDeleted(): bool
+    {
+        return $this->status !== BookingStatusEnum::CHECKED_IN;
+    }
 }
