@@ -93,6 +93,27 @@ Route::prefix('admin')->name('admin.')->group(function () {
     });
 });
 
+// Ottu Payment Routes
+Route::prefix('payment')->name('ottu.')->group(function () {
+    Route::get('/checkout/{bookingId}', [App\Http\Controllers\OttuCheckoutController::class, 'checkout'])
+        ->middleware('auth')
+        ->name('checkout');
+
+    Route::get('/success/{bookingId}', [App\Http\Controllers\OttuCheckoutController::class, 'success'])
+        ->middleware('auth')
+        ->name('success');
+
+    Route::get('/cancel/{bookingId}', [App\Http\Controllers\OttuCheckoutController::class, 'cancel'])
+        ->middleware('auth')
+        ->name('cancel');
+
+    Route::post('/webhook', [App\Http\Controllers\OttuCheckoutController::class, 'webhook'])
+        ->name('webhook');
+
+    Route::get('/payment-methods', [App\Http\Controllers\OttuCheckoutController::class, 'paymentMethods'])
+        ->name('payment-methods');
+});
+
 Route::post('/job-submit', function () {
     return "Form submitted (frontend only).";
 })->name('job.submit');

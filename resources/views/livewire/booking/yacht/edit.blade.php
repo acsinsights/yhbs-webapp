@@ -172,7 +172,7 @@ new class extends Component {
         }
 
         $this->totalDays = $days;
-        $this->basePrice = $yacht->discount_price ?? $yacht->price ?? 0;
+        $this->basePrice = $yacht->discount_price ?? ($yacht->price ?? 0);
 
         // For yachts, multiply base price by number of days
         $this->calculatedAmount = $this->basePrice * $days;
@@ -227,9 +227,6 @@ new class extends Component {
                 $this->discount = null;
                 $this->raisedAmount = null;
             }
-        }
-    }
-            $this->amountManuallySet = true;
         }
     }
 

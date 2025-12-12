@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'ottu' => [
+        'merchant_id' => env('OTTU_MERCHANT_ID'),
+        'api_key' => env('OTTU_API_KEY'),
+        'api_url' => env('OTTU_API_URL', 'https://sandbox.ottu.net'),
+        'webhook_secret' => env('OTTU_WEBHOOK_SECRET'),
+        'currency' => env('OTTU_CURRENCY', 'KWD'),
+        'sdk_url' => 'https://assets.ottu.net/checkout/v3/checkout.min.js',
+    ],
 ];
