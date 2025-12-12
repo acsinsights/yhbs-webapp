@@ -17,15 +17,6 @@ new class extends Component {
     public array $sortBy = ['column' => 'id', 'direction' => 'desc'];
     public int $perPage = 10;
 
-    // Delete action
-    public function delete($id): void
-    {
-        $booking = Booking::findOrFail($id);
-        $booking->delete();
-
-        $this->success('Booking deleted successfully.');
-    }
-
     public function checkin($id): void
     {
         $booking = Booking::where('bookingable_type', Room::class)->findOrFail($id);
@@ -46,18 +37,24 @@ new class extends Component {
     {
         $view->bookings = Booking::query()
             ->where('bookingable_type', Room::class)
-            ->with(['bookingable.house', 'user'])
+            ->with(['bookingable', 'user'])
             ->when($this->search, function ($query) {
-                return $query
-                    ->whereHas('user', function ($q) {
-                        $q->where('name', 'like', "%{$this->search}%")->orWhere('email', 'like', "%{$this->search}%");
+                return $query->where(function ($q) {
+                    // Search in user
+                    $q->whereHas('user', function ($userQuery) {
+                        $userQuery->where('name', 'like', "%{$this->search}%")->orWhere('email', 'like', "%{$this->search}%");
                     })
-                    ->orWhereHas('bookingable', function ($q) {
-                        $q->where('room_number', 'like', "%{$this->search}%");
-                    })
-                    ->orWhereHas('bookingable.house', function ($q) {
-                        $q->where('name', 'like', "%{$this->search}%");
-                    });
+                        // Search in room number
+                        ->orWhereHasMorph('bookingable', [Room::class], function ($roomQuery) {
+                            $roomQuery->where('room_number', 'like', "%{$this->search}%");
+                        })
+                        // Search in house name (through room's house relationship)
+                        ->orWhereHasMorph('bookingable', [Room::class], function ($roomQuery) {
+                            $roomQuery->whereHas('house', function ($houseQuery) {
+                                $houseQuery->where('name', 'like', "%{$this->search}%");
+                            });
+                        });
+                });
             })
             ->orderBy(...array_values($this->sortBy))
             ->paginate($this->perPage);
@@ -189,11 +186,6 @@ new class extends Component {
                         @endif
                         <x-menu-item icon="o-eye" link="{{ route('admin.bookings.room.show', $booking->id) }}"
                             class="btn-ghost btn-sm" title="View Details" />
-                        @if ($booking->canBeDeleted())
-                            <x-menu-item icon="o-trash" wire:click="delete({{ $booking->id }})"
-                                wire:confirm="Are you sure you want to delete this booking?" spinner
-                                class="btn-ghost btn-sm text-error" title="Delete" />
-                        @endif
                     </x-dropdown>
                 </div>
             @endscope

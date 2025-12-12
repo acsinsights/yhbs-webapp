@@ -119,4 +119,50 @@ class Booking extends Model
     {
         return $this->status !== BookingStatusEnum::CHECKED_IN;
     }
+
+    /**
+     * Scope a query to search bookings by user and bookingable properties.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  string  $search
+     * @param  array  $bookingableFields  Fields to search in the bookingable model
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeSearch($query, $search, array $bookingableFields = [])
+    {
+        if (empty($search)) {
+            return $query;
+        }
+
+        return $query->where(function ($q) use ($search, $bookingableFields) {
+            // Search in user name and email
+            $q->whereHas('user', function ($userQuery) use ($search) {
+                $userQuery->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+
+            // Search in bookingable fields if provided
+            if (!empty($bookingableFields)) {
+                $q->orWhereHas('bookingable', function ($bookingableQuery) use ($search, $bookingableFields) {
+                    $bookingableQuery->where(function ($fieldQuery) use ($search, $bookingableFields) {
+                        foreach ($bookingableFields as $index => $field) {
+                            $method = $index === 0 ? 'where' : 'orWhere';
+
+                            // Handle nested relationships (e.g., 'house.name')
+                            if (str_contains($field, '.')) {
+                                $relationName = substr($field, 0, strpos($field, '.'));
+                                $nestedField = substr($field, strpos($field, '.') + 1);
+
+                                $fieldQuery->orWhereHas($relationName, function ($nestedQuery) use ($search, $nestedField) {
+                                    $nestedQuery->where($nestedField, 'like', "%{$search}%");
+                                });
+                            } else {
+                                $fieldQuery->{$method}($field, 'like', "%{$search}%");
+                            }
+                        }
+                    });
+                });
+            }
+        });
+    }
 }
