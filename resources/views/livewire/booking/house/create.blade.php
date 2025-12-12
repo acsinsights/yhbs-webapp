@@ -24,6 +24,8 @@ new class extends Component {
     public ?string $check_out = null;
     public int $adults = 1;
     public int $children = 0;
+    public array $adultNames = [];
+    public array $childrenNames = [];
     public ?float $amount = null;
     public bool $amountManuallySet = false;
     public string $payment_method = 'cash';
@@ -112,6 +114,32 @@ new class extends Component {
     public function updatedHouseSearch(): void
     {
         $this->resetPage();
+    }
+
+    public function updatedAdults(): void
+    {
+        // Initialize adult names array
+        $currentCount = count($this->adultNames);
+        if ($this->adults > $currentCount) {
+            for ($i = $currentCount; $i < $this->adults; $i++) {
+                $this->adultNames[$i] = '';
+            }
+        } elseif ($this->adults < $currentCount) {
+            $this->adultNames = array_slice($this->adultNames, 0, $this->adults);
+        }
+    }
+
+    public function updatedChildren(): void
+    {
+        // Initialize children names array
+        $currentCount = count($this->childrenNames);
+        if ($this->children > $currentCount) {
+            for ($i = $currentCount; $i < $this->children; $i++) {
+                $this->childrenNames[$i] = '';
+            }
+        } elseif ($this->children < $currentCount) {
+            $this->childrenNames = array_slice($this->childrenNames, 0, $this->children);
+        }
     }
 
     public function updatedHouseId(): void
@@ -300,12 +328,18 @@ new class extends Component {
         }
 
         // Create a single booking for the entire house
+        $guestDetails = [
+            'adults' => array_values(array_filter($this->adultNames)),
+            'children' => array_values(array_filter($this->childrenNames)),
+        ];
+
         $booking = Booking::create([
             'bookingable_type' => House::class,
             'bookingable_id' => $this->house_id,
             'user_id' => $this->user_id,
             'adults' => $this->adults,
             'children' => $this->children,
+            'guest_details' => $guestDetails,
             'check_in' => $checkIn,
             'check_out' => $checkOut,
             'price' => $this->amount,
@@ -390,7 +424,7 @@ new class extends Component {
     <x-card shadow class="mx-auto">
         <x-form wire:submit="store">
             <div class="space-y-6">
-                <div class="grid gap-6 lg:grid-cols-3">
+                <div class="grid gap-6 lg:grid-cols-3 lg:items-start">
                     <div class="space-y-6 lg:col-span-2">
                         {{-- Date Range Section --}}
                         <x-booking.date-range-section stepNumber="1" :minCheckInDate="$minCheckInDate" />
@@ -407,7 +441,8 @@ new class extends Component {
                         @endphp
 
                         {{-- Guest Details Section --}}
-                        <x-booking.guest-section stepNumber="3" :maxAdults="$maxAdults" :maxChildren="$maxChildren" />
+                        <x-booking.guest-section stepNumber="3" :maxAdults="$maxAdults" :maxChildren="$maxChildren" :adults="$adults"
+                            :children="$children" />
 
                         {{-- House Selection Section --}}
                         <x-card class="bg-base-200">
@@ -623,10 +658,10 @@ new class extends Component {
                     {{-- Summary Column --}}
                     <div class="sticky top-24">
                         <x-booking.booking-summary :adults="$adults" :children="$children" :checkInDate="$checkInDate"
-                            :checkOutDate="$checkOutDate" :amount="$amount" :paymentMethod="$payment_method" :paymentStatus="$payment_status" :showChecklist="true"
-                            :customerSelected="!!$user_id" :selectionSelected="!!$house_id" :selectionLabel="'House'" :amountFilled="!!$amount"
-                            :paymentMethodSelected="!!$payment_method" :paymentStatusSelected="!!$payment_status" :showInfoMessage="true" :infoTitle="'Booking Entire House'"
-                            :infoMessage="'When you book a house, all rooms in that house will be reserved for your selected dates.'">
+                            :checkOutDate="$checkOutDate" :amount="$amount" :paymentMethod="$payment_method" :paymentStatus="$payment_status"
+                            :showChecklist="true" :customerSelected="!!$user_id" :selectionSelected="!!$house_id" :selectionLabel="'House'"
+                            :amountFilled="!!$amount" :paymentMethodSelected="!!$payment_method" :paymentStatusSelected="!!$payment_status" :showInfoMessage="true"
+                            :infoTitle="'Booking Entire House'" :infoMessage="'When you book a house, all rooms in that house will be reserved for your selected dates.'">
                             <x-slot:selection>
                                 {{-- Selected House --}}
                                 <div class="bg-base-100/80 rounded-lg p-2.5 border border-base-300/50">

@@ -68,10 +68,10 @@ new class extends Component {
             <p class="text-sm text-base-content/60">House overview and media</p>
         </x-slot:subtitle>
         <x-slot:actions>
-            <x-button icon="o-pencil" label="Edit" link="{{ route('admin.houses.edit', $house) }}" class="btn-primary"
-                responsive />
             <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.houses.index') }}"
                 class="btn-outline btn-primary" responsive />
+            <x-button icon="o-pencil" label="Edit" link="{{ route('admin.houses.edit', $house) }}" class="btn-primary"
+                responsive />
             <x-button icon="o-trash" label="Delete" wire:click="delete"
                 wire:confirm="Delete this house? This action cannot be undone." class="btn-error" responsive />
         </x-slot:actions>

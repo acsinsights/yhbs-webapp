@@ -100,7 +100,7 @@ new class extends Component {
                 @if ($booking->bookingable)
                     <div class="flex gap-2 items-center">
                         <x-button tooltip="{{ $booking->bookingable->house->name }}"
-                            link="{{ route('admin.houses.edit', $booking->bookingable->house->id) }}"
+                            link="{{ route('admin.houses.show', $booking->bookingable->house->id) }}"
                             class="btn-ghost btn-sm">
                             <x-icon name="o-building-office-2" class="w-4 h-4" />
                             <span class="font-semibold">{{ $booking->bookingable->room_number }}</span>

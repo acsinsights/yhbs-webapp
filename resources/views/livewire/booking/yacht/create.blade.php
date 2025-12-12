@@ -24,6 +24,8 @@ new class extends Component {
     public ?string $check_out = null;
     public ?int $adults = 1;
     public ?int $children = 0;
+    public array $adultNames = [];
+    public array $childrenNames = [];
     public ?float $amount = null;
     public bool $amountManuallySet = false;
     public string $payment_method = 'cash';
@@ -52,6 +54,16 @@ new class extends Component {
         if (!$this->amountManuallySet) {
             $this->amount = null;
         }
+
+        // Initialize adult names array
+        $currentCount = count($this->adultNames);
+        if ($this->adults > $currentCount) {
+            for ($i = $currentCount; $i < $this->adults; $i++) {
+                $this->adultNames[$i] = '';
+            }
+        } elseif ($this->adults < $currentCount) {
+            $this->adultNames = array_slice($this->adultNames, 0, $this->adults);
+        }
     }
 
     public function updatedChildren(): void
@@ -60,6 +72,16 @@ new class extends Component {
         $this->yacht_id = null;
         if (!$this->amountManuallySet) {
             $this->amount = null;
+        }
+
+        // Initialize children names array
+        $currentCount = count($this->childrenNames);
+        if ($this->children > $currentCount) {
+            for ($i = $currentCount; $i < $this->children; $i++) {
+                $this->childrenNames[$i] = '';
+            }
+        } elseif ($this->children < $currentCount) {
+            $this->childrenNames = array_slice($this->childrenNames, 0, $this->children);
         }
     }
 
@@ -267,6 +289,8 @@ new class extends Component {
                 'check_out' => 'required|date|after:check_in',
                 'adults' => 'required|integer|min:1',
                 'children' => 'required|integer|min:0',
+                'adultNames.*' => 'required|string|max:255',
+                'childrenNames.*' => 'nullable|string|max:255',
                 'amount' => 'required|numeric|min:0|max:999999999.99',
                 'payment_method' => 'required|in:cash,card',
                 'payment_status' => 'required|in:paid,pending',
@@ -301,12 +325,18 @@ new class extends Component {
             return;
         }
 
+        $guestDetails = [
+            'adults' => array_values(array_filter($this->adultNames)),
+            'children' => array_values(array_filter($this->childrenNames)),
+        ];
+
         $booking = Booking::create([
             'bookingable_type' => Yacht::class,
             'bookingable_id' => $this->yacht_id,
             'user_id' => $this->user_id,
             'adults' => $this->adults,
             'children' => $this->children,
+            'guest_details' => $guestDetails,
             'check_in' => $checkIn,
             'check_out' => $checkOut,
             'price' => $this->amount,
@@ -401,7 +431,7 @@ new class extends Component {
     <x-card shadow class="mx-auto">
         <x-form wire:submit="store">
             <div class="space-y-6">
-                <div class="grid gap-6 lg:grid-cols-3">
+                <div class="grid gap-6 lg:grid-cols-3 lg:items-start">
                     <div class="space-y-6 lg:col-span-2">
                         {{-- Date Range Section --}}
                         <x-booking.date-range-section stepNumber="1" checkInLabel="Departure" checkOutLabel="Return"
@@ -420,7 +450,8 @@ new class extends Component {
                         @endphp
 
                         {{-- Guest Details Section --}}
-                        <x-booking.guest-section stepNumber="3" :maxAdults="$maxAdults" :maxChildren="$maxChildren" />
+                        <x-booking.guest-section stepNumber="3" :maxAdults="$maxAdults" :maxChildren="$maxChildren" :adults="$adults"
+                            :children="$children" />
 
                         {{-- Yacht Selection Section --}}
                         <x-card class="bg-base-200">

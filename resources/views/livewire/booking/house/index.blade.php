@@ -83,7 +83,7 @@ new class extends Component {
             @scope('cell_house_name', $booking)
                 <div class="flex gap-2 items-center">
                     <x-button tooltip="View House Details"
-                        link="{{ route('admin.houses.edit', $booking->bookingable->id) }}" class="btn-ghost btn-sm">
+                        link="{{ route('admin.houses.show', $booking->bookingable->id) }}" class="btn-ghost btn-sm">
                         <x-icon name="o-building-office-2" class="w-4 h-4" />
                         <span class="font-semibold">{{ $booking->bookingable->name }}</span>
                     </x-button>
