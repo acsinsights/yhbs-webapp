@@ -109,7 +109,7 @@ class BookingSeeder extends Seeder
                     'check_in' => $checkIn,
                     'check_out' => $checkOut,
                     'price' => $yacht->price,
-                    'discount_price' => $yacht->discount_price,
+                    'price_per_hour' => $yacht->price_per_hour,
                     'status' => BookingStatusEnum::cases()[array_rand(BookingStatusEnum::cases())]->value,
                     'payment_status' => ['pending', 'paid', 'failed'][array_rand(['pending', 'paid', 'failed'])],
                     'payment_method' => ['cash', 'card', 'other', 'online'][array_rand(['cash', 'card', 'other', 'online'])],

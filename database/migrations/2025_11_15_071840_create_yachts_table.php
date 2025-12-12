@@ -19,7 +19,7 @@ return new class extends Migration {
             $table->text('description')->nullable();
             $table->integer('sku')->nullable();
             $table->decimal('price', 10, 2)->nullable();
-            $table->decimal('discount_price', 10, 2)->nullable();
+            $table->decimal('price_per_hour', 10, 2)->nullable();
             $table->integer('length')->nullable();
             $table->integer('width')->nullable();
             $table->integer('max_guests')->nullable();

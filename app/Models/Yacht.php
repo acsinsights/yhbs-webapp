@@ -18,7 +18,7 @@ class Yacht extends Model
         'description',
         'sku',
         'price',
-        'discount_price',
+        'price_per_hour',
         'length',
         'width',
         'max_guests',

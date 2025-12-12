@@ -29,6 +29,9 @@
                             </a>
                             <i class="bi bi-plus dropdown-icon"></i>
                             <ul class="sub-menu">
+                                <li class="{{ request()->is('houses*') ? 'active' : '' }}">
+                                    <a href="{{ route('houses.index') }}">Houses</a>
+                                </li>
                                 <li class="{{ request()->is('rooms*') ? 'active' : '' }}">
                                     <a href="{{ route('rooms.index') }}">Hotel Rooms</a>
                                 </li>

@@ -1,9 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Livewire\Volt\Volt;
 use App\Http\Controllers\Customer\AuthController;
 use App\Http\Controllers\Customer\DashboardController;
 use App\Http\Controllers\Frontend\RoomController;
+use App\Http\Controllers\Frontend\HouseController;
 use App\Http\Controllers\Frontend\YachtController;
 use App\Http\Controllers\Frontend\BookingController;
 
@@ -36,9 +38,6 @@ Route::get('/privacy-policy', function () {
 Route::get('/terms-condition', function () {
     return view('frontend.terms-condition');
 })->name('terms-condition');
-
-
-
 
 // Customer Routes
 Route::prefix('customer')->name('customer.')->group(function () {
@@ -78,6 +77,10 @@ Route::get('/booking/confirmation/{id}', [BookingController::class, 'confirmatio
 // Rooms Routes
 Route::get('/rooms', [RoomController::class, 'index'])->name('rooms.index');
 Route::get('/rooms/{slug}', [RoomController::class, 'show'])->name('rooms.show');
+
+// Houses Routes
+Route::get('/houses', [HouseController::class, 'index'])->name('houses.index');
+Route::get('/houses/{slug}', [HouseController::class, 'show'])->name('houses.show');
 
 // Yachts Routes
 Route::get('/yachts', [YachtController::class, 'index'])->name('yachts.index');

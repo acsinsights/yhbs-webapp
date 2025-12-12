@@ -117,10 +117,13 @@
                                         {{ $yacht->max_fuel_capacity }} L
                                     </div>
                                 @endif
-                                @if ($yacht->discount_price)
+                                @if ($yacht->price_per_hour)
                                     <div class="col-md-6 mb-3">
-                                        <strong><i class="bi bi-tag-fill me-2"></i>Discount Price:</strong>
-                                        <span class="text-success">{{ currency_format($yacht->discount_price) }}</span>
+                                        <strong><i class="bi bi-tag-fill me-2"></i>Price Per Hour:</strong>
+                                        <span
+                                            class="text-decoration-line-through text-muted">{{ currency_format($yacht->price) }}</span>
+                                        <span
+                                            class="text-success fw-bold">{{ currency_format($yacht->price_per_hour) }}</span>
                                     </div>
                                 @endif
                             </div>
@@ -172,79 +175,7 @@
                 <div class="col-lg-4">
                     <div class="package-sidebar">
                         <!-- Booking Card -->
-                        <div class="booking-form-wrap mb-4 p-4 border rounded">
-                            <h4 class="mb-3">Book This Yacht</h4>
-                            <div class="price-display mb-3 text-center">
-                                <h2 class="text-primary">{{ currency_format($yacht->price) }}</h2>
-                                <p class="text-muted">per day</p>
-                            </div>
-
-                            <form action="{{ route('checkout') }}" method="GET" id="yachtBookingForm">
-                                <input type="hidden" name="type" value="yacht">
-                                <input type="hidden" name="id" value="{{ $yacht->id }}">
-
-                                <!-- Date Range Picker -->
-                                <div class="mb-3">
-                                    <label class="form-label"><i class="bi bi-calendar-range me-2"></i>Select Dates (Start
-                                        to End)</label>
-                                    <input type="text" name="date_range" class="form-control" required
-                                        placeholder="Select start and end dates" id="yachtDateRangePicker" readonly>
-                                    <input type="hidden" name="check_in" id="startDate">
-                                    <input type="hidden" name="check_out" id="endDate">
-                                </div>
-
-                                <!-- Availability Message -->
-                                <div class="alert alert-info d-none" id="yachtAvailabilityMessage">
-                                    <small><i class="bi bi-info-circle me-2"></i><span
-                                            id="yachtAvailabilityText"></span></small>
-                                </div>
-
-                                <!-- Guests -->
-                                <div class="mb-3">
-                                    <label class="form-label"><i class="bi bi-people me-2"></i>Guests</label>
-                                    <input type="number" name="guests" class="form-control" min="1"
-                                        max="{{ $yacht->max_guests ?? 1 }}" value="1" required id="guestsInput">
-                                    <small class="text-muted">Max: {{ $yacht->max_guests ?? 1 }} guests</small>
-                                </div>
-
-                                @if ($yacht->max_crew)
-                                    <!-- Crew Members -->
-                                    <div class="mb-3">
-                                        <label class="form-label"><i class="bi bi-person-badge me-2"></i>Crew Members
-                                            (Optional)</label>
-                                        <input type="number" name="crew" class="form-control" min="0"
-                                            max="{{ $yacht->max_crew }}" value="0" id="crewInput">
-                                        <small class="text-muted">Max: {{ $yacht->max_crew }} crew</small>
-                                    </div>
-                                @endif
-
-                                <!-- Guest Details Container -->
-                                <div class="mb-3" id="yachtGuestDetailsContainer" style="display: none;">
-                                    <label class="form-label"><i class="bi bi-person-lines-fill me-2"></i>Guest
-                                        Names</label>
-                                    <div id="yachtGuestNamesList"></div>
-                                    <small class="text-muted">Please provide the names of all guests</small>
-                                </div>
-
-                                <!-- Total Capacity Alert -->
-                                @if ($yacht->max_capacity)
-                                    <div class="alert alert-info mb-3">
-                                        <small><i class="bi bi-info-circle me-2"></i>Total capacity:
-                                            {{ $yacht->max_capacity }} persons (guests + crew)</small>
-                                    </div>
-                                @endif
-
-                                <!-- Validation Alert -->
-                                <div class="alert alert-warning d-none" id="yachtCapacityAlert">
-                                    <small><i class="bi bi-exclamation-triangle me-2"></i>Capacity exceeded! Please adjust
-                                        guest/crew numbers.</small>
-                                </div>
-
-                                <button type="submit" class="primary-btn1 w-100">
-                                    <span>Book Now</span>
-                                </button>
-                            </form>
-                        </div>
+                        @livewire('frontend.booking-card', ['bookable' => $yacht, 'type' => 'yacht'])
 
                         <!-- Quick Info -->
                         <div class="quick-info-wrap p-4 border rounded">

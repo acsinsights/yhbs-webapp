@@ -20,6 +20,7 @@ class Booking extends Model
         'check_out',
         'arrival_time',
         'price',
+        'price_per_hour',
         'discount_price',
         'status',
         'payment_status',

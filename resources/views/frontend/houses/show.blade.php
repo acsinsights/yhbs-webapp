@@ -1,5 +1,5 @@
 @extends('frontend.layouts.app')
-@section('title', $room->name)
+@section('title', $house->name)
 @section('styles')
     <!-- Flatpickr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -11,63 +11,76 @@
         style="background-image:linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url({{ asset('frontend/assets/img/innerpages/breadcrumb-bg6.jpg') }});">
         <div class="container">
             <div class="banner-content">
-                <h1>{{ $room->name }}</h1>
+                <h1>{{ $house->name }}</h1>
                 <ul class="breadcrumb-list">
                     <li><a href="{{ route('home') }}">Home</a></li>
-                    <li><a href="{{ route('rooms.index') }}">Rooms</a></li>
-                    <li>{{ $room->name }}</li>
+                    <li><a href="{{ route('houses.index') }}">Houses</a></li>
+                    <li>{{ $house->name }}</li>
                 </ul>
             </div>
         </div>
     </div>
 
-    <!-- Room Details Section -->
+    <!-- House Details Section -->
     <div class="package-details-section pt-120 pb-120">
         <div class="container">
             <div class="row">
                 <div class="col-lg-8">
-                    <!-- Room Image -->
+                    <!-- House Image -->
                     <div class="package-img-area mb-4">
-                        @if ($room->image)
-                            @if (str_starts_with($room->image, '/default'))
-                                <img src="{{ asset($room->image) }}" alt="{{ $room->name }}" class="img-fluid rounded">
+                        @if ($house->image)
+                            @if (str_starts_with($house->image, '/default'))
+                                <img src="{{ asset($house->image) }}" alt="{{ $house->name }}" class="img-fluid rounded">
                             @else
-                                <img src="{{ asset('storage/' . $room->image) }}" alt="{{ $room->name }}"
+                                <img src="{{ asset('storage/' . $house->image) }}" alt="{{ $house->name }}"
                                     class="img-fluid rounded">
                             @endif
                         @else
                             <img src="{{ asset('frontend/assets/img/innerpages/hotel-img1.jpg') }}"
-                                alt="{{ $room->name }}" class="img-fluid rounded">
+                                alt="{{ $house->name }}" class="img-fluid rounded">
                         @endif
                     </div>
 
-                    <!-- Room Information -->
+                    <!-- House Information -->
                     <div class="package-details-content">
-                        <h2>{{ $room->name }}</h2>
+                        <h2>{{ $house->name }}</h2>
 
-                        @if ($room->categories->first())
+                        @if ($house->house_number)
                             <div class="mb-3">
-                                <span class="badge bg-primary">{{ $room->categories->first()->name }}</span>
+                                <span class="badge bg-primary">House #{{ $house->house_number }}</span>
                             </div>
                         @endif
 
-                        @if ($room->description)
+                        @if ($house->description)
                             <div class="mb-4">
-                                <h4>About This Room</h4>
-                                <p>{{ $room->description }}</p>
+                                <h4>About This House</h4>
+                                <p>{{ $house->description }}</p>
                             </div>
                         @endif
 
-                        <!-- Room Features -->
-                        @if ($room->amenities && $room->amenities->count() > 0)
+                        <!-- Rooms in House -->
+                        @if ($house->rooms && $house->rooms->count() > 0)
                             <div class="mb-4">
-                                <h4>Amenities</h4>
+                                <h4>Rooms ({{ $house->rooms->count() }})</h4>
                                 <div class="row">
-                                    @foreach ($room->amenities as $amenity)
+                                    @foreach ($house->rooms as $room)
                                         <div class="col-md-6 mb-3">
-                                            <div class="d-flex align-items-center">
-                                                <i class="bi bi-check-circle text-success me-2"></i>
-                                                <span>{{ $amenity->name }}</span>
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">{{ $room->name }}</h6>
+                                                    <p class="card-text small text-muted mb-2">Room
+                                                        #{{ $room->room_number }}</p>
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <span
+                                                            class="badge {{ $room->is_active ? 'bg-success' : 'bg-danger' }}">
+                                                            {{ $room->is_active ? 'Available' : 'Not Available' }}
+                                                        </span>
+                                                        <a href="{{ route('rooms.show', $room->slug) }}"
+                                                            class="btn btn-sm btn-outline-primary">
+                                                            View Room
+                                                        </a>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     @endforeach
@@ -75,55 +88,70 @@
                             </div>
                         @endif
 
-                        <!-- Room Details -->
+                        <!-- House Details -->
                         <div class="mb-4">
-                            <h4>Room Details</h4>
+                            <h4>House Details</h4>
                             <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <strong><i class="bi bi-hash me-2"></i>Room Number:</strong> {{ $room->room_number }}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <strong><i class="bi bi-building me-2"></i>Property:</strong>
-                                    {{ $room->house->name ?? 'N/A' }}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <strong><i class="bi bi-people me-2"></i>Adults:</strong> {{ $room->adults ?? 0 }}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <strong><i class="bi bi-person me-2"></i>Children:</strong> {{ $room->children ?? 0 }}
-                                </div>
-                                @if ($room->price_per_night)
+                                @if ($house->house_number)
                                     <div class="col-md-6 mb-3">
-                                        <strong><i class="bi bi-cash me-2"></i>Price per Night:</strong>
-                                        {{ currency_format($room->price_per_night) }}
+                                        <strong><i class="bi bi-hash me-2"></i>House Number:</strong>
+                                        {{ $house->house_number }}
                                     </div>
                                 @endif
-                                @if ($room->discount_price)
+                                <div class="col-md-6 mb-3">
+                                    <strong><i class="bi bi-door-open me-2"></i>Rooms:</strong>
+                                    {{ $house->rooms->count() }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <strong><i class="bi bi-people me-2"></i>Adults:</strong> {{ $house->adults ?? 0 }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <strong><i class="bi bi-person me-2"></i>Children:</strong> {{ $house->children ?? 0 }}
+                                </div>
+                                @if ($house->price_per_night)
                                     <div class="col-md-6 mb-3">
-                                        <strong><i class="bi bi-tag-fill me-2"></i>Discount Price:</strong>
-                                        <span class="text-success">{{ currency_format($room->discount_price) }}</span>
+                                        <strong><i class="bi bi-cash me-2"></i>Price per Night:</strong>
+                                        {{ currency_format($house->price_per_night) }}
+                                    </div>
+                                @endif
+                                @if ($house->price_per_2night)
+                                    <div class="col-md-6 mb-3">
+                                        <strong><i class="bi bi-cash me-2"></i>Price for 2 Nights:</strong>
+                                        {{ currency_format($house->price_per_2night) }}
+                                    </div>
+                                @endif
+                                @if ($house->price_per_3night)
+                                    <div class="col-md-6 mb-3">
+                                        <strong><i class="bi bi-cash me-2"></i>Price for 3 Nights:</strong>
+                                        {{ currency_format($house->price_per_3night) }}
+                                    </div>
+                                @endif
+                                @if ($house->additional_night_price)
+                                    <div class="col-md-6 mb-3">
+                                        <strong><i class="bi bi-cash me-2"></i>Additional Night Price:</strong>
+                                        {{ currency_format($house->additional_night_price) }}
                                     </div>
                                 @endif
                                 <div class="col-md-6 mb-3">
                                     <strong><i class="bi bi-check-circle me-2"></i>Status:</strong>
-                                    <span class="badge {{ $room->is_active ? 'bg-success' : 'bg-danger' }}">
-                                        {{ $room->is_active ? 'Available' : 'Not Available' }}
+                                    <span class="badge {{ $house->is_active ? 'bg-success' : 'bg-danger' }}">
+                                        {{ $house->is_active ? 'Available' : 'Not Available' }}
                                     </span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Similar Rooms -->
-                    @if ($similarRooms->count() > 0)
+                    <!-- Similar Houses -->
+                    @if ($similarHouses->count() > 0)
                         <div class="similar-rooms-section mt-5">
-                            <h4 class="mb-4">Similar Rooms</h4>
+                            <h4 class="mb-4">Similar Houses</h4>
                             <div class="row">
-                                @foreach ($similarRooms as $similar)
+                                @foreach ($similarHouses as $similar)
                                     <div class="col-md-4 mb-4">
                                         <div class="hotel-card">
                                             <div class="hotel-img-wrap">
-                                                <a href="{{ route('rooms.show', $similar->id) }}" class="hotel-img">
+                                                <a href="{{ route('houses.show', $similar->slug) }}" class="hotel-img">
                                                     @if ($similar->image)
                                                         @if (str_starts_with($similar->image, '/default'))
                                                             <img src="{{ asset($similar->image) }}"
@@ -140,7 +168,7 @@
                                             </div>
                                             <div class="hotel-content">
                                                 <h6><a
-                                                        href="{{ route('rooms.show', $similar->id) }}">{{ $similar->name }}</a>
+                                                        href="{{ route('houses.show', $similar->slug) }}">{{ $similar->name }}</a>
                                                 </h6>
                                                 <div class="price-area">
                                                     <span>{{ currency_format($similar->price_per_night) }}</span>
@@ -159,44 +187,33 @@
                 <div class="col-lg-4">
                     <div class="package-sidebar">
                         <!-- Booking Card -->
-                        @livewire('frontend.booking-card', ['bookable' => $room, 'type' => 'room'])
+                        @livewire('frontend.booking-card', ['bookable' => $house, 'type' => 'house'])
 
                         <!-- Quick Info -->
                         <div class="quick-info-wrap p-4 border rounded">
                             <h5 class="mb-3">Quick Info</h5>
                             <ul class="list-unstyled">
+                                @if ($house->house_number)
+                                    <li class="mb-2">
+                                        <i class="bi bi-hash me-2"></i>
+                                        <strong>House:</strong> #{{ $house->house_number }}
+                                    </li>
+                                @endif
                                 <li class="mb-2">
-                                    <i class="bi bi-hash me-2"></i>
-                                    <strong>Room:</strong> {{ $room->room_number }}
-                                </li>
-                                <li class="mb-2">
-                                    <i class="bi bi-building me-2"></i>
-                                    <strong>Property:</strong> {{ $room->house->name ?? 'N/A' }}
+                                    <i class="bi bi-door-open me-2"></i>
+                                    <strong>Rooms:</strong> {{ $house->rooms->count() }}
                                 </li>
                                 <li class="mb-2">
                                     <i class="bi bi-people me-2"></i>
-                                    <strong>Adults:</strong> {{ $room->adults ?? 0 }}
+                                    <strong>Adults:</strong> {{ $house->adults ?? 0 }}
                                 </li>
                                 <li class="mb-2">
                                     <i class="bi bi-person me-2"></i>
-                                    <strong>Children:</strong> {{ $room->children ?? 0 }}
+                                    <strong>Children:</strong> {{ $house->children ?? 0 }}
                                 </li>
-                                @if ($room->categories->first())
-                                    <li class="mb-2">
-                                        <i class="bi bi-tag me-2"></i>
-                                        <strong>Category:</strong> {{ $room->categories->first()->name }}
-                                    </li>
-                                @endif
-                                @if ($room->discount_price)
-                                    <li class="mb-2">
-                                        <i class="bi bi-tag-fill me-2"></i>
-                                        <strong>Discount:</strong> <span
-                                            class="text-success">{{ currency_format($room->discount_price) }}</span>
-                                    </li>
-                                @endif
                                 <li class="mb-2">
                                     <i class="bi bi-check-circle me-2"></i>
-                                    <strong>Status:</strong> {{ $room->is_active ? 'Available' : 'Not Available' }}
+                                    <strong>Status:</strong> {{ $house->is_active ? 'Available' : 'Not Available' }}
                                 </li>
                             </ul>
                         </div>

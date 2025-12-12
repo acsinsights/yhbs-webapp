@@ -21,7 +21,7 @@ new class extends Component {
     public ?string $description = null;
     public ?int $sku = null;
     public ?float $price = null;
-    public ?float $discount_price = null;
+    public ?float $price_per_hour = null;
     public bool $is_active = false;
     public ?int $length = null;
     public ?int $max_guests = null;
@@ -63,7 +63,7 @@ new class extends Component {
         $this->description = $yacht->description;
         $this->sku = $yacht->sku;
         $this->price = $yacht->price;
-        $this->discount_price = $yacht->discount_price;
+        $this->price_per_hour = $yacht->price_per_hour;
         $this->length = $yacht->length;
         $this->max_guests = $yacht->max_guests;
         $this->max_crew = $yacht->max_crew;
@@ -119,7 +119,7 @@ new class extends Component {
             'description' => 'nullable|string',
             'sku' => 'nullable|integer',
             'price' => 'nullable|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0',
+            'price_per_hour' => 'nullable|numeric|min:0',
             'is_active' => 'nullable|boolean',
             'length' => 'nullable|integer|min:0',
             'max_guests' => 'nullable|integer|min:0',
@@ -159,7 +159,7 @@ new class extends Component {
             'description' => $this->description,
             'sku' => $this->sku,
             'price' => $this->price,
-            'discount_price' => $this->discount_price,
+            'price_per_hour' => $this->price_per_hour,
             'is_active' => $this->is_active,
             'length' => $this->length,
             'max_guests' => $this->max_guests,
@@ -300,8 +300,8 @@ new class extends Component {
                 <x-input wire:model="price" type="number" step="0.01" label="Price" placeholder="0.00"
                     icon="o-currency-dollar" hint="Regular yacht price" />
 
-                <x-input wire:model="discount_price" type="number" step="0.01" label="Discount Price"
-                    placeholder="0.00" icon="o-tag" hint="Discounted price (optional)" />
+                <x-input wire:model="price_per_hour" type="number" step="0.01" label="Price Per Hour"
+                    placeholder="0.00" icon="o-clock" hint="Hourly rental price" />
 
                 <x-input wire:model="length" type="number" label="Length (m)" placeholder="Enter length in meters"
                     icon="o-arrows-pointing-out" hint="Yacht length in meters" />
