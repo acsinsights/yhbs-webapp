@@ -11,8 +11,8 @@ new class extends Component {
 
     public ?string $check_in = null;
     public ?string $check_out = null;
-    public string $check_in_time = '14:00';
-    public string $check_out_time = '12:00';
+    public string $check_in_time = '09:00';
+    public string $check_out_time = '17:00';
     public int $adults = 1;
     public int $children = 0;
     public array $adultNames = [];
@@ -59,6 +59,24 @@ new class extends Component {
             ->toArray();
     }
 
+    public function getMaxAdultsProperty(): int
+    {
+        if ($this->type === 'yacht') {
+            $maxGuests = $this->bookable->max_guests ?? 10;
+            return max(1, $maxGuests - $this->children);
+        }
+        return $this->bookable->adults ?? 10;
+    }
+
+    public function getMaxChildrenProperty(): int
+    {
+        if ($this->type === 'yacht') {
+            $maxGuests = $this->bookable->max_guests ?? 10;
+            return max(0, $maxGuests - $this->adults);
+        }
+        return $this->bookable->children ?? 10;
+    }
+
     public function updatedCheckIn(): void
     {
         $this->validateDates();
@@ -75,13 +93,27 @@ new class extends Component {
 
     public function updatedAdults(): void
     {
-        $maxAdults = $this->bookable->adults ?? 10;
+        // For yachts, use max guests logic
+        if ($this->type === 'yacht') {
+            $maxGuests = $this->bookable->max_guests ?? 10;
+            $maxAdults = $maxGuests - $this->children;
 
-        if ($this->adults > $maxAdults) {
-            $this->adults = $maxAdults;
-        }
-        if ($this->adults < 1) {
-            $this->adults = 1;
+            if ($this->adults > $maxAdults) {
+                $this->adults = $maxAdults;
+            }
+            if ($this->adults < 1) {
+                $this->adults = 1;
+            }
+        } else {
+            // For rooms/houses, use the specific adults field
+            $maxAdults = $this->bookable->adults ?? 10;
+
+            if ($this->adults > $maxAdults) {
+                $this->adults = $maxAdults;
+            }
+            if ($this->adults < 1) {
+                $this->adults = 1;
+            }
         }
 
         // Initialize adult names array
@@ -97,13 +129,27 @@ new class extends Component {
 
     public function updatedChildren(): void
     {
-        $maxChildren = $this->bookable->children ?? 10;
+        // For yachts, use max guests logic
+        if ($this->type === 'yacht') {
+            $maxGuests = $this->bookable->max_guests ?? 10;
+            $maxChildren = $maxGuests - $this->adults;
 
-        if ($this->children > $maxChildren) {
-            $this->children = $maxChildren;
-        }
-        if ($this->children < 0) {
-            $this->children = 0;
+            if ($this->children > $maxChildren) {
+                $this->children = $maxChildren;
+            }
+            if ($this->children < 0) {
+                $this->children = 0;
+            }
+        } else {
+            // For rooms/houses, use the specific children field
+            $maxChildren = $this->bookable->children ?? 10;
+
+            if ($this->children > $maxChildren) {
+                $this->children = $maxChildren;
+            }
+            if ($this->children < 0) {
+                $this->children = 0;
+            }
         }
 
         // Initialize children names array
@@ -119,11 +165,13 @@ new class extends Component {
 
     public function updatedCheckInTime(): void
     {
+        $this->validateDates();
         $this->calculatePrice();
     }
 
     public function updatedCheckOutTime(): void
     {
+        $this->validateDates();
         $this->calculatePrice();
     }
 
@@ -143,9 +191,13 @@ new class extends Component {
             $checkIn = Carbon::parse($this->check_in);
         }
 
-        // Check-out must be after check-in
-        if ($checkOut->lte($checkIn)) {
-            $this->check_out = $checkIn->copy()->addDay()->format('Y-m-d');
+        // For yachts, allow same-day bookings - no automatic date adjustment
+        // Validation will happen at booking time
+        if ($this->type !== 'yacht') {
+            // For rooms/houses, check-out must be at least next day
+            if ($checkOut->lt($checkIn)) {
+                $this->check_out = $checkIn->copy()->addDay()->format('Y-m-d');
+            }
         }
     }
 
@@ -216,8 +268,15 @@ new class extends Component {
 
     public function bookNow()
     {
-        $maxAdults = $this->bookable->adults ?? 10;
-        $maxChildren = $this->bookable->children ?? 10;
+        // Get max values based on type
+        if ($this->type === 'yacht') {
+            $maxGuests = $this->bookable->max_guests ?? 10;
+            $maxAdults = $maxGuests;
+            $maxChildren = $maxGuests;
+        } else {
+            $maxAdults = $this->bookable->adults ?? 10;
+            $maxChildren = $this->bookable->children ?? 10;
+        }
 
         // Validate
         $this->validate(
@@ -237,6 +296,15 @@ new class extends Component {
                 'check_out_time.required' => 'Check-out time is required.',
             ],
         );
+
+        // For yachts, validate that adults + children <= max guests
+        if ($this->type === 'yacht') {
+            $maxGuests = $this->bookable->max_guests ?? 10;
+            if ($this->adults + $this->children > $maxGuests) {
+                $this->dispatch('error', "Total guests cannot exceed $maxGuests.");
+                return;
+            }
+        }
 
         if (!$this->isAvailable) {
             $this->dispatch('error', 'Selected dates are not available.');
@@ -383,8 +451,8 @@ new class extends Component {
             <div class="mb-3">
                 <label class="form-label"><i class="bi bi-people me-2"></i>Adults</label>
                 <input type="number" wire:model.live="adults" class="form-control" min="1"
-                    max="{{ $bookable->adults ?? 1 }}" required>
-                <small class="text-muted">Max: {{ $bookable->adults ?? 1 }} adults</small>
+                    max="{{ $this->maxAdults }}" required>
+                <small class="text-muted">Max: {{ $this->maxAdults }} adults</small>
                 @error('adults')
                     <span class="text-danger small">{{ $message }}</span>
                 @enderror
@@ -394,8 +462,8 @@ new class extends Component {
             <div class="mb-3">
                 <label class="form-label"><i class="bi bi-person me-2"></i>Children</label>
                 <input type="number" wire:model.live="children" class="form-control" min="0"
-                    max="{{ $bookable->children ?? 0 }}">
-                <small class="text-muted">Max: {{ $bookable->children ?? 0 }} children</small>
+                    max="{{ $this->maxChildren }}">
+                <small class="text-muted">Max: {{ $this->maxChildren }} children</small>
                 @error('children')
                     <span class="text-danger small">{{ $message }}</span>
                 @enderror
