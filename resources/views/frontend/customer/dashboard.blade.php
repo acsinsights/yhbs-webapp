@@ -111,8 +111,8 @@
                                             </p>
                                         </div>
                                         <div class="col-md-2 text-center">
-                                            <span class="badge badge-{{ $booking->status_color ?? 'secondary' }}">
-                                                {{ ucfirst($booking->status ?? 'Pending') }}
+                                            <span class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }}">
+                                                {{ $booking->status?->label() ?? 'Pending' }}
                                             </span>
                                         </div>
                                         <div class="col-md-2 text-end">

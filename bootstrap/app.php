@@ -15,11 +15,14 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'role' =>  RoleMiddleware::class,
+            'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
             'admin.auth' => \App\Http\Middleware\AdminAuthMiddleware::class,
         ]);
+
+        // Redirect unauthenticated users to customer login
+        $middleware->redirectGuestsTo(fn($request) => route('customer.login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
