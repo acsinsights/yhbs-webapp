@@ -29,15 +29,10 @@
                     <!-- House Image -->
                     <div class="package-img-area mb-4">
                         @if ($house->image)
-                            @if (str_starts_with($house->image, '/default'))
-                                <img src="{{ asset($house->image) }}" alt="{{ $house->name }}" class="img-fluid rounded">
-                            @else
-                                <img src="{{ asset('storage/' . $house->image) }}" alt="{{ $house->name }}"
-                                    class="img-fluid rounded">
-                            @endif
+                            <img src="{{ asset($house->image) }}" alt="{{ $house->name }}" class="img-fluid rounded">
                         @else
-                            <img src="{{ asset('frontend/assets/img/innerpages/hotel-img1.jpg') }}"
-                                alt="{{ $house->name }}" class="img-fluid rounded">
+                            <img src="{{ asset('frontend/img/home2/hoses rooms/5.jpg') }}" alt="{{ $house->name }}"
+                                class="img-fluid rounded">
                         @endif
                     </div>
 
@@ -153,15 +148,10 @@
                                             <div class="hotel-img-wrap">
                                                 <a href="{{ route('houses.show', $similar->slug) }}" class="hotel-img">
                                                     @if ($similar->image)
-                                                        @if (str_starts_with($similar->image, '/default'))
-                                                            <img src="{{ asset($similar->image) }}"
-                                                                alt="{{ $similar->name }}">
-                                                        @else
-                                                            <img src="{{ asset('storage/' . $similar->image) }}"
-                                                                alt="{{ $similar->name }}">
-                                                        @endif
+                                                        <img src="{{ asset($similar->image) }}"
+                                                            alt="{{ $similar->name }}">
                                                     @else
-                                                        <img src="{{ asset('frontend/assets/img/innerpages/hotel-img1.jpg') }}"
+                                                        <img src="{{ asset('frontend/img/home2/hoses rooms/5.jpg') }}"
                                                             alt="{{ $similar->name }}">
                                                     @endif
                                                 </a>

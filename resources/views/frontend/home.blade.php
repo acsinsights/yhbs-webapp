@@ -1337,7 +1337,7 @@
                     <div class="package-card">
                         <div class="package-img-wrap">
                             <a href="travel-package-details.html" class="package-img">
-                                <img src="{{ asset('frontend/img/home2/hoses rooms/5.jpg') }}" alt="">
+                                <img src="{{ asset('frontend/img/home2/houses/5.jpg') }}" alt="">
                             </a>
                         </div>
                         <div class="package-content">
@@ -2471,7 +2471,7 @@
                                     <div class="package-card">
                                         <div class="package-img-wrap">
                                             <a href="{{ route('houses.show', $house->slug) }}" class="package-img">
-                                                <img src="{{ $house->image ? asset($house->image) : asset('frontend/img/home2/hoses rooms/5.jpg') }}"
+                                                <img src="{{ $house->image ? asset($house->image) : asset('frontend/img/home2/houses/5.jpg') }}"
                                                     alt="{{ $house->name }}">
                                             </a>
                                             @if ($house->price_per_night < 500)
