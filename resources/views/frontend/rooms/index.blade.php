@@ -216,7 +216,7 @@
                                                             alt="{{ $room->name }}">
                                                     @endif
                                                 @else
-                                                    <img src="{{ asset('frontend/assets/img/innerpages/hotel-img1.jpg') }}"
+                                                    <img src="{{ asset('frontend/img/home2/hoses rooms/5.jpg') }}"
                                                         alt="{{ $room->name }}">
                                                 @endif
                                             </a>
