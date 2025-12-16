@@ -129,7 +129,12 @@
                         </div>
                         <div class="card-body text-center">
                             <div class="profile-avatar mb-3">
-                                <i class="bi bi-person-circle"></i>
+                                @if (auth()->user()->avatar)
+                                    <img src="{{ asset('storage/' . auth()->user()->avatar) }}" alt="Profile Avatar"
+                                        class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">
+                                @else
+                                    <i class="bi bi-person-circle"></i>
+                                @endif
                             </div>
                             <h5>{{ auth()->user()->name }}</h5>
                             <p class="text-muted mb-3">{{ auth()->user()->email }}</p>

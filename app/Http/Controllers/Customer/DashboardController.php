@@ -80,8 +80,20 @@ class DashboardController extends Controller
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => ['nullable', 'string', 'max:20', 'regex:/^[\d\s\-\+\(\)]+$/'],
+            'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
         ]);
+
+        // Handle avatar upload
+        if ($request->hasFile('avatar')) {
+            // Delete old avatar if exists
+            if ($user->avatar && \Storage::exists($user->avatar)) {
+                \Storage::delete($user->avatar);
+            }
+
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $validated['avatar'] = $avatarPath;
+        }
 
         $user->update($validated);
 
