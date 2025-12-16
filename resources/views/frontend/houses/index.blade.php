@@ -144,12 +144,8 @@
                                         <div class="hotel-img-wrap">
                                             <a href="{{ route('houses.show', $house->slug) }}" class="hotel-img">
                                                 @if ($house->image)
-                                                    @if (str_starts_with($house->image, '/default'))
-                                                        <img src="{{ asset($house->image) }}" alt="{{ $house->name }}">
-                                                    @else
-                                                        <img src="{{ asset('storage/' . $house->image) }}"
-                                                            alt="{{ $house->name }}">
-                                                    @endif
+                                                    <img src="{{ $house->image ? asset($house->image) : asset('frontend/img/home2/hoses rooms/5.jpg') }}"
+                                                        alt="{{ $house->name }}">
                                                 @else
                                                     <img src="{{ asset('frontend/assets/img/innerpages/hotel-img1.jpg') }}"
                                                         alt="{{ $house->name }}">

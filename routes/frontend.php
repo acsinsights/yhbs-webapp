@@ -11,7 +11,8 @@ use App\Http\Controllers\Frontend\BookingController;
 
 // Frontend Home Page
 Route::get('/', function () {
-    return view('frontend.home');
+    $houses = \App\Models\House::with('rooms')->active()->take(3)->get();
+    return view('frontend.home', compact('houses'));
 })->name('home');
 
 // about page
