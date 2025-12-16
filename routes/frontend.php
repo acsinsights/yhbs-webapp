@@ -63,6 +63,7 @@ Route::prefix('customer')->name('customer.')->group(function () {
 
         Route::get('/bookings', [DashboardController::class, 'bookings'])->name('bookings');
         Route::get('/bookings/{id}', [DashboardController::class, 'bookingDetails'])->name('booking.details');
+        Route::post('/bookings/{id}/cancel', [DashboardController::class, 'cancelBooking'])->name('booking.cancel');
     });
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

@@ -32,9 +32,25 @@ class DashboardController extends Controller
             ->sum('price');
 
         $recentBookings = Booking::where('user_id', $user->id)
-            ->latest()
+            ->with('bookingable')
+            ->orderBy('created_at', 'desc')
             ->take(5)
-            ->get();
+            ->get()
+            ->map(function ($booking) {
+                $bookingable = $booking->bookingable;
+
+                return [
+                    'id' => $booking->id,
+                    'check_in' => $booking->check_in ? $booking->check_in->format('M d, Y') : 'N/A',
+                    'check_out' => $booking->check_out ? $booking->check_out->format('M d, Y') : 'N/A',
+                    'status' => $booking->status,
+                    'total' => $booking->price ?? 0,
+                    'room_name' => $bookingable ? ($bookingable->name ?? 'N/A') : 'N/A',
+                    'image' => $bookingable && $bookingable->image
+                        ? asset('storage/' . $bookingable->image)
+                        : asset('frontend/img/innerpages/hotel-dt-room-img1.jpg'),
+                ];
+            });
 
         return view('frontend.customer.dashboard', compact(
             'totalBookings',
@@ -97,8 +113,16 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         $bookings = Booking::where('user_id', $user->id)
+            ->with('bookingable')
             ->latest()
-            ->paginate(10);
+            ->paginate(10)
+            ->through(function ($booking) {
+                // Eager load house relationship only for Room bookings
+                if ($booking->bookingable instanceof \App\Models\Room) {
+                    $booking->bookingable->load('house');
+                }
+                return $booking;
+            });
 
         return view('frontend.customer.bookings', compact('bookings'));
     }
@@ -115,5 +139,32 @@ class DashboardController extends Controller
             ->firstOrFail();
 
         return view('frontend.customer.booking-details', compact('booking'));
+    }
+
+    /**
+     * Cancel a booking
+     */
+    public function cancelBooking($id)
+    {
+        $user = Auth::user();
+        $booking = Booking::where('id', $id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        // Check if booking can be cancelled
+        if (!$booking->canBeCancelled()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This booking cannot be cancelled.'
+            ], 400);
+        }
+
+        $booking->status = \App\Enums\BookingStatusEnum::CANCELLED;
+        $booking->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Booking cancelled successfully!'
+        ]);
     }
 }

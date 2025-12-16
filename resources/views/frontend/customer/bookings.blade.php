@@ -53,65 +53,69 @@
                 <!-- All Bookings -->
                 <div class="tab-pane fade show active" id="all" role="tabpanel">
                     <div class="row">
-                        @forelse($bookings ?? [] as $booking)
+                        @forelse($bookings as $booking)
                             <div class="col-lg-12 mb-4">
                                 <div class="booking-card">
                                     <div class="row align-items-center">
                                         <div class="col-md-3">
-                                            <img src="{{ $booking->image ?? asset('frontend/img/default-room.jpg') }}"
+                                            <img src="{{ $booking->bookingable?->image ? asset('storage/' . $booking->bookingable->image) : asset('frontend/img/innerpages/hotel-dt-room-img1.jpg') }}"
                                                 alt="Booking" class="booking-image">
                                         </div>
                                         <div class="col-md-6">
                                             <div class="booking-details">
-                                                <span class="badge badge-{{ $booking->status_color ?? 'secondary' }} mb-2">
-                                                    {{ ucfirst($booking->status ?? 'Pending') }}
+                                                <span
+                                                    class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }} mb-2">
+                                                    {{ $booking->status?->label() ?? 'Pending' }}
                                                 </span>
-                                                <h4>{{ $booking->property_name ?? 'Property Name' }}</h4>
-                                                <p class="text-muted mb-2">
-                                                    <i class="bi bi-geo-alt me-2"></i>{{ $booking->location ?? 'Location' }}
-                                                </p>
+                                                <h4>{{ $booking->bookingable?->name ?? 'Property Name' }}</h4>
+                                                @if ($booking->bookingable?->house)
+                                                    <p class="text-muted mb-2">
+                                                        <i
+                                                            class="bi bi-house me-2"></i>{{ $booking->bookingable->house->name }}
+                                                    </p>
+                                                @endif
                                                 <div class="booking-info">
                                                     <div class="info-item">
                                                         <i class="bi bi-calendar-check"></i>
                                                         <div>
                                                             <small>Check-in</small>
-                                                            <p>{{ $booking->check_in ?? 'N/A' }}</p>
+                                                            <p>{{ $booking->check_in?->format('M d, Y') ?? 'N/A' }}</p>
                                                         </div>
                                                     </div>
                                                     <div class="info-item">
                                                         <i class="bi bi-calendar-x"></i>
                                                         <div>
                                                             <small>Check-out</small>
-                                                            <p>{{ $booking->check_out ?? 'N/A' }}</p>
+                                                            <p>{{ $booking->check_out?->format('M d, Y') ?? 'N/A' }}</p>
                                                         </div>
                                                     </div>
                                                     <div class="info-item">
                                                         <i class="bi bi-people"></i>
                                                         <div>
                                                             <small>Guests</small>
-                                                            <p>{{ $booking->guests ?? '2' }} Adults</p>
+                                                            <p>{{ $booking->adults ?? '0' }} Adults</p>
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <p class="booking-id mb-0">
                                                     <i class="bi bi-hash me-1"></i>Booking ID:
-                                                    <strong>{{ $booking->id ?? 'N/A' }}</strong>
+                                                    <strong>{{ $booking->id }}</strong>
                                                 </p>
                                             </div>
                                         </div>
                                         <div class="col-md-3 text-end">
                                             <div class="booking-price mb-3">
                                                 <small class="text-muted">Total Amount</small>
-                                                <h3 class="text-primary">{{ currency_format($booking->total ?? 0) }}</h3>
+                                                <h3 class="text-primary">{{ currency_format($booking->price ?? 0) }}</h3>
                                             </div>
                                             <div class="booking-actions">
-                                                <a href="{{ route('customer.booking.details', $booking->id ?? '#') }}"
+                                                <a href="{{ route('customer.booking.details', $booking->id) }}"
                                                     class="btn btn-outline-primary btn-sm mb-2 w-100">
                                                     <i class="bi bi-eye me-2"></i>View Details
                                                 </a>
-                                                @if (($booking->status ?? '') == 'pending')
+                                                @if ($booking->status === App\Enums\BookingStatusEnum::PENDING)
                                                     <button class="btn btn-outline-danger btn-sm w-100"
-                                                        onclick="cancelBooking({{ $booking->id ?? 0 }})">
+                                                        onclick="cancelBooking({{ $booking->id }})">
                                                         <i class="bi bi-x-circle me-2"></i>Cancel
                                                     </button>
                                                 @endif
@@ -133,47 +137,308 @@
                             </div>
                         @endforelse
                     </div>
+
+                    <!-- Pagination -->
+                    @if ($bookings->hasPages())
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-center">
+                                    {{ $bookings->links() }}
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Confirmed Bookings -->
                 <div class="tab-pane fade" id="confirmed" role="tabpanel">
                     <div class="row">
-                        <div class="col-12">
-                            <div class="empty-state">
-                                <i class="bi bi-check-circle"></i>
-                                <h4>No Confirmed Bookings</h4>
-                                <p class="text-muted">Your confirmed bookings will appear here</p>
+                        @php
+                            $confirmedBookings = $bookings->filter(function($booking) {
+                                return in_array($booking->status, [
+                                    App\Enums\BookingStatusEnum::BOOKED,
+                                    App\Enums\BookingStatusEnum::CHECKED_IN
+                                ]);
+                            });
+                        @endphp
+
+                        @forelse($confirmedBookings as $booking)
+                            <div class="col-lg-12 mb-4">
+                                <div class="booking-card">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-3">
+                                            <img src="{{ $booking->bookingable?->image ? asset('storage/' . $booking->bookingable->image) : asset('frontend/img/innerpages/hotel-dt-room-img1.jpg') }}"
+                                                alt="Booking" class="booking-image">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="booking-details">
+                                                <span class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }} mb-2">
+                                                    {{ $booking->status?->label() ?? 'Confirmed' }}
+                                                </span>
+                                                <h4>{{ $booking->bookingable?->name ?? 'Property Name' }}</h4>
+                                                @if ($booking->bookingable?->house)
+                                                    <p class="text-muted mb-2">
+                                                        <i class="bi bi-house me-2"></i>{{ $booking->bookingable->house->name }}
+                                                    </p>
+                                                @endif
+                                                <div class="booking-info">
+                                                    <div class="info-item">
+                                                        <i class="bi bi-calendar-check"></i>
+                                                        <div>
+                                                            <small>Check-in</small>
+                                                            <p>{{ $booking->check_in?->format('M d, Y') ?? 'N/A' }}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <i class="bi bi-calendar-x"></i>
+                                                        <div>
+                                                            <small>Check-out</small>
+                                                            <p>{{ $booking->check_out?->format('M d, Y') ?? 'N/A' }}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <i class="bi bi-people"></i>
+                                                        <div>
+                                                            <small>Guests</small>
+                                                            <p>{{ $booking->adults ?? '0' }} Adults</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <p class="booking-id mb-0">
+                                                    <i class="bi bi-hash me-1"></i>Booking ID:
+                                                    <strong>{{ $booking->id }}</strong>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 text-end">
+                                            <div class="booking-price mb-3">
+                                                <small class="text-muted">Total Amount</small>
+                                                <h3 class="text-primary">{{ currency_format($booking->price ?? 0) }}</h3>
+                                            </div>
+                                            <div class="booking-actions">
+                                                <a href="{{ route('customer.booking.details', $booking->id) }}"
+                                                    class="btn btn-outline-primary btn-sm mb-2 w-100">
+                                                    <i class="bi bi-eye me-2"></i>View Details
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        @empty
+                            <div class="col-12">
+                                <div class="empty-state">
+                                    <i class="bi bi-check-circle"></i>
+                                    <h4>No Confirmed Bookings</h4>
+                                    <p class="text-muted">Your confirmed bookings will appear here</p>
+                                </div>
+                            </div>
+                        @endforelse
                     </div>
                 </div>
 
                 <!-- Pending Bookings -->
                 <div class="tab-pane fade" id="pending" role="tabpanel">
                     <div class="row">
-                        <div class="col-12">
-                            <div class="empty-state">
-                                <i class="bi bi-clock-history"></i>
-                                <h4>No Pending Bookings</h4>
-                                <p class="text-muted">Your pending bookings will appear here</p>
+                        @php
+                            $pendingBookings = $bookings->filter(function($booking) {
+                                return $booking->status === App\Enums\BookingStatusEnum::PENDING;
+                            });
+                        @endphp
+
+                        @forelse($pendingBookings as $booking)
+                            <div class="col-lg-12 mb-4">
+                                <div class="booking-card">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-3">
+                                            <img src="{{ $booking->bookingable?->image ? asset('storage/' . $booking->bookingable->image) : asset('frontend/img/innerpages/hotel-dt-room-img1.jpg') }}"
+                                                alt="Booking" class="booking-image">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="booking-details">
+                                                <span class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }} mb-2">
+                                                    {{ $booking->status?->label() ?? 'Pending' }}
+                                                </span>
+                                                <h4>{{ $booking->bookingable?->name ?? 'Property Name' }}</h4>
+                                                @if ($booking->bookingable?->house)
+                                                    <p class="text-muted mb-2">
+                                                        <i class="bi bi-house me-2"></i>{{ $booking->bookingable->house->name }}
+                                                    </p>
+                                                @endif
+                                                <div class="booking-info">
+                                                    <div class="info-item">
+                                                        <i class="bi bi-calendar-check"></i>
+                                                        <div>
+                                                            <small>Check-in</small>
+                                                            <p>{{ $booking->check_in?->format('M d, Y') ?? 'N/A' }}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <i class="bi bi-calendar-x"></i>
+                                                        <div>
+                                                            <small>Check-out</small>
+                                                            <p>{{ $booking->check_out?->format('M d, Y') ?? 'N/A' }}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <i class="bi bi-people"></i>
+                                                        <div>
+                                                            <small>Guests</small>
+                                                            <p>{{ $booking->adults ?? '0' }} Adults</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <p class="booking-id mb-0">
+                                                    <i class="bi bi-hash me-1"></i>Booking ID:
+                                                    <strong>{{ $booking->id }}</strong>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 text-end">
+                                            <div class="booking-price mb-3">
+                                                <small class="text-muted">Total Amount</small>
+                                                <h3 class="text-primary">{{ currency_format($booking->price ?? 0) }}</h3>
+                                            </div>
+                                            <div class="booking-actions">
+                                                <a href="{{ route('customer.booking.details', $booking->id) }}"
+                                                    class="btn btn-outline-primary btn-sm mb-2 w-100">
+                                                    <i class="bi bi-eye me-2"></i>View Details
+                                                </a>
+                                                <button class="btn btn-outline-danger btn-sm w-100"
+                                                    onclick="cancelBooking({{ $booking->id }})">
+                                                    <i class="bi bi-x-circle me-2"></i>Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        @empty
+                            <div class="col-12">
+                                <div class="empty-state">
+                                    <i class="bi bi-clock-history"></i>
+                                    <h4>No Pending Bookings</h4>
+                                    <p class="text-muted">Your pending bookings will appear here</p>
+                                </div>
+                            </div>
+                        @endforelse
                     </div>
                 </div>
 
                 <!-- Cancelled Bookings -->
                 <div class="tab-pane fade" id="cancelled" role="tabpanel">
                     <div class="row">
-                        <div class="col-12">
-                            <div class="empty-state">
-                                <i class="bi bi-x-circle"></i>
-                                <h4>No Cancelled Bookings</h4>
-                                <p class="text-muted">Your cancelled bookings will appear here</p>
+                        @php
+                            $cancelledBookings = $bookings->filter(function($booking) {
+                                return $booking->status === App\Enums\BookingStatusEnum::CANCELLED;
+                            });
+                        @endphp
+
+                        @forelse($cancelledBookings as $booking)
+                            <div class="col-lg-12 mb-4">
+                                <div class="booking-card">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-3">
+                                            <img src="{{ $booking->bookingable?->image ? asset('storage/' . $booking->bookingable->image) : asset('frontend/img/innerpages/hotel-dt-room-img1.jpg') }}"
+                                                alt="Booking" class="booking-image">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="booking-details">
+                                                <span class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }} mb-2">
+                                                    {{ $booking->status?->label() ?? 'Cancelled' }}
+                                                </span>
+                                                <h4>{{ $booking->bookingable?->name ?? 'Property Name' }}</h4>
+                                                @if ($booking->bookingable?->house)
+                                                    <p class="text-muted mb-2">
+                                                        <i class="bi bi-house me-2"></i>{{ $booking->bookingable->house->name }}
+                                                    </p>
+                                                @endif
+                                                <div class="booking-info">
+                                                    <div class="info-item">
+                                                        <i class="bi bi-calendar-check"></i>
+                                                        <div>
+                                                            <small>Check-in</small>
+                                                            <p>{{ $booking->check_in?->format('M d, Y') ?? 'N/A' }}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <i class="bi bi-calendar-x"></i>
+                                                        <div>
+                                                            <small>Check-out</small>
+                                                            <p>{{ $booking->check_out?->format('M d, Y') ?? 'N/A' }}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <i class="bi bi-people"></i>
+                                                        <div>
+                                                            <small>Guests</small>
+                                                            <p>{{ $booking->adults ?? '0' }} Adults</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <p class="booking-id mb-0">
+                                                    <i class="bi bi-hash me-1"></i>Booking ID:
+                                                    <strong>{{ $booking->id }}</strong>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 text-end">
+                                            <div class="booking-price mb-3">
+                                                <small class="text-muted">Total Amount</small>
+                                                <h3 class="text-muted">{{ currency_format($booking->price ?? 0) }}</h3>
+                                            </div>
+                                            <div class="booking-actions">
+                                                <a href="{{ route('customer.booking.details', $booking->id) }}"
+                                                    class="btn btn-outline-primary btn-sm w-100">
+                                                    <i class="bi bi-eye me-2"></i>View Details
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        @empty
+                            <div class="col-12">
+                                <div class="empty-state">
+                                    <i class="bi bi-x-circle"></i>
+                                    <h4>No Cancelled Bookings</h4>
+                                    <p class="text-muted">Your cancelled bookings will appear here</p>
+                                </div>
+                            </div>
+                        @endforelse
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+@endsection
+
+@section('scripts')
+    <script>
+        function cancelBooking(bookingId) {
+            if (confirm('Are you sure you want to cancel this booking?')) {
+                fetch(`/customer/bookings/${bookingId}/cancel`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Booking cancelled successfully!');
+                            location.reload();
+                        } else {
+                            alert(data.message || 'Failed to cancel booking');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while cancelling the booking');
+                    });
+            }
+        }
+    </script>
 @endsection

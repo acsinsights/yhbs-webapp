@@ -22,7 +22,7 @@
             <div class="welcome-banner mb-4">
                 <div class="row align-items-center">
                     <div class="col-md-8">
-                        <h2 class="text-white">Welcome back, {{ auth()->user()->name ?? 'Guest' }}!</h2>
+                        <h2 class="text-white">Welcome back, {{ auth()->user()->name }}!</h2>
                         <p class="mb-0">Manage your bookings and profile from your dashboard</p>
                     </div>
                     <div class="col-md-4 text-end">
@@ -35,50 +35,38 @@
 
             <!-- Stats Cards -->
             <div class="row mb-4">
-                <div class="col-lg-3 col-md-6 mb-4">
+                <div class="col-lg-4 col-md-6 mb-4">
                     <div class="stat-card">
                         <div class="stat-icon bg-primary">
                             <i class="bi bi-calendar-check"></i>
                         </div>
                         <div class="stat-content">
-                            <h3>{{ $totalBookings ?? 0 }}</h3>
+                            <h3>{{ $totalBookings }}</h3>
                             <p>Total Bookings</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="col-lg-3 col-md-6 mb-4">
+                <div class="col-lg-4 col-md-6 mb-4">
                     <div class="stat-card">
                         <div class="stat-icon bg-success">
                             <i class="bi bi-check-circle"></i>
                         </div>
                         <div class="stat-content">
-                            <h3>{{ $confirmedBookings ?? 0 }}</h3>
+                            <h3>{{ $confirmedBookings }}</h3>
                             <p>Confirmed</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="col-lg-3 col-md-6 mb-4">
+                <div class="col-lg-4 col-md-6 mb-4">
                     <div class="stat-card">
                         <div class="stat-icon bg-warning">
                             <i class="bi bi-clock-history"></i>
                         </div>
                         <div class="stat-content">
-                            <h3>{{ $pendingBookings ?? 0 }}</h3>
+                            <h3>{{ $pendingBookings }}</h3>
                             <p>Pending</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-3 col-md-6 mb-4">
-                    <div class="stat-card">
-                        <div class="stat-icon bg-info">
-                            <i class="bi bi-currency-dollar"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>{{ currency_format($totalSpent ?? 0) }}</h3>
-                            <p>Total Spent</p>
                         </div>
                     </div>
                 </div>
@@ -93,30 +81,30 @@
                             <a href="{{ route('customer.bookings') }}" class="btn btn-sm btn-primary">View All</a>
                         </div>
                         <div class="card-body">
-                            @forelse($recentBookings ?? [] as $booking)
+                            @forelse($recentBookings as $booking)
                                 <div class="booking-item">
                                     <div class="row align-items-center">
                                         <div class="col-md-2">
-                                            <img src="{{ $booking->image ?? asset('frontend/img/default-room.jpg') }}"
-                                                alt="Booking" class="booking-img">
+                                            <img src="{{ $booking['image'] }}" alt="Booking" class="booking-img">
                                         </div>
                                         <div class="col-md-6">
-                                            <h5>{{ $booking->room_name ?? 'Room Name' }}</h5>
+                                            <h5>{{ $booking['room_name'] }}</h5>
                                             <p class="text-muted mb-1">
-                                                <i class="bi bi-calendar me-2"></i>{{ $booking->check_in ?? 'N/A' }} -
-                                                {{ $booking->check_out ?? 'N/A' }}
+                                                <i class="bi bi-calendar me-2"></i>{{ $booking['check_in'] }} -
+                                                {{ $booking['check_out'] }}
                                             </p>
                                             <p class="text-muted mb-0">
-                                                <i class="bi bi-hash me-2"></i>Booking ID: {{ $booking->id ?? 'N/A' }}
+                                                <i class="bi bi-hash me-2"></i>Booking ID: {{ $booking['id'] }}
                                             </p>
                                         </div>
                                         <div class="col-md-2 text-center">
-                                            <span class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }}">
-                                                {{ $booking->status?->label() ?? 'Pending' }}
+                                            <span
+                                                class="badge {{ $booking['status']?->badgeColor() ?? 'badge-secondary' }}">
+                                                {{ $booking['status']?->label() ?? 'Pending' }}
                                             </span>
                                         </div>
                                         <div class="col-md-2 text-end">
-                                            <h5 class="text-primary mb-0">${{ number_format($booking->total ?? 0, 2) }}
+                                            <h5 class="text-primary mb-0">{{ currency_format($booking['total']) }}
                                             </h5>
                                         </div>
                                     </div>
@@ -143,8 +131,8 @@
                             <div class="profile-avatar mb-3">
                                 <i class="bi bi-person-circle"></i>
                             </div>
-                            <h5>{{ auth()->user()->name ?? 'Guest User' }}</h5>
-                            <p class="text-muted mb-3">{{ auth()->user()->email ?? 'guest@example.com' }}</p>
+                            <h5>{{ auth()->user()->name }}</h5>
+                            <p class="text-muted mb-3">{{ auth()->user()->email }}</p>
                             <a href="{{ route('customer.profile') }}" class="btn btn-outline-primary btn-sm">
                                 <i class="bi bi-pencil me-2"></i>Edit Profile
                             </a>
