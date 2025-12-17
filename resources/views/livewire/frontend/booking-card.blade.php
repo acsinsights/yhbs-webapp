@@ -21,6 +21,8 @@ new class extends Component {
     public ?float $totalPrice = null;
     public bool $isAvailable = true;
     public string $availabilityMessage = '';
+    public string $errorMessage = '';
+    public string $successMessage = '';
 
     public function mount($bookable, string $type): void
     {
@@ -35,21 +37,30 @@ new class extends Component {
             default => throw new \Exception('Invalid bookable type'),
         };
 
-        // Get booked dates
+        // Get booked dates (only future and current bookings)
+        $today = now()->startOfDay()->format('Y-m-d');
         $query = Booking::where('bookingable_type', $modelClass)
             ->where('bookingable_id', $bookable->id)
-            ->whereIn('status', ['pending', 'booked', 'checked_in']);
+            ->whereIn('status', ['pending', 'booked', 'checked_in'])
+            ->where('check_out', '>=', $today); // Only consider bookings that haven't ended yet
 
         $this->bookedDates = $query
             ->get(['check_in', 'check_out'])
-            ->flatMap(function ($booking) {
+            ->flatMap(function ($booking) use ($today) {
                 $dates = [];
-                $checkIn = new \DateTime($booking->check_in);
-                $checkOut = new \DateTime($booking->check_out);
+                $checkIn = Carbon::parse($booking->check_in)->startOfDay();
+                $checkOut = Carbon::parse($booking->check_out)->startOfDay();
+                $todayCarbon = Carbon::parse($today);
 
-                while ($checkIn < $checkOut) {
+                // Start from today if check-in is in the past
+                if ($checkIn->lt($todayCarbon)) {
+                    $checkIn = $todayCarbon->copy();
+                }
+
+                // Generate all dates in the booking range (excluding check-out date)
+                while ($checkIn->lt($checkOut)) {
                     $dates[] = $checkIn->format('Y-m-d');
-                    $checkIn->modify('+1 day');
+                    $checkIn->addDay();
                 }
 
                 return $dates;
@@ -57,6 +68,16 @@ new class extends Component {
             ->unique()
             ->values()
             ->toArray();
+
+        // Initialize adult names array (default 1 adult)
+        $this->adultNames = [''];
+
+        // Initialize children names array if needed
+        if ($this->children > 0) {
+            for ($i = 0; $i < $this->children; $i++) {
+                $this->childrenNames[$i] = '';
+            }
+        }
     }
 
     public function getMaxAdultsProperty(): int
@@ -211,8 +232,24 @@ new class extends Component {
 
         $checkIn = Carbon::parse($this->check_in);
         $checkOut = Carbon::parse($this->check_out);
+        $now = Carbon::now()->startOfDay();
 
-        // Generate range of dates
+        // Check if check-in date is in the past
+        if ($checkIn->lt($now)) {
+            $this->isAvailable = false;
+            $this->availabilityMessage = 'Check-in date cannot be in the past.';
+            return;
+        }
+
+        // Check if check-out is before or same as check-in
+        if ($checkOut->lte($checkIn)) {
+            $this->isAvailable = false;
+            $this->availabilityMessage = 'Check-out date must be after check-in date.';
+            return;
+        }
+
+        // Generate range of dates to check (excluding check-out date)
+        // We exclude check-out because guest leaves on that day
         $selectedDates = [];
         $current = $checkIn->copy();
         while ($current->lt($checkOut)) {
@@ -268,66 +305,111 @@ new class extends Component {
 
     public function bookNow()
     {
-        // Get max values based on type
-        if ($this->type === 'yacht') {
-            $maxGuests = $this->bookable->max_guests ?? 10;
-            $maxAdults = $maxGuests;
-            $maxChildren = $maxGuests;
-        } else {
-            $maxAdults = $this->bookable->adults ?? 10;
-            $maxChildren = $this->bookable->children ?? 10;
-        }
+        try {
+            // Reset messages
+            $this->errorMessage = '';
+            $this->successMessage = '';
 
-        // Validate
-        $this->validate(
-            [
-                'check_in' => 'required|date|after_or_equal:today',
-                'check_out' => 'required|date|after:check_in',
+            // Check if dates are selected
+            if (!$this->check_in || !$this->check_out) {
+                $this->errorMessage = 'Please select check-in and check-out dates.';
+                return;
+            }
+
+            // Check availability
+            if (!$this->isAvailable) {
+                $this->errorMessage = 'Selected dates are not available. Please choose different dates.';
+                return;
+            }
+
+            // Get max values based on type
+            if ($this->type === 'yacht') {
+                $maxGuests = $this->bookable->max_guests ?? 10;
+                $maxAdults = $maxGuests;
+                $maxChildren = $maxGuests;
+            } else {
+                $maxAdults = $this->bookable->adults ?? 10;
+                $maxChildren = $this->bookable->children ?? 10;
+            }
+
+            // Build validation rules dynamically
+            $rules = [
+                'check_in' => 'required|date',
+                'check_out' => 'required|date',
                 'check_in_time' => 'required|date_format:H:i',
                 'check_out_time' => 'required|date_format:H:i',
                 'adults' => "required|integer|min:1|max:$maxAdults",
-                'children' => "required|integer|min:0|max:$maxChildren",
-                'adultNames.*' => 'required|string|max:255',
-                'childrenNames.*' => 'nullable|string|max:255',
-            ],
-            [
-                'adultNames.*.required' => 'Please provide names for all adults.',
+                'children' => "nullable|integer|min:0|max:$maxChildren",
+            ];
+
+            // Add validation for adult names only if adults > 0
+            if ($this->adults > 0) {
+                for ($i = 0; $i < $this->adults; $i++) {
+                    $rules["adultNames.{$i}"] = 'required|string|min:1|max:255';
+                }
+            }
+
+            // Add validation for children names only if children > 0
+            if ($this->children > 0) {
+                for ($i = 0; $i < $this->children; $i++) {
+                    $rules["childrenNames.{$i}"] = 'nullable|string|max:255';
+                }
+            }
+
+            // Validate
+            $validated = $this->validate($rules, [
+                'check_in.required' => 'Check-in date is required.',
+                'check_out.required' => 'Check-out date is required.',
+                'adultNames.*.required' => 'Please provide name for all adults.',
+                'adultNames.*.min' => 'Adult name is required.',
                 'check_in_time.required' => 'Check-in time is required.',
                 'check_out_time.required' => 'Check-out time is required.',
-            ],
-        );
+            ]);
 
-        // For yachts, validate that adults + children <= max guests
-        if ($this->type === 'yacht') {
-            $maxGuests = $this->bookable->max_guests ?? 10;
-            if ($this->adults + $this->children > $maxGuests) {
-                $this->dispatch('error', "Total guests cannot exceed $maxGuests.");
+            // For yachts, validate that adults + children <= max guests
+            if ($this->type === 'yacht') {
+                $maxGuests = $this->bookable->max_guests ?? 10;
+                if ($this->adults + $this->children > $maxGuests) {
+                    $this->errorMessage = "Total guests cannot exceed $maxGuests.";
+                    return;
+                }
+            }
+
+            // Ensure adult names are filled
+            $filledAdultNames = array_filter($this->adultNames, fn($name) => !empty(trim($name)));
+            if (count($filledAdultNames) < $this->adults) {
+                $this->errorMessage = 'Please provide names for all adults.';
                 return;
             }
+
+            // Combine date and time
+            $checkInDateTime = $this->check_in . ' ' . $this->check_in_time;
+            $checkOutDateTime = $this->check_out . ' ' . $this->check_out_time;
+
+            // Filter out empty names
+            $adultNames = array_values(array_filter($this->adultNames, fn($name) => !empty(trim($name))));
+            $childrenNames = array_values(array_filter($this->childrenNames, fn($name) => !empty(trim($name))));
+
+            // Redirect to checkout with booking details
+            $queryParams = [
+                'type' => $this->type,
+                'id' => $this->bookable->id,
+                'check_in' => $checkInDateTime,
+                'check_out' => $checkOutDateTime,
+                'adults' => $this->adults,
+                'children' => $this->children,
+                'adult_names' => $adultNames,
+                'children_names' => $childrenNames,
+            ];
+
+            return redirect()->route('checkout', $queryParams);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Validation errors are automatically handled by Livewire
+            throw $e;
+        } catch (\Exception $e) {
+            $this->errorMessage = 'An error occurred while processing your booking. Please try again.';
+            \Log::error('Booking error: ' . $e->getMessage());
         }
-
-        if (!$this->isAvailable) {
-            $this->dispatch('error', 'Selected dates are not available.');
-            return;
-        }
-
-        // Combine date and time
-        $checkInDateTime = $this->check_in . ' ' . $this->check_in_time;
-        $checkOutDateTime = $this->check_out . ' ' . $this->check_out_time;
-
-        // Redirect to checkout with booking details
-        $queryParams = [
-            'type' => $this->type,
-            'id' => $this->bookable->id,
-            'check_in' => $checkInDateTime,
-            'check_out' => $checkOutDateTime,
-            'adults' => $this->adults,
-            'children' => $this->children,
-            'adult_names' => array_values(array_filter($this->adultNames)),
-            'children_names' => array_values(array_filter($this->childrenNames)),
-        ];
-
-        return redirect()->route('checkout', $queryParams);
     }
 }; ?>
 
@@ -346,6 +428,38 @@ new class extends Component {
     </div>
 
     @if ($bookable->is_active)
+        <!-- Error Message -->
+        @if ($errorMessage)
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                {{ $errorMessage }}
+                <button type="button" class="btn-close" wire:click="$set('errorMessage', '')"></button>
+            </div>
+        @endif
+
+        <!-- Success Message -->
+        @if ($successMessage)
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i>
+                {{ $successMessage }}
+                <button type="button" class="btn-close" wire:click="$set('successMessage', '')"></button>
+            </div>
+        @endif
+
+        <!-- Validation Errors -->
+        @if ($errors->any())
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>Please fix the following errors:</strong>
+                <ul class="mb-0 mt-2">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
         <form wire:submit="bookNow">
             <!-- Date Range Picker -->
             <div class="mb-3">

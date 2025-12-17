@@ -93,38 +93,23 @@
                             </div>
                         </div>
 
-                        <!-- Arrival Time & Guest Details -->
-                        @if (isset($booking->arrival_time) || (isset($booking->guest_names) && count($booking->guest_names) > 0))
+                        <!-- Guest Details -->
+                        @if (isset($booking->guest_names) && count($booking->guest_names) > 0)
                             <div class="checkout-card mt-4">
                                 <div class="card-header">
-                                    <h4><i class="bi bi-clock-history me-2"></i>Booking Details</h4>
+                                    <h4><i class="bi bi-person-lines-fill me-2"></i>Guest Names</h4>
                                 </div>
                                 <div class="card-body">
-                                    @if (isset($booking->arrival_time))
-                                        <div class="mb-3">
-                                            <label class="form-label"><i class="bi bi-clock me-2"></i>Expected Arrival
-                                                Time</label>
-                                            <input type="time" name="arrival_time" class="form-control"
-                                                value="{{ $booking->arrival_time }}" readonly>
-                                        </div>
-                                    @endif
-
-                                    @if (isset($booking->guest_names) && count($booking->guest_names) > 0)
-                                        <div class="mb-0">
-                                            <label class="form-label"><i class="bi bi-person-lines-fill me-2"></i>Guest
-                                                Names</label>
-                                            <div class="guest-names-list">
-                                                @foreach ($booking->guest_names as $index => $guestName)
-                                                    <div class="guest-name-item mb-2">
-                                                        <input type="text" name="guest_names[]" class="form-control"
-                                                            value="{{ $guestName }}" readonly>
-                                                        <input type="hidden" name="guest_names_hidden[]"
-                                                            value="{{ $guestName }}">
-                                                    </div>
-                                                @endforeach
+                                    <div class="guest-names-list">
+                                        @foreach ($booking->guest_names as $index => $guestName)
+                                            <div class="guest-name-item mb-2">
+                                                <input type="text" name="guest_names[]" class="form-control"
+                                                    value="{{ $guestName }}" readonly>
+                                                <input type="hidden" name="guest_names_hidden[]"
+                                                    value="{{ $guestName }}">
                                             </div>
-                                        </div>
-                                    @endif
+                                        @endforeach
+                                    </div>
                                 </div>
                             </div>
                         @endif
@@ -154,7 +139,7 @@
                                                 <i class="bi bi-calendar-check me-2"></i>Check-in
                                             </div>
                                             <div class="detail-value">
-                                                {{ $booking->check_in ?? 'N/A' }}
+                                                {{ $booking->check_in_display ?? ($booking->check_in ?? 'N/A') }}
                                             </div>
                                         </div>
                                         <div class="detail-row">
@@ -162,19 +147,10 @@
                                                 <i class="bi bi-calendar-x me-2"></i>Check-out
                                             </div>
                                             <div class="detail-value">
-                                                {{ $booking->check_out ?? 'N/A' }}
+                                                {{ $booking->check_out_display ?? ($booking->check_out ?? 'N/A') }}
                                             </div>
                                         </div>
-                                        @if (isset($booking->arrival_time))
-                                            <div class="detail-row">
-                                                <div class="detail-label">
-                                                    <i class="bi bi-clock me-2"></i>Arrival Time
-                                                </div>
-                                                <div class="detail-value">
-                                                    {{ \Carbon\Carbon::parse($booking->arrival_time)->format('h:i A') }}
-                                                </div>
-                                            </div>
-                                        @endif
+
                                         <div class="detail-row">
                                             <div class="detail-label">
                                                 <i class="bi bi-moon me-2"></i>Nights
@@ -243,30 +219,20 @@
                             <!-- Payment Method -->
                             <div class="checkout-card mb-4">
                                 <div class="card-header">
-                                    <h4><i class="bi bi-credit-card me-2"></i>Payment Method</h4>
+                                    <h4><i class="bi bi-cash-coin me-2"></i>Payment Method</h4>
                                 </div>
                                 <div class="card-body">
                                     <div class="payment-methods">
                                         <div class="payment-option mb-3">
-                                            <input type="radio" class="form-check-input" id="card"
-                                                name="payment_method" value="card" checked>
-                                            <label class="form-check-label" for="card">
-                                                <i class="bi bi-credit-card me-2"></i>Credit / Debit Card
+                                            <input type="radio" class="form-check-input" id="pay_at_property"
+                                                name="payment_method" value="cash" checked>
+                                            <label class="form-check-label" for="pay_at_property">
+                                                <i class="bi bi-building me-2"></i>Pay at Property
                                             </label>
-                                        </div>
-                                        <div class="payment-option mb-3">
-                                            <input type="radio" class="form-check-input" id="paypal"
-                                                name="payment_method" value="paypal">
-                                            <label class="form-check-label" for="paypal">
-                                                <i class="bi bi-paypal me-2"></i>PayPal
-                                            </label>
-                                        </div>
-                                        <div class="payment-option">
-                                            <input type="radio" class="form-check-input" id="bank"
-                                                name="payment_method" value="bank">
-                                            <label class="form-check-label" for="bank">
-                                                <i class="bi bi-bank me-2"></i>Bank Transfer
-                                            </label>
+                                            <small class="text-muted d-block mt-2">
+                                                <i class="bi bi-info-circle me-1"></i>
+                                                You can pay cash or card at the property upon check-in.
+                                            </small>
                                         </div>
                                     </div>
                                 </div>
@@ -287,6 +253,27 @@
                                     @enderror
                                 </div>
                             </div>
+
+                            <!-- Hidden Fields -->
+                            <input type="hidden" name="type" value="{{ $booking->type }}">
+                            <input type="hidden" name="property_id" value="{{ $booking->property_id }}">
+                            <input type="hidden" name="check_in" value="{{ $booking->check_in }}">
+                            <input type="hidden" name="check_out" value="{{ $booking->check_out }}">
+                            <input type="hidden" name="adults" value="{{ $booking->guests }}">
+                            <input type="hidden" name="children" value="{{ $booking->children }}">
+                            <input type="hidden" name="total" value="{{ $booking->total }}">
+
+                            @if (isset($booking->adult_names))
+                                @foreach ($booking->adult_names as $adultName)
+                                    <input type="hidden" name="adult_names[]" value="{{ $adultName }}">
+                                @endforeach
+                            @endif
+
+                            @if (isset($booking->children_names))
+                                @foreach ($booking->children_names as $childName)
+                                    <input type="hidden" name="children_names[]" value="{{ $childName }}">
+                                @endforeach
+                            @endif
 
                             <!-- Confirm Button -->
                             <button type="submit" class="btn btn-primary w-100 btn-lg">
