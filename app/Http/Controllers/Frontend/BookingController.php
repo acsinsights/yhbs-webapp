@@ -289,9 +289,9 @@ class BookingController extends Controller
                     // Set default image if no image found
                     $propertyImage = asset('frontend/img/default-room.jpg');
                 }
-                
+
                 \Log::info('House Image Final Path', ['property_image' => $propertyImage]);
-                
+
                 $propertyName = $house->name;
                 $location = 'House #' . ($house->house_number ?? 'N/A');
                 $propertyType = 'House';
