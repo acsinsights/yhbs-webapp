@@ -85,17 +85,17 @@ new class extends Component {
             ->unique();
         $availableYachts = $totalYachts - $bookedYachtIds->count();
 
-        // Total revenue (from paid bookings)
-        $totalRevenue = Booking::where('payment_status', 'paid')->sum(DB::raw('COALESCE(discount_price, price)'));
+        // Total revenue (from paid bookings) - use discount_price if it exists and is less than price, otherwise use price
+        $totalRevenue = Booking::where('payment_status', 'paid')->sum(DB::raw('CASE WHEN discount_price IS NOT NULL AND discount_price < price THEN discount_price ELSE price END'));
 
         // House Revenue
-        $houseRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', House::class)->sum(DB::raw('COALESCE(discount_price, price)'));
+        $houseRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', House::class)->sum(DB::raw('CASE WHEN discount_price IS NOT NULL AND discount_price < price THEN discount_price ELSE price END'));
 
         // Room Revenue
-        $roomRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Room::class)->sum(DB::raw('COALESCE(discount_price, price)'));
+        $roomRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Room::class)->sum(DB::raw('CASE WHEN discount_price IS NOT NULL AND discount_price < price THEN discount_price ELSE price END'));
 
         // Yacht revenue
-        $yachtRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Yacht::class)->sum(DB::raw('COALESCE(discount_price, price)'));
+        $yachtRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Yacht::class)->sum(DB::raw('CASE WHEN discount_price IS NOT NULL AND discount_price < price THEN discount_price ELSE price END'));
 
         // Active customers (users with bookings in last 30 days or with active bookings)
         $customerUserIds = User::role(RolesEnum::CUSTOMER->value)->pluck('id');
@@ -114,10 +114,34 @@ new class extends Component {
             $activeCustomers = $customerUserIds->count();
         }
 
+        // Total bookings count
+        $totalBookings = Booking::count();
+        $totalHouseBookings = Booking::where('bookingable_type', House::class)->count();
+        $totalRoomBookings = Booking::where('bookingable_type', Room::class)->count();
+        $totalYachtBookings = Booking::where('bookingable_type', Yacht::class)->count();
+
+        // Pending payments
+        $pendingPayments = Booking::where('payment_status', 'pending')->count();
+        $pendingPaymentAmount = Booking::where('payment_status', 'pending')->sum(DB::raw('CASE WHEN discount_price IS NOT NULL AND discount_price < price THEN discount_price ELSE price END'));
+
+        // Today's check-ins and check-outs
+        $todayStart = now()->startOfDay();
+        $todayEnd = now()->endOfDay();
+        $todayCheckIns = Booking::whereBetween('check_in', [$todayStart, $todayEnd])
+            ->whereIn('status', ['pending', 'booked'])
+            ->count();
+        $todayCheckOuts = Booking::whereBetween('check_out', [$todayStart, $todayEnd])
+            ->where('status', 'checked_in')
+            ->count();
+
         $this->stats = [
             'current_house_bookings' => $currentHouseBookings,
             'current_room_bookings' => $currentRoomBookings,
             'current_yacht_bookings' => $currentYachtBookings,
+            'total_bookings' => $totalBookings,
+            'total_house_bookings' => $totalHouseBookings,
+            'total_room_bookings' => $totalRoomBookings,
+            'total_yacht_bookings' => $totalYachtBookings,
             'available_houses' => max(0, $availableHouses),
             'total_houses' => $totalHouses,
             'available_rooms' => max(0, $availableRooms),
@@ -129,6 +153,10 @@ new class extends Component {
             'room_revenue' => $roomRevenue,
             'yacht_revenue' => $yachtRevenue,
             'active_customers' => $activeCustomers,
+            'pending_payments' => $pendingPayments,
+            'pending_payment_amount' => $pendingPaymentAmount,
+            'today_check_ins' => $todayCheckIns,
+            'today_check_outs' => $todayCheckOuts,
         ];
     }
 
@@ -136,37 +164,20 @@ new class extends Component {
     {
         $now = now();
 
-        // Get current bookings for chart
-        $currentHouseBookings = Booking::where('bookingable_type', House::class)
-            ->whereIn('status', ['pending', 'booked', 'checked_in'])
-            ->where(function ($query) use ($now) {
-                $query->where('check_in', '<=', $now)->where('check_out', '>=', $now);
-            })
-            ->count();
+        // Get total bookings for chart (all time)
+        $totalHouseBookings = Booking::where('bookingable_type', House::class)->count();
+        $totalRoomBookings = Booking::where('bookingable_type', Room::class)->count();
+        $totalYachtBookings = Booking::where('bookingable_type', Yacht::class)->count();
 
-        $currentRoomBookings = Booking::where('bookingable_type', Room::class)
-            ->whereIn('status', ['pending', 'booked', 'checked_in'])
-            ->where(function ($query) use ($now) {
-                $query->where('check_in', '<=', $now)->where('check_out', '>=', $now);
-            })
-            ->count();
-
-        $currentYachtBookings = Booking::where('bookingable_type', Yacht::class)
-            ->whereIn('status', ['pending', 'booked', 'checked_in'])
-            ->where(function ($query) use ($now) {
-                $query->where('check_in', '<=', $now)->where('check_out', '>=', $now);
-            })
-            ->count();
-
-        // Booking distribution chart
+        // Booking distribution chart - show total bookings instead of current
         $this->bookingChart = [
             'type' => 'pie',
             'data' => [
                 'labels' => ['House Bookings', 'Room Bookings', 'Yacht Bookings'],
                 'datasets' => [
                     [
-                        'label' => 'Current Bookings',
-                        'data' => [$currentHouseBookings, $currentRoomBookings, $currentYachtBookings],
+                        'label' => 'Total Bookings',
+                        'data' => [$totalHouseBookings, $totalRoomBookings, $totalYachtBookings],
                         'backgroundColor' => ['rgb(245, 158, 11)', 'rgb(59, 130, 246)', 'rgb(16, 185, 129)'],
                     ],
                 ],
@@ -174,6 +185,17 @@ new class extends Component {
             'options' => [
                 'responsive' => true,
                 'maintainAspectRatio' => false,
+                'plugins' => [
+                    'legend' => [
+                        'display' => true,
+                        'position' => 'bottom',
+                    ],
+                    'tooltip' => [
+                        'callbacks' => [
+                            'label' => 'function(context) { return context.label + ": " + context.parsed + " bookings"; }',
+                        ],
+                    ],
+                ],
             ],
         ];
 
@@ -184,11 +206,11 @@ new class extends Component {
         $monthlyLabels = [];
         for ($i = 5; $i >= 0; $i--) {
             $month = now()->subMonths($i);
-            $houseRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', House::class)->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum(DB::raw('COALESCE(discount_price, price)'));
+            $houseRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', House::class)->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum(DB::raw('CASE WHEN discount_price IS NOT NULL AND discount_price < price THEN discount_price ELSE price END'));
 
-            $roomRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Room::class)->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum(DB::raw('COALESCE(discount_price, price)'));
+            $roomRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Room::class)->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum(DB::raw('CASE WHEN discount_price IS NOT NULL AND discount_price < price THEN discount_price ELSE price END'));
 
-            $yachtRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Yacht::class)->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum(DB::raw('COALESCE(discount_price, price)'));
+            $yachtRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Yacht::class)->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum(DB::raw('CASE WHEN discount_price IS NOT NULL AND discount_price < price THEN discount_price ELSE price END'));
 
             $monthlyHouseRevenue[] = $houseRevenue;
             $monthlyRoomRevenue[] = $roomRevenue;
@@ -260,9 +282,14 @@ new class extends Component {
                 ->addDays($i * 3);
             $groupEnd = $groupStart->copy()->addDays(2)->endOfDay();
 
-            // Skip if we're beyond current month
-            if ($groupStart->month != $currentMonth->month) {
+            // Skip if we're beyond current month or beyond today
+            if ($groupStart->month != $currentMonth->month || $groupStart->isAfter($now)) {
                 break;
+            }
+
+            // Adjust end date if it goes beyond today
+            if ($groupEnd->isAfter($now)) {
+                $groupEnd = $now->copy()->endOfDay();
             }
 
             // Count active customers for this 3-day group in current month
@@ -352,83 +379,131 @@ new class extends Component {
         </x-slot:middle>
     </x-header>
 
+    <!-- Today's Summary Section -->
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
+        <!-- Today's Check-ins -->
+        <x-card shadow title="Today's Check-ins" separator>
+            <div class="flex items-center justify-between p-4 bg-info/10 rounded-lg">
+                <div>
+                    <div class="text-sm text-base-content/60 mb-1">Expected</div>
+                    <div class="text-3xl font-bold text-info">{{ $stats['today_check_ins'] }}</div>
+                </div>
+                <x-icon name="o-arrow-right-on-rectangle" class="w-12 h-12 text-info/50" />
+            </div>
+        </x-card>
+
+        <!-- Today's Check-outs -->
+        <x-card shadow title="Today's Check-outs" separator>
+            <div class="flex items-center justify-between p-4 bg-warning/10 rounded-lg">
+                <div>
+                    <div class="text-sm text-base-content/60 mb-1">Expected</div>
+                    <div class="text-3xl font-bold text-warning">{{ $stats['today_check_outs'] }}</div>
+                </div>
+                <x-icon name="o-arrow-left-on-rectangle" class="w-12 h-12 text-warning/50" />
+            </div>
+        </x-card>
+
+        <!-- Pending Payments -->
+        <x-card shadow title="Pending Payments" separator>
+            <div class="flex items-center justify-between p-4 bg-error/10 rounded-lg">
+                <div>
+                    <div class="text-sm text-base-content/60 mb-1">Count</div>
+                    <div class="text-3xl font-bold text-error">{{ $stats['pending_payments'] }}</div>
+                </div>
+                <x-icon name="o-exclamation-triangle" class="w-12 h-12 text-error/50" />
+            </div>
+        </x-card>
+
+        <!-- Pending Payment Amount -->
+        <x-card shadow title="Pending Amount" separator>
+            <div class="flex items-center justify-between p-4 bg-error/10 rounded-lg">
+                <div>
+                    <div class="text-sm text-base-content/60 mb-1">Total</div>
+                    <div class="text-xl font-bold text-error">{{ currency_format($stats['pending_payment_amount']) }}
+                    </div>
+                </div>
+                <x-icon name="o-currency-dollar" class="w-12 h-12 text-error/50" />
+            </div>
+        </x-card>
+    </div>
+
     <!-- Current Bookings Section -->
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3 mb-6">
         <!-- House Bookings Card -->
         <x-card shadow title="House Bookings" separator>
-            <div class="space-y-4">
-                <div class="flex items-center justify-between p-4 bg-warning/10 rounded-lg">
-                    <div>
-                        <div class="text-sm text-base-content/60 mb-1">Current Bookings</div>
-                        <div class="text-4xl font-bold text-warning">{{ $stats['current_house_bookings'] }}</div>
-                    </div>
-                    <x-icon name="o-home-modern" class="w-16 h-16 text-warning/50" />
-                </div>
-                <div class="flex items-center justify-between p-4 bg-info/10 rounded-lg">
+            <div class="space-y-3">
+                <div class="flex items-center justify-between p-3 bg-info/10 rounded-lg">
                     <div>
                         <div class="text-sm text-base-content/60 mb-1">Available Houses</div>
-                        <div class="text-2xl font-bold text-info">
+                        <div class="text-xl font-bold text-info">
                             {{ $stats['available_houses'] }} / {{ $stats['total_houses'] }}
                         </div>
                     </div>
-                    <x-icon name="o-home-modern" class="w-12 h-12 text-info/50" />
+                    <x-icon name="o-home-modern" class="w-10 h-10 text-info/50" />
+                </div>
+                <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                    <div>
+                        <div class="text-sm text-base-content/60 mb-1">Total Bookings</div>
+                        <div class="text-xl font-bold">{{ $stats['total_house_bookings'] }}</div>
+                    </div>
+                    <x-icon name="o-clipboard-document-list" class="w-10 h-10 text-base-content/30" />
                 </div>
             </div>
         </x-card>
 
         <!-- Room Bookings Card -->
         <x-card shadow title="Room Bookings" separator>
-            <div class="space-y-4">
-                <div class="flex items-center justify-between p-4 bg-primary/10 rounded-lg">
-                    <div>
-                        <div class="text-sm text-base-content/60 mb-1">Current Bookings</div>
-                        <div class="text-4xl font-bold text-primary">{{ $stats['current_room_bookings'] }}</div>
-                    </div>
-                    <x-icon name="o-building-office" class="w-16 h-16 text-primary/50" />
-                </div>
-                <div class="flex items-center justify-between p-4 bg-success/10 rounded-lg">
+            <div class="space-y-3">
+                <div class="flex items-center justify-between p-3 bg-success/10 rounded-lg">
                     <div>
                         <div class="text-sm text-base-content/60 mb-1">Available Rooms</div>
-                        <div class="text-2xl font-bold text-success">
+                        <div class="text-xl font-bold text-success">
                             {{ $stats['available_rooms'] }} / {{ $stats['total_rooms'] }}
                         </div>
                     </div>
-                    <x-icon name="o-home" class="w-12 h-12 text-success/50" />
+                    <x-icon name="o-home" class="w-10 h-10 text-success/50" />
+                </div>
+                <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                    <div>
+                        <div class="text-sm text-base-content/60 mb-1">Total Bookings</div>
+                        <div class="text-xl font-bold">{{ $stats['total_room_bookings'] }}</div>
+                    </div>
+                    <x-icon name="o-clipboard-document-list" class="w-10 h-10 text-base-content/30" />
                 </div>
             </div>
         </x-card>
 
         <!-- Yacht Bookings Card -->
         <x-card shadow title="Yacht Bookings" separator>
-            <div class="space-y-4">
-                <div class="flex items-center justify-between p-4 bg-success/10 rounded-lg">
-                    <div>
-                        <div class="text-sm text-base-content/60 mb-1">Current Bookings</div>
-                        <div class="text-4xl font-bold text-success">{{ $stats['current_yacht_bookings'] }}</div>
-                    </div>
-                    <x-icon name="o-sparkles" class="w-16 h-16 text-success/50" />
-                </div>
-                <div class="flex items-center justify-between p-4 bg-info/10 rounded-lg">
+            <div class="space-y-3">
+                <div class="flex items-center justify-between p-3 bg-info/10 rounded-lg">
                     <div>
                         <div class="text-sm text-base-content/60 mb-1">Available Yachts</div>
-                        <div class="text-2xl font-bold text-info">
+                        <div class="text-xl font-bold text-info">
                             {{ $stats['available_yachts'] }} / {{ $stats['total_yachts'] }}
                         </div>
                     </div>
-                    <x-icon name="o-sparkles" class="w-12 h-12 text-info/50" />
+                    <x-icon name="o-sparkles" class="w-10 h-10 text-info/50" />
+                </div>
+                <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                    <div>
+                        <div class="text-sm text-base-content/60 mb-1">Total Bookings</div>
+                        <div class="text-xl font-bold">{{ $stats['total_yacht_bookings'] }}</div>
+                    </div>
+                    <x-icon name="o-clipboard-document-list" class="w-10 h-10 text-base-content/30" />
                 </div>
             </div>
         </x-card>
     </div>
 
-    <!-- Revenue Section -->
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-4 mb-6">
+    <!-- Revenue & Customer Section -->
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-5 mb-6">
         <!-- Total Revenue Card -->
         <x-card shadow title="Total Revenue" separator>
             <div class="flex items-center justify-between p-4 bg-secondary/10 rounded-lg">
                 <div>
                     <div class="text-sm text-base-content/60 mb-1">All Time</div>
-                    <div class="text-2xl font-bold text-secondary">
+                    <div class="text-xl font-bold text-secondary">
                         {{ currency_format($stats['total_revenue']) }}
                     </div>
                 </div>
@@ -441,7 +516,7 @@ new class extends Component {
             <div class="flex items-center justify-between p-4 bg-warning/10 rounded-lg">
                 <div>
                     <div class="text-sm text-base-content/60 mb-1">Houses</div>
-                    <div class="text-2xl font-bold text-warning">
+                    <div class="text-xl font-bold text-warning">
                         {{ currency_format($stats['house_revenue']) }}
                     </div>
                 </div>
@@ -454,7 +529,7 @@ new class extends Component {
             <div class="flex items-center justify-between p-4 bg-primary/10 rounded-lg">
                 <div>
                     <div class="text-sm text-base-content/60 mb-1">Rooms</div>
-                    <div class="text-2xl font-bold text-primary">
+                    <div class="text-xl font-bold text-primary">
                         {{ currency_format($stats['room_revenue']) }}
                     </div>
                 </div>
@@ -467,11 +542,24 @@ new class extends Component {
             <div class="flex items-center justify-between p-4 bg-success/10 rounded-lg">
                 <div>
                     <div class="text-sm text-base-content/60 mb-1">Yachts</div>
-                    <div class="text-2xl font-bold text-success">
+                    <div class="text-xl font-bold text-success">
                         {{ currency_format($stats['yacht_revenue']) }}
                     </div>
                 </div>
                 <x-icon name="o-sparkles" class="w-12 h-12 text-success/50" />
+            </div>
+        </x-card>
+
+        <!-- Active Customers Card -->
+        <x-card shadow title="Active Customers" separator>
+            <div class="flex items-center justify-between p-4 bg-accent/10 rounded-lg">
+                <div>
+                    <div class="text-sm text-base-content/60 mb-1">Total</div>
+                    <div class="text-3xl font-bold text-accent">
+                        {{ $stats['active_customers'] }}
+                    </div>
+                </div>
+                <x-icon name="o-users" class="w-12 h-12 text-accent/50" />
             </div>
         </x-card>
     </div>
