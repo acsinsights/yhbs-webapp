@@ -51,7 +51,7 @@
 
     <!-- Breadcrumb section Start-->
     <div class="breadcrumb-section three"
-        style="background-image:linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url({{ asset('frontend/assets/img/innerpages/breadcrumb-bg6.jpg') }});">
+        style="background-image:linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url({{ asset('frontend/img/grand-villa/luxury-architecture-exterior-design.jpg') }});">
         <div class="container">
             <div class="banner-content">
                 <h1>Houses</h1>
@@ -144,8 +144,7 @@
                                         <div class="hotel-img-wrap">
                                             <a href="{{ route('houses.show', $house->slug) }}" class="hotel-img">
                                                 @if ($house->image)
-                                                    <img src="{{ asset($house->image) }}"
-                                                        alt="{{ $house->name }}">
+                                                    <img src="{{ asset($house->image) }}" alt="{{ $house->name }}">
                                                 @else
                                                     <img src="{{ asset('frontend/img/home2/hoses rooms/5.jpg') }}"
                                                         alt="{{ $house->name }}">

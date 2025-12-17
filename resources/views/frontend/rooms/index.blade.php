@@ -51,7 +51,7 @@
 
     <!-- Breadcrumb section Start-->
     <div class="breadcrumb-section three"
-        style="background-image:linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url({{ asset('frontend/assets/img/innerpages/breadcrumb-bg6.jpg') }});">
+        style="background-image:linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),  url({{ asset('frontend/img/Rooms/luxury-bedroom-interior-with-rich-furniture-scenic-view-from-walkout-deck.jpg') }});">
         <div class="container">
             <div class="banner-content">
                 <h1>Hotel Rooms</h1>

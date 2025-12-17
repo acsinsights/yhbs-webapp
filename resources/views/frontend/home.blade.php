@@ -1216,8 +1216,8 @@
                 data-wow-duration="1500ms">
                 <div class="col-xl-6 col-lg-8">
                     <div class="section-title text-center">
-                        <h2>Our Marine Services</h2>
-                        <p>A selection of our most booked accommodation and marine packages on Failaka Island.</p>
+                        <h2>Island Living & Marine Experiences</h2>
+                        <p>Island stays, heritage homes, and yacht cruises — all in one place.</p>
                     </div>
                 </div>
             </div>
