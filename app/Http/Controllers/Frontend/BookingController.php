@@ -260,18 +260,38 @@ class BookingController extends Controller
         } elseif ($booking->bookingable_type === House::class) {
             $house = $booking->bookingable;
             if ($house) {
+                // Log house image path for debugging
+                \Log::info('House Image Debug', [
+                    'house_id' => $house->id,
+                    'house_image' => $house->image,
+                    'house_name' => $house->name,
+                ]);
+
                 if ($house->image) {
                     // Handle different image path formats
                     if (str_starts_with($house->image, 'http')) {
                         $propertyImage = $house->image;
                     } elseif (str_starts_with($house->image, '/default') || str_starts_with($house->image, '/frontend')) {
+                        // Image path starts with /default or /frontend, use asset directly
+                        $propertyImage = asset($house->image);
+                    } elseif (str_starts_with($house->image, 'default/') || str_starts_with($house->image, 'frontend/')) {
+                        // Image path without leading slash
                         $propertyImage = asset($house->image);
                     } elseif (str_starts_with($house->image, 'storage/')) {
                         $propertyImage = asset($house->image);
+                    } elseif (str_starts_with($house->image, 'houses/')) {
+                        $propertyImage = asset('storage/' . $house->image);
                     } else {
+                        // Assume it's already a relative path from storage
                         $propertyImage = asset('storage/' . $house->image);
                     }
+                } else {
+                    // Set default image if no image found
+                    $propertyImage = asset('frontend/img/default-room.jpg');
                 }
+                
+                \Log::info('House Image Final Path', ['property_image' => $propertyImage]);
+                
                 $propertyName = $house->name;
                 $location = 'House #' . ($house->house_number ?? 'N/A');
                 $propertyType = 'House';
