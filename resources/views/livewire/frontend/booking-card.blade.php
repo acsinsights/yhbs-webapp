@@ -11,8 +11,6 @@ new class extends Component {
 
     public ?string $check_in = null;
     public ?string $check_out = null;
-    public string $check_in_time = '09:00';
-    public string $check_out_time = '17:00';
     public int $adults = 1;
     public int $children = 0;
     public array $adultNames = [];
@@ -57,11 +55,15 @@ new class extends Component {
                     $checkIn = $todayCarbon->copy();
                 }
 
-                // Generate all dates in the booking range (excluding check-out date)
+                // Generate all dates in the booking range
+                // IMPORTANT: We exclude the checkout date because guests check out that day
+                // So a new guest can check in on the same day someone else checks out
                 while ($checkIn->lt($checkOut)) {
                     $dates[] = $checkIn->format('Y-m-d');
                     $checkIn->addDay();
                 }
+                // Note: We do NOT add the checkout date to booked dates
+                // This allows new bookings to start on that date
 
                 return $dates;
             })
@@ -184,18 +186,6 @@ new class extends Component {
         }
     }
 
-    public function updatedCheckInTime(): void
-    {
-        $this->validateDates();
-        $this->calculatePrice();
-    }
-
-    public function updatedCheckOutTime(): void
-    {
-        $this->validateDates();
-        $this->calculatePrice();
-    }
-
     protected function validateDates(): void
     {
         if (!$this->check_in || !$this->check_out) {
@@ -212,14 +202,8 @@ new class extends Component {
             $checkIn = Carbon::parse($this->check_in);
         }
 
-        // For yachts, allow same-day bookings - no automatic date adjustment
-        // Validation will happen at booking time
-        if ($this->type !== 'yacht') {
-            // For rooms/houses, check-out must be at least next day
-            if ($checkOut->lt($checkIn)) {
-                $this->check_out = $checkIn->copy()->addDay()->format('Y-m-d');
-            }
-        }
+        // Allow same-day bookings for all types (room, house, yacht)
+        // Check-out can be on the same day as check-in
     }
 
     protected function checkAvailability(): void
@@ -230,8 +214,8 @@ new class extends Component {
             return;
         }
 
-        $checkIn = Carbon::parse($this->check_in);
-        $checkOut = Carbon::parse($this->check_out);
+        $checkIn = Carbon::parse($this->check_in)->startOfDay();
+        $checkOut = Carbon::parse($this->check_out)->startOfDay();
         $now = Carbon::now()->startOfDay();
 
         // Check if check-in date is in the past
@@ -241,24 +225,33 @@ new class extends Component {
             return;
         }
 
-        // Check if check-out is before or same as check-in
-        if ($checkOut->lte($checkIn)) {
+        // Check if check-out is before check-in (same day is allowed)
+        if ($checkOut->lt($checkIn)) {
             $this->isAvailable = false;
-            $this->availabilityMessage = 'Check-out date must be after check-in date.';
+            $this->availabilityMessage = 'Check-out date cannot be before check-in date.';
             return;
         }
 
-        // Generate range of dates to check (excluding check-out date)
-        // We exclude check-out because guest leaves on that day
+        // Generate range of dates to check
+        // For same-day bookings (check-in = check-out), we check only the check-in date
+        // For multi-day bookings, we check from check-in up to (but not including) check-out
         $selectedDates = [];
-        $current = $checkIn->copy();
-        while ($current->lt($checkOut)) {
-            $selectedDates[] = $current->format('Y-m-d');
-            $current->addDay();
+
+        if ($checkIn->equalTo($checkOut)) {
+            // Same-day booking - only check the single date
+            $selectedDates[] = $checkIn->format('Y-m-d');
+        } else {
+            // Multi-day booking - check from check-in to (but not including) check-out
+            $current = $checkIn->copy();
+            while ($current->lt($checkOut)) {
+                $selectedDates[] = $current->format('Y-m-d');
+                $current->addDay();
+            }
         }
 
         // Check if any selected date is booked
-        $hasConflict = !empty(array_intersect($selectedDates, $this->bookedDates));
+        $conflictDates = array_intersect($selectedDates, $this->bookedDates);
+        $hasConflict = !empty($conflictDates);
 
         $this->isAvailable = !$hasConflict;
 
@@ -277,29 +270,70 @@ new class extends Component {
             return;
         }
 
-        // Combine date and time for accurate calculation
-        $checkInDateTime = Carbon::parse($this->check_in . ' ' . $this->check_in_time);
-        $checkOutDateTime = Carbon::parse($this->check_out . ' ' . $this->check_out_time);
+        $checkInDate = Carbon::parse($this->check_in)->startOfDay();
+        $checkOutDate = Carbon::parse($this->check_out)->startOfDay();
 
-        // Calculate the difference in hours
-        $totalHours = $checkInDateTime->diffInHours($checkOutDateTime);
+        // Calculate the difference in days
+        $nights = $checkInDate->diffInDays($checkOutDate);
 
-        if ($totalHours <= 0) {
-            $this->totalNights = null;
-            $this->totalPrice = null;
-            return;
+        // Log for debugging
+        \Log::info('Night Calculation Debug', [
+            'check_in_raw' => $this->check_in,
+            'check_out_raw' => $this->check_out,
+            'check_in_parsed' => $checkInDate->format('Y-m-d'),
+            'check_out_parsed' => $checkOutDate->format('Y-m-d'),
+            'nights_calculated' => $nights,
+        ]);
+
+        // Allow same-day bookings (0 nights = 1 day booking)
+        // Note: diffInDays returns float, so use == instead of ===
+        if ($nights == 0) {
+            $nights = 1;
         }
 
-        // For yachts, calculate based on hours; for rooms/houses, calculate based on nights
+        $this->totalNights = $nights;
+
+        // For yachts, use per hour pricing (assuming full day = 24 hours)
         if ($this->type === 'yacht') {
-            $this->totalNights = $totalHours; // Store hours instead of nights for yachts
-            // Yacht pricing: hourly rate x hours
-            $this->totalPrice = $totalHours * ($this->bookable->price_per_hour ?? ($this->bookable->price_per_night ?? 0));
+            $hours = $nights * 24;
+            $this->totalPrice = $hours * ($this->bookable->price_per_hour ?? ($this->bookable->price_per_night ?? 0));
         } else {
-            // For rooms and houses: calculate nights (every 24 hours = 1 night)
-            $nights = ceil($totalHours / 24);
-            $this->totalNights = $nights;
-            $this->totalPrice = $nights * ($this->bookable->price_per_night ?? 0);
+            // For rooms and houses: calculate based on night-specific pricing structure
+            // Note: $nights is float, so use == instead of ===
+            if ($nights == 1) {
+                // 1 night - use price_per_night
+                $this->totalPrice = $this->bookable->price_per_night ?? 0;
+                \Log::info('Price Calculation - 1 Night', [
+                    'type' => $this->type,
+                    'property_id' => $this->bookable->id,
+                    'price_per_night' => $this->bookable->price_per_night,
+                    'total_price' => $this->totalPrice,
+                ]);
+            } elseif ($nights == 2) {
+                // 2 nights - use price_per_2night if available, otherwise 2x price_per_night
+                if ($this->bookable->price_per_2night) {
+                    $this->totalPrice = $this->bookable->price_per_2night;
+                } else {
+                    $this->totalPrice = ($this->bookable->price_per_night ?? 0) * 2;
+                }
+            } elseif ($nights == 3) {
+                // 3 nights - use price_per_3night if available, otherwise 3x price_per_night
+                if ($this->bookable->price_per_3night) {
+                    $this->totalPrice = $this->bookable->price_per_3night;
+                } else {
+                    $this->totalPrice = ($this->bookable->price_per_night ?? 0) * 3;
+                }
+            } else {
+                // 4+ nights - use price_per_3night + (additional nights x additional_night_price)
+                if ($this->bookable->price_per_3night) {
+                    $basePrice = $this->bookable->price_per_3night;
+                } else {
+                    $basePrice = ($this->bookable->price_per_night ?? 0) * 3;
+                }
+                $additionalNights = $nights - 3;
+                $additionalPrice = $additionalNights * ($this->bookable->additional_night_price ?? ($this->bookable->price_per_night ?? 0));
+                $this->totalPrice = $basePrice + $additionalPrice;
+            }
         }
     }
 
@@ -336,8 +370,6 @@ new class extends Component {
             $rules = [
                 'check_in' => 'required|date',
                 'check_out' => 'required|date',
-                'check_in_time' => 'required|date_format:H:i',
-                'check_out_time' => 'required|date_format:H:i',
                 'adults' => "required|integer|min:1|max:$maxAdults",
                 'children' => "nullable|integer|min:0|max:$maxChildren",
             ];
@@ -362,8 +394,6 @@ new class extends Component {
                 'check_out.required' => 'Check-out date is required.',
                 'adultNames.*.required' => 'Please provide name for all adults.',
                 'adultNames.*.min' => 'Adult name is required.',
-                'check_in_time.required' => 'Check-in time is required.',
-                'check_out_time.required' => 'Check-out time is required.',
             ]);
 
             // For yachts, validate that adults + children <= max guests
@@ -382,10 +412,6 @@ new class extends Component {
                 return;
             }
 
-            // Combine date and time
-            $checkInDateTime = $this->check_in . ' ' . $this->check_in_time;
-            $checkOutDateTime = $this->check_out . ' ' . $this->check_out_time;
-
             // Filter out empty names
             $adultNames = array_values(array_filter($this->adultNames, fn($name) => !empty(trim($name))));
             $childrenNames = array_values(array_filter($this->childrenNames, fn($name) => !empty(trim($name))));
@@ -394,8 +420,8 @@ new class extends Component {
             $queryParams = [
                 'type' => $this->type,
                 'id' => $this->bookable->id,
-                'check_in' => $checkInDateTime,
-                'check_out' => $checkOutDateTime,
+                'check_in' => $this->check_in,
+                'check_out' => $this->check_out,
                 'adults' => $this->adults,
                 'children' => $this->children,
                 'adult_names' => $adultNames,
@@ -470,6 +496,13 @@ new class extends Component {
                     id="dateRangePicker-{{ $bookable->id }}" data-booked-dates='@json($bookedDates)' readonly>
                 <input type="hidden" wire:model="check_in" id="checkInDate-{{ $bookable->id }}">
                 <input type="hidden" wire:model="check_out" id="checkOutDate-{{ $bookable->id }}">
+                @if ($check_in && $check_out)
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Check-in: {{ \Carbon\Carbon::parse($check_in)->format('M d, Y') }} |
+                        Check-out: {{ \Carbon\Carbon::parse($check_out)->format('M d, Y') }}
+                    </small>
+                @endif
             </div>
 
             <script>
@@ -486,8 +519,13 @@ new class extends Component {
                         disable: bookedDates,
                         onChange: function(selectedDates, dateStr, instance) {
                             if (selectedDates.length === 2) {
-                                const checkIn = selectedDates[0].toISOString().split('T')[0];
-                                const checkOut = selectedDates[1].toISOString().split('T')[0];
+                                // Use local date string to avoid timezone issues
+                                const checkIn = selectedDates[0].getFullYear() + '-' +
+                                    String(selectedDates[0].getMonth() + 1).padStart(2, '0') + '-' +
+                                    String(selectedDates[0].getDate()).padStart(2, '0');
+                                const checkOut = selectedDates[1].getFullYear() + '-' +
+                                    String(selectedDates[1].getMonth() + 1).padStart(2, '0') + '-' +
+                                    String(selectedDates[1].getDate()).padStart(2, '0');
 
                                 checkInInput.value = checkIn;
                                 checkOutInput.value = checkOut;
@@ -503,28 +541,6 @@ new class extends Component {
                     });
                 });
             </script>
-
-            <!-- Time Inputs -->
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label class="form-label">
-                        <i class="bi bi-clock me-2"></i>Check-in Time
-                    </label>
-                    <input type="time" wire:model.live="check_in_time" class="form-control" required>
-                    @error('check_in_time')
-                        <span class="text-danger small">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">
-                        <i class="bi bi-clock me-2"></i>Check-out Time
-                    </label>
-                    <input type="time" wire:model.live="check_out_time" class="form-control" required>
-                    @error('check_out_time')
-                        <span class="text-danger small">{{ $message }}</span>
-                    @enderror
-                </div>
-            </div>
 
             <!-- Availability Message -->
             @if ($availabilityMessage)
@@ -550,11 +566,18 @@ new class extends Component {
                 <div class="alert alert-info mb-3">
                     <div class="d-flex justify-content-between align-items-center">
                         @if ($type === 'yacht')
-                            <span><strong>{{ $totalNights }}</strong>
-                                {{ $totalNights === 1 ? 'hour' : 'hours' }}</span>
+                            <span>
+                                <strong>{{ $totalNights }}</strong>
+                                {{ $totalNights === 1 ? 'hour' : 'hours' }}
+                            </span>
                         @else
-                            <span><strong>{{ $totalNights }}</strong>
-                                {{ $totalNights === 1 ? 'night' : 'nights' }}</span>
+                            <span>
+                                <strong>{{ $totalNights }}</strong>
+                                {{ $totalNights === 1 ? 'night' : 'nights' }}
+                                <small class="text-muted d-block">
+                                    ({{ $totalNights + 1 }} {{ $totalNights + 1 === 1 ? 'day' : 'days' }})
+                                </small>
+                            </span>
                         @endif
                         <strong class="text-primary">{{ currency_format($totalPrice) }}</strong>
                     </div>
@@ -629,6 +652,16 @@ new class extends Component {
                     @endif
 
                     <small class="text-muted">Please provide names for all guests</small>
+                </div>
+            @endif
+
+            <!-- Total Amount Display -->
+            @if ($totalPrice && $isAvailable)
+                <div class="alert alert-success mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold"><i class="bi bi-cash-coin me-2"></i>Total Amount:</span>
+                        <span class="fs-4 fw-bold text-success">{{ currency_format($totalPrice) }}</span>
+                    </div>
                 </div>
             @endif
 

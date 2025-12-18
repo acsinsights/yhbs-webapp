@@ -99,18 +99,48 @@ class BookingController extends Controller
             return redirect()->back()->with('error', 'Please select check-in and check-out dates.');
         }
 
-        $checkInDate = Carbon::parse($checkIn);
-        $checkOutDate = Carbon::parse($checkOut);
+        $checkInDate = Carbon::parse($checkIn)->startOfDay();
+        $checkOutDate = Carbon::parse($checkOut)->startOfDay();
 
-        // For yachts, calculate hours; for rooms/houses, calculate nights
+        // Calculate nights
+        $nights = $checkInDate->diffInDays($checkOutDate);
+
+        // Allow same-day bookings (0 nights = 1 day booking)
+        if ($nights === 0) {
+            $nights = 1;
+        }
+
+        // Calculate price based on property type and nights
         if ($type === 'yacht') {
-            $hours = max(1, $checkInDate->diffInHours($checkOutDate));
-            $subtotal = $price * $hours;
-            $nights = $hours; // Store as hours for yachts
+            $hours = $nights * 24;
+            $subtotal = $hours * ($property->price_per_hour ?? ($property->price_per_night ?? 0));
         } else {
-            $totalHours = $checkInDate->diffInHours($checkOutDate);
-            $nights = max(1, ceil($totalHours / 24));
-            $subtotal = $price * $nights;
+            // For rooms and houses: use night-specific pricing
+            if ($nights === 1) {
+                $subtotal = $property->price_per_night ?? 0;
+            } elseif ($nights === 2) {
+                if ($property->price_per_2night) {
+                    $subtotal = $property->price_per_2night;
+                } else {
+                    $subtotal = ($property->price_per_night ?? 0) * 2;
+                }
+            } elseif ($nights === 3) {
+                if ($property->price_per_3night) {
+                    $subtotal = $property->price_per_3night;
+                } else {
+                    $subtotal = ($property->price_per_night ?? 0) * 3;
+                }
+            } else {
+                // 4+ nights
+                if ($property->price_per_3night) {
+                    $basePrice = $property->price_per_3night;
+                } else {
+                    $basePrice = ($property->price_per_night ?? 0) * 3;
+                }
+                $additionalNights = $nights - 3;
+                $additionalPrice = $additionalNights * ($property->additional_night_price ?? $property->price_per_night ?? 0);
+                $subtotal = $basePrice + $additionalPrice;
+            }
         }
 
         $serviceFee = 0; // No service fee for now
@@ -126,10 +156,10 @@ class BookingController extends Controller
             'property_image' => $propertyImage,
             'property_name' => $propertyName,
             'location' => $location,
-            'check_in' => $checkInDate->format('Y-m-d H:i'),
-            'check_in_display' => $checkInDate->format('M d, Y h:i A'),
-            'check_out' => $checkOutDate->format('Y-m-d H:i'),
-            'check_out_display' => $checkOutDate->format('M d, Y h:i A'),
+            'check_in' => $checkInDate->format('Y-m-d'),
+            'check_in_display' => $checkInDate->format('M d, Y'),
+            'check_out' => $checkOutDate->format('Y-m-d'),
+            'check_out_display' => $checkOutDate->format('M d, Y'),
             'nights' => $nights,
             'guests' => $adults,
             'children' => $children,
@@ -201,8 +231,8 @@ class BookingController extends Controller
             'adults' => $validated['adults'],
             'children' => $validated['children'] ?? 0,
             'guest_details' => $guestDetails,
-            'check_in' => $validated['check_in'],
-            'check_out' => $validated['check_out'],
+            'check_in' => Carbon::parse($validated['check_in'])->format('Y-m-d'),
+            'check_out' => Carbon::parse($validated['check_out'])->format('Y-m-d'),
             'price' => $validated['total'],
             'status' => 'booked',
             'payment_status' => 'pending',
@@ -302,15 +332,18 @@ class BookingController extends Controller
             $propertyImage = asset('frontend/assets/img/innerpages/hotel-img1.jpg');
         }
 
-        $checkInDate = Carbon::parse($booking->check_in);
-        $checkOutDate = Carbon::parse($booking->check_out);
+        $checkInDate = Carbon::parse($booking->check_in)->startOfDay();
+        $checkOutDate = Carbon::parse($booking->check_out)->startOfDay();
 
-        // Calculate nights or hours based on property type
+        // Calculate nights based on property type
         if ($booking->bookingable_type === Yacht::class) {
-            $nights = max(1, $checkInDate->diffInHours($checkOutDate));
+            // For yachts, still calculate by hours (days * 24)
+            $days = $checkInDate->diffInDays($checkOutDate);
+            $nights = max(1, $days === 0 ? 1 : $days);
         } else {
-            $totalHours = $checkInDate->diffInHours($checkOutDate);
-            $nights = max(1, ceil($totalHours / 24));
+            // For rooms and houses, calculate by days
+            $nights = $checkInDate->diffInDays($checkOutDate);
+            $nights = max(1, $nights === 0 ? 1 : $nights);
         }
 
         // Get customer info from guest_details or user
@@ -332,8 +365,8 @@ class BookingController extends Controller
             'property_name' => $propertyName,
             'property_type' => $propertyType,
             'location' => $location,
-            'check_in' => $booking->check_in->format('M d, Y h:i A'),
-            'check_out' => $booking->check_out->format('M d, Y h:i A'),
+            'check_in' => $checkInDate->format('M d, Y'),
+            'check_out' => $checkOutDate->format('M d, Y'),
             'nights' => $nights,
             'guests' => $booking->adults,
             'children' => $booking->children,
@@ -352,7 +385,7 @@ class BookingController extends Controller
             'price_per_night' => $pricePerNight,
             'service_fee' => 0,
             'tax' => 0,
-            'created_at' => $booking->created_at->format('M d, Y h:i A'),
+            'created_at' => $booking->created_at->format('M d, Y'),
         ];
 
         // Log for debugging

@@ -65,7 +65,8 @@ class Room extends Model
 
     public function scopeSearch($query, $search)
     {
-        return $query->where('room_number', 'like', "%{$search}%")
+        return $query->where('name', 'like', "%{$search}%")
+            ->orWhere('room_number', 'like', "%{$search}%")
             ->orWhereHas('house', function ($query) use ($search) {
                 $query->where('name', 'like', "%{$search}%");
             });
