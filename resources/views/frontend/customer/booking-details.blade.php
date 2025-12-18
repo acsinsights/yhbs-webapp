@@ -26,16 +26,39 @@
                     <div class="confirmation-card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h4><i class="bi bi-receipt me-2"></i>Booking Information</h4>
-                            <span
-                                class="badge badge-{{ $booking->status == 'confirmed' || $booking->status == 'booked' ? 'success' : ($booking->status == 'pending' ? 'warning' : ($booking->status == 'cancelled' ? 'danger' : 'secondary')) }}">
-                                {{ ucfirst($booking->status) }}
+                            <span class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }}">
+                                {{ $booking->status?->label() ?? 'Pending' }}
                             </span>
                         </div>
                         <div class="card-body">
                             <!-- Property Image -->
                             @if ($booking->bookingable)
-                                <img src="{{ $booking->bookingable->image ?? asset('frontend/img/default-property.jpg') }}"
-                                    alt="{{ $booking->bookingable->name ?? 'Property' }}" class="confirmation-image mb-4">
+                                @php
+                                    $propertyImage = asset('frontend/img/default-property.jpg');
+                                    if ($booking->bookingable->image) {
+                                        $image = $booking->bookingable->image;
+                                        if (str_starts_with($image, 'http')) {
+                                            $propertyImage = $image;
+                                        } elseif (
+                                            str_starts_with($image, '/default') ||
+                                            str_starts_with($image, '/frontend')
+                                        ) {
+                                            $propertyImage = asset($image);
+                                        } elseif (
+                                            str_starts_with($image, 'default/') ||
+                                            str_starts_with($image, 'frontend/')
+                                        ) {
+                                            $propertyImage = asset($image);
+                                        } elseif (str_starts_with($image, 'storage/')) {
+                                            $propertyImage = asset($image);
+                                        } else {
+                                            $propertyImage = asset('storage/' . $image);
+                                        }
+                                    }
+                                @endphp
+                                <img src="{{ $propertyImage }}" alt="{{ $booking->bookingable->name ?? 'Property' }}"
+                                    class="confirmation-image mb-4"
+                                    onerror="this.src='{{ asset('frontend/img/default-property.jpg') }}'">
                             @endif
 
                             <!-- Property Details -->
@@ -135,12 +158,11 @@
                             </div>
 
                             <div class="payment-status">
-                                <span
-                                    class="badge badge-{{ $booking->payment_status == 'paid' ? 'success' : ($booking->payment_status == 'pending' ? 'warning' : 'danger') }}">
-                                    Payment {{ ucfirst($booking->payment_status ?? 'pending') }}
+                                <span class="badge {{ $booking->payment_status?->badgeColor() ?? 'badge-warning' }}">
+                                    Payment {{ $booking->payment_status?->label() ?? 'Pending' }}
                                 </span>
                                 <p class="text-muted mt-2 mb-0">
-                                    <small>Method: {{ ucfirst($booking->payment_method ?? 'N/A') }}</small>
+                                    <small>Method: {{ ucfirst($booking->payment_method?->value ?? 'N/A') }}</small>
                                 </p>
                             </div>
                         </div>
@@ -152,11 +174,7 @@
                             <h4><i class="bi bi-gear me-2"></i>Actions</h4>
                         </div>
                         <div class="card-body">
-                            <div class="d-grid gap-2">
-                                <button class="btn btn-outline-primary" onclick="window.print()">
-                                    <i class="bi bi-printer me-2"></i>Print Details
-                                </button>
-
+                            <div class="d-grid gap-2"> 
                                 @if (in_array($booking->status, ['pending', 'confirmed', 'booked']))
                                     <button class="btn btn-outline-danger" onclick="cancelBooking({{ $booking->id }})">
                                         <i class="bi bi-x-circle me-2"></i>Cancel Booking
