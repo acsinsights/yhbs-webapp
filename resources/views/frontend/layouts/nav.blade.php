@@ -33,18 +33,18 @@
                                     <a href="{{ route('houses.index') }}">Houses</a>
                                 </li>
                                 <li class="{{ request()->is('rooms*') ? 'active' : '' }}">
-                                    <a href="{{ route('rooms.index') }}">Hotel Rooms</a>
+                                    <a href="{{ route('rooms.index') }}">Rooms</a>
                                 </li>
                                 <li class="{{ request()->is('yachts*') ? 'active' : '' }}">
-                                    <a href="{{ route('yachts.index') }}">Yacht Rentals</a>
+                                    <a href="{{ route('yachts.index') }}">Yachts</a>
                                 </li>
                             </ul>
                         </li>
                         <li class="{{ request()->is('contact*') ? 'active' : '' }}">
-                            <a href="{{ url('/contact') }}">Contact</a>
+                            <a href="{{ url('/contact') }}">Contact Us</a>
                         </li>
                     </ul>
-                    <div class="contact-area d-xl-none d-flex">
+                    {{-- <div class="contact-area d-xl-none d-flex">
                         <div class="icon">
                             <svg width="16" height="16" viewbox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
                                 <g>
@@ -58,7 +58,7 @@
                             <span>Need Help?</span>
                             <a href="tel:91345533865">+965 1808080</a>
                         </div>
-                    </div>
+                    </div> --}}
                     <a href="#" class="primary-btn1 black-bg d-xl-none d-flex">
                         <span>
                             <svg width="15" height="15" viewbox="0 0 15 15" xmlns="http://www.w3.org/2000/svg">
@@ -84,7 +84,7 @@
                 </div>
             </div>
             <div class="nav-right">
-                <div class="contact-and-search-area">
+                {{-- <div class="contact-and-search-area">
                     <div class="contact-area d-xl-flex d-none">
                         <div class="icon">
                             <svg width="16" height="16" viewbox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
@@ -95,10 +95,10 @@
                                 </g>
                             </svg>
                         </div>
-                        {{-- <div class="content">
+                        <div class="content">
                             <span>Need Help?</span>
                             <a href="tel:91345533865">+91 345 533 865</a>
-                        </div> --}}
+                        </div>
                     </div>
                     <div class="search-bar">
                         <div class="search-btn">
@@ -134,7 +134,7 @@
                             </form>
                         </div>
                     </div>
-                </div>
+                </div> --}}
 
                 @auth
                     <!-- Logged In User Menu -->
