@@ -58,8 +58,34 @@
                                 <div class="booking-card">
                                     <div class="row align-items-center">
                                         <div class="col-md-3">
-                                            <img src="{{ $booking->bookingable?->image ? asset('storage/' . $booking->bookingable->image) : asset('frontend/img/innerpages/hotel-dt-room-img1.jpg') }}"
-                                                alt="Booking" class="booking-image">
+                                            @php
+                                                $propertyImage = asset(
+                                                    'frontend/img/innerpages/hotel-dt-room-img1.jpg',
+                                                );
+                                                if ($booking->bookingable?->image) {
+                                                    $image = $booking->bookingable->image;
+                                                    if (str_starts_with($image, 'http')) {
+                                                        $propertyImage = $image;
+                                                    } elseif (
+                                                        str_starts_with($image, '/default') ||
+                                                        str_starts_with($image, '/frontend')
+                                                    ) {
+                                                        $propertyImage = asset($image);
+                                                    } elseif (
+                                                        str_starts_with($image, 'default/') ||
+                                                        str_starts_with($image, 'frontend/')
+                                                    ) {
+                                                        $propertyImage = asset($image);
+                                                    } elseif (str_starts_with($image, 'storage/')) {
+                                                        $propertyImage = asset($image);
+                                                    } else {
+                                                        $propertyImage = asset('storage/' . $image);
+                                                    }
+                                                }
+                                            @endphp
+                                            <img src="{{ $propertyImage }}"
+                                                alt="{{ $booking->bookingable?->name ?? 'Booking' }}" class="booking-image"
+                                                onerror="this.src='{{ asset('frontend/img/innerpages/hotel-dt-room-img1.jpg') }}'">
                                         </div>
                                         <div class="col-md-6">
                                             <div class="booking-details">
@@ -154,10 +180,10 @@
                 <div class="tab-pane fade" id="confirmed" role="tabpanel">
                     <div class="row">
                         @php
-                            $confirmedBookings = $bookings->filter(function($booking) {
+                            $confirmedBookings = $bookings->filter(function ($booking) {
                                 return in_array($booking->status, [
                                     App\Enums\BookingStatusEnum::BOOKED,
-                                    App\Enums\BookingStatusEnum::CHECKED_IN
+                                    App\Enums\BookingStatusEnum::CHECKED_IN,
                                 ]);
                             });
                         @endphp
@@ -167,18 +193,47 @@
                                 <div class="booking-card">
                                     <div class="row align-items-center">
                                         <div class="col-md-3">
-                                            <img src="{{ $booking->bookingable?->image ? asset('storage/' . $booking->bookingable->image) : asset('frontend/img/innerpages/hotel-dt-room-img1.jpg') }}"
-                                                alt="Booking" class="booking-image">
+                                            @php
+                                                $propertyImage = asset(
+                                                    'frontend/img/innerpages/hotel-dt-room-img1.jpg',
+                                                );
+                                                if ($booking->bookingable?->image) {
+                                                    $image = $booking->bookingable->image;
+                                                    if (str_starts_with($image, 'http')) {
+                                                        $propertyImage = $image;
+                                                    } elseif (
+                                                        str_starts_with($image, '/default') ||
+                                                        str_starts_with($image, '/frontend')
+                                                    ) {
+                                                        $propertyImage = asset($image);
+                                                    } elseif (
+                                                        str_starts_with($image, 'default/') ||
+                                                        str_starts_with($image, 'frontend/')
+                                                    ) {
+                                                        $propertyImage = asset($image);
+                                                    } elseif (str_starts_with($image, 'storage/')) {
+                                                        $propertyImage = asset($image);
+                                                    } else {
+                                                        $propertyImage = asset('storage/' . $image);
+                                                    }
+                                                }
+                                            @endphp
+                                            <img src="{{ $propertyImage }}"
+                                                alt="{{ $booking->bookingable?->name ?? 'Booking' }}"
+                                                class="booking-image"
+                                                onerror="this.src='{{ asset('frontend/img/innerpages/hotel-dt-room-img1.jpg') }}'">
                                         </div>
                                         <div class="col-md-6">
                                             <div class="booking-details">
-                                                <span class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }} mb-2">
+                                                <span
+                                                    class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }} mb-2">
                                                     {{ $booking->status?->label() ?? 'Confirmed' }}
                                                 </span>
                                                 <h4>{{ $booking->bookingable?->name ?? 'Property Name' }}</h4>
                                                 @if ($booking->bookingable?->house)
                                                     <p class="text-muted mb-2">
-                                                        <i class="bi bi-house me-2"></i>{{ $booking->bookingable->house->name }}
+                                                        <i
+                                                            class="bi bi-house me-2"></i>{{ $booking->bookingable->house->name }}
                                                     </p>
                                                 @endif
                                                 <div class="booking-info">
@@ -241,7 +296,7 @@
                 <div class="tab-pane fade" id="pending" role="tabpanel">
                     <div class="row">
                         @php
-                            $pendingBookings = $bookings->filter(function($booking) {
+                            $pendingBookings = $bookings->filter(function ($booking) {
                                 return $booking->status === App\Enums\BookingStatusEnum::PENDING;
                             });
                         @endphp
@@ -251,18 +306,47 @@
                                 <div class="booking-card">
                                     <div class="row align-items-center">
                                         <div class="col-md-3">
-                                            <img src="{{ $booking->bookingable?->image ? asset('storage/' . $booking->bookingable->image) : asset('frontend/img/innerpages/hotel-dt-room-img1.jpg') }}"
-                                                alt="Booking" class="booking-image">
+                                            @php
+                                                $propertyImage = asset(
+                                                    'frontend/img/innerpages/hotel-dt-room-img1.jpg',
+                                                );
+                                                if ($booking->bookingable?->image) {
+                                                    $image = $booking->bookingable->image;
+                                                    if (str_starts_with($image, 'http')) {
+                                                        $propertyImage = $image;
+                                                    } elseif (
+                                                        str_starts_with($image, '/default') ||
+                                                        str_starts_with($image, '/frontend')
+                                                    ) {
+                                                        $propertyImage = asset($image);
+                                                    } elseif (
+                                                        str_starts_with($image, 'default/') ||
+                                                        str_starts_with($image, 'frontend/')
+                                                    ) {
+                                                        $propertyImage = asset($image);
+                                                    } elseif (str_starts_with($image, 'storage/')) {
+                                                        $propertyImage = asset($image);
+                                                    } else {
+                                                        $propertyImage = asset('storage/' . $image);
+                                                    }
+                                                }
+                                            @endphp
+                                            <img src="{{ $propertyImage }}"
+                                                alt="{{ $booking->bookingable?->name ?? 'Booking' }}"
+                                                class="booking-image"
+                                                onerror="this.src='{{ asset('frontend/img/innerpages/hotel-dt-room-img1.jpg') }}'">
                                         </div>
                                         <div class="col-md-6">
                                             <div class="booking-details">
-                                                <span class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }} mb-2">
+                                                <span
+                                                    class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }} mb-2">
                                                     {{ $booking->status?->label() ?? 'Pending' }}
                                                 </span>
                                                 <h4>{{ $booking->bookingable?->name ?? 'Property Name' }}</h4>
                                                 @if ($booking->bookingable?->house)
                                                     <p class="text-muted mb-2">
-                                                        <i class="bi bi-house me-2"></i>{{ $booking->bookingable->house->name }}
+                                                        <i
+                                                            class="bi bi-house me-2"></i>{{ $booking->bookingable->house->name }}
                                                     </p>
                                                 @endif
                                                 <div class="booking-info">
@@ -329,7 +413,7 @@
                 <div class="tab-pane fade" id="cancelled" role="tabpanel">
                     <div class="row">
                         @php
-                            $cancelledBookings = $bookings->filter(function($booking) {
+                            $cancelledBookings = $bookings->filter(function ($booking) {
                                 return $booking->status === App\Enums\BookingStatusEnum::CANCELLED;
                             });
                         @endphp
@@ -339,18 +423,47 @@
                                 <div class="booking-card">
                                     <div class="row align-items-center">
                                         <div class="col-md-3">
-                                            <img src="{{ $booking->bookingable?->image ? asset('storage/' . $booking->bookingable->image) : asset('frontend/img/innerpages/hotel-dt-room-img1.jpg') }}"
-                                                alt="Booking" class="booking-image">
+                                            @php
+                                                $propertyImage = asset(
+                                                    'frontend/img/innerpages/hotel-dt-room-img1.jpg',
+                                                );
+                                                if ($booking->bookingable?->image) {
+                                                    $image = $booking->bookingable->image;
+                                                    if (str_starts_with($image, 'http')) {
+                                                        $propertyImage = $image;
+                                                    } elseif (
+                                                        str_starts_with($image, '/default') ||
+                                                        str_starts_with($image, '/frontend')
+                                                    ) {
+                                                        $propertyImage = asset($image);
+                                                    } elseif (
+                                                        str_starts_with($image, 'default/') ||
+                                                        str_starts_with($image, 'frontend/')
+                                                    ) {
+                                                        $propertyImage = asset($image);
+                                                    } elseif (str_starts_with($image, 'storage/')) {
+                                                        $propertyImage = asset($image);
+                                                    } else {
+                                                        $propertyImage = asset('storage/' . $image);
+                                                    }
+                                                }
+                                            @endphp
+                                            <img src="{{ $propertyImage }}"
+                                                alt="{{ $booking->bookingable?->name ?? 'Booking' }}"
+                                                class="booking-image"
+                                                onerror="this.src='{{ asset('frontend/img/innerpages/hotel-dt-room-img1.jpg') }}'">
                                         </div>
                                         <div class="col-md-6">
                                             <div class="booking-details">
-                                                <span class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }} mb-2">
+                                                <span
+                                                    class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }} mb-2">
                                                     {{ $booking->status?->label() ?? 'Cancelled' }}
                                                 </span>
                                                 <h4>{{ $booking->bookingable?->name ?? 'Property Name' }}</h4>
                                                 @if ($booking->bookingable?->house)
                                                     <p class="text-muted mb-2">
-                                                        <i class="bi bi-house me-2"></i>{{ $booking->bookingable->house->name }}
+                                                        <i
+                                                            class="bi bi-house me-2"></i>{{ $booking->bookingable->house->name }}
                                                     </p>
                                                 @endif
                                                 <div class="booking-info">
@@ -411,7 +524,6 @@
             </div>
         </div>
     </div>
-
 @endsection
 
 @section('scripts')
