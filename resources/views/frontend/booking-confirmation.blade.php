@@ -482,22 +482,22 @@
                             <div class="payment-breakdown">
                                 <div class="payment-row">
                                     <span>Price per night</span>
-                                    <span>${{ number_format($booking->price_per_night ?? 0, 2) }}</span>
+                                    <span>{{ currency_format( number_format($booking->price_per_night ?? 0, 2) ) }}</span>
                                 </div>
                                 <div class="payment-row">
                                     <span>× {{ $booking->nights ?? '1' }} nights</span>
-                                    <span>${{ number_format(($booking->price_per_night ?? 0) * ($booking->nights ?? 1), 2) }}</span>
+                                    <span>{{ currency_format( number_format(($booking->price_per_night ?? 0) * ($booking->nights ?? 1), 2) ) }}</span>
                                 </div>
                                 @if (($booking->service_fee ?? 0) > 0)
                                     <div class="payment-row">
                                         <span>Service fee</span>
-                                        <span>${{ number_format($booking->service_fee ?? 0, 2) }}</span>
+                                        <span>{{ currency_format( number_format($booking->service_fee ?? 0, 2) ) }}</span>
                                     </div>
                                 @endif
                                 @if (($booking->tax ?? 0) > 0)
                                     <div class="payment-row">
                                         <span>Taxes</span>
-                                        <span>${{ number_format($booking->tax ?? 0, 2) }}</span>
+                                        <span>{{ currency_format( number_format($booking->tax ?? 0, 2) ) }}</span>
                                     </div>
                                 @endif
                             </div>
@@ -506,7 +506,7 @@
 
                             <div class="total-amount">
                                 <span>Total Paid</span>
-                                <span>${{ number_format($booking->total ?? 0, 2) }}</span>
+                                <span>{{ currency_format( number_format($booking->total ?? 0, 2) ) }}</span>
                             </div>
 
                             <div class="payment-status">
