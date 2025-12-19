@@ -8,11 +8,21 @@ use Illuminate\Http\Request;
 
 class BlogController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $blogs = Blog::published()
-            ->latest('date')
-            ->paginate(12);
+        $query = Blog::published()->latest('date');
+
+        // Apply search filter if search parameter exists
+        if ($request->has('search') && $request->search != '') {
+            $searchTerm = $request->search;
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('title', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('content', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('location', 'like', '%' . $searchTerm . '%');
+            });
+        }
+
+        $blogs = $query->paginate(12);
 
         return view('frontend.blogs.index', compact('blogs'));
     }
