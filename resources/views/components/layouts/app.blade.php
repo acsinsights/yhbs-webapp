@@ -96,6 +96,11 @@
                     <x-menu-item title="Amenities" icon="o-star" link="{{ route('admin.amenity.index') }}" />
 
                     <div class="divider divider-start my-1">
+                        <small class="hidden-when-collapsed">Content</small>
+                    </div>
+                    <x-menu-item title="Blogs" icon="o-document-text" link="{{ route('admin.blogs.index') }}" />
+
+                    <div class="divider divider-start my-1">
                         <small class="hidden-when-collapsed">Reports</small>
                     </div>
                     <x-menu-item title="Booking Reports" icon="o-chart-bar" link="###" />

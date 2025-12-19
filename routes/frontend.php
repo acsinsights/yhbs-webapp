@@ -90,6 +90,10 @@ Route::get('/houses/{slug}', [HouseController::class, 'show'])->name('houses.sho
 Route::get('/yachts', [YachtController::class, 'index'])->name('yachts.index');
 Route::get('/yachts/{id}', [YachtController::class, 'show'])->name('yachts.show');
 
+// Blog Routes
+Route::get('/blogs', [App\Http\Controllers\Frontend\BlogController::class, 'index'])->name('blogs.index');
+Route::get('/blog/{slug}', [App\Http\Controllers\Frontend\BlogController::class, 'show'])->name('blogs.show');
+
 // Password Reset Routes (handled by Customer AuthController)
 Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
 Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');

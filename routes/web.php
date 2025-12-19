@@ -54,6 +54,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Volt::route('/', 'website-settings.index')->name('website-settings.index');
         });
 
+        // Blogs routes
+        Route::group(['prefix' => 'blogs'], function () {
+            Volt::route('/', 'blogs.index')->name('blogs.index');
+            Volt::route('/{blog}/edit', 'blogs.edit')->name('blogs.edit');
+        });
+
         // Bookings routes
         Route::group(['prefix' => 'bookings'], function () {
             Volt::route('/', 'bookings.index')->name('bookings.index');
