@@ -83,6 +83,7 @@
                         link="{{ route('admin.bookings.room.index') }}" />
                     <x-menu-item title="House Bookings" icon="o-building-office"
                         link="{{ route('admin.bookings.house.index') }}" />
+                    <x-menu-item title="Coupons" icon="o-ticket" link="{{ route('admin.coupons.index') }}" />
                 @endrole
 
                 @role('admin|superadmin')

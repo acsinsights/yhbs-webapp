@@ -6,6 +6,7 @@ use App\Enums\BookingStatusEnum;
 use App\Enums\PaymentStatusEnum;
 use App\Models\Booking;
 use App\Services\OttuService;
+use App\Services\CouponService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
@@ -15,10 +16,12 @@ use Illuminate\Support\Facades\Auth;
 class OttuCheckoutController extends Controller
 {
     protected OttuService $ottuService;
+    protected CouponService $couponService;
 
-    public function __construct(OttuService $ottuService)
+    public function __construct(OttuService $ottuService, CouponService $couponService)
     {
         $this->ottuService = $ottuService;
+        $this->couponService = $couponService;
     }
 
     /**
@@ -30,7 +33,7 @@ class OttuCheckoutController extends Controller
      */
     public function checkout(Request $request, int $bookingId): View|RedirectResponse
     {
-        $booking = Booking::with(['user', 'yacht', 'house', 'room'])->findOrFail($bookingId);
+        $booking = Booking::with(['user', 'yacht', 'house', 'room', 'coupon'])->findOrFail($bookingId);
 
         // Check if booking belongs to authenticated user or is authorized
         if ($booking->user_id !== Auth::id() && !hasAuthRole('admin')) {
@@ -43,9 +46,17 @@ class OttuCheckoutController extends Controller
                 ->with('info', 'This booking has already been paid.');
         }
 
+        // Calculate total amount (considering discount)
+        $totalAmount = $booking->total_amount ?? ($booking->price - ($booking->discount_amount ?? 0));
+
+        // Update booking total if not set
+        if (!$booking->total_amount) {
+            $booking->update(['total_amount' => $totalAmount]);
+        }
+
         // Create payment session with Ottu
         $paymentData = [
-            'amount' => $booking->total_amount,
+            'amount' => $totalAmount,
             'currency_code' => config('services.ottu.currency', 'KWD'),
             'customer_id' => $booking->user->id,
             'customer_email' => $booking->user->email,
@@ -257,5 +268,108 @@ class OttuCheckoutController extends Controller
         }
 
         return response()->json(['error' => $result['error']], 500);
+    }
+
+    /**
+     * Apply coupon to booking
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function applyCoupon(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'booking_id' => 'required|exists:bookings,id',
+            'coupon_code' => 'required|string',
+        ]);
+
+        $booking = Booking::findOrFail($request->booking_id);
+
+        // Check if booking belongs to authenticated user
+        if ($booking->user_id !== Auth::id() && !hasAuthRole('admin')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to this booking',
+            ], 403);
+        }
+
+        // Check if booking already has a coupon
+        if ($booking->coupon_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please remove the existing coupon before applying a new one.',
+            ]);
+        }
+
+        // Validate coupon
+        $result = $this->couponService->validateCoupon(
+            $request->coupon_code,
+            $booking->price,
+            $booking->user_id
+        );
+
+        if (!$result['valid']) {
+            return response()->json([
+                'success' => false,
+                'message' => $result['error'],
+            ]);
+        }
+
+        // Apply coupon to booking
+        $coupon = $result['coupon'];
+        $discount = $result['discount'];
+        $totalAmount = $result['final_amount'];
+
+        $booking->update([
+            'coupon_id' => $coupon->id,
+            'discount_amount' => $discount,
+            'total_amount' => $totalAmount,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Coupon applied successfully!',
+            'data' => [
+                'discount_amount' => number_format($discount, 3),
+                'total_amount' => number_format($totalAmount, 3),
+                'coupon_code' => $coupon->code,
+                'coupon_name' => $coupon->name,
+            ],
+        ]);
+    }
+
+    /**
+     * Remove coupon from booking
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function removeCoupon(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'booking_id' => 'required|exists:bookings,id',
+        ]);
+
+        $booking = Booking::findOrFail($request->booking_id);
+
+        // Check if booking belongs to authenticated user
+        if ($booking->user_id !== Auth::id() && !hasAuthRole('admin')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to this booking',
+            ], 403);
+        }
+
+        // Remove coupon
+        $booking->update([
+            'coupon_id' => null,
+            'discount_amount' => 0,
+            'total_amount' => $booking->price,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Coupon removed successfully!',
+        ]);
     }
 }

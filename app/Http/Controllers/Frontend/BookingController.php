@@ -6,6 +6,7 @@ use App\Models\Booking;
 use App\Models\Room;
 use App\Models\Yacht;
 use App\Models\House;
+use App\Services\CouponService;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -397,5 +398,50 @@ class BookingController extends Controller
         ]);
 
         return view('frontend.booking-confirmation', ['booking' => $bookingData]);
+    }
+
+    public function applyCoupon(Request $request)
+    {
+        $request->validate([
+            'coupon_code' => 'required|string',
+            'booking_amount' => 'required|numeric',
+            'price_per_night' => 'nullable|numeric',
+            'nights' => 'nullable|integer',
+            'property_type' => 'nullable|string',
+            'property_id' => 'nullable|integer',
+        ]);
+
+        $couponService = new CouponService();
+        $result = $couponService->validateCoupon(
+            $request->coupon_code,
+            $request->booking_amount,
+            $request->price_per_night,
+            $request->nights,
+            null,
+            $request->property_type,
+            $request->property_id
+        );
+
+        if ($result['valid']) {
+            // Store coupon in session
+            session([
+                'applied_coupon' => [
+                    'code' => $request->coupon_code,
+                    'discount_amount' => $result['discount_amount'],
+                    'new_total' => $result['new_total'],
+                    'free_nights' => $result['free_nights'] ?? 0,
+                ]
+            ]);
+
+            return back()->with('coupon_success', $result['message'] ?? 'Coupon applied successfully!');
+        }
+
+        return back()->withErrors(['coupon_code' => $result['error']])->withInput();
+    }
+
+    public function removeCoupon()
+    {
+        session()->forget('applied_coupon');
+        return back()->with('coupon_success', 'Coupon removed successfully');
     }
 }

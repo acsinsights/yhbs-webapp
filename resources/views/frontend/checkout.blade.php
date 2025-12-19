@@ -184,25 +184,91 @@
 
                                     <div class="divider"></div>
 
+                                    <!-- Coupon Section -->
+                                    <div class="coupon-section mb-3">
+                                        @if (session('applied_coupon'))
+                                            <div class="applied-coupon-badge d-flex align-items-center justify-content-between" style="padding: 10px; background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px;">
+                                                <div style="flex: 1;">
+                                                    <strong style="color: #0369a1;">{{ session('applied_coupon.code') }}</strong> <span style="color: #059669;">applied</span>
+                                                    <div class="text-sm" style="color: #059669;">
+                                                        <i class="bi bi-tag-fill"></i> Discount: {{ currency_format(number_format(session('applied_coupon.discount_amount'), 2)) }}
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex gap-2" style="gap: 8px;">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                                        onclick="document.getElementById('removeCouponForm').submit()"
+                                                        style="min-width: 80px;">
+                                                        <i class="bi bi-arrow-repeat"></i> Change
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                                        onclick="document.getElementById('removeCouponForm').submit()"
+                                                        style="min-width: 80px;">
+                                                        <i class="bi bi-x-circle"></i> Remove
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        @else
+                                            <div class="coupon-input-wrapper">
+                                                <input type="text" id="couponCodeInput"
+                                                    class="form-control @error('coupon_code') is-invalid @enderror"
+                                                    placeholder="Enter coupon code" style="text-transform: uppercase;"
+                                                    value="{{ old('coupon_code') }}">
+                                                <button type="button" class="btn btn-primary"
+                                                    onclick="applyCouponCode()">Apply</button>
+                                            </div>
+                                            @error('coupon_code')
+                                                <div class="alert alert-danger mt-2">{{ $message }}</div>
+                                            @enderror
+                                        @endif
+
+                                        @if (session('coupon_error'))
+                                            <div class="alert alert-danger mt-2">{{ session('coupon_error') }}</div>
+                                        @endif
+
+                                        @if (session('coupon_success'))
+                                            <div class="alert alert-success mt-2">{{ session('coupon_success') }}</div>
+                                        @endif
+                                    </div>
+
                                     <div class="price-breakdown">
                                         <div class="price-row">
                                             <span>Price per night</span>
-                                            <span>{{ currency_format( number_format($booking->price_per_night ?? 0, 2) ) }}</span>
+                                            <span
+                                                id="pricePerNight">{{ currency_format(number_format($booking->price_per_night ?? 0, 2)) }}</span>
                                         </div>
                                         <div class="price-row">
-                                            <span>× {{ $booking->nights ?? '1' }} nights</span>
-                                            <span>{{ currency_format( number_format(($booking->price_per_night ?? 0) * ($booking->nights ?? 1), 2) ) }}</span>
+                                            <span>× <span id="nightsCount">{{ $booking->nights ?? '1' }}</span>
+                                                nights</span>
+                                            <span
+                                                id="subtotal">{{ currency_format(number_format(($booking->price_per_night ?? 0) * ($booking->nights ?? 1), 2)) }}</span>
                                         </div>
                                         @if (($booking->service_fee ?? 0) > 0)
                                             <div class="price-row">
                                                 <span>Service fee</span>
-                                                <span>{{ currency_format( number_format($booking->service_fee ?? 0, 2) ) }}</span>
+                                                <span
+                                                    id="serviceFee">{{ currency_format(number_format($booking->service_fee ?? 0, 2)) }}</span>
                                             </div>
                                         @endif
                                         @if (($booking->tax ?? 0) > 0)
                                             <div class="price-row">
                                                 <span>Taxes</span>
-                                                <span>{{ currency_format( number_format($booking->tax ?? 0, 2) ) }}</span>
+                                                <span
+                                                    id="tax">{{ currency_format(number_format($booking->tax ?? 0, 2)) }}</span>
+                                            </div>
+                                        @endif
+                                        @if (session('applied_coupon'))
+                                            <div class="price-row discount-row">
+                                                <span class="text-success">
+                                                    <i class="bi bi-tag-fill me-1"></i>Coupon Discount
+                                                    @if (session('applied_coupon.free_nights') > 0)
+                                                        ({{ session('applied_coupon.free_nights') }}
+                                                        night{{ session('applied_coupon.free_nights') > 1 ? 's' : '' }}
+                                                        free)
+                                                    @endif
+                                                </span>
+                                                <span class="text-success">
+                                                    -{{ currency_format(number_format(session('applied_coupon.discount_amount'), 2)) }}
+                                                </span>
                                             </div>
                                         @endif
                                     </div>
@@ -211,7 +277,7 @@
 
                                     <div class="total-price">
                                         <span>Total Amount</span>
-                                        <span>{{ currency_format( number_format($booking->total ?? 0, 2) ) }}</span>
+                                        <span>{{ currency_format(number_format(session('applied_coupon') ? session('applied_coupon.new_total') : $booking->total ?? 0, 2)) }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -261,7 +327,13 @@
                             <input type="hidden" name="check_out" value="{{ $booking->check_out }}">
                             <input type="hidden" name="adults" value="{{ $booking->guests }}">
                             <input type="hidden" name="children" value="{{ $booking->children }}">
-                            <input type="hidden" name="total" value="{{ $booking->total }}">
+                            <input type="hidden" name="total"
+                                value="{{ session('applied_coupon') ? session('applied_coupon.new_total') : $booking->total }}">
+                            @if (session('applied_coupon'))
+                                <input type="hidden" name="coupon_code" value="{{ session('applied_coupon.code') }}">
+                                <input type="hidden" name="discount_amount"
+                                    value="{{ session('applied_coupon.discount_amount') }}">
+                            @endif
 
                             @if (isset($booking->adult_names))
                                 @foreach ($booking->adult_names as $adultName)
@@ -290,4 +362,100 @@
         </div>
     </div>
 
+    <!-- Hidden Coupon Forms (Outside main form) -->
+    <form id="applyCouponForm" action="{{ route('booking.apply-coupon') }}" method="POST" style="display: none;">
+        @csrf
+        <input type="hidden" name="coupon_code" id="hiddenCouponCode">
+        <input type="hidden" name="booking_amount" value="{{ $booking->total }}">
+        <input type="hidden" name="price_per_night" value="{{ $booking->price_per_night ?? 0 }}">
+        <input type="hidden" name="nights" value="{{ $booking->nights ?? 1 }}">
+        <input type="hidden" name="property_type" value="{{ $booking->type ?? '' }}">
+        <input type="hidden" name="property_id" value="{{ $booking->property_id ?? '' }}">
+    </form>
+
+    <form id="removeCouponForm" action="{{ route('booking.remove-coupon') }}" method="POST" style="display: none;">
+        @csrf
+    </form>
+
+@endsection
+
+@section('scripts')
+    <script>
+        function applyCouponCode() {
+            const couponCode = document.getElementById('couponCodeInput').value.trim();
+            if (!couponCode) {
+                alert('Please enter a coupon code');
+                return;
+            }
+            document.getElementById('hiddenCouponCode').value = couponCode.toUpperCase();
+            document.getElementById('applyCouponForm').submit();
+        }
+    </script>
+@endsection
+
+@section('styles')
+    <style>
+        .coupon-section {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px dashed #dee2e6;
+        }
+
+        .coupon-input-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+
+        .coupon-input-wrapper input {
+            flex: 1;
+        }
+
+        .applied-coupon-badge {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 6px;
+            color: #155724;
+        }
+
+        .remove-coupon {
+            background: none;
+            border: none;
+            color: #155724;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .remove-coupon:hover {
+            background: rgba(21, 87, 36, 0.1);
+        }
+
+        .discount-row {
+            color: #28a745 !important;
+            font-weight: 600;
+        }
+
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .text-sm {
+            font-size: 0.875rem;
+        }
+    </style>
 @endsection

@@ -49,6 +49,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Volt::route('/', 'amenity.index')->name('amenity.index');
         });
 
+        // Coupons routes
+        Route::group(['prefix' => 'coupons'], function () {
+            Volt::route('/', 'coupons.index')->name('coupons.index');
+            Volt::route('/create', 'coupons.create')->name('coupons.create');
+            Volt::route('/{coupon}/edit', 'coupons.edit')->name('coupons.edit');
+        });
+
         // Website Settings routes
         Route::group(['prefix' => 'website-settings'], function () {
             Volt::route('/', 'website-settings.index')->name('website-settings.index');
@@ -118,6 +125,15 @@ Route::prefix('payment')->name('ottu.')->group(function () {
 
     Route::get('/payment-methods', [App\Http\Controllers\OttuCheckoutController::class, 'paymentMethods'])
         ->name('payment-methods');
+});
+
+// Checkout Coupon Routes
+Route::prefix('checkout')->middleware('auth')->group(function () {
+    Route::post('/apply-coupon', [App\Http\Controllers\OttuCheckoutController::class, 'applyCoupon'])
+        ->name('checkout.apply-coupon');
+
+    Route::post('/remove-coupon', [App\Http\Controllers\OttuCheckoutController::class, 'removeCoupon'])
+        ->name('checkout.remove-coupon');
 });
 
 Route::post('/job-submit', function () {

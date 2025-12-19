@@ -70,6 +70,18 @@
                 transform: rotate(360deg);
             }
         }
+
+        #coupon-code {
+            text-transform: uppercase;
+        }
+
+        .coupon-success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        }
+
+        .coupon-error {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+        }
     </style>
 </head>
 
@@ -116,9 +128,69 @@
             </div>
 
             <div class="summary-item">
+                <span class="text-gray-600">Subtotal:</span>
+                <span class="font-medium">{{ number_format($booking->price, 3) }} KWD</span>
+            </div>
+
+            @if ($booking->discount_amount > 0)
+                <div class="summary-item text-green-600">
+                    <span>Discount ({{ $booking->coupon->code }}):</span>
+                    <span>-{{ number_format($booking->discount_amount, 3) }} KWD</span>
+                </div>
+            @endif
+
+            <div class="summary-item">
                 <span class="text-gray-600">Total Amount:</span>
                 <span class="text-blue-600 font-bold">{{ number_format($booking->total_amount, 3) }} KWD</span>
             </div>
+        </div>
+
+        <!-- Coupon Section -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6" id="coupon-section">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z">
+                    </path>
+                </svg>
+                Have a Coupon Code?
+            </h3>
+
+            @if ($booking->discount_amount > 0)
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 text-green-500 mr-3" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <div>
+                                <p class="font-semibold text-green-800">Coupon Applied Successfully!</p>
+                                <p class="text-sm text-green-600">Code: <strong>{{ $booking->coupon->code }}</strong>
+                                </p>
+                                <p class="text-xs text-green-500 mt-1">{{ $booking->coupon->name }}</p>
+                            </div>
+                        </div>
+                        <button onclick="removeCoupon()" class="text-red-500 hover:text-red-700 text-sm underline">
+                            Remove
+                        </button>
+                    </div>
+                </div>
+            @else
+                <form id="coupon-form" class="flex gap-3" onsubmit="applyCoupon(event)">
+                    <div class="flex-1">
+                        <input type="text" id="coupon-code" placeholder="Enter coupon code"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
+                            style="text-transform: uppercase;">
+                    </div>
+                    <button type="submit" id="apply-coupon-btn"
+                        class="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm hover:shadow-md">
+                        Apply
+                    </button>
+                </form>
+                <div id="coupon-message" class="mt-3 text-sm"></div>
+            @endif
         </div>
 
         <!-- Terms and Conditions -->
@@ -150,6 +222,103 @@
     </div>
 
     <script>
+        // CSRF Token for AJAX requests
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+        // Apply Coupon Function
+        function applyCoupon(event) {
+            event.preventDefault();
+
+            const couponCode = document.getElementById('coupon-code').value.trim().toUpperCase();
+            const messageDiv = document.getElementById('coupon-message');
+            const applyBtn = document.getElementById('apply-coupon-btn');
+
+            if (!couponCode) {
+                showMessage('Please enter a coupon code', 'error');
+                return;
+            }
+
+            // Disable button and show loading
+            applyBtn.disabled = true;
+            applyBtn.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span> Applying...';
+
+            // Send AJAX request to validate and apply coupon
+            fetch('{{ route('checkout.apply-coupon') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({
+                        booking_id: {{ $booking->id }},
+                        coupon_code: couponCode
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Reload page to show updated prices
+                        window.location.reload();
+                    } else {
+                        showMessage(data.message, 'error');
+                        applyBtn.disabled = false;
+                        applyBtn.innerHTML = 'Apply';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showMessage('Something went wrong. Please try again.', 'error');
+                    applyBtn.disabled = false;
+                    applyBtn.innerHTML = 'Apply';
+                });
+        }
+
+        // Remove Coupon Function
+        function removeCoupon() {
+            if (!confirm('Are you sure you want to remove this coupon?')) {
+                return;
+            }
+
+            fetch('{{ route('checkout.remove-coupon') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({
+                        booking_id: {{ $booking->id }}
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert(data.message || 'Failed to remove coupon');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Something went wrong. Please try again.');
+                });
+        }
+
+        // Show Message Helper
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('coupon-message');
+            messageDiv.innerHTML = `
+                <div class="p-3 rounded-lg ${type === 'error' ? 'coupon-error text-red-800' : 'coupon-success text-green-800'}">
+                    <p class="flex items-center">
+                        ${type === 'error' ?
+                            '<svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>' :
+                            '<svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>'
+                        }
+                        ${message}
+                    </p>
+                </div>
+            `;
+        }
+
         // Callback Functions
         window.errorCallback = function(data) {
             console.error('Payment error:', data);

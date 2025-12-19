@@ -22,6 +22,9 @@ class Booking extends Model
         'price',
         'price_per_hour',
         'discount_price',
+        'coupon_id',
+        'discount_amount',
+        'total_amount',
         'status',
         'payment_status',
         'payment_method',
@@ -51,6 +54,14 @@ class Booking extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the coupon used for this booking.
+     */
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
     }
 
     /**

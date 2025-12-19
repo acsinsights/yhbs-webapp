@@ -76,6 +76,10 @@ Route::middleware(['auth', 'role:customer'])->group(function () {
     Route::get('/checkout', [BookingController::class, 'checkout'])->name('checkout');
     Route::post('/booking/confirm', [BookingController::class, 'confirm'])->name('booking.confirm');
     Route::get('/booking/confirmation/{id}', [BookingController::class, 'confirmation'])->name('booking.confirmation');
+
+    // Frontend Coupon Routes
+    Route::post('/booking/apply-coupon', [BookingController::class, 'applyCoupon'])->name('booking.apply-coupon');
+    Route::post('/booking/remove-coupon', [BookingController::class, 'removeCoupon'])->name('booking.remove-coupon');
 });
 
 // Rooms Routes
