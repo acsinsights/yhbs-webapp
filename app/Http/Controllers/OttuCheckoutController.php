@@ -131,6 +131,17 @@ class OttuCheckoutController extends Controller
                         'paid_at' => now(),
                     ]);
 
+                    // Increment coupon usage if coupon was used
+                    if ($booking->coupon_id) {
+                        $coupon = \App\Models\Coupon::find($booking->coupon_id);
+                        if ($coupon) {
+                            $coupon->incrementUsage();
+                        }
+
+                        // Clear coupon from session
+                        session()->forget('applied_coupon');
+                    }
+
                     return view('ottu.success', [
                         'booking' => $booking,
                         'orderNo' => $orderNo,
@@ -317,8 +328,8 @@ class OttuCheckoutController extends Controller
 
         // Apply coupon to booking
         $coupon = $result['coupon'];
-        $discount = $result['discount'];
-        $totalAmount = $result['final_amount'];
+        $discount = $result['discount_amount'];
+        $totalAmount = $result['new_total'];
 
         $booking->update([
             'coupon_id' => $coupon->id,

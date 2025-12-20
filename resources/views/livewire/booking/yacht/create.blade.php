@@ -340,6 +340,7 @@ new class extends Component {
             'check_in' => $checkIn,
             'check_out' => $checkOut,
             'price' => $this->amount,
+            'total_amount' => $this->amount,
             'payment_method' => $this->payment_method,
             'payment_status' => $this->payment_status,
             'status' => BookingStatusEnum::BOOKED->value,

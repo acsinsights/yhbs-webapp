@@ -17,12 +17,21 @@ return new class extends Migration {
             $table->foreignId('user_id')->nullable()->constrained('users');
             $table->integer('adults')->nullable();
             $table->integer('children')->nullable();
-            $table->dateTime('check_in')->nullable();
-            $table->dateTime('check_out')->nullable();
+            $table->json('guest_details')->nullable()->comment('Array of guest names');
+            $table->date('check_in')->nullable();
+            $table->time('arrival_time')->nullable()->comment('Expected arrival time');
+            $table->date('check_out')->nullable();
             $table->decimal('price', 10, 2)->nullable();
+            $table->decimal('price_per_hour', 10, 2)->nullable();
+            $table->foreignId('coupon_id')->nullable()->constrained()->nullOnDelete();
+            $table->decimal('discount_amount', 10, 2)->default(0);
+            $table->decimal('total_amount', 10, 2)->default(0);
             $table->decimal('discount_price', 10, 2)->nullable();
             $table->string('status')->default('pending')->comment('pending, booked, checked_in, cancelled, checked_out');
             $table->string('payment_status')->default('pending')->comment('pending, paid, failed');
+            $table->string('payment_session_id')->nullable();
+            $table->string('payment_reference')->nullable();
+            $table->timestamp('paid_at')->nullable();
             $table->string('payment_method')->default('other')->comment('cash, card, other, online');
             $table->text('notes')->nullable();
 

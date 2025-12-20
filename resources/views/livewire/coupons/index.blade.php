@@ -89,8 +89,6 @@ new class extends Component {
             @scope('cell_discount_value', $coupon)
                 @if ($coupon->discount_type->value === 'percentage')
                     {{ $coupon->discount_value }}%
-                @elseif($coupon->discount_type->value === 'free_nights')
-                    {{ $coupon->discount_value }} {{ $coupon->discount_value == 1 ? 'Night' : 'Nights' }}
                 @else
                     {{ number_format($coupon->discount_value, 3) }} KWD
                 @endif

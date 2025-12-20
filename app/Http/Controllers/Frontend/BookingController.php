@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Models\Booking;
+use App\Models\Coupon;
 use App\Models\Room;
 use App\Models\Yacht;
 use App\Models\House;
@@ -18,6 +19,15 @@ class BookingController extends Controller
     {
         $type = $request->get('type', 'room');
         $id = $request->get('id');
+
+        // Clear coupon session if property/type has changed
+        $currentProperty = session('checkout_property_id');
+        $currentType = session('checkout_property_type');
+
+        if ($currentProperty != $id || $currentType != $type) {
+            session()->forget('applied_coupon');
+            session(['checkout_property_id' => $id, 'checkout_property_type' => $type]);
+        }
 
         if (!$id) {
             return redirect()->route('home')->with('error', 'Invalid booking request.');
@@ -65,7 +75,7 @@ class BookingController extends Controller
                     // Handle different image path formats
                     if (str_starts_with($property->image, 'http')) {
                         $propertyImage = $property->image;
-                    } elseif (str_starts_with($property->image, '/default') || str_starts_with($property->image, '/frontend')) {
+                    } elseif (str_starts_with($property->image, 'default/') || str_starts_with($property->image, '/default') || str_starts_with($property->image, 'frontend/') || str_starts_with($property->image, '/frontend')) {
                         $propertyImage = asset($property->image);
                     } elseif (str_starts_with($property->image, 'storage/')) {
                         $propertyImage = asset($property->image);
@@ -196,6 +206,8 @@ class BookingController extends Controller
             'phone' => 'required|string',
             'address' => 'nullable|string',
             'special_requests' => 'nullable|string',
+            'coupon_code' => 'nullable|string',
+            'discount_amount' => 'nullable|numeric|min:0',
         ]);
 
         // Determine bookingable type and get the property
@@ -208,6 +220,61 @@ class BookingController extends Controller
         } else {
             $bookingableType = House::class;
             $property = House::findOrFail($validated['property_id']);
+        }
+
+        // Handle coupon if provided
+        $couponId = null;
+        $discountAmount = 0;
+
+        if (!empty($validated['coupon_code'])) {
+            $coupon = Coupon::where('code', strtoupper($validated['coupon_code']))->first();
+
+            if ($coupon) {
+                // Final validation: check usage limits one more time before confirming
+                if ($coupon->usage_limit && $coupon->usage_count >= $coupon->usage_limit) {
+                    return redirect()->back()
+                        ->withInput()
+                        ->with('coupon_error', 'This coupon has reached its usage limit.');
+                }
+
+                // Check per-user usage limit
+                $userId = Auth::id();
+                if ($userId && $coupon->usage_limit_per_user) {
+                    $userUsageCount = \App\Models\Booking::where('user_id', $userId)
+                        ->where('coupon_id', $coupon->id)
+                        ->count();
+
+                    if ($userUsageCount >= $coupon->usage_limit_per_user) {
+                        return redirect()->back()
+                            ->withInput()
+                            ->with('coupon_error', 'You have already used this coupon the maximum number of times.');
+                    }
+                }
+
+                // Check if coupon is still valid
+                if (!$coupon->isValid()) {
+                    return redirect()->back()
+                        ->withInput()
+                        ->with('coupon_error', 'This coupon is no longer valid.');
+                }
+
+                // Get discount amount from form if provided, otherwise from session or calculate
+                if (isset($validated['discount_amount'])) {
+                    $discountAmount = (float) $validated['discount_amount'];
+                } else {
+                    $appliedCoupon = session('applied_coupon');
+                    if ($appliedCoupon && $appliedCoupon['code'] === $coupon->code && isset($appliedCoupon['discount_amount'])) {
+                        $discountAmount = $appliedCoupon['discount_amount'];
+                    } else {
+                        // Calculate discount as last resort
+                        // Note: validated['total'] is already discounted, so calculate from original
+                        $originalTotal = (float) $validated['total'] + $discountAmount;
+                        $discountAmount = $coupon->calculateDiscount($originalTotal);
+                    }
+                }
+
+                $couponId = $coupon->id;
+            }
         }
 
         // Combine guest names
@@ -235,11 +302,22 @@ class BookingController extends Controller
             'check_in' => Carbon::parse($validated['check_in'])->format('Y-m-d'),
             'check_out' => Carbon::parse($validated['check_out'])->format('Y-m-d'),
             'price' => $validated['total'],
+            'coupon_id' => $couponId,
+            'discount_amount' => $discountAmount,
+            'total_amount' => $validated['total'],
             'status' => 'booked',
             'payment_status' => 'pending',
             'payment_method' => $validated['payment_method'],
             'notes' => $validated['special_requests'] ?? null,
         ]);
+
+        // Increment coupon usage count if coupon was used
+        if ($couponId) {
+            $coupon->incrementUsage();
+
+            // Clear coupon from session after successful booking
+            session()->forget('applied_coupon');
+        }
 
         return redirect()->route('booking.confirmation', ['id' => $booking->id])
             ->with('success', 'Booking confirmed successfully!');
@@ -422,14 +500,24 @@ class BookingController extends Controller
             $request->property_id
         );
 
+        // Debug logging
+        \Log::info('Coupon Application', [
+            'booking_amount' => $request->booking_amount,
+            'price_per_night' => $request->price_per_night,
+            'nights' => $request->nights,
+            'valid' => $result['valid'] ?? false,
+            'discount_amount' => $result['discount_amount'] ?? 0,
+            'new_total' => $result['new_total'] ?? 0,
+        ]);
+
         if ($result['valid']) {
-            // Store coupon in session
+            // Store only coupon info in session, calculate discount fresh on page
             session([
                 'applied_coupon' => [
-                    'code' => $request->coupon_code,
-                    'discount_amount' => $result['discount_amount'],
-                    'new_total' => $result['new_total'],
-                    'free_nights' => $result['free_nights'] ?? 0,
+                    'code' => $result['coupon']->code,
+                    'discount_type' => $result['coupon']->discount_type->value,
+                    'discount_value' => $result['coupon']->discount_value,
+                    'max_discount_amount' => $result['coupon']->max_discount_amount,
                 ]
             ]);
 

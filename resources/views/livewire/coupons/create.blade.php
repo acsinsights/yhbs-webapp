@@ -35,7 +35,7 @@ new class extends Component {
                     'code' => 'required|string|max:50|unique:coupons,code',
                     'name' => 'required|string|max:255',
                     'description' => 'nullable|string',
-                    'discount_type' => 'required|in:percentage,fixed,free_nights',
+                    'discount_type' => 'required|in:percentage,fixed',
                     'discount_value' => 'required|numeric|min:0',
                     'min_nights_required' => 'nullable|integer|min:1',
                     'min_booking_amount' => 'nullable|numeric|min:0',
@@ -91,7 +91,7 @@ new class extends Component {
 
     public function discountTypes(): array
     {
-        return [['id' => 'percentage', 'name' => 'Percentage (%)'], ['id' => 'fixed', 'name' => 'Fixed Amount (KWD)'], ['id' => 'free_nights', 'name' => 'Free Nights/Days']];
+        return [['id' => 'percentage', 'name' => 'Percentage (%)'], ['id' => 'fixed', 'name' => 'Fixed Amount (KWD)']];
     }
 
     public function with(): array
@@ -171,20 +171,9 @@ new class extends Component {
                 <x-select label="Discount Type *" wire:model.live="discount_type" :options="$discountTypes"
                     placeholder="Select discount type" icon="o-calculator" inline />
 
-                @if ($discount_type === 'free_nights')
-                    <x-input label="Number of Free Nights *" wire:model="discount_value" type="number" step="1"
-                        min="1" placeholder="e.g., 1, 2, or 3" suffix="Nights" icon="o-moon"
-                        hint="Number of nights/days the customer gets free" inline />
-
-                    <x-input label="Minimum Nights Required" wire:model="min_nights_required" type="number"
-                        step="1" min="1" placeholder="e.g., 3 or 5" suffix="Nights" icon="o-calendar"
-                        hint="Minimum booking nights required to get free nights (e.g., Book 3 nights get 1 free)"
-                        inline />
-                @else
-                    <x-input label="Discount Value *" wire:model="discount_value" type="number"
-                        step="{{ $discount_type === 'percentage' ? '0.01' : '0.001' }}" min="0"
-                        placeholder="e.g., 10 or 25.50" :suffix="$discount_type === 'percentage' ? '%' : 'KWD'" icon="o-currency-dollar" inline />
-                @endif
+                <x-input label="Discount Value *" wire:model="discount_value" type="number"
+                    step="{{ $discount_type === 'percentage' ? '0.01' : '0.001' }}" min="0"
+                    placeholder="e.g., 10 or 25.50" :suffix="$discount_type === 'percentage' ? '%' : 'KWD'" icon="o-currency-dollar" inline />
 
                 <x-input label="Minimum Booking Amount" wire:model="min_booking_amount" type="number" step="0.001"
                     min="0" placeholder="0.000" suffix="KWD"

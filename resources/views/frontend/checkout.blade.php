@@ -125,8 +125,13 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="property-preview mb-4">
-                                        <img src="{{ $booking->property_image ?? asset('frontend/img/default-room.jpg') }}"
-                                            alt="Property" class="property-image">
+                                        @php
+                                            // property_image already comes as full asset path from controller
+                                            $propertyImagePath =
+                                                $booking->property_image ??
+                                                asset('frontend/assets/img/innerpages/hotel-img1.jpg');
+                                        @endphp
+                                        <img src="{{ $propertyImagePath }}" alt="Property" class="property-image">
                                         <h5 class="mt-3">{{ $booking->property_name ?? 'Luxury Room' }}</h5>
                                         <p class="text-muted mb-0">
                                             <i class="bi bi-geo-alt me-2"></i>{{ $booking->location ?? 'Location' }}
@@ -187,19 +192,29 @@
                                     <!-- Coupon Section -->
                                     <div class="coupon-section mb-3">
                                         @if (session('applied_coupon'))
-                                            <div class="applied-coupon-badge d-flex align-items-center justify-content-between" style="padding: 10px; background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px;">
+                                            <div class="applied-coupon-badge d-flex align-items-center justify-content-between"
+                                                style="padding: 10px; background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px;">
                                                 <div style="flex: 1;">
-                                                    <strong style="color: #0369a1;">{{ session('applied_coupon.code') }}</strong> <span style="color: #059669;">applied</span>
+                                                    <strong
+                                                        style="color: #0369a1;">{{ session('applied_coupon.code') }}</strong>
+                                                    <span style="color: #059669;">applied</span>
+                                                    @php
+                                                        $badgeCoupon = session('applied_coupon');
+                                                        $badgeType = $badgeCoupon['discount_type'] ?? 'fixed';
+                                                        $badgeValue = $badgeCoupon['discount_value'] ?? 0;
+                                                        $badgeTypeText = '';
+                                                        if ($badgeType === 'percentage') {
+                                                            $badgeTypeText = $badgeValue . '% off';
+                                                        } else {
+                                                            $badgeTypeText =
+                                                                currency_format(number_format($badgeValue, 2)) . ' off';
+                                                        }
+                                                    @endphp
                                                     <div class="text-sm" style="color: #059669;">
-                                                        <i class="bi bi-tag-fill"></i> Discount: {{ currency_format(number_format(session('applied_coupon.discount_amount'), 2)) }}
+                                                        <i class="bi bi-tag-fill"></i> Discount: {{ $badgeTypeText }}
                                                     </div>
                                                 </div>
-                                                <div class="d-flex gap-2" style="gap: 8px;">
-                                                    <button type="button" class="btn btn-sm btn-outline-primary"
-                                                        onclick="document.getElementById('removeCouponForm').submit()"
-                                                        style="min-width: 80px;">
-                                                        <i class="bi bi-arrow-repeat"></i> Change
-                                                    </button>
+                                                <div>
                                                     <button type="button" class="btn btn-sm btn-outline-danger"
                                                         onclick="document.getElementById('removeCouponForm').submit()"
                                                         style="min-width: 80px;">
@@ -239,8 +254,18 @@
                                         <div class="price-row">
                                             <span>× <span id="nightsCount">{{ $booking->nights ?? '1' }}</span>
                                                 nights</span>
+                                            @php
+                                                // Calculate subtotal - use backend only if different from calculated
+                                                $calculated =
+                                                    ($booking->price_per_night ?? 0) * ($booking->nights ?? 1);
+                                                $backend = $booking->subtotal ?? 0;
+
+                                                // Use backend only if it's different (special pricing)
+                                                $displaySubtotalCalc =
+                                                    $backend > 0 && $backend != $calculated ? $backend : $calculated;
+                                            @endphp
                                             <span
-                                                id="subtotal">{{ currency_format(number_format(($booking->price_per_night ?? 0) * ($booking->nights ?? 1), 2)) }}</span>
+                                                id="subtotal">{{ currency_format(number_format($displaySubtotalCalc, 2)) }}</span>
                                         </div>
                                         @if (($booking->service_fee ?? 0) > 0)
                                             <div class="price-row">
@@ -257,17 +282,49 @@
                                             </div>
                                         @endif
                                         @if (session('applied_coupon'))
+                                            @php
+                                                // Calculate discount - use backend only if different
+                                                $calculated =
+                                                    (float) ($booking->price_per_night ?? 0) *
+                                                    (int) ($booking->nights ?? 1);
+                                                $backend = (float) ($booking->subtotal ?? 0);
+
+                                                $displaySubtotal =
+                                                    $backend > 0 && $backend != $calculated ? $backend : $calculated;
+
+                                                $displayBase =
+                                                    $displaySubtotal +
+                                                    (float) ($booking->service_fee ?? 0) +
+                                                    (float) ($booking->tax ?? 0);
+
+                                                $displayDiscount = 0;
+                                                $coupon = session('applied_coupon');
+                                                $discountType = $coupon['discount_type'] ?? 'fixed';
+                                                $discountValue = (float) ($coupon['discount_value'] ?? 0);
+                                                $maxDiscount =
+                                                    isset($coupon['max_discount_amount']) &&
+                                                    $coupon['max_discount_amount']
+                                                        ? (float) $coupon['max_discount_amount']
+                                                        : null;
+
+                                                if ($discountType === 'percentage') {
+                                                    $displayDiscount = ($displayBase * $discountValue) / 100;
+                                                    if ($maxDiscount && $displayDiscount > $maxDiscount) {
+                                                        $displayDiscount = $maxDiscount;
+                                                    }
+                                                } else {
+                                                    // Fixed amount
+                                                    $displayDiscount = $discountValue;
+                                                }
+
+                                                $displayDiscount = min($displayDiscount, $displayBase);
+                                            @endphp
                                             <div class="price-row discount-row">
                                                 <span class="text-success">
                                                     <i class="bi bi-tag-fill me-1"></i>Coupon Discount
-                                                    @if (session('applied_coupon.free_nights') > 0)
-                                                        ({{ session('applied_coupon.free_nights') }}
-                                                        night{{ session('applied_coupon.free_nights') > 1 ? 's' : '' }}
-                                                        free)
-                                                    @endif
                                                 </span>
                                                 <span class="text-success">
-                                                    -{{ currency_format(number_format(session('applied_coupon.discount_amount'), 2)) }}
+                                                    -{{ currency_format(number_format($displayDiscount, 2)) }}
                                                 </span>
                                             </div>
                                         @endif
@@ -277,7 +334,49 @@
 
                                     <div class="total-price">
                                         <span>Total Amount</span>
-                                        <span>{{ currency_format(number_format(session('applied_coupon') ? session('applied_coupon.new_total') : $booking->total ?? 0, 2)) }}</span>
+                                        @php
+                                            // Calculate total - use backend only if different
+                                            $calculated =
+                                                (float) ($booking->price_per_night ?? 0) *
+                                                (int) ($booking->nights ?? 1);
+                                            $backend = (float) ($booking->subtotal ?? 0);
+
+                                            $calculatedSubtotal =
+                                                $backend > 0 && $backend != $calculated ? $backend : $calculated;
+
+                                            $serviceFee = (float) ($booking->service_fee ?? 0);
+                                            $tax = (float) ($booking->tax ?? 0);
+                                            $baseAmount = $calculatedSubtotal + $serviceFee + $tax;
+
+                                            // Get discount if coupon applied
+                                            $discount = 0;
+                                            if (session('applied_coupon')) {
+                                                $coupon = session('applied_coupon');
+                                                $discountType = $coupon['discount_type'] ?? 'fixed';
+                                                $discountValue = (float) ($coupon['discount_value'] ?? 0);
+                                                $maxDiscount =
+                                                    isset($coupon['max_discount_amount']) &&
+                                                    $coupon['max_discount_amount']
+                                                        ? (float) $coupon['max_discount_amount']
+                                                        : null;
+
+                                                if ($discountType === 'percentage') {
+                                                    $discount = ($baseAmount * $discountValue) / 100;
+                                                    if ($maxDiscount && $discount > $maxDiscount) {
+                                                        $discount = $maxDiscount;
+                                                    }
+                                                } else {
+                                                    // Fixed amount
+                                                    $discount = $discountValue;
+                                                }
+
+                                                $discount = min($discount, $baseAmount);
+                                            }
+
+                                            // Calculate final total: Base - Discount
+                                            $finalAmount = max(0, $baseAmount - $discount);
+                                        @endphp
+                                        <span>{{ currency_format(number_format($finalAmount, 2)) }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -327,12 +426,48 @@
                             <input type="hidden" name="check_out" value="{{ $booking->check_out }}">
                             <input type="hidden" name="adults" value="{{ $booking->guests }}">
                             <input type="hidden" name="children" value="{{ $booking->children }}">
-                            <input type="hidden" name="total"
-                                value="{{ session('applied_coupon') ? session('applied_coupon.new_total') : $booking->total }}">
+                            @php
+                                // Calculate form total - use backend only if different
+                                $calculated = (float) ($booking->price_per_night ?? 0) * (int) ($booking->nights ?? 1);
+                                $backend = (float) ($booking->subtotal ?? 0);
+
+                                $formCalculatedSubtotal =
+                                    $backend > 0 && $backend != $calculated ? $backend : $calculated;
+
+                                $formServiceFee = (float) ($booking->service_fee ?? 0);
+                                $formTax = (float) ($booking->tax ?? 0);
+                                $formBase = $formCalculatedSubtotal + $formServiceFee + $formTax;
+
+                                $formDiscount = 0;
+                                if (session('applied_coupon')) {
+                                    $coupon = session('applied_coupon');
+                                    $discountType = $coupon['discount_type'] ?? 'fixed';
+                                    $discountValue = (float) ($coupon['discount_value'] ?? 0);
+                                    $maxDiscount =
+                                        isset($coupon['max_discount_amount']) && $coupon['max_discount_amount']
+                                            ? (float) $coupon['max_discount_amount']
+                                            : null;
+
+                                    if ($discountType === 'percentage') {
+                                        $formDiscount = ($formBase * $discountValue) / 100;
+                                        if ($maxDiscount && $formDiscount > $maxDiscount) {
+                                            $formDiscount = $maxDiscount;
+                                        }
+                                    } else {
+                                        // Fixed amount
+                                        $formDiscount = $discountValue;
+                                    }
+
+                                    $formDiscount = min($formDiscount, $formBase);
+                                }
+
+                                $formFinalTotal = max(0, $formBase - $formDiscount);
+                            @endphp
+                            <input type="hidden" name="total" value="{{ $formFinalTotal }}">
                             @if (session('applied_coupon'))
-                                <input type="hidden" name="coupon_code" value="{{ session('applied_coupon.code') }}">
-                                <input type="hidden" name="discount_amount"
-                                    value="{{ session('applied_coupon.discount_amount') }}">
+                                <input type="hidden" name="coupon_code"
+                                    value="{{ session('applied_coupon')['code'] ?? '' }}">
+                                <input type="hidden" name="discount_amount" value="{{ $formDiscount }}">
                             @endif
 
                             @if (isset($booking->adult_names))
@@ -366,7 +501,8 @@
     <form id="applyCouponForm" action="{{ route('booking.apply-coupon') }}" method="POST" style="display: none;">
         @csrf
         <input type="hidden" name="coupon_code" id="hiddenCouponCode">
-        <input type="hidden" name="booking_amount" value="{{ $booking->total }}">
+        <input type="hidden" name="booking_amount"
+            value="{{ $booking->subtotal + ($booking->service_fee ?? 0) + ($booking->tax ?? 0) }}">
         <input type="hidden" name="price_per_night" value="{{ $booking->price_per_night ?? 0 }}">
         <input type="hidden" name="nights" value="{{ $booking->nights ?? 1 }}">
         <input type="hidden" name="property_type" value="{{ $booking->type ?? '' }}">

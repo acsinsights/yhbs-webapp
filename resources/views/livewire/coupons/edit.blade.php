@@ -31,8 +31,9 @@ new class extends Component {
 
     public function mount(Coupon $coupon): void
     {
-        $this->coupon = $coupon;
-        $this->code = $coupon->code;
+        // Refresh coupon to get latest usage count
+        $this->coupon = $coupon->fresh();
+        $this->code = $this->coupon->code;
         $this->name = $coupon->name;
         $this->description = $coupon->description ?? '';
         $this->discount_type = $coupon->discount_type->value;
@@ -60,7 +61,7 @@ new class extends Component {
             'code' => 'required|string|max:50|unique:coupons,code,' . $this->coupon->id,
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'discount_type' => 'required|in:percentage,fixed,free_nights',
+            'discount_type' => 'required|in:percentage,fixed',
             'discount_value' => 'required|numeric|min:0',
             'min_nights_required' => 'nullable|integer|min:1',
             'min_booking_amount' => 'required|numeric|min:0',
@@ -97,7 +98,7 @@ new class extends Component {
 
     public function discountTypes(): array
     {
-        return [['id' => 'percentage', 'name' => 'Percentage (%)'], ['id' => 'fixed', 'name' => 'Fixed Amount (KWD)'], ['id' => 'free_nights', 'name' => 'Free Nights/Days']];
+        return [['id' => 'percentage', 'name' => 'Percentage (%)'], ['id' => 'fixed', 'name' => 'Fixed Amount (KWD)']];
     }
 
     public function with(): array
@@ -210,20 +211,9 @@ new class extends Component {
                 <x-select label="Discount Type *" wire:model.live="discount_type" :options="$discountTypes"
                     placeholder="Select discount type" icon="o-calculator" inline />
 
-                @if ($discount_type === 'free_nights')
-                    <x-input label="Number of Free Nights *" wire:model="discount_value" type="number" step="1"
-                        min="1" placeholder="e.g., 1, 2, or 3" suffix="Nights" icon="o-moon"
-                        hint="Number of nights/days the customer gets free" inline />
-
-                    <x-input label="Minimum Nights Required" wire:model="min_nights_required" type="number"
-                        step="1" min="1" placeholder="e.g., 3 or 5" suffix="Nights" icon="o-calendar"
-                        hint="Minimum booking nights required to get free nights (e.g., Book 3 nights get 1 free)"
-                        inline />
-                @else
-                    <x-input label="Discount Value *" wire:model="discount_value" type="number"
-                        step="{{ $discount_type === 'percentage' ? '0.01' : '0.001' }}" min="0"
-                        placeholder="e.g., 10 or 25.50" :suffix="$discount_type === 'percentage' ? '%' : 'KWD'" icon="o-currency-dollar" inline />
-                @endif
+                <x-input label="Discount Value *" wire:model="discount_value" type="number"
+                    step="{{ $discount_type === 'percentage' ? '0.01' : '0.001' }}" min="0"
+                    placeholder="e.g., 10 or 25.50" :suffix="$discount_type === 'percentage' ? '%' : 'KWD'" icon="o-currency-dollar" inline />
 
                 <x-input label="Minimum Booking Amount" wire:model="min_booking_amount" type="number" step="0.001"
                     min="0" placeholder="0.000" suffix="KWD"
@@ -331,15 +321,15 @@ new class extends Component {
             </h3>
             <div class="space-y-2">
                 @foreach ($coupon->bookings()->latest()->limit(5)->get() as $booking)
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
                         <div>
                             <p class="font-medium">Booking #{{ $booking->id }}</p>
-                            <p class="text-sm text-gray-600">{{ $booking->user->name }} -
+                            <p class="text-sm opacity-60">{{ $booking->user->name }} -
                                 {{ $booking->created_at->format('d M Y') }}</p>
                         </div>
                         <div class="text-right">
-                            <p class="text-sm text-gray-600">Discount</p>
-                            <p class="font-semibold text-green-600">{{ number_format($booking->discount_amount, 3) }}
+                            <p class="text-sm opacity-60">Discount</p>
+                            <p class="font-semibold text-success">{{ number_format($booking->discount_amount, 3) }}
                                 KWD</p>
                         </div>
                     </div>
