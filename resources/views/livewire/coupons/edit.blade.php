@@ -329,7 +329,7 @@ new class extends Component {
                         </div>
                         <div class="text-right">
                             <p class="text-sm opacity-60">Discount</p>
-                            <p class="font-semibold text-success">{{ number_format($booking->discount_amount, 3) }}
+                            <p class="font-semibold text-success">{{ number_format($booking->discount_amount, 2) }}
                                 KWD</p>
                         </div>
                     </div>
