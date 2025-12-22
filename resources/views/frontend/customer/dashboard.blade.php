@@ -19,7 +19,7 @@
     <div class="customer-dashboard-section pt-100 pb-100">
         <div class="container">
             <!-- Welcome Section -->
-            <div class="welcome-banner mb-4">
+            <div class="welcome-banner mb-5">
                 <div class="row align-items-center">
                     <div class="col-md-8">
                         <h2 class="text-white">Welcome back, {{ auth()->user()->name }}!</h2>
@@ -34,62 +34,95 @@
             </div>
 
             <!-- Stats Cards -->
-            <div class="row mb-4">
-                <div class="col-lg-3 col-md-6 mb-4">
-                    <div class="stat-card">
-                        <div class="stat-icon bg-primary">
+            <div class="row g-4 mb-4">
+                <!-- Total Bookings -->
+                <div class="col-lg-4 col-md-4">
+                    <div class="stat-card stat-card-primary">
+                        <div class="stat-icon-modern">
                             <i class="bi bi-calendar-check"></i>
                         </div>
-                        <div class="stat-content">
-                            <h3>{{ $totalBookings }}</h3>
-                            <p>Total Bookings</p>
+                        <div class="stat-content-modern">
+                            <p class="stat-label">Total Bookings</p>
+                            <h3 class="stat-number">{{ $totalBookings }}</h3>
                         </div>
                     </div>
                 </div>
 
-                <div class="col-lg-3 col-md-6 mb-4">
-                    <div class="stat-card">
-                        <div class="stat-icon bg-success">
+                <!-- Confirmed -->
+                <div class="col-lg-4 col-md-4">
+                    <div class="stat-card stat-card-success">
+                        <div class="stat-icon-modern">
                             <i class="bi bi-check-circle"></i>
                         </div>
-                        <div class="stat-content">
-                            <h3>{{ $confirmedBookings }}</h3>
-                            <p>Confirmed</p>
+                        <div class="stat-content-modern">
+                            <p class="stat-label">Confirmed</p>
+                            <h3 class="stat-number">{{ $confirmedBookings }}</h3>
                         </div>
                     </div>
                 </div>
 
-                <div class="col-lg-3 col-md-6 mb-4">
-                    <div class="stat-card">
-                        <div class="stat-icon bg-warning">
+                <!-- Pending -->
+                <div class="col-lg-4 col-md-4">
+                    <div class="stat-card stat-card-warning">
+                        <div class="stat-icon-modern">
                             <i class="bi bi-clock-history"></i>
                         </div>
-                        <div class="stat-content">
-                            <h3>{{ $pendingBookings }}</h3>
-                            <p>Pending</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-3 col-md-6 mb-4">
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                            <i class="bi bi-wallet2"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>{{ currency_format(number_format(auth()->user()->wallet_balance ?? 0, 2)) }}</h3>
-                            <p>Wallet Balance</p>
-                            @if ((auth()->user()->wallet_balance ?? 0) > 0)
-                                <small class="text-success"><i class="bi bi-info-circle"></i> Use at checkout</small>
-                            @endif
+                        <div class="stat-content-modern">
+                            <p class="stat-label">Pending</p>
+                            <h3 class="stat-number">{{ $pendingBookings }}</h3>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="row">
+            <!-- Wallet Balance - Featured Banner -->
+            <div class="row mb-5">
+                <div class="col-12">
+                    <div class="wallet-featured-banner">
+                        <div class="wallet-sparkle">✨</div>
+                        <div class="row align-items-center">
+                            <div class="col-lg-7">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="wallet-icon-banner">
+                                        <i class="bi bi-wallet2"></i>
+                                    </div>
+                                    <div>
+                                        <p class="wallet-label-banner">Your Wallet Balance</p>
+                                        <h2 class="wallet-amount-banner">
+                                            {{ currency_format(number_format(auth()->user()->wallet_balance ?? 0, 2)) }}
+                                        </h2>
+                                        @if ((auth()->user()->wallet_balance ?? 0) > 0)
+                                            <div class="wallet-status active">
+                                                <i class="bi bi-check-circle-fill"></i> Available for bookings
+                                            </div>
+                                        @else
+                                            <div class="wallet-status inactive">
+                                                <i class="bi bi-info-circle"></i> Refunds appear here
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-5 mt-3 mt-lg-0">
+                                <div class="wallet-info-note">
+                                    <div class="wallet-info-icon">
+                                        <i class="bi bi-info-circle-fill"></i>
+                                    </div>
+                                    <div class="wallet-info-text">
+                                        <h6>How to use?</h6>
+                                        <p>Your wallet balance can only be used during the booking checkout process. Simply
+                                            toggle the wallet option when making a new booking.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
                 <!-- Recent Bookings -->
-                <div class="col-lg-8 mb-4">
+                <div class="col-lg-8">
                     <div class="dashboard-card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h4><i class="bi bi-list-ul me-2"></i>Recent Bookings</h4>

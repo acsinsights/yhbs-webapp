@@ -338,26 +338,31 @@
                                     @endphp
                                     @if ($walletBalance > 0)
                                         <div class="wallet-section mb-3">
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <div>
-                                                    <i class="bi bi-wallet2 me-2" style="color: #7c3aed;"></i>
-                                                    <strong>Available Wallet Balance:</strong>
+                                            <div class="wallet-card">
+                                                <div class="wallet-header">
+                                                    <div class="wallet-icon-wrapper">
+                                                        <i class="bi bi-wallet2"></i>
+                                                    </div>
+                                                    <div class="wallet-info">
+                                                        <h6 class="mb-0 text-white">Wallet Balance</h6>
+                                                        <p class="wallet-amount mb-0">{{ currency_format(number_format($walletBalance, 2)) }}</p>
+                                                    </div>
                                                 </div>
-                                                <span
-                                                    class="badge bg-success">{{ currency_format(number_format($walletBalance, 2)) }}</span>
+                                                <div class="wallet-toggle-section">
+                                                    <label class="wallet-toggle-label">
+                                                        <input class="wallet-checkbox" type="checkbox" id="use_wallet_balance"
+                                                            name="use_wallet_balance" value="1"
+                                                            onchange="toggleWalletUsage(this)">
+                                                        <span class="wallet-label-text">
+                                                            <i class="bi bi-check-circle"></i> Use wallet for this booking
+                                                        </span>
+                                                    </label>
+                                                </div>
+                                                <div class="wallet-note">
+                                                    <i class="bi bi-info-circle"></i>
+                                                    Your wallet balance will be automatically applied to reduce the total amount
+                                                </div>
                                             </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="use_wallet_balance"
-                                                    name="use_wallet_balance" value="1"
-                                                    onchange="toggleWalletUsage(this)">
-                                                <label class="form-check-label" for="use_wallet_balance">
-                                                    Use wallet balance for this booking
-                                                </label>
-                                            </div>
-                                            <small class="text-muted d-block mt-2">
-                                                <i class="bi bi-info-circle me-1"></i>
-                                                Your wallet balance will be applied to reduce the total amount.
-                                            </small>
                                         </div>
                                         <div class="divider"></div>
                                     @endif
@@ -413,16 +418,22 @@
                                     </div>
 
                                     <!-- Wallet Applied Amount -->
-                                    <div id="walletAppliedRow" class="price-row text-success" style="display: none;">
-                                        <span><i class="bi bi-wallet2 me-1"></i>Wallet Balance Used</span>
-                                        <span id="walletAppliedAmount">-{{ currency_format(0) }}</span>
+                                    <div id="walletAppliedRow" class="wallet-applied-row mt-3" style="display: none;">
+                                        <div class="wallet-applied-content">
+                                            <span>
+                                                <i class="bi bi-wallet2 me-2"></i>Wallet Balance Used
+                                            </span>
+                                            <span class="wallet-applied-badge" id="walletAppliedAmount">-{{ currency_format(0) }}</span>
+                                        </div>
                                     </div>
 
                                     <!-- Amount to Pay -->
-                                    <div id="amountToPayRow" class="total-price"
-                                        style="display: none; border-top: 2px solid #e5e7eb; margin-top: 10px; padding-top: 10px;">
-                                        <span><strong>Amount to Pay</strong></span>
-                                        <span
+                                    <div id="amountToPayRow" class="amount-to-pay-row"
+                                        style="display: none;">
+                                        <span class="pay-label">
+                                            <i class="bi bi-cash-coin me-2"></i><strong>Amount to Pay</strong>
+                                        </span>
+                                        <span class="pay-amount"
                                             id="amountToPay"><strong>{{ currency_format(number_format($finalAmount, 2)) }}</strong></span>
                                     </div>
                                 </div>
@@ -590,85 +601,28 @@
                 // Format currency
                 const currencySymbol = '{{ currency_symbol() }}';
 
-                // Show wallet applied row
-                walletAppliedRow.style.display = 'flex';
+                // Show wallet applied row with animation
+                walletAppliedRow.style.display = 'block';
+                setTimeout(() => {
+                    walletAppliedRow.classList.add('show');
+                }, 10);
                 walletAppliedAmount.textContent = '-' + currencySymbol + ' ' + walletUsed.toFixed(2);
 
-                // Show amount to pay row
+                // Show amount to pay row with animation
                 amountToPayRow.style.display = 'flex';
+                setTimeout(() => {
+                    amountToPayRow.classList.add('show');
+                }, 10);
                 amountToPay.innerHTML = '<strong>' + currencySymbol + ' ' + finalAmount.toFixed(2) + '</strong>';
             } else {
-                // Hide wallet rows
-                walletAppliedRow.style.display = 'none';
-                amountToPayRow.style.display = 'none';
+                // Hide wallet rows with animation
+                walletAppliedRow.classList.remove('show');
+                amountToPayRow.classList.remove('show');
+                setTimeout(() => {
+                    walletAppliedRow.style.display = 'none';
+                    amountToPayRow.style.display = 'none';
+                }, 300);
             }
         }
     </script>
-@endsection
-
-@section('styles')
-    <style>
-        .coupon-section {
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 1px dashed #dee2e6;
-        }
-
-        .coupon-input-wrapper {
-            display: flex;
-            gap: 10px;
-        }
-
-        .coupon-input-wrapper input {
-            flex: 1;
-        }
-
-        .applied-coupon-badge {
-            display: none;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 15px;
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            border-radius: 6px;
-            color: #155724;
-        }
-
-        .remove-coupon {
-            background: none;
-            border: none;
-            color: #155724;
-            font-size: 24px;
-            font-weight: bold;
-            cursor: pointer;
-            padding: 0;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: all 0.3s;
-        }
-
-        .remove-coupon:hover {
-            background: rgba(21, 87, 36, 0.1);
-        }
-
-        .discount-row {
-            color: #28a745 !important;
-            font-weight: 600;
-        }
-
-        .price-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-
-        .text-sm {
-            font-size: 0.875rem;
-        }
-    </style>
 @endsection
