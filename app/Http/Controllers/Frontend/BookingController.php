@@ -8,6 +8,7 @@ use App\Models\Room;
 use App\Models\Yacht;
 use App\Models\House;
 use App\Services\CouponService;
+use App\Services\WalletService;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -252,6 +253,7 @@ class BookingController extends Controller
             'special_requests' => 'nullable|string',
             'coupon_code' => 'nullable|string',
             'discount_amount' => 'nullable|numeric|min:0',
+            'use_wallet_balance' => 'nullable|boolean',
         ]);
 
         // Determine bookingable type and get the property
@@ -321,6 +323,26 @@ class BookingController extends Controller
             }
         }
 
+        // Handle wallet balance usage
+        $walletAmountUsed = 0;
+        if (!empty($validated['use_wallet_balance']) && Auth::check()) {
+            $user = Auth::user();
+            $walletBalance = $user->wallet_balance;
+            $totalAmount = (float) $validated['total'];
+
+            // Calculate how much wallet balance to use
+            $walletAmountUsed = min($walletBalance, $totalAmount);
+
+            if ($walletAmountUsed > 0) {
+                // Deduct from wallet
+                $walletService = app(WalletService::class);
+                // Note: We'll create the booking first, then deduct wallet
+            }
+        }
+
+        // Calculate final amount to pay
+        $finalTotal = (float) $validated['total'] - $walletAmountUsed;
+
         // Combine guest names
         $guestDetails = [
             'customer' => [
@@ -348,12 +370,23 @@ class BookingController extends Controller
             'price' => $validated['total'],
             'coupon_id' => $couponId,
             'discount_amount' => $discountAmount,
-            'total_amount' => $validated['total'],
+            'total_amount' => $finalTotal,
             'status' => 'booked',
-            'payment_status' => 'pending',
+            'payment_status' => $walletAmountUsed >= (float) $validated['total'] ? 'paid' : 'pending',
             'payment_method' => $validated['payment_method'],
             'notes' => $validated['special_requests'] ?? null,
         ]);
+
+        // Deduct wallet balance if used
+        if ($walletAmountUsed > 0) {
+            $walletService = app(WalletService::class);
+            $walletService->deductAmount(
+                Auth::user(),
+                $walletAmountUsed,
+                $booking,
+                "Wallet payment for booking #{$booking->id}"
+            );
+        }
 
         // Increment coupon usage count if coupon was used
         if ($couponId) {

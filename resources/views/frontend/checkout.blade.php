@@ -332,6 +332,36 @@
 
                                     <div class="divider"></div>
 
+                                    <!-- Wallet Balance Section -->
+                                    @php
+                                        $walletBalance = auth()->user()->wallet_balance ?? 0;
+                                    @endphp
+                                    @if ($walletBalance > 0)
+                                        <div class="wallet-section mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <div>
+                                                    <i class="bi bi-wallet2 me-2" style="color: #7c3aed;"></i>
+                                                    <strong>Available Wallet Balance:</strong>
+                                                </div>
+                                                <span
+                                                    class="badge bg-success">{{ currency_format(number_format($walletBalance, 2)) }}</span>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="use_wallet_balance"
+                                                    name="use_wallet_balance" value="1"
+                                                    onchange="toggleWalletUsage(this)">
+                                                <label class="form-check-label" for="use_wallet_balance">
+                                                    Use wallet balance for this booking
+                                                </label>
+                                            </div>
+                                            <small class="text-muted d-block mt-2">
+                                                <i class="bi bi-info-circle me-1"></i>
+                                                Your wallet balance will be applied to reduce the total amount.
+                                            </small>
+                                        </div>
+                                        <div class="divider"></div>
+                                    @endif
+
                                     <div class="total-price">
                                         <span>Total Amount</span>
                                         @php
@@ -376,7 +406,23 @@
                                             // Calculate final total: Base - Discount
                                             $finalAmount = max(0, $baseAmount - $discount);
                                         @endphp
-                                        <span>{{ currency_format(number_format($finalAmount, 2)) }}</span>
+                                        <span
+                                            id="totalAmount">{{ currency_format(number_format($finalAmount, 2)) }}</span>
+                                        <input type="hidden" id="originalTotal" value="{{ $finalAmount }}">
+                                        <input type="hidden" id="walletBalance" value="{{ $walletBalance ?? 0 }}">
+                                    </div>
+
+                                    <!-- Wallet Applied Amount -->
+                                    <div id="walletAppliedRow" class="price-row text-success" style="display: none;">
+                                        <span><i class="bi bi-wallet2 me-1"></i>Wallet Balance Used</span>
+                                        <span id="walletAppliedAmount">-{{ currency_format(0) }}</span>
+                                    </div>
+
+                                    <!-- Amount to Pay -->
+                                    <div id="amountToPayRow" class="total-price"
+                                        style="display: none; border-top: 2px solid #e5e7eb; margin-top: 10px; padding-top: 10px;">
+                                        <span><strong>Amount to Pay</strong></span>
+                                        <span id="amountToPay"><strong>{{ currency_format(number_format($finalAmount, 2)) }}</strong></span>
                                     </div>
                                 </div>
                             </div>
@@ -525,6 +571,36 @@
             }
             document.getElementById('hiddenCouponCode').value = couponCode.toUpperCase();
             document.getElementById('applyCouponForm').submit();
+        }
+
+        function toggleWalletUsage(checkbox) {
+            const originalTotal = parseFloat(document.getElementById('originalTotal').value);
+            const walletBalance = parseFloat(document.getElementById('walletBalance').value);
+            const walletAppliedRow = document.getElementById('walletAppliedRow');
+            const amountToPayRow = document.getElementById('amountToPayRow');
+            const walletAppliedAmount = document.getElementById('walletAppliedAmount');
+            const amountToPay = document.getElementById('amountToPay');
+
+            if (checkbox.checked) {
+                // Calculate wallet usage
+                const walletUsed = Math.min(walletBalance, originalTotal);
+                const finalAmount = Math.max(0, originalTotal - walletUsed);
+
+                // Format currency
+                const currencySymbol = '{{ currency_symbol() }}';
+
+                // Show wallet applied row
+                walletAppliedRow.style.display = 'flex';
+                walletAppliedAmount.textContent = '-' + currencySymbol + walletUsed.toFixed(2);
+
+                // Show amount to pay row
+                amountToPayRow.style.display = 'flex';
+                amountToPay.innerHTML = '<strong>' + currencySymbol + finalAmount.toFixed(2) + '</strong>';
+            } else {
+                // Hide wallet rows
+                walletAppliedRow.style.display = 'none';
+                amountToPayRow.style.display = 'none';
+            }
         }
     </script>
 @endsection

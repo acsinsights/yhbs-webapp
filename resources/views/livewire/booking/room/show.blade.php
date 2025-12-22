@@ -5,6 +5,7 @@ use Mary\Traits\Toast;
 use Illuminate\View\View;
 use Livewire\Volt\Component;
 use App\Models\{Booking, Room};
+use App\Services\WalletService;
 
 new class extends Component {
     use Toast;
@@ -15,6 +16,7 @@ new class extends Component {
     public string $payment_method = '';
     public bool $showCancelModal = false;
     public string $cancellation_reason = '';
+    public ?float $refund_amount = null;
 
     public function mount(Booking $booking): void
     {
@@ -69,6 +71,7 @@ new class extends Component {
 
         $this->validate([
             'cancellation_reason' => 'required|min:10',
+            'refund_amount' => 'nullable|numeric|min:0|max:' . $this->booking->price,
         ]);
 
         $this->booking->update([
@@ -76,8 +79,14 @@ new class extends Component {
             'notes' => ($this->booking->notes ? $this->booking->notes . "\n\n" : '') . 'Cancellation Reason: ' . $this->cancellation_reason,
         ]);
 
+        // Add refund to customer's wallet if amount is specified
+        if ($this->refund_amount && $this->refund_amount > 0) {
+            $walletService = app(WalletService::class);
+            $walletService->addCredit($this->booking->user, $this->refund_amount, $this->booking, "Refund for cancelled booking #{$this->booking->id}", 'booking_cancellation');
+        }
+
         $this->showCancelModal = false;
-        $this->success('Booking cancelled successfully.', redirectTo: route('admin.bookings.room.index'));
+        $this->success('Booking cancelled successfully.' . ($this->refund_amount ? " Refund of {$this->refund_amount} added to customer's wallet." : ''), redirectTo: route('admin.bookings.room.index'));
     }
 
     public function rendering(View $view)
@@ -344,6 +353,10 @@ new class extends Component {
             <x-textarea label="Cancellation Reason" wire:model="cancellation_reason"
                 placeholder="Please provide a detailed reason for cancellation..." rows="4"
                 hint="Minimum 10 characters required" />
+
+            <x-input label="Refund Amount (Optional)" wire:model="refund_amount" type="number" step="0.01"
+                min="0" max="{{ $booking->price }}" icon="o-currency-dollar"
+                hint="Enter amount to refund to customer's wallet. Max: {{ $booking->price }}" />
         </div>
 
         <x-slot:actions>

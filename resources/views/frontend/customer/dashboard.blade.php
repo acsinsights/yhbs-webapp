@@ -35,7 +35,7 @@
 
             <!-- Stats Cards -->
             <div class="row mb-4">
-                <div class="col-lg-4 col-md-6 mb-4">
+                <div class="col-lg-3 col-md-6 mb-4">
                     <div class="stat-card">
                         <div class="stat-icon bg-primary">
                             <i class="bi bi-calendar-check"></i>
@@ -47,7 +47,7 @@
                     </div>
                 </div>
 
-                <div class="col-lg-4 col-md-6 mb-4">
+                <div class="col-lg-3 col-md-6 mb-4">
                     <div class="stat-card">
                         <div class="stat-icon bg-success">
                             <i class="bi bi-check-circle"></i>
@@ -59,7 +59,7 @@
                     </div>
                 </div>
 
-                <div class="col-lg-4 col-md-6 mb-4">
+                <div class="col-lg-3 col-md-6 mb-4">
                     <div class="stat-card">
                         <div class="stat-icon bg-warning">
                             <i class="bi bi-clock-history"></i>
@@ -67,6 +67,21 @@
                         <div class="stat-content">
                             <h3>{{ $pendingBookings }}</h3>
                             <p>Pending</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <i class="bi bi-wallet2"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>{{ currency_format(number_format(auth()->user()->wallet_balance ?? 0, 2)) }}</h3>
+                            <p>Wallet Balance</p>
+                            @if((auth()->user()->wallet_balance ?? 0) > 0)
+                                <small class="text-success"><i class="bi bi-info-circle"></i> Use at checkout</small>
+                            @endif
                         </div>
                     </div>
                 </div>

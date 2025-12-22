@@ -28,6 +28,7 @@ class User extends Authenticatable
         'avatar',
         'password',
         'role',
+        'wallet_balance',
     ];
 
     /**
@@ -76,5 +77,29 @@ class User extends Authenticatable
     public function isAdminOrReception(): bool
     {
         return in_array($this->role, [RolesEnum::ADMIN, RolesEnum::RECEPTION]);
+    }
+
+    /**
+     * Get wallet transactions
+     */
+    public function walletTransactions()
+    {
+        return $this->hasMany(WalletTransaction::class);
+    }
+
+    /**
+     * Get wallet balance
+     */
+    public function getWalletBalance(): float
+    {
+        return $this->wallet_balance ?? 0;
+    }
+
+    /**
+     * Check if user has sufficient wallet balance
+     */
+    public function hasSufficientBalance(float $amount): bool
+    {
+        return $this->wallet_balance >= $amount;
     }
 }
