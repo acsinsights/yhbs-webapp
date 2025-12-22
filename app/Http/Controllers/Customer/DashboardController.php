@@ -39,6 +39,20 @@ class DashboardController extends Controller
             ->map(function ($booking) {
                 $bookingable = $booking->bookingable;
 
+                // Handle image path properly
+                $propertyImage = asset('frontend/img/innerpages/hotel-dt-room-img1.jpg');
+                if ($bookingable && $bookingable->image) {
+                    if (str_starts_with($bookingable->image, 'http')) {
+                        $propertyImage = $bookingable->image;
+                    } elseif (str_starts_with($bookingable->image, 'default/') || str_starts_with($bookingable->image, '/default') || str_starts_with($bookingable->image, 'frontend/') || str_starts_with($bookingable->image, '/frontend')) {
+                        $propertyImage = asset($bookingable->image);
+                    } elseif (str_starts_with($bookingable->image, 'storage/')) {
+                        $propertyImage = asset($bookingable->image);
+                    } else {
+                        $propertyImage = asset('storage/' . $bookingable->image);
+                    }
+                }
+
                 return [
                     'id' => $booking->id,
                     'check_in' => $booking->check_in ? $booking->check_in->format('M d, Y') : 'N/A',
@@ -46,9 +60,7 @@ class DashboardController extends Controller
                     'status' => $booking->status,
                     'total' => $booking->price ?? 0,
                     'room_name' => $bookingable ? ($bookingable->name ?? 'N/A') : 'N/A',
-                    'image' => $bookingable && $bookingable->image
-                        ? asset('storage/' . $bookingable->image)
-                        : asset('frontend/img/innerpages/hotel-dt-room-img1.jpg'),
+                    'image' => $propertyImage,
                 ];
             });
 

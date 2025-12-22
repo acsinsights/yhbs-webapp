@@ -422,7 +422,8 @@
                                     <div id="amountToPayRow" class="total-price"
                                         style="display: none; border-top: 2px solid #e5e7eb; margin-top: 10px; padding-top: 10px;">
                                         <span><strong>Amount to Pay</strong></span>
-                                        <span id="amountToPay"><strong>{{ currency_format(number_format($finalAmount, 2)) }}</strong></span>
+                                        <span
+                                            id="amountToPay"><strong>{{ currency_format(number_format($finalAmount, 2)) }}</strong></span>
                                     </div>
                                 </div>
                             </div>
@@ -591,11 +592,11 @@
 
                 // Show wallet applied row
                 walletAppliedRow.style.display = 'flex';
-                walletAppliedAmount.textContent = '-' + currencySymbol + walletUsed.toFixed(2);
+                walletAppliedAmount.textContent = '-' + currencySymbol + ' ' + walletUsed.toFixed(2);
 
                 // Show amount to pay row
                 amountToPayRow.style.display = 'flex';
-                amountToPay.innerHTML = '<strong>' + currencySymbol + finalAmount.toFixed(2) + '</strong>';
+                amountToPay.innerHTML = '<strong>' + currencySymbol + ' ' + finalAmount.toFixed(2) + '</strong>';
             } else {
                 // Hide wallet rows
                 walletAppliedRow.style.display = 'none';
