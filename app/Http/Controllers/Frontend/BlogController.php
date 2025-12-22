@@ -17,12 +17,11 @@ class BlogController extends Controller
             $searchTerm = $request->search;
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('title', 'like', '%' . $searchTerm . '%')
-                    ->orWhere('content', 'like', '%' . $searchTerm . '%')
-                    ->orWhere('location', 'like', '%' . $searchTerm . '%');
+                    ->orWhere('content', 'like', '%' . $searchTerm . '%');
             });
         }
 
-        $blogs = $query->paginate(12);
+        $blogs = $query->paginate(6);
 
         return view('frontend.blogs.index', compact('blogs'));
     }
