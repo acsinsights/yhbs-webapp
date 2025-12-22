@@ -363,7 +363,7 @@ new class extends Component {
 
             $view->availableRooms = $query->orderBy('room_number')->paginate($this->perPage);
         } else {
-            $view->availableRooms = \Illuminate\Pagination\LengthAwarePaginator::empty();
+            $view->availableRooms = new \Illuminate\Pagination\LengthAwarePaginator([], 0, $this->perPage);
         }
 
         $view->customers = User::role(RolesEnum::CUSTOMER->value)->orderBy('name')->get();

@@ -11,8 +11,8 @@ new class extends Component {
 
     public ?string $check_in = null;
     public ?string $check_out = null;
-    public int $adults = 1;
-    public int $children = 0;
+    public $adults = 1;
+    public $children = 0;
     public array $adultNames = [];
     public array $childrenNames = [];
     public ?int $totalNights = null;
@@ -116,6 +116,15 @@ new class extends Component {
 
     public function updatedAdults(): void
     {
+        // Handle empty string or null values
+        if ($this->adults === '' || $this->adults === null) {
+            $this->adults = 1;
+            return;
+        }
+
+        // Ensure it's an integer
+        $this->adults = (int) $this->adults;
+
         // For yachts, use max guests logic
         if ($this->type === 'yacht') {
             $maxGuests = $this->bookable->max_guests ?? 10;
@@ -152,6 +161,15 @@ new class extends Component {
 
     public function updatedChildren(): void
     {
+        // Handle empty string or null values
+        if ($this->children === '' || $this->children === null) {
+            $this->children = 0;
+            return;
+        }
+
+        // Ensure it's an integer
+        $this->children = (int) $this->children;
+
         // For yachts, use max guests logic
         if ($this->type === 'yacht') {
             $maxGuests = $this->bookable->max_guests ?? 10;
