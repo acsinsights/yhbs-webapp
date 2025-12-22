@@ -43,6 +43,15 @@ class BookingController extends Controller
         if ($type === 'room') {
             $property = Room::with('house')->find($id);
             if ($property) {
+                // CRITICAL DEBUG: Check property right after fetch
+                \Log::info('Property Fetched', [
+                    'type' => 'room',
+                    'id' => $id,
+                    'property_id' => $property->id,
+                    'price_per_night_RAW' => $property->getAttributes()['price_per_night'] ?? 'NOT SET',
+                    'price_per_night_ACCESSOR' => $property->price_per_night,
+                ]);
+
                 if ($property->image) {
                     if (str_starts_with($property->image, '/default')) {
                         $propertyImage = asset($property->image);
@@ -125,17 +134,42 @@ class BookingController extends Controller
         if ($type === 'yacht') {
             $hours = $nights * 24;
             $subtotal = $hours * ($property->price_per_hour ?? ($property->price_per_night ?? 0));
+            // For display, show the actual per-night rate for yachts too
+            $price = $property->price_per_night ?? ($property->price_per_hour ? $property->price_per_hour * 24 : 0);
         } else {
             // For rooms and houses: use night-specific pricing
-            if ($nights === 1) {
+            if ($nights == 1) { // Use loose comparison to handle both int and float
+                // CRITICAL DEBUG
+                \Log::info('BEFORE Assignment', [
+                    'type' => $type,
+                    'property_id' => $id,
+                    'property_price_per_night_RAW' => $property->price_per_night,
+                    'property_price_per_night_TYPE' => gettype($property->price_per_night),
+                ]);
+
                 $subtotal = $property->price_per_night ?? 0;
-            } elseif ($nights === 2) {
+
+                \Log::info('AFTER Assignment', [
+                    'subtotal_VALUE' => $subtotal,
+                    'subtotal_TYPE' => gettype($subtotal),
+                    'property_STILL' => $property->price_per_night,
+                ]);
+
+                // Debug logging
+                \Log::info('1 Night Booking Debug', [
+                    'type' => $type,
+                    'property_id' => $id,
+                    'nights' => $nights,
+                    'property_price_per_night' => $property->price_per_night,
+                    'calculated_subtotal' => $subtotal,
+                ]);
+            } elseif ($nights == 2) { // Use loose comparison
                 if ($property->price_per_2night) {
                     $subtotal = $property->price_per_2night;
                 } else {
                     $subtotal = ($property->price_per_night ?? 0) * 2;
                 }
-            } elseif ($nights === 3) {
+            } elseif ($nights == 3) { // Use loose comparison
                 if ($property->price_per_3night) {
                     $subtotal = $property->price_per_3night;
                 } else {
@@ -158,6 +192,16 @@ class BookingController extends Controller
         $tax = 0; // No tax for now
         $total = $subtotal + $serviceFee + $tax;
 
+        // TEMPORARY DEBUG - Remove after fixing
+        if ($type === 'room' && $id == 12) {
+            \Log::info('Room 12 Checkout Debug', [
+                'nights' => $nights,
+                'property_price_per_night' => $property->price_per_night,
+                'calculated_subtotal' => $subtotal,
+                'total' => $total,
+            ]);
+        }
+
         // Combine all guest names
         $allGuestNames = array_merge($adultNames, $childrenNames);
 
@@ -177,7 +221,7 @@ class BookingController extends Controller
             'guest_names' => $allGuestNames,
             'adult_names' => $adultNames,
             'children_names' => $childrenNames,
-            'price_per_night' => $price,
+            'price_per_night' => $property->price_per_night ?? 0, // Use actual property value
             'subtotal' => $subtotal,
             'service_fee' => $serviceFee,
             'tax' => $tax,
