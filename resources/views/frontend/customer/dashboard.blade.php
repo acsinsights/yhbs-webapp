@@ -79,7 +79,7 @@
                         <div class="stat-content">
                             <h3>{{ currency_format(number_format(auth()->user()->wallet_balance ?? 0, 2)) }}</h3>
                             <p>Wallet Balance</p>
-                            @if((auth()->user()->wallet_balance ?? 0) > 0)
+                            @if ((auth()->user()->wallet_balance ?? 0) > 0)
                                 <small class="text-success"><i class="bi bi-info-circle"></i> Use at checkout</small>
                             @endif
                         </div>
