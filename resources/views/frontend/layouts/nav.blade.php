@@ -292,3 +292,39 @@
         </div>
     </div>
     <!-- header Section End-->
+
+    <!-- User Dropdown Menu Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropdownContainer = document.querySelector('.user-menu-dropdown');
+            const dropdownMenu = document.querySelector('.user-dropdown-menu');
+            let hideTimeout;
+
+            if (dropdownContainer && dropdownMenu) {
+                // Show dropdown on hover
+                dropdownContainer.addEventListener('mouseenter', function() {
+                    clearTimeout(hideTimeout);
+                    dropdownMenu.style.display = 'block';
+                });
+
+                // Hide dropdown with delay when mouse leaves
+                dropdownContainer.addEventListener('mouseleave', function() {
+                    hideTimeout = setTimeout(function() {
+                        dropdownMenu.style.display = 'none';
+                    }, 300); // 300ms delay before hiding
+                });
+
+                // Keep dropdown visible when hovering over the menu itself
+                dropdownMenu.addEventListener('mouseenter', function() {
+                    clearTimeout(hideTimeout);
+                    dropdownMenu.style.display = 'block';
+                });
+
+                dropdownMenu.addEventListener('mouseleave', function() {
+                    hideTimeout = setTimeout(function() {
+                        dropdownMenu.style.display = 'none';
+                    }, 300);
+                });
+            }
+        });
+    </script>
