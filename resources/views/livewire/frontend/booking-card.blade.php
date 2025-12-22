@@ -220,8 +220,10 @@ new class extends Component {
             $checkIn = Carbon::parse($this->check_in);
         }
 
-        // Allow same-day bookings for all types (room, house, yacht)
-        // Check-out can be on the same day as check-in
+        // Minimum 2 days booking required (check-out must be at least 1 day after check-in)
+        if ($checkOut->lte($checkIn)) {
+            $this->check_out = $checkIn->copy()->addDay()->format('Y-m-d');
+        }
     }
 
     protected function checkAvailability(): void
@@ -243,10 +245,10 @@ new class extends Component {
             return;
         }
 
-        // Check if check-out is before check-in (same day is allowed)
-        if ($checkOut->lt($checkIn)) {
+        // Check if check-out is before or same as check-in (minimum 2 days required)
+        if ($checkOut->lte($checkIn)) {
             $this->isAvailable = false;
-            $this->availabilityMessage = 'Check-out date cannot be before check-in date.';
+            $this->availabilityMessage = 'Minimum 2 days booking required. Check-out must be at least 1 day after check-in.';
             return;
         }
 
@@ -537,6 +539,17 @@ new class extends Component {
                         disable: bookedDates,
                         onChange: function(selectedDates, dateStr, instance) {
                             if (selectedDates.length === 2) {
+                                const checkInTime = selectedDates[0].getTime();
+                                const checkOutTime = selectedDates[1].getTime();
+
+                                // Prevent same date selection - require minimum 1 day difference
+                                if (checkInTime === checkOutTime) {
+                                    instance.clear();
+                                    alert(
+                                        'Please select different dates for check-in and check-out. Minimum 2 days booking required.');
+                                    return;
+                                }
+
                                 // Use local date string to avoid timezone issues
                                 const checkIn = selectedDates[0].getFullYear() + '-' +
                                     String(selectedDates[0].getMonth() + 1).padStart(2, '0') + '-' +
