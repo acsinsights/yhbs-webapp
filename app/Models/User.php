@@ -102,4 +102,20 @@ class User extends Authenticatable
     {
         return $this->wallet_balance >= $amount;
     }
+
+    /**
+     * Get user notifications
+     */
+    public function userNotifications()
+    {
+        return $this->hasMany(UserNotification::class)->latest();
+    }
+
+    /**
+     * Get unread notifications count
+     */
+    public function unreadNotificationsCount(): int
+    {
+        return $this->userNotifications()->unread()->count();
+    }
 }

@@ -16,6 +16,7 @@
         "livewire/volt": "^1.9",
         "owenvoke/blade-fontawesome": "^2.9",
         "robsontenorio/mary": "^2.4",
+        "spatie/laravel-activitylog": "^4.10",
         "spatie/laravel-permission": "^6.23"
     },
     "require-dev": {

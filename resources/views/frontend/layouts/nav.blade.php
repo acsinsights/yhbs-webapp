@@ -138,7 +138,14 @@
 
                 @auth
                     <!-- Logged In User Menu -->
-                    <div class="user-menu-dropdown d-xl-flex d-none" style="position: relative;">
+                    <div class="user-menu-dropdown d-xl-flex d-none"
+                        style="position: relative; display: flex; align-items: center; gap: 20px;">
+
+                        <!-- Notification Bell -->
+                        @role('customer')
+                            <livewire:customer.notification-bell />
+                        @endrole
+
                         <a href="#" class="primary-btn1 black-bg user-dropdown-toggle" style="position: relative;">
                             <span>
                                 <svg width="15" height="15" viewbox="0 0 15 15" xmlns="http://www.w3.org/2000/svg">

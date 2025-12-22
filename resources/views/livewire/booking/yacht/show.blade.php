@@ -19,7 +19,10 @@ new class extends Component {
     public ?float $refund_amount = null;
     public bool $showRescheduleModal = false;
     public ?string $new_date_range = null;
+    public ?string $reschedule_notes = null;
     public array $bookedDates = [];
+    public bool $showHistoryDrawer = false;
+    public $activities = [];
 
     public function mount(Booking $booking): void
     {
@@ -27,15 +30,34 @@ new class extends Component {
         $this->payment_status = $booking->payment_status->value;
         $this->payment_method = $booking->payment_method->value;
         $this->loadBookedDates();
+
+        // Explicitly set modal states to false
+        $this->showRescheduleModal = false;
+        $this->showPaymentModal = false;
+        $this->showCancelModal = false;
     }
 
     public function updated($property): void
     {
         if ($property === 'showRescheduleModal' && $this->showRescheduleModal) {
             $this->new_date_range = null;
+            $this->reschedule_notes = null;
             $this->loadBookedDates();
             $this->dispatch('reinit-datepicker');
         }
+
+        if ($property === 'showHistoryDrawer' && $this->showHistoryDrawer) {
+            $this->loadActivities();
+        }
+    }
+
+    public function loadActivities(): void
+    {
+        $this->activities = \Spatie\Activitylog\Models\Activity::where('subject_type', get_class($this->booking))
+            ->where('subject_id', $this->booking->id)
+            ->with('causer')
+            ->latest()
+            ->get();
     }
 
     public function loadBookedDates(): void
@@ -133,6 +155,7 @@ new class extends Component {
     {
         $this->validate([
             'new_date_range' => 'required|string',
+            'reschedule_notes' => 'nullable|string|min:3',
         ]);
 
         // Parse date range (format: "2025-01-15 to 2025-01-20")
@@ -199,7 +222,40 @@ new class extends Component {
         $this->booking->update([
             'check_in' => $newCheckIn,
             'check_out' => $newCheckOut,
-            'notes' => ($this->booking->notes ? $this->booking->notes . "\n\n" : '') . "Rescheduled from {$oldCheckIn} - {$oldCheckOut} to {$newCheckIn->format('M d, Y')} - {$newCheckOut->format('M d, Y')} by admin.",
+        ]);
+
+        // Log activity
+        $description = "Rescheduled from {$oldCheckIn} - {$oldCheckOut} to {$newCheckIn->format('M d, Y')} - {$newCheckOut->format('M d, Y')}";
+        if ($this->reschedule_notes) {
+            $description .= ". Reason: {$this->reschedule_notes}";
+        }
+
+        activity()
+            ->performedOn($this->booking)
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'old_check_in' => $oldCheckIn,
+                'old_check_out' => $oldCheckOut,
+                'new_check_in' => $newCheckIn->format('M d, Y'),
+                'new_check_out' => $newCheckOut->format('M d, Y'),
+                'notes' => $this->reschedule_notes,
+            ])
+            ->log($description);
+
+        // Create notification for customer
+        \App\Models\UserNotification::create([
+            'user_id' => $this->booking->user_id,
+            'type' => 'booking_rescheduled',
+            'title' => 'Booking Rescheduled',
+            'message' => "Your booking #{$this->booking->id} has been rescheduled from {$oldCheckIn} - {$oldCheckOut} to {$newCheckIn->format('M d, Y')} - {$newCheckOut->format('M d, Y')}.",
+            'data' => [
+                'booking_id' => $this->booking->id,
+                'old_check_in' => $oldCheckIn,
+                'old_check_out' => $oldCheckOut,
+                'new_check_in' => $newCheckIn->format('M d, Y'),
+                'new_check_out' => $newCheckOut->format('M d, Y'),
+                'notes' => $this->reschedule_notes,
+            ],
         ]);
 
         $this->showRescheduleModal = false;
@@ -213,11 +269,36 @@ new class extends Component {
         $view->booking = $this->booking;
     }
 }; ?>
+
 @section('cdn')
     {{-- Flatpickr  --}}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <script>
+        document.addEventListener('livewire:initialized', () => {
+            // Prevent auto-opening of datepicker when modal opens
+            Livewire.hook('morph.updated', ({
+                el,
+                component
+            }) => {
+                setTimeout(() => {
+                    const datepickerInputs = document.querySelectorAll(
+                        '[wire\\:model\\.live="new_date_range"]');
+                    datepickerInputs.forEach(input => {
+                        if (input && input._flatpickr) {
+                            // Close if auto-opened
+                            input._flatpickr.close();
+                            // Blur the input
+                            input.blur();
+                        }
+                    });
+                }, 50);
+            });
+        });
+    </script>
 @endsection
+
 <div>
     @php
         $breadcrumbs = [
@@ -241,6 +322,7 @@ new class extends Component {
             <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
         </x-slot:subtitle>
         <x-slot:actions>
+            <x-button icon="o-clock" label="History" wire:click="$set('showHistoryDrawer', true)" class="btn-ghost" />
             <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.yacht.index') }}"
                 class="btn-ghost btn-outline" />
 
@@ -505,26 +587,33 @@ new class extends Component {
         </x-slot:actions>
     </x-modal>
 
-    {{-- Reschedule Booking Modal --}}
-    <x-modal wire:model="showRescheduleModal" title="Reschedule Booking" class="backdrop-blur"
-        box-class="max-w-2xl">
+    {{-- Reschedule Booking Drawer --}}
+    <x-drawer wire:model="showRescheduleModal" title="Reschedule Booking" class="w-11/12 lg:w-1/3" right>
         <div class="space-y-4">
             <x-alert title="Current Booking Dates"
                 description="Check-in: {{ $booking->check_in->format('M d, Y') }} | Check-out: {{ $booking->check_out->format('M d, Y') }}"
                 icon="o-information-circle" class="alert-info" />
 
-            <div x-data wire:key="reschedule-datepicker-{{ $booking->id }}">
+            <div wire:key="reschedule-datepicker-{{ $booking->id }}">
                 <x-datepicker label="Select New Date Range (Check-in to Check-out)" wire:model.live="new_date_range"
                     icon="o-calendar" :config="[
                         'mode' => 'range',
-                        'dateFormat' => 'M d, Y',
+                        'dateFormat' => 'Y-m-d',
+                        'altInput' => true,
+                        'altFormat' => 'M d, Y',
                         'minDate' => 'today',
                         'disable' => $bookedDates,
                         'conjunction' => ' to ',
+                        'allowInput' => false,
+                        'clickOpens' => true,
                     ]" />
                 <p class="text-xs text-base-content/60 mt-1">📅 Select check-in and check-out dates. Red dates are
                     already booked.</p>
             </div>
+
+            <x-textarea label="Reason for Rescheduling (Optional)" wire:model="reschedule_notes"
+                placeholder="Enter reason for rescheduling..." rows="3"
+                hint="Provide context for the date change" />
 
             @if (count($bookedDates) > 0)
                 <x-alert title="Booked Dates Info"
@@ -541,5 +630,62 @@ new class extends Component {
             <x-button label="Confirm Reschedule" wire:click="rescheduleBooking" class="btn-primary"
                 spinner="rescheduleBooking" />
         </x-slot:actions>
-    </x-modal>
+    </x-drawer>
+
+    {{-- Activity History Drawer --}}
+    <x-drawer wire:model="showHistoryDrawer" title="Booking History" class="w-11/12 lg:w-2/5" right>
+        <div class="space-y-4">
+            @if (count($activities) > 0)
+                <div class="space-y-3">
+                    @foreach ($activities as $activity)
+                        <x-card shadow>
+                            <div class="space-y-2">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        @php
+                                            // Parse description to extract reason
+                                            $mainDescription = $activity->description;
+                                            $reason = null;
+                                            if (strpos($activity->description, '. Reason: ') !== false) {
+                                                [$mainDescription, $reason] = explode(
+                                                    '. Reason: ',
+                                                    $activity->description,
+                                                    2,
+                                                );
+                                            }
+                                        @endphp
+                                        <p class="text-sm font-medium text-base-content">
+                                            {{ $mainDescription }}
+                                        </p>
+                                        @if ($reason)
+                                            <p class="text-xs text-base-content/70 mt-2 italic">
+                                                <strong>Reason:</strong> {{ $reason }}
+                                            </p>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between text-xs text-base-content/50">
+                                    <div class="flex items-center gap-2">
+                                        <x-icon name="o-user" class="w-3 h-3" />
+                                        <span>{{ $activity->causer?->name ?? 'System' }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <x-icon name="o-clock" class="w-3 h-3" />
+                                        <span>{{ $activity->created_at->diffForHumans() }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </x-card>
+                    @endforeach
+                </div>
+            @else
+                <x-alert title="No History" description="No activity history available for this booking yet."
+                    icon="o-information-circle" class="alert-info" />
+            @endif
+        </div>
+
+        <x-slot:actions>
+            <x-button label="Close" @click="$wire.showHistoryDrawer = false" />
+        </x-slot:actions>
+    </x-drawer>
 </div>

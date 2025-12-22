@@ -6,9 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Enums\{BookingStatusEnum, PaymentMethodEnum, PaymentStatusEnum};
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Booking extends Model
 {
+    use LogsActivity;
     protected $fillable = [
         'bookingable_type',
         'bookingable_id',
@@ -39,6 +42,17 @@ class Booking extends Model
         'payment_status' => PaymentStatusEnum::class,
         'payment_method' => PaymentMethodEnum::class,
     ];
+
+    /**
+     * Get the activity log options.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['status', 'payment_status', 'payment_method', 'check_in', 'check_out', 'price'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
 
     /**
      * Get the parent bookingable model (room or yacht).
