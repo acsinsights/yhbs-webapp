@@ -222,6 +222,27 @@
     border: 1px dashed rgba(0, 153, 255, 0.719) !important;
 }
 
+.flatpickr-day.flatpickr-disabled,
+.flatpickr-day.flatpickr-disabled:hover {
+    color: #ef4444 !important;
+    background-color: #fef2f2 !important;
+    border-color: #fecaca !important;
+    cursor: not-allowed !important;
+    font-weight: 600 !important;
+}
+
+.flatpickr-day.flatpickr-disabled::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px;
+    height: 20px;
+    background-color: #ef4444;
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
 input[type="radio"]:checked+span {
     display: block;
 }

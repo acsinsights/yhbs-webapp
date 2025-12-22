@@ -17,12 +17,50 @@ new class extends Component {
     public bool $showCancelModal = false;
     public string $cancellation_reason = '';
     public ?float $refund_amount = null;
+    public bool $showRescheduleModal = false;
+    public ?string $new_date_range = null;
+    public array $bookedDates = [];
 
     public function mount(Booking $booking): void
     {
         $this->booking = $booking->load(['bookingable.house', 'user']);
         $this->payment_status = $booking->payment_status->value;
         $this->payment_method = $booking->payment_method->value;
+        $this->loadBookedDates();
+    }
+    public function updated($property): void
+    {
+        if ($property === 'showRescheduleModal' && $this->showRescheduleModal) {
+            $this->new_date_range = null;
+            $this->loadBookedDates();
+            $this->dispatch('reinit-datepicker');
+        }
+    }
+    public function loadBookedDates(): void
+    {
+        // Get booked dates for this room, excluding current booking
+        $bookings = Booking::where('bookingable_type', Room::class)
+            ->where('bookingable_id', $this->booking->bookingable_id)
+            ->where('id', '!=', $this->booking->id)
+            ->whereIn('status', ['pending', 'booked', 'checked_in'])
+            ->get(['check_in', 'check_out']);
+
+        $this->bookedDates = $bookings
+            ->flatMap(function ($booking) {
+                $dates = [];
+                $checkIn = new \DateTime($booking->check_in);
+                $checkOut = new \DateTime($booking->check_out);
+
+                while ($checkIn < $checkOut) {
+                    $dates[] = $checkIn->format('Y-m-d');
+                    $checkIn->modify('+1 day');
+                }
+
+                return $dates;
+            })
+            ->unique()
+            ->values()
+            ->toArray();
     }
 
     public function checkin(): void
@@ -89,6 +127,85 @@ new class extends Component {
         $this->success('Booking cancelled successfully.' . ($this->refund_amount ? " Refund of {$this->refund_amount} added to customer's wallet." : ''), redirectTo: route('admin.bookings.room.index'));
     }
 
+    public function rescheduleBooking(): void
+    {
+        $this->validate([
+            'new_date_range' => 'required|string',
+        ]);
+
+        // Parse date range (format: "2025-01-15 to 2025-01-20")
+        $dates = explode(' to ', $this->new_date_range);
+
+        if (count($dates) !== 2) {
+            $this->error('Please select both check-in and check-out dates.');
+            return;
+        }
+
+        $newCheckIn = Carbon::parse(trim($dates[0]));
+        $newCheckOut = Carbon::parse(trim($dates[1]));
+
+        // Validate dates
+        if ($newCheckIn->isBefore(Carbon::today())) {
+            $this->error('Check-in date cannot be in the past.');
+            return;
+        }
+
+        if ($newCheckOut->isBefore($newCheckIn)) {
+            $this->error('Check-out date must be after check-in date.');
+            return;
+        }
+
+        // Check if any of the requested dates are already booked
+        $requestedDates = [];
+        $current = $newCheckIn->copy();
+        while ($current->lt($newCheckOut)) {
+            $requestedDates[] = $current->format('Y-m-d');
+            $current->addDay();
+        }
+
+        $conflictingDates = array_intersect($requestedDates, $this->bookedDates);
+
+        if (!empty($conflictingDates)) {
+            $this->error('The selected dates conflict with existing bookings. Please choose different dates.');
+            return;
+        }
+
+        // Check if there are any confirmed bookings for the requested dates (excluding current booking)
+        $hasConflict = Booking::where('bookingable_type', Room::class)
+            ->where('bookingable_id', $this->booking->bookingable_id)
+            ->where('id', '!=', $this->booking->id)
+            ->whereIn('status', ['pending', 'booked', 'checked_in'])
+            ->where(function ($query) use ($newCheckIn, $newCheckOut) {
+                $query
+                    ->whereBetween('check_in', [$newCheckIn, $newCheckOut])
+                    ->orWhereBetween('check_out', [$newCheckIn, $newCheckOut])
+                    ->orWhere(function ($q) use ($newCheckIn, $newCheckOut) {
+                        $q->where('check_in', '<=', $newCheckIn)->where('check_out', '>=', $newCheckOut);
+                    });
+            })
+            ->exists();
+
+        if ($hasConflict) {
+            $this->error('The selected dates are already booked by another customer. Please choose different dates.');
+            return;
+        }
+
+        // Update booking with new dates
+        $oldCheckIn = $this->booking->check_in->format('M d, Y');
+        $oldCheckOut = $this->booking->check_out->format('M d, Y');
+
+        $this->booking->update([
+            'check_in' => $newCheckIn,
+            'check_out' => $newCheckOut,
+            'notes' => ($this->booking->notes ? $this->booking->notes . "\n\n" : '') . "Rescheduled from {$oldCheckIn} - {$oldCheckOut} to {$newCheckIn->format('M d, Y')} - {$newCheckOut->format('M d, Y')} by admin.",
+        ]);
+
+        $this->showRescheduleModal = false;
+        $this->success('Booking rescheduled successfully.');
+        $this->booking->refresh();
+        $this->loadBookedDates();
+    }
+
     public function rendering(View $view)
     {
         $view->booking = $this->booking;
@@ -124,6 +241,8 @@ new class extends Component {
             @if ($booking->status === \App\Enums\BookingStatusEnum::BOOKED)
                 <x-button icon="o-pencil" label="Edit" link="{{ route('admin.bookings.room.edit', $booking->id) }}"
                     class="btn-primary" />
+                <x-button icon="o-calendar" label="Reschedule" wire:click="$set('showRescheduleModal', true)"
+                    class="btn-secondary" />
                 <x-button icon="o-arrow-right-end-on-rectangle" label="Check In" wire:click="checkin"
                     wire:confirm="Are you sure you want to check in this booking?" class="btn-info" spinner="checkin" />
                 <x-button icon="o-x-circle" label="Cancel Booking" wire:click="$set('showCancelModal', true)"
@@ -135,6 +254,8 @@ new class extends Component {
             @elseif ($booking->canBeEdited())
                 <x-button icon="o-pencil" label="Edit" link="{{ route('admin.bookings.room.edit', $booking->id) }}"
                     class="btn-primary" />
+                <x-button icon="o-calendar" label="Reschedule" wire:click="$set('showRescheduleModal', true)"
+                    class="btn-secondary" />
                 <x-button icon="o-x-circle" label="Cancel Booking" wire:click="$set('showCancelModal', true)"
                     class="btn-error" />
             @endif
@@ -363,6 +484,44 @@ new class extends Component {
             <x-button label="Cancel" @click="$wire.showCancelModal = false" />
             <x-button label="Confirm Cancellation" wire:click="cancelBooking" class="btn-error"
                 spinner="cancelBooking" />
+        </x-slot:actions>
+    </x-modal>
+
+    {{-- Reschedule Booking Modal --}}
+    <x-modal wire:model="showRescheduleModal" title="Reschedule Booking" class="backdrop-blur"
+        box-class="max-w-2xl">
+        <div class="space-y-4">
+            <x-alert title="Current Booking Dates"
+                description="Check-in: {{ $booking->check_in->format('M d, Y') }} | Check-out: {{ $booking->check_out->format('M d, Y') }}"
+                icon="o-information-circle" class="alert-info" />
+
+            <div x-data wire:key="reschedule-datepicker-{{ $booking->id }}">
+                <x-datepicker label="Select New Date Range (Check-in to Check-out)" wire:model.live="new_date_range"
+                    icon="o-calendar" :config="[
+                        'mode' => 'range',
+                        'dateFormat' => 'M d, Y',
+                        'minDate' => 'today',
+                        'disable' => $bookedDates,
+                        'conjunction' => ' to ',
+                    ]" />
+                <p class="text-xs text-base-content/60 mt-1">📅 Select check-in and check-out dates. Red dates are
+                    already booked.</p>
+            </div>
+
+            @if (count($bookedDates) > 0)
+                <x-alert title="Booked Dates Info"
+                    description="Red highlighted dates in the calendar are already booked and cannot be selected."
+                    icon="o-exclamation-triangle" class="alert-warning" />
+            @else
+                <x-alert title="No Conflicts" description="All dates are currently available for this room."
+                    icon="o-check-circle" class="alert-success" />
+            @endif
+        </div>
+
+        <x-slot:actions>
+            <x-button label="Cancel" @click="$wire.showRescheduleModal = false" />
+            <x-button label="Confirm Reschedule" wire:click="rescheduleBooking" class="btn-primary"
+                spinner="rescheduleBooking" />
         </x-slot:actions>
     </x-modal>
 </div>
