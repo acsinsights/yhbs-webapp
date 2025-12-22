@@ -114,6 +114,10 @@ new class extends Component {
                         class="btn-sm btn-error" />
                 </div>
             @endscope>
+
+            <x-slot:empty>
+                <x-empty icon="o-document-text" message="No blogs published yet" description="Check back soon for updates!" />
+            </x-slot>
         </x-table>
     </x-card>
 

@@ -10,6 +10,9 @@
     {{-- add favicon --}}
     <link rel="icon" href="{{ asset('default/app_logo.png') }}" type="image/x-icon" />
 
+    {{-- Flatpickr CSS --}}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
     {{-- Fonts --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @yield('cdn')
@@ -200,6 +203,10 @@
         </x-slot:content>
     </x-main>
     <x-toast />
+
+    {{-- Flatpickr JS --}}
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
     @yield('scripts')
 </body>
 
