@@ -61,6 +61,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Volt::route('/', 'website-settings.index')->name('website-settings.index');
         });
 
+        // Page Meta routes
+        Route::group(['prefix' => 'page-meta'], function () {
+            Volt::route('/', 'admin.page-meta.index')->name('page-meta.index');
+            Volt::route('/{id}/edit', 'admin.page-meta.edit')->name('page-meta.edit');
+        });
+
         // Blogs routes
         Route::group(['prefix' => 'blogs'], function () {
             Volt::route('/', 'blogs.index')->name('blogs.index');

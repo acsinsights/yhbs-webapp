@@ -113,6 +113,8 @@
                 </div>
                 <x-menu-item title="Website Settings" icon="o-cog-6-tooth"
                     link="{{ route('admin.website-settings.index') }}" />
+                <x-menu-item title="Page Meta" icon="o-document-magnifying-glass"
+                    link="{{ route('admin.page-meta.index') }}" />
                 <x-menu-item title="Profile" icon="o-user-circle" link="{{ route('admin.profile') }}" />
             </x-menu>
         </x-slot:sidebar>
