@@ -320,31 +320,30 @@ new class extends Component {
             <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
         </x-slot:subtitle>
         <x-slot:actions>
-            <x-button icon="o-clock" label="History" wire:click="$set('showHistoryDrawer', true)" class="btn-ghost" />
             <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.room.index') }}"
                 class="btn-ghost btn-outline" />
 
             @if ($booking->status === \App\Enums\BookingStatusEnum::BOOKED)
-                <x-button icon="o-pencil" label="Edit" link="{{ route('admin.bookings.room.edit', $booking->id) }}"
-                    class="btn-primary" />
-                <x-button icon="o-calendar" label="Reschedule" wire:click="$set('showRescheduleModal', true)"
-                    class="btn-secondary" />
                 <x-button icon="o-arrow-right-end-on-rectangle" label="Check In" wire:click="checkin"
                     wire:confirm="Are you sure you want to check in this booking?" class="btn-info" spinner="checkin" />
-                <x-button icon="o-x-circle" label="Cancel Booking" wire:click="$set('showCancelModal', true)"
-                    class="btn-error" />
             @elseif ($booking->canCheckOut())
                 <x-button icon="o-arrow-right-start-on-rectangle" label="Check Out" wire:click="checkout"
                     wire:confirm="Are you sure you want to checkout this booking?" class="btn-success"
                     spinner="checkout" />
-            @elseif ($booking->canBeEdited())
-                <x-button icon="o-pencil" label="Edit" link="{{ route('admin.bookings.room.edit', $booking->id) }}"
-                    class="btn-primary" />
-                <x-button icon="o-calendar" label="Reschedule" wire:click="$set('showRescheduleModal', true)"
-                    class="btn-secondary" />
-                <x-button icon="o-x-circle" label="Cancel Booking" wire:click="$set('showCancelModal', true)"
-                    class="btn-error" />
             @endif
+
+            <x-dropdown icon="o-ellipsis-vertical" class="btn-ghost btn-circle">
+                <x-menu-item title="History" icon="o-clock" wire:click.stop="$set('showHistoryDrawer', true)" />
+                @if ($booking->status === \App\Enums\BookingStatusEnum::BOOKED || $booking->canBeEdited())
+                    <x-menu-item title="Edit" icon="o-pencil"
+                        link="{{ route('admin.bookings.room.edit', $booking->id) }}" />
+                    <x-menu-item title="Reschedule" icon="o-calendar"
+                        wire:click.stop="$set('showRescheduleModal', true)" />
+                    <x-menu-separator />
+                    <x-menu-item title="Cancel Booking" icon="o-x-circle"
+                        wire:click.stop="$set('showCancelModal', true)" class="text-error" />
+                @endif
+            </x-dropdown>
         </x-slot:actions>
     </x-header>
 
