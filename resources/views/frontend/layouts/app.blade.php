@@ -6,9 +6,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    @php
+        $pageMeta = getPageMeta();
+    @endphp
+
+    <meta name="description" content="@yield('meta_description', $pageMeta->description)">
+    <meta name="keywords" content="@yield('meta_keywords', $pageMeta->keywords)">
+
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="@yield('title', $pageMeta->title)">
+    <meta property="og:description" content="@yield('meta_description', $pageMeta->description)">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url()->current() }}">
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@yield('title', $pageMeta->title)">
+    <meta name="twitter:description" content="@yield('meta_description', $pageMeta->description)">
+
     <link rel="icon" href="{{ asset('frontend/img/fav-icon.svg') }}" type="image/gif" sizes="20x20">
     <title>
-        @yield('title', 'Yachts & Hotels Booking System') - {{ config('app.name') }}
+        @yield('title', $pageMeta->title)
     </title>
 
     <link href="{{ asset('frontend/css/bootstrap.min.css') }}" rel="stylesheet">

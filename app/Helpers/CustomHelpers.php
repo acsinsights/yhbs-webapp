@@ -91,3 +91,35 @@ if (!function_exists('customTransliterate')) {
         return implode(' ', $transliteratedWords);
     }
 }
+
+if (!function_exists('getPageMeta')) {
+    /**
+     * Get page meta information based on route name
+     *
+     * @param string|null $routeName
+     * @return object
+     */
+    function getPageMeta($routeName = null)
+    {
+        if (!$routeName) {
+            $routeName = request()->route()->getName();
+        }
+
+        $pageMeta = \App\Models\PageMeta::where('route_name', $routeName)->first();
+
+        if ($pageMeta) {
+            return (object) [
+                'title' => $pageMeta->meta_title,
+                'description' => $pageMeta->meta_description,
+                'keywords' => $pageMeta->meta_keywords,
+            ];
+        }
+
+        // Return default meta
+        return (object) [
+            'title' => config('app.name') . ' - Yacht & House Booking System',
+            'description' => 'Book luxury yachts and premium houses with our advanced booking system.',
+            'keywords' => 'yacht booking, house rental, luxury rentals',
+        ];
+    }
+}

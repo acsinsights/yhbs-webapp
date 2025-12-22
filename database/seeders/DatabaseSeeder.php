@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             YachtSeeder::class,
             BookingSeeder::class,
             WebsiteSettingSeeder::class,
+            PageMetaSeeder::class,
         ]);
     }
 }
