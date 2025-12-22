@@ -183,7 +183,8 @@ new class extends Component {
             </div>
         @endscope
         <x-slot:empty>
-            <x-empty icon="o-inbox" message="No contact form submissions yet" description="Check back soon for updates!" />
+            <x-empty icon="o-inbox" message="No contact form submissions yet"
+                description="Check back soon for updates!" />
         </x-slot>
     </x-table>
 
