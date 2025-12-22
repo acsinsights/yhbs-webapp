@@ -80,48 +80,63 @@
                                 <p>We’re excited to hear from you! Whether you have a question about our services, want to
                                     discuss a new project.</p>
                             </div>
-                            <form>
+
+                            @if (session('success'))
+                                <div class="alert alert-success" style="background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" style="width: 24px; height: 24px; flex-shrink: 0;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span style="font-size: 1rem; font-weight: 500;">{{ session('success') }}</span>
+                                </div>
+                            @endif
+
+                            <form action="{{ route('contact.store') }}" method="POST">
+                                @csrf
                                 <div class="row g-4 mb-60">
                                     <div class="col-md-6">
                                         <div class="form-inner">
-                                            <label>Full Name</label>
-                                            <input type="text" placeholder="Wasington Mongla">
+                                            <label>Full Name <span class="text-danger">*</span></label>
+                                            <input type="text" name="full_name" placeholder="Wasington Mongla"
+                                                value="{{ old('full_name') }}" required>
+                                            @error('full_name')
+                                                <small class="text-danger">{{ $message }}</small>
+                                            @enderror
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-inner">
-                                            <label>Email Address</label>
-                                            <input type="email" placeholder="info@example.com">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-inner">
-                                            <label>Phone Number</label>
-                                            <input type="text" placeholder="+92 567 *** ***">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-inner">
-                                            <label>Where are you going?</label>
-                                            <select>
-                                                <option>Maldives </option>
-                                                <option>France</option>
-                                                <option>United States</option>
-                                                <option>Thailand</option>
-                                            </select>
+                                            <label>Phone Number <span class="text-danger">*</span></label>
+                                            <input type="text" name="phone" placeholder="+965 1808080"
+                                                value="{{ old('phone') }}" required>
+                                            @error('phone')
+                                                <small class="text-danger">{{ $message }}</small>
+                                            @enderror
                                         </div>
                                     </div>
                                     <div class="col-md-12">
                                         <div class="form-inner">
-                                            <label>Brief/Message</label>
-                                            <textarea placeholder="Write somethings about inquiry"></textarea>
+                                            <label>Email Address <span class="text-danger">*</span></label>
+                                            <input type="email" name="email" placeholder="info@example.com"
+                                                value="{{ old('email') }}" required>
+                                            @error('email')
+                                                <small class="text-danger">{{ $message }}</small>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <div class="form-inner">
+                                            <label>Brief/Message <span class="text-danger">*</span></label>
+                                            <textarea name="message" placeholder="Write somethings about inquiry" required>{{ old('message') }}</textarea>
+                                            @error('message')
+                                                <small class="text-danger">{{ $message }}</small>
+                                            @enderror
                                         </div>
                                     </div>
                                     <div class="col-md-12">
                                         <div class="form-inner2">
                                             <div class="form-check">
                                                 <input class="form-check-input" type="checkbox" value=""
-                                                    id="contactCheck22">
+                                                    id="contactCheck22" required>
                                                 <label class="form-check-label" for="contactCheck22">
                                                     I will agree with yours privacy policy & terms & conditions.
                                                 </label>
@@ -166,7 +181,8 @@
     <!--Contact Map Section Start-->
     <div class="contact-map-section">
         <iframe src="https://www.google.com/maps?q=Dayia%20Tower,%20Sharq,%20Kuwait&output=embed" width="100%"
-            height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+            height="100%" style="border:0;" allowfullscreen="" loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade">
         </iframe>
     </div>
     <!--Contact Map Section End-->

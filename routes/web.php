@@ -67,6 +67,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Volt::route('/{id}/edit', 'admin.page-meta.edit')->name('page-meta.edit');
         });
 
+        // Contact Submissions routes
+        Route::group(['prefix' => 'contacts'], function () {
+            Volt::route('/', 'admin.contacts.index')->name('contacts.index');
+            Volt::route('/{id}/show', 'admin.contacts.show')->name('contacts.show');
+        });
+
         // Blogs routes
         Route::group(['prefix' => 'blogs'], function () {
             Volt::route('/', 'blogs.index')->name('blogs.index');

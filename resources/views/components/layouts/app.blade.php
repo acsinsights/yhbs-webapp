@@ -100,6 +100,8 @@
                         <small class="hidden-when-collapsed">Content</small>
                     </div>
                     <x-menu-item title="Blogs" icon="o-document-text" link="{{ route('admin.blogs.index') }}" />
+                    <x-menu-item title="Contact Submissions" icon="o-envelope"
+                        link="{{ route('admin.contacts.index') }}" />
 
                     <div class="divider divider-start my-1">
                         <small class="hidden-when-collapsed">Reports</small>

@@ -25,6 +25,9 @@ Route::get('/contact', function () {
     return view('frontend.contact');
 })->name('contact');
 
+// contact form submission
+Route::post('/contact', [App\Http\Controllers\Frontend\ContactController::class, 'store'])->name('contact.store');
+
 // job application page
 Route::get('/job-application', function () {
     return view('frontend.job-application');
