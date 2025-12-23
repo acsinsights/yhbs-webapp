@@ -334,6 +334,11 @@ new class extends Component {
 
             <x-dropdown icon="o-ellipsis-vertical" class="btn-ghost btn-circle">
                 <x-menu-item title="History" icon="o-clock" wire:click.stop="$set('showHistoryDrawer', true)" />
+                @if ($booking->isCheckedIn() || $booking->isCheckedOut())
+                    <x-menu-item title="Download Receipt" icon="o-arrow-down-tray"
+                        @click="window.location.href='{{ route('admin.booking.download-receipt', $booking->id) }}'" />
+                    <x-menu-separator />
+                @endif
                 @if ($booking->status === \App\Enums\BookingStatusEnum::BOOKED || $booking->canBeEdited())
                     <x-menu-item title="Edit" icon="o-pencil"
                         link="{{ route('admin.bookings.room.edit', $booking->id) }}" />

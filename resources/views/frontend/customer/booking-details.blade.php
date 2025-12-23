@@ -208,8 +208,12 @@
                                     </div>
                                 @endif
 
-                                @if ($discount > 0)
+                                {{-- Only show divider if discount or wallet is used --}}
+                                @if ($discount > 0 || $walletUsed > 0)
                                     <div class="divider"></div>
+                                @endif
+
+                                @if ($discount > 0)
                                     <div class="payment-row text-success">
                                         <span>
                                             <i class="bi bi-tag-fill me-1"></i>Discount
@@ -254,6 +258,16 @@
                         </div>
                         <div class="card-body">
                             <div class="d-grid gap-2">
+                                {{-- Download Receipt Button - Only show after check-in --}}
+                                @if (
+                                    $booking->status == App\Enums\BookingStatusEnum::CHECKED_IN ||
+                                        $booking->status == App\Enums\BookingStatusEnum::CHECKED_OUT)
+                                    <a href="{{ route('customer.booking.download-receipt', $booking->id) }}"
+                                        class="btn btn-primary" target="_blank">
+                                        <i class="bi bi-download me-2"></i>Download Receipt (PDF)
+                                    </a>
+                                @endif
+
                                 @if (
                                     !$booking->cancellation_status &&
                                         !$booking->cancelled_at &&

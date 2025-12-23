@@ -337,11 +337,19 @@ new class extends Component {
 
             <x-dropdown icon="o-ellipsis-vertical" class="btn-ghost btn-outline btn-circle">
                 <x-menu-item title="History" icon="o-clock" wire:click.stop="$set('showHistoryDrawer', true)" />
-                @if ($booking->status === \App\Enums\BookingStatusEnum::BOOKED || $booking->canBeEdited())
-                    <x-menu-item title="Edit" icon="o-pencil" link="{{ route('admin.bookings.house.edit', $booking->id) }}" />
-                    <x-menu-item title="Reschedule" icon="o-calendar" wire:click.stop="$set('showRescheduleModal', true)" />
+                @if ($booking->isCheckedIn() || $booking->isCheckedOut())
+                    <x-menu-item title="Download Receipt" icon="o-arrow-down-tray"
+                        @click="window.location.href='{{ route('admin.booking.download-receipt', $booking->id) }}'" />
                     <x-menu-separator />
-                    <x-menu-item title="Cancel Booking" icon="o-x-circle" wire:click.stop="$set('showCancelModal', true)" class="text-error" />
+                @endif
+                @if ($booking->status === \App\Enums\BookingStatusEnum::BOOKED || $booking->canBeEdited())
+                    <x-menu-item title="Edit" icon="o-pencil"
+                        link="{{ route('admin.bookings.house.edit', $booking->id) }}" />
+                    <x-menu-item title="Reschedule" icon="o-calendar"
+                        wire:click.stop="$set('showRescheduleModal', true)" />
+                    <x-menu-separator />
+                    <x-menu-item title="Cancel Booking" icon="o-x-circle"
+                        wire:click.stop="$set('showCancelModal', true)" class="text-error" />
                 @endif
             </x-dropdown>
         </x-slot:actions>

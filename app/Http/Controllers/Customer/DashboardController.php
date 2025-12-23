@@ -7,6 +7,7 @@ use App\Models\Booking;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class DashboardController extends Controller
 {
@@ -181,7 +182,7 @@ class DashboardController extends Controller
         $walletTransaction = \App\Models\WalletTransaction::where('booking_id', $booking->id)
             ->where('type', 'debit')
             ->first();
-        $booking->wallet_amount_used = $walletTransaction ? abs($walletTransaction->amount) : 0;
+        $booking->wallet_amount_used = $walletTransaction ? abs((float) $walletTransaction->amount) : 0;
 
         // Calculate original subtotal (before discount)
         // booking->price = subtotal after discount, so add discount back
@@ -227,4 +228,38 @@ class DashboardController extends Controller
             'message' => 'Booking cancelled successfully!'
         ]);
     }
+
+    /**
+     * Download booking receipt as PDF
+     */
+    public function downloadReceipt($id)
+    {
+        $user = Auth::user();
+        $booking = Booking::where('id', $id)
+            ->where('user_id', $user->id)
+            ->with(['bookingable', 'user', 'coupon'])
+            ->firstOrFail();
+
+        // Check if booking has been checked in (only show receipt after check-in)
+        if (!$booking->isCheckedIn() && !$booking->isCheckedOut()) {
+            abort(403, 'Receipt is only available after check-in.');
+        }
+
+        // Load house relationship if it's a room booking
+        if ($booking->bookingable instanceof \App\Models\Room) {
+            $booking->bookingable->load('house');
+        }
+
+        // Generate PDF
+        $pdf = Pdf::loadView('pdf.booking-receipt', compact('booking'));
+
+        // Set paper size and orientation
+        $pdf->setPaper('a4', 'portrait');
+
+        // Download the PDF with a specific filename
+        $filename = 'booking-receipt-' . $booking->id . '-' . now()->format('Y-m-d') . '.pdf';
+
+        return $pdf->download($filename);
+    }
 }
+

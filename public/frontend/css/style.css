@@ -5478,6 +5478,11 @@ header.style-1.three .main-menu>ul>li .mega-menu .menu-row .menu-single-item ul 
     border: 1px dashed #dee2e6;
 }
 
+.rooms-filter-select {
+    font-size: 15px;
+    padding: 13px 16px;
+}
+
 .coupon-input-wrapper {
     display: flex;
     gap: 10px;

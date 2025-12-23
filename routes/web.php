@@ -83,6 +83,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::group(['prefix' => 'bookings'], function () {
             Volt::route('/', 'bookings.index')->name('bookings.index');
             Volt::route('/create', 'bookings.create')->name('bookings.create');
+
+            // Download receipt
+            Route::get('/{booking}/download-receipt', [App\Http\Controllers\Admin\BookingController::class, 'downloadReceipt'])
+                ->name('booking.download-receipt');
         });
 
         // Cancellation Requests
@@ -150,7 +154,3 @@ Route::prefix('checkout')->middleware('auth')->group(function () {
     Route::post('/remove-coupon', [App\Http\Controllers\OttuCheckoutController::class, 'removeCoupon'])
         ->name('checkout.remove-coupon');
 });
-
-Route::post('/job-submit', function () {
-    return "Form submitted (frontend only).";
-})->name('job.submit');

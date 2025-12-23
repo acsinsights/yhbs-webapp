@@ -55,8 +55,8 @@
                                     <i class="bi bi-tag text-primary"></i> Category
                                 </label>
                                 <select name="category"
-                                    class="form-select form-select-lg rounded-3 shadow-sm border-0 bg-light">
-                                    <option value="">All Categories</option>
+                                    class="form-select rooms-filter-select form-select-lg rounded-3 shadow-sm border-0 bg-light">
+                                    <option class="fs-5" value="">All Categories</option>
                                     @foreach ($categories as $category)
                                         <option value="{{ $category->id }}"
                                             {{ request('category') == $category->id ? 'selected' : '' }}>

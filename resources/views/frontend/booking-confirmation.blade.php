@@ -599,10 +599,6 @@
                                         ($booking->tax ?? 0);
                                 @endphp
                                 @if (isset($booking->discount_amount) && $booking->discount_amount > 0)
-                                    <div class="payment-row" style="font-weight: 600;">
-                                        <span>Subtotal</span>
-                                        <span>{{ currency_format(number_format($subtotal, 2)) }}</span>
-                                    </div>
                                     <div class="payment-row" style="color: #28a745;">
                                         <span>
                                             <i class="bi bi-tag-fill me-2"></i>Discount
@@ -612,10 +608,6 @@
                                         </span>
                                         <span>-
                                             {{ currency_format(number_format($booking->discount_amount ?? 0, 2)) }}</span>
-                                    </div>
-                                    <div class="payment-row" style="font-weight: 600;">
-                                        <span>After Discount</span>
-                                        <span>{{ currency_format(number_format($subtotal - ($booking->discount_amount ?? 0), 2)) }}</span>
                                     </div>
                                 @endif
 
