@@ -249,48 +249,77 @@
                                         <div class="price-row">
                                             <span>Price per night</span>
                                             <span
-                                                id="pricePerNight">{{ currency_format(number_format($booking->price_per_night ?? 0, 2)) }}</span>
+                                                id="pricePerNight">{{ currency_format($booking->price_per_night ?? 0) }}</span>
                                         </div>
                                         <div class="price-row">
                                             <span>× <span id="nightsCount">{{ $booking->nights ?? '1' }}</span>
                                                 nights</span>
                                             @php
-                                                // Calculate subtotal - use backend only if different from calculated
-                                                $calculated =
-                                                    ($booking->price_per_night ?? 0) * ($booking->nights ?? 1);
-                                                $backend = $booking->subtotal ?? 0;
+                                                // Debug logging for houses
+                                                if (($booking->type ?? '') === 'house') {
+                                                    \Log::info('Checkout View - House Booking Data', [
+                                                        'type' => $booking->type ?? 'unknown',
+                                                        'property_id' => $booking->property_id ?? 'missing',
+                                                        'price_per_night' => $booking->price_per_night ?? 'missing',
+                                                        'price_per_night_type' => gettype(
+                                                            $booking->price_per_night ?? null,
+                                                        ),
+                                                        'nights' => $booking->nights ?? 'missing',
+                                                        'nights_type' => gettype($booking->nights ?? null),
+                                                        'subtotal' => $booking->subtotal ?? 'missing',
+                                                        'subtotal_type' => gettype($booking->subtotal ?? null),
+                                                        'booking_object' => json_encode($booking),
+                                                    ]);
+                                                }
 
-                                                // Use backend only if it's different (special pricing)
-                                                $displaySubtotalCalc =
-                                                    $backend > 0 && $backend != $calculated ? $backend : $calculated;
+                                                // Always prefer backend subtotal if available, otherwise calculate
+                                                $backend = floatval($booking->subtotal ?? 0);
+                                                $calculated =
+                                                    floatval($booking->price_per_night ?? 0) *
+                                                    floatval($booking->nights ?? 1);
+
+                                                \Log::info('Subtotal Calculation', [
+                                                    'backend' => $backend,
+                                                    'calculated' => $calculated,
+                                                    'backend_gt_0' => $backend > 0,
+                                                    'result' => $backend > 0 ? 'using backend' : 'using calculated',
+                                                ]);
+
+                                                // Use backend if it exists and is not 0, otherwise use calculated
+                                                $displaySubtotalCalc = $backend > 0 ? $backend : $calculated;
+
+                                                \Log::info('Display Value', [
+                                                    'displaySubtotalCalc' => $displaySubtotalCalc,
+                                                    'number_format_result' => number_format($displaySubtotalCalc, 2),
+                                                    'currency_format_result' => currency_format(
+                                                        number_format($displaySubtotalCalc, 2),
+                                                    ),
+                                                ]);
                                             @endphp
-                                            <span
-                                                id="subtotal">{{ currency_format(number_format($displaySubtotalCalc, 2)) }}</span>
+                                            <span id="subtotal">{{ currency_format($displaySubtotalCalc) }}</span>
                                         </div>
                                         @if (($booking->service_fee ?? 0) > 0)
                                             <div class="price-row">
                                                 <span>Service fee</span>
                                                 <span
-                                                    id="serviceFee">{{ currency_format(number_format($booking->service_fee ?? 0, 2)) }}</span>
+                                                    id="serviceFee">{{ currency_format($booking->service_fee ?? 0) }}</span>
                                             </div>
                                         @endif
                                         @if (($booking->tax ?? 0) > 0)
                                             <div class="price-row">
                                                 <span>Taxes</span>
-                                                <span
-                                                    id="tax">{{ currency_format(number_format($booking->tax ?? 0, 2)) }}</span>
+                                                <span id="tax">{{ currency_format($booking->tax ?? 0) }}</span>
                                             </div>
                                         @endif
                                         @if (session('applied_coupon'))
                                             @php
-                                                // Calculate discount - use backend only if different
+                                                // Calculate discount - always prefer backend if available
                                                 $calculated =
-                                                    (float) ($booking->price_per_night ?? 0) *
-                                                    (int) ($booking->nights ?? 1);
-                                                $backend = (float) ($booking->subtotal ?? 0);
+                                                    floatval($booking->price_per_night ?? 0) *
+                                                    floatval($booking->nights ?? 1);
+                                                $backend = floatval($booking->subtotal ?? 0);
 
-                                                $displaySubtotal =
-                                                    $backend > 0 && $backend != $calculated ? $backend : $calculated;
+                                                $displaySubtotal = $backend > 0 ? $backend : $calculated;
 
                                                 $displayBase =
                                                     $displaySubtotal +
@@ -324,7 +353,7 @@
                                                     <i class="bi bi-tag-fill me-1"></i>Coupon Discount
                                                 </span>
                                                 <span class="text-success">
-                                                    -{{ currency_format(number_format($displayDiscount, 2)) }}
+                                                    -{{ currency_format($displayDiscount) }}
                                                 </span>
                                             </div>
                                         @endif
@@ -345,14 +374,15 @@
                                                     </div>
                                                     <div class="wallet-info">
                                                         <h6 class="mb-0 text-white">Wallet Balance</h6>
-                                                        <p class="wallet-amount mb-0">{{ currency_format(number_format($walletBalance, 2)) }}</p>
+                                                        <p class="wallet-amount mb-0">
+                                                            {{ currency_format(number_format($walletBalance, 2)) }}</p>
                                                     </div>
                                                 </div>
                                                 <div class="wallet-toggle-section">
                                                     <label class="wallet-toggle-label">
-                                                        <input class="wallet-checkbox" type="checkbox" id="use_wallet_balance"
-                                                            name="use_wallet_balance" value="1"
-                                                            onchange="toggleWalletUsage(this)">
+                                                        <input class="wallet-checkbox" type="checkbox"
+                                                            id="use_wallet_balance" name="use_wallet_balance"
+                                                            value="1" onchange="toggleWalletUsage(this)">
                                                         <span class="wallet-label-text">
                                                             <i class="bi bi-check-circle"></i> Use wallet for this booking
                                                         </span>
@@ -360,7 +390,8 @@
                                                 </div>
                                                 <div class="wallet-note">
                                                     <i class="bi bi-info-circle"></i>
-                                                    Your wallet balance will be automatically applied to reduce the total amount
+                                                    Your wallet balance will be automatically applied to reduce the total
+                                                    amount
                                                 </div>
                                             </div>
                                         </div>
@@ -370,17 +401,15 @@
                                     <div class="total-price">
                                         <span>Total Amount</span>
                                         @php
-                                            // Calculate total - use backend only if different
+                                            // Always prefer backend subtotal if available
+                                            $backend = floatval($booking->subtotal ?? 0);
                                             $calculated =
-                                                (float) ($booking->price_per_night ?? 0) *
-                                                (int) ($booking->nights ?? 1);
-                                            $backend = (float) ($booking->subtotal ?? 0);
+                                                floatval($booking->price_per_night ?? 0) *
+                                                floatval($booking->nights ?? 1);
+                                            $calculatedSubtotal = $backend > 0 ? $backend : $calculated;
 
-                                            $calculatedSubtotal =
-                                                $backend > 0 && $backend != $calculated ? $backend : $calculated;
-
-                                            $serviceFee = (float) ($booking->service_fee ?? 0);
-                                            $tax = (float) ($booking->tax ?? 0);
+                                            $serviceFee = floatval($booking->service_fee ?? 0);
+                                            $tax = floatval($booking->tax ?? 0);
                                             $baseAmount = $calculatedSubtotal + $serviceFee + $tax;
 
                                             // Get discount if coupon applied
@@ -388,11 +417,11 @@
                                             if (session('applied_coupon')) {
                                                 $coupon = session('applied_coupon');
                                                 $discountType = $coupon['discount_type'] ?? 'fixed';
-                                                $discountValue = (float) ($coupon['discount_value'] ?? 0);
+                                                $discountValue = floatval($coupon['discount_value'] ?? 0);
                                                 $maxDiscount =
                                                     isset($coupon['max_discount_amount']) &&
                                                     $coupon['max_discount_amount']
-                                                        ? (float) $coupon['max_discount_amount']
+                                                        ? floatval($coupon['max_discount_amount'])
                                                         : null;
 
                                                 if ($discountType === 'percentage') {
@@ -411,8 +440,7 @@
                                             // Calculate final total: Base - Discount
                                             $finalAmount = max(0, $baseAmount - $discount);
                                         @endphp
-                                        <span
-                                            id="totalAmount">{{ currency_format(number_format($finalAmount, 2)) }}</span>
+                                        <span id="totalAmount">{{ currency_format($finalAmount) }}</span>
                                         <input type="hidden" id="originalTotal" value="{{ $finalAmount }}">
                                         <input type="hidden" id="walletBalance" value="{{ $walletBalance ?? 0 }}">
                                     </div>
@@ -423,18 +451,18 @@
                                             <span>
                                                 <i class="bi bi-wallet2 me-2"></i>Wallet Balance Used
                                             </span>
-                                            <span class="wallet-applied-badge" id="walletAppliedAmount">-{{ currency_format(0) }}</span>
+                                            <span class="wallet-applied-badge"
+                                                id="walletAppliedAmount">-{{ currency_format(0) }}</span>
                                         </div>
                                     </div>
 
                                     <!-- Amount to Pay -->
-                                    <div id="amountToPayRow" class="amount-to-pay-row"
-                                        style="display: none;">
+                                    <div id="amountToPayRow" class="amount-to-pay-row" style="display: none;">
                                         <span class="pay-label">
                                             <i class="bi bi-cash-coin me-2"></i><strong>Amount to Pay</strong>
                                         </span>
                                         <span class="pay-amount"
-                                            id="amountToPay"><strong>{{ currency_format(number_format($finalAmount, 2)) }}</strong></span>
+                                            id="amountToPay"><strong>{{ currency_format($finalAmount) }}</strong></span>
                                     </div>
                                 </div>
                             </div>
@@ -485,12 +513,12 @@
                             <input type="hidden" name="adults" value="{{ $booking->guests }}">
                             <input type="hidden" name="children" value="{{ $booking->children }}">
                             @php
-                                // Calculate form total - use backend only if different
-                                $calculated = (float) ($booking->price_per_night ?? 0) * (int) ($booking->nights ?? 1);
-                                $backend = (float) ($booking->subtotal ?? 0);
+                                // Calculate form total - always prefer backend if available
+                                $calculated =
+                                    floatval($booking->price_per_night ?? 0) * floatval($booking->nights ?? 1);
+                                $backend = floatval($booking->subtotal ?? 0);
 
-                                $formCalculatedSubtotal =
-                                    $backend > 0 && $backend != $calculated ? $backend : $calculated;
+                                $formCalculatedSubtotal = $backend > 0 ? $backend : $calculated;
 
                                 $formServiceFee = (float) ($booking->service_fee ?? 0);
                                 $formTax = (float) ($booking->tax ?? 0);

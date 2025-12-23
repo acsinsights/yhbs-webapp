@@ -85,6 +85,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Volt::route('/create', 'bookings.create')->name('bookings.create');
         });
 
+        // Cancellation Requests
+        Volt::route('/cancellation-requests', 'admin.cancellation-requests')->name('cancellation-requests');
+
         // Room Bookings routes
         Route::group(['prefix' => 'bookings/rooms'], function () {
             Volt::route('/', 'booking.room.index')->name('bookings.room.index');

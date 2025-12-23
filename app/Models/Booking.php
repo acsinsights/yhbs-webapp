@@ -32,6 +32,13 @@ class Booking extends Model
         'payment_status',
         'payment_method',
         'notes',
+        'cancellation_requested_at',
+        'cancellation_status',
+        'cancellation_reason',
+        'cancelled_at',
+        'refund_amount',
+        'refund_status',
+        'cancelled_by',
     ];
 
     protected $casts = [
@@ -41,6 +48,8 @@ class Booking extends Model
         'status' => BookingStatusEnum::class,
         'payment_status' => PaymentStatusEnum::class,
         'payment_method' => PaymentMethodEnum::class,
+        'cancellation_requested_at' => 'datetime',
+        'cancelled_at' => 'datetime',
     ];
 
     /**
@@ -76,6 +85,30 @@ class Booking extends Model
     public function coupon(): BelongsTo
     {
         return $this->belongsTo(Coupon::class);
+    }
+
+    /**
+     * Get the user who cancelled this booking.
+     */
+    public function cancelledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
+    }
+
+    /**
+     * Check if cancellation has been requested.
+     */
+    public function hasCancellationRequest(): bool
+    {
+        return $this->cancellation_requested_at !== null && $this->cancellation_status === 'pending';
+    }
+
+    /**
+     * Check if booking is cancelled.
+     */
+    public function isCancelled(): bool
+    {
+        return $this->status === BookingStatusEnum::CANCELLED || $this->cancelled_at !== null;
     }
 
     /**
@@ -135,7 +168,9 @@ class Booking extends Model
     {
         return $this->status !== BookingStatusEnum::CHECKED_IN
             && $this->status !== BookingStatusEnum::CHECKED_OUT
-            && $this->status !== BookingStatusEnum::CANCELLED;
+            && $this->status !== BookingStatusEnum::CANCELLED
+            && $this->cancelled_at === null
+            && $this->cancellation_requested_at === null;
     }
 
     /**

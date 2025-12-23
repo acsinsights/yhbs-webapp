@@ -89,10 +89,26 @@
                                         </div>
                                         <div class="col-md-6">
                                             <div class="booking-details">
-                                                <span
-                                                    class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }} mb-2">
-                                                    {{ $booking->status?->label() ?? 'Pending' }}
-                                                </span>
+                                                <div class="mb-2">
+                                                    <span
+                                                        class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }} me-2">
+                                                        {{ $booking->status?->label() ?? 'Pending' }}
+                                                    </span>
+
+                                                    @if ($booking->cancellation_status === 'pending')
+                                                        <span class="badge bg-warning">
+                                                            <i class="bi bi-clock me-1"></i>Cancellation Pending
+                                                        </span>
+                                                    @elseif($booking->cancellation_status === 'approved' || $booking->cancelled_at)
+                                                        <span class="badge bg-danger">
+                                                            <i class="bi bi-x-circle me-1"></i>Cancelled
+                                                        </span>
+                                                    @elseif($booking->cancellation_status === 'rejected')
+                                                        <span class="badge bg-info">
+                                                            <i class="bi bi-info-circle me-1"></i>Cancellation Declined
+                                                        </span>
+                                                    @endif
+                                                </div>
                                                 <h4>{{ $booking->bookingable?->name ?? 'Property Name' }}</h4>
                                                 @if ($booking->bookingable?->house)
                                                     <p class="text-muted mb-2">
@@ -225,10 +241,26 @@
                                         </div>
                                         <div class="col-md-6">
                                             <div class="booking-details">
-                                                <span
-                                                    class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }} mb-2">
-                                                    {{ $booking->status?->label() ?? 'Confirmed' }}
-                                                </span>
+                                                <div class="mb-2">
+                                                    <span
+                                                        class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }} me-2">
+                                                        {{ $booking->status?->label() ?? 'Confirmed' }}
+                                                    </span>
+
+                                                    @if ($booking->cancellation_status === 'pending')
+                                                        <span class="badge bg-warning">
+                                                            <i class="bi bi-clock me-1"></i>Cancellation Pending
+                                                        </span>
+                                                    @elseif($booking->cancellation_status === 'approved' || $booking->cancelled_at)
+                                                        <span class="badge bg-danger">
+                                                            <i class="bi bi-x-circle me-1"></i>Cancelled
+                                                        </span>
+                                                    @elseif($booking->cancellation_status === 'rejected')
+                                                        <span class="badge bg-info">
+                                                            <i class="bi bi-info-circle me-1"></i>Cancellation Declined
+                                                        </span>
+                                                    @endif
+                                                </div>
                                                 <h4>{{ $booking->bookingable?->name ?? 'Property Name' }}</h4>
                                                 @if ($booking->bookingable?->house)
                                                     <p class="text-muted mb-2">
@@ -338,10 +370,26 @@
                                         </div>
                                         <div class="col-md-6">
                                             <div class="booking-details">
-                                                <span
-                                                    class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }} mb-2">
-                                                    {{ $booking->status?->label() ?? 'Pending' }}
-                                                </span>
+                                                <div class="mb-2">
+                                                    <span
+                                                        class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }} me-2">
+                                                        {{ $booking->status?->label() ?? 'Pending' }}
+                                                    </span>
+
+                                                    @if ($booking->cancellation_status === 'pending')
+                                                        <span class="badge bg-warning">
+                                                            <i class="bi bi-clock me-1"></i>Cancellation Pending
+                                                        </span>
+                                                    @elseif($booking->cancellation_status === 'approved' || $booking->cancelled_at)
+                                                        <span class="badge bg-danger">
+                                                            <i class="bi bi-x-circle me-1"></i>Cancelled
+                                                        </span>
+                                                    @elseif($booking->cancellation_status === 'rejected')
+                                                        <span class="badge bg-info">
+                                                            <i class="bi bi-info-circle me-1"></i>Cancellation Declined
+                                                        </span>
+                                                    @endif
+                                                </div>
                                                 <h4>{{ $booking->bookingable?->name ?? 'Property Name' }}</h4>
                                                 @if ($booking->bookingable?->house)
                                                     <p class="text-muted mb-2">
@@ -455,10 +503,19 @@
                                         </div>
                                         <div class="col-md-6">
                                             <div class="booking-details">
-                                                <span
-                                                    class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }} mb-2">
-                                                    {{ $booking->status?->label() ?? 'Cancelled' }}
-                                                </span>
+                                                <div class="mb-2">
+                                                    <span
+                                                        class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }} me-2">
+                                                        {{ $booking->status?->label() ?? 'Cancelled' }}
+                                                    </span>
+
+                                                    @if ($booking->refund_amount > 0)
+                                                        <span class="badge bg-info">
+                                                            <i class="bi bi-cash-coin me-1"></i>Refunded:
+                                                            {{ currency_format($booking->refund_amount) }}
+                                                        </span>
+                                                    @endif
+                                                </div>
                                                 <h4>{{ $booking->bookingable?->name ?? 'Property Name' }}</h4>
                                                 @if ($booking->bookingable?->house)
                                                     <p class="text-muted mb-2">

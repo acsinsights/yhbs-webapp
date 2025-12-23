@@ -15,7 +15,7 @@ class DashboardController extends Controller
      */
     public function index()
     {
-        $user = Auth::user();
+        $user = Auth::user()->fresh(); // Refresh user data from database
 
         // Get bookings data
         $totalBookings = Booking::where('user_id', $user->id)->count();
@@ -159,8 +159,44 @@ class DashboardController extends Controller
         $user = Auth::user();
         $booking = Booking::where('id', $id)
             ->where('user_id', $user->id)
-            ->with('bookingable')
+            ->with(['bookingable', 'coupon'])
             ->firstOrFail();
+
+        // Add additional fields for display
+        $checkInDate = $booking->check_in ? \Carbon\Carbon::parse($booking->check_in) : null;
+        $checkOutDate = $booking->check_out ? \Carbon\Carbon::parse($booking->check_out) : null;
+
+        // Calculate nights
+        if ($checkInDate && $checkOutDate) {
+            $nights = $checkInDate->diffInDays($checkOutDate);
+            $nights = max(1, $nights);
+        } else {
+            $nights = 1;
+        }
+
+        // Get coupon code if available
+        $booking->coupon_code = $booking->coupon ? $booking->coupon->code : null;
+
+        // Get wallet transaction for this booking
+        $walletTransaction = \App\Models\WalletTransaction::where('booking_id', $booking->id)
+            ->where('type', 'debit')
+            ->first();
+        $booking->wallet_amount_used = $walletTransaction ? abs($walletTransaction->amount) : 0;
+
+        // Calculate original subtotal (before discount)
+        // booking->price = subtotal after discount, so add discount back
+        $originalSubtotal = $booking->price + ($booking->discount_amount ?? 0);
+
+        // Calculate price per night from original subtotal
+        $booking->price_per_night = $nights > 0 ? ($originalSubtotal / $nights) : $originalSubtotal;
+        $booking->nights = $nights;
+
+        // Set service fee and tax (currently 0, but can be updated later)
+        $booking->service_fee = 0;
+        $booking->tax = 0;
+
+        // Use total_amount if available, otherwise use price
+        $booking->total = $booking->total_amount ?? $booking->price;
 
         return view('frontend.customer.booking-details', compact('booking'));
     }

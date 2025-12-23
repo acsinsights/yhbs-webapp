@@ -87,6 +87,18 @@
                     <x-menu-item title="House Bookings" icon="o-building-office"
                         link="{{ route('admin.bookings.house.index') }}" />
                     <x-menu-item title="Coupons" icon="o-ticket" link="{{ route('admin.coupons.index') }}" />
+
+                    @php
+                        $pendingCancellations = \App\Models\Booking::where('cancellation_status', 'pending')->count();
+                    @endphp
+                    <x-menu-item title="Cancellation Requests" icon="o-x-circle"
+                        link="{{ route('admin.cancellation-requests') }}">
+                        @if ($pendingCancellations > 0)
+                            <x-slot:actions>
+                                <x-badge value="{{ $pendingCancellations }}" class="badge-error" />
+                            </x-slot:actions>
+                        @endif
+                    </x-menu-item>
                 @endrole
 
                 @role('admin|superadmin')

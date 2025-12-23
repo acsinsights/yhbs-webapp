@@ -26,10 +26,44 @@
                     <div class="confirmation-card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h4><i class="bi bi-receipt me-2"></i>Booking Information</h4>
-                            <span class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }}">
-                                {{ $booking->status?->label() ?? 'Pending' }}
-                            </span>
+                            <div>
+                                <span class="badge {{ $booking->status?->badgeColor() ?? 'badge-secondary' }}">
+                                    {{ $booking->status?->label() ?? 'Pending' }}
+                                </span>
+
+                                @if ($booking->cancellation_status === 'pending')
+                                    <span class="badge bg-warning ms-2">
+                                        <i class="bi bi-clock me-1"></i>Cancellation Pending
+                                    </span>
+                                @elseif($booking->cancellation_status === 'rejected')
+                                    <span class="badge bg-info ms-2">
+                                        <i class="bi bi-info-circle me-1"></i>Cancellation Declined
+                                    </span>
+                                @endif
+                            </div>
                         </div>
+
+                        <!-- Cancellation Alert -->
+                        @if ($booking->cancellation_status === 'pending')
+                            <div class="alert alert-warning mb-0 rounded-0">
+                                <small><i class="bi bi-info-circle me-2"></i>Your cancellation request is under
+                                    review</small>
+                            </div>
+                        @elseif($booking->cancellation_status === 'approved' || $booking->cancelled_at)
+                            <div class="alert alert-success mb-0 rounded-0">
+                                <small>
+                                    <i class="bi bi-check-circle me-2"></i>Booking cancelled successfully
+                                    @if ($booking->refund_amount > 0)
+                                        - Refund: {{ currency_format($booking->refund_amount) }}
+                                    @endif
+                                </small>
+                            </div>
+                        @elseif($booking->cancellation_status === 'rejected')
+                            <div class="alert alert-danger mb-0 rounded-0">
+                                <small><i class="bi bi-x-circle me-2"></i>Cancellation request was declined</small>
+                            </div>
+                        @endif
+
                         <div class="card-body">
                             <!-- Property Image -->
                             @if ($booking->bookingable)
@@ -138,14 +172,59 @@
                         </div>
                         <div class="card-body">
                             <div class="payment-breakdown">
+                                @php
+                                    // Get values from booking object (already calculated in controller)
+                                    $nights = $booking->nights ?? 1;
+                                    $pricePerNight = $booking->price_per_night ?? 0;
+                                    $serviceFee = $booking->service_fee ?? 0;
+                                    $tax = $booking->tax ?? 0;
+                                    $discount = $booking->discount_amount ?? 0;
+                                    $walletUsed = $booking->wallet_amount_used ?? 0;
+
+                                    // Calculate subtotal (price_per_night × nights)
+                                    $subtotal = $pricePerNight * $nights;
+                                @endphp
+
                                 <div class="payment-row">
-                                    <span>Booking Amount</span>
-                                    <span>{{ currency_format($booking->price ?? 0) }}</span>
+                                    <span>Price per night</span>
+                                    <span>{{ currency_format($pricePerNight) }}</span>
                                 </div>
-                                @if ($booking->discount_price)
+                                <div class="payment-row">
+                                    <span>× {{ $nights }} {{ $nights > 1 ? 'nights' : 'night' }}</span>
+                                    <span>{{ currency_format($subtotal) }}</span>
+                                </div>
+
+                                @if ($serviceFee > 0)
                                     <div class="payment-row">
-                                        <span>Discount</span>
-                                        <span class="text-success">-{{ currency_format($booking->discount_price) }}</span>
+                                        <span>Service fee</span>
+                                        <span>{{ currency_format($serviceFee) }}</span>
+                                    </div>
+                                @endif
+
+                                @if ($tax > 0)
+                                    <div class="payment-row">
+                                        <span>Taxes</span>
+                                        <span>{{ currency_format($tax) }}</span>
+                                    </div>
+                                @endif
+
+                                @if ($discount > 0)
+                                    <div class="divider"></div>
+                                    <div class="payment-row text-success">
+                                        <span>
+                                            <i class="bi bi-tag-fill me-1"></i>Discount
+                                            @if ($booking->coupon_code)
+                                                <small>({{ $booking->coupon_code }})</small>
+                                            @endif
+                                        </span>
+                                        <span>-{{ currency_format($discount) }}</span>
+                                    </div>
+                                @endif
+
+                                @if ($walletUsed > 0)
+                                    <div class="payment-row text-info">
+                                        <span><i class="bi bi-wallet2 me-1"></i>Wallet Used</span>
+                                        <span>-{{ currency_format($walletUsed) }}</span>
                                     </div>
                                 @endif
                             </div>
@@ -154,10 +233,10 @@
 
                             <div class="total-amount">
                                 <span>Total Paid</span>
-                                <span>{{ currency_format(($booking->price ?? 0) - ($booking->discount_price ?? 0)) }}</span>
+                                <span>{{ currency_format($booking->total ?? ($booking->price ?? 0)) }}</span>
                             </div>
 
-                            <div class="payment-status">
+                            <div class="payment-status mt-3">
                                 <span class="badge {{ $booking->payment_status?->badgeColor() ?? 'badge-warning' }}">
                                     Payment {{ $booking->payment_status?->label() ?? 'Pending' }}
                                 </span>
@@ -174,11 +253,16 @@
                             <h4><i class="bi bi-gear me-2"></i>Actions</h4>
                         </div>
                         <div class="card-body">
-                            <div class="d-grid gap-2"> 
-                                @if (in_array($booking->status, ['pending', 'confirmed', 'booked']))
-                                    <button class="btn btn-outline-danger" onclick="cancelBooking({{ $booking->id }})">
-                                        <i class="bi bi-x-circle me-2"></i>Cancel Booking
-                                    </button>
+                            <div class="d-grid gap-2">
+                                @if (
+                                    !$booking->cancellation_status &&
+                                        !$booking->cancelled_at &&
+                                        in_array($booking->status, [
+                                            App\Enums\BookingStatusEnum::PENDING,
+                                            App\Enums\BookingStatusEnum::BOOKED,
+                                            App\Enums\BookingStatusEnum::CHECKED_IN,
+                                        ]))
+                                    <livewire:customer.booking-cancellation-request :bookingId="$booking->id" />
                                 @endif
 
                                 <a href="{{ route('customer.bookings') }}" class="btn btn-outline-secondary">
@@ -191,15 +275,4 @@
             </div>
         </div>
     </div>
-@endsection
-
-@section('scripts')
-    <script>
-        function cancelBooking(bookingId) {
-            if (confirm('Are you sure you want to cancel this booking? This action cannot be undone.')) {
-                // Add your cancel booking AJAX logic here
-                alert('Booking cancellation functionality will be implemented.');
-            }
-        }
-    </script>
 @endsection

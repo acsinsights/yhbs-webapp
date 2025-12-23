@@ -137,8 +137,44 @@ class BookingController extends Controller
             $subtotal = $hours * ($property->price_per_hour ?? ($property->price_per_night ?? 0));
             // For display, show the actual per-night rate for yachts too
             $price = $property->price_per_night ?? ($property->price_per_hour ? $property->price_per_hour * 24 : 0);
+        } elseif ($type === 'house') {
+            // Houses: use tiered pricing structure like rooms
+            if ($nights == 1) {
+                $subtotal = $property->price_per_night ?? 0;
+            } elseif ($nights == 2) {
+                if ($property->price_per_2night) {
+                    $subtotal = $property->price_per_2night;
+                } else {
+                    $subtotal = ($property->price_per_night ?? 0) * 2;
+                }
+            } elseif ($nights == 3) {
+                if ($property->price_per_3night) {
+                    $subtotal = $property->price_per_3night;
+                } else {
+                    $subtotal = ($property->price_per_night ?? 0) * 3;
+                }
+            } else {
+                // 4+ nights
+                if ($property->price_per_3night) {
+                    $basePrice = $property->price_per_3night;
+                } else {
+                    $basePrice = ($property->price_per_night ?? 0) * 3;
+                }
+                $additionalNights = $nights - 3;
+                $additionalPrice = $additionalNights * ($property->additional_night_price ?? $property->price_per_night ?? 0);
+                $subtotal = $basePrice + $additionalPrice;
+            }
+
+            \Log::info('House Booking Calculation', [
+                'property_id' => $id,
+                'nights' => $nights,
+                'price_per_night' => $property->price_per_night,
+                'price_per_2night' => $property->price_per_2night ?? 'not set',
+                'price_per_3night' => $property->price_per_3night ?? 'not set',
+                'calculated_subtotal' => $subtotal,
+            ]);
         } else {
-            // For rooms and houses: use night-specific pricing
+            // For rooms: use night-specific pricing
             if ($nights == 1) { // Use loose comparison to handle both int and float
                 // CRITICAL DEBUG
                 \Log::info('BEFORE Assignment', [
@@ -206,6 +242,20 @@ class BookingController extends Controller
         // Combine all guest names
         $allGuestNames = array_merge($adultNames, $childrenNames);
 
+        // Ensure price_per_night is a valid number
+        $pricePerNight = floatval($property->price_per_night ?? 0);
+
+        // Add debug logging for houses
+        if ($type === 'house') {
+            \Log::info('House Booking Object Creation', [
+                'property_id' => $id,
+                'property_price_per_night' => $property->price_per_night,
+                'pricePerNight_converted' => $pricePerNight,
+                'nights' => $nights,
+                'subtotal' => $subtotal,
+            ]);
+        }
+
         $booking = (object) [
             'type' => $type,
             'property_id' => $id,
@@ -222,7 +272,7 @@ class BookingController extends Controller
             'guest_names' => $allGuestNames,
             'adult_names' => $adultNames,
             'children_names' => $childrenNames,
-            'price_per_night' => $property->price_per_night ?? 0, // Use actual property value
+            'price_per_night' => $pricePerNight,
             'subtotal' => $subtotal,
             'service_fee' => $serviceFee,
             'tax' => $tax,
@@ -402,7 +452,7 @@ class BookingController extends Controller
 
     public function confirmation($id)
     {
-        $booking = Booking::with(['bookingable', 'user'])->findOrFail($id);
+        $booking = Booking::with(['bookingable', 'user', 'coupon', 'cancelledBy'])->findOrFail($id);
 
         // Check if user is authorized to view this booking
         if (Auth::check() && $booking->user_id && $booking->user_id !== Auth::id()) {
@@ -514,6 +564,22 @@ class BookingController extends Controller
         // Calculate price per night
         $pricePerNight = $nights > 0 ? $booking->price / $nights : $booking->price;
 
+        // Get coupon and discount info
+        $couponCode = null;
+        $discountAmount = $booking->discount_amount ?? 0;
+        if ($booking->coupon) {
+            $couponCode = $booking->coupon->code;
+        }
+
+        // Check for wallet transaction
+        $walletAmountUsed = 0;
+        $walletTransaction = \App\Models\WalletTransaction::where('booking_id', $booking->id)
+            ->where('type', 'debit')
+            ->first();
+        if ($walletTransaction) {
+            $walletAmountUsed = abs($walletTransaction->amount);
+        }
+
         $bookingData = (object) [
             'id' => $booking->id,
             'reference' => 'YHBS' . str_pad($booking->id, 6, '0', STR_PAD_LEFT),
@@ -537,11 +603,21 @@ class BookingController extends Controller
             'payment_method' => ucfirst($booking->payment_method->value),
             'payment_status' => ucfirst($booking->payment_status->value),
             'status' => ucfirst(str_replace('_', ' ', $booking->status->value)),
-            'total' => $booking->price,
+            'total' => $booking->total_amount ?? $booking->price,
             'price_per_night' => $pricePerNight,
             'service_fee' => 0,
             'tax' => 0,
+            'discount_amount' => $discountAmount,
+            'coupon_code' => $couponCode,
+            'wallet_amount_used' => $walletAmountUsed,
             'created_at' => $booking->created_at->format('M d, Y'),
+            // Cancellation info
+            'cancellation_requested_at' => $booking->cancellation_requested_at,
+            'cancellation_status' => $booking->cancellation_status,
+            'cancellation_reason' => $booking->cancellation_reason,
+            'cancelled_at' => $booking->cancelled_at,
+            'refund_amount' => $booking->refund_amount,
+            'refund_status' => $booking->refund_status,
         ];
 
         // Log for debugging
