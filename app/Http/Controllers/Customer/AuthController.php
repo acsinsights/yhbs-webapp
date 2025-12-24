@@ -8,7 +8,10 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rules;
 use App\Http\Controllers\Controller;
 use Illuminate\Auth\Events\PasswordReset;
-use Illuminate\Support\Facades\{Password, Auth, Hash};
+use Illuminate\Support\Facades\{Password, Auth, Hash, Mail, DB};
+use App\Mail\PasswordResetOtpMail;
+use App\Mail\RegistrationOtpMail;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -70,24 +73,43 @@ class AuthController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $user = User::create([
-            'first_name' => $validated['first_name'],
-            'last_name' => $validated['last_name'],
-            'name' => $validated['first_name'] . ' ' . $validated['last_name'],
-            'email' => $validated['email'],
-            'phone' => $validated['phone'],
-            'password' => Hash::make($validated['password']),
+        // Store user data in session temporarily
+        session([
+            'registration_data' => [
+                'first_name' => $validated['first_name'],
+                'last_name' => $validated['last_name'],
+                'name' => $validated['first_name'] . ' ' . $validated['last_name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'],
+                'password' => Hash::make($validated['password']),
+            ]
         ]);
 
-        // Assign customer role if you're using Spatie permission
-        if (method_exists($user, 'assignRole')) {
-            $user->assignRole('customer');
-        }
+        // Generate 6-digit OTP
+        $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
 
-        Auth::login($user);
+        // Delete old OTPs for this email
+        DB::table('password_reset_otps')
+            ->where('email', $validated['email'])
+            ->where('type', 'registration')
+            ->delete();
 
-        return redirect()->route('customer.dashboard')
-            ->with('success', 'Account created successfully! Welcome to YHBS.');
+        // Store new OTP
+        DB::table('password_reset_otps')->insert([
+            'email' => $validated['email'],
+            'otp' => $otp,
+            'type' => 'registration',
+            'expires_at' => Carbon::now()->addMinutes(10),
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
+        ]);
+
+        // Send OTP email
+        Mail::to($validated['email'])->send(new RegistrationOtpMail($otp, $validated['first_name'] . ' ' . $validated['last_name']));
+
+        return redirect()->route('customer.verify-registration-otp')
+            ->with('email', $validated['email'])
+            ->with('success', 'OTP sent to your email! Please verify to complete registration.');
     }
 
     /**
@@ -148,9 +170,81 @@ class AuthController extends Controller
         );
 
         return $status == Password::PASSWORD_RESET
-            ? redirect()->route('customer.login')->with('success', __($status))
+            ? redirect()->route('customer.login')->with('success', 'Password has been reset successfully!')
             : back()->withInput($request->only('email'))
                 ->withErrors(['email' => __($status)]);
+    }
+
+    /**
+     * Show registration OTP verification form
+     */
+    public function showVerifyRegistrationOtp()
+    {
+        if (!session('registration_data')) {
+            return redirect()->route('customer.register')
+                ->with('error', 'Registration session expired. Please register again.');
+        }
+
+        return view('frontend.auth.verify-registration-otp');
+    }
+
+    /**
+     * Verify registration OTP
+     */
+    public function verifyRegistrationOtp(Request $request)
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+            'otp' => ['required', 'string', 'size:6'],
+        ]);
+
+        if (!session('registration_data')) {
+            return redirect()->route('customer.register')
+                ->with('error', 'Registration session expired. Please register again.');
+        }
+
+        $otpRecord = DB::table('password_reset_otps')
+            ->where('email', $request->email)
+            ->where('otp', $request->otp)
+            ->where('type', 'registration')
+            ->first();
+
+        if (!$otpRecord) {
+            return back()->withErrors(['otp' => 'Invalid OTP code.'])->withInput();
+        }
+
+        if (Carbon::parse($otpRecord->expires_at)->isPast()) {
+            return back()->withErrors(['otp' => 'OTP has expired. Please request a new one.'])->withInput();
+        }
+
+        // OTP verified, create user
+        $registrationData = session('registration_data');
+
+        $user = User::create($registrationData);
+
+        // Assign customer role
+        if (method_exists($user, 'assignRole')) {
+            $user->assignRole('customer');
+        }
+
+        // Mark email as verified
+        $user->email_verified_at = Carbon::now();
+        $user->save();
+
+        // Delete used OTP
+        DB::table('password_reset_otps')
+            ->where('email', $request->email)
+            ->where('type', 'registration')
+            ->delete();
+
+        // Clear registration data from session
+        session()->forget('registration_data');
+
+        // Login user
+        Auth::login($user);
+
+        return redirect()->route('customer.dashboard')
+            ->with('success', 'Email verified successfully! Welcome to YHBS.');
     }
 
     /**

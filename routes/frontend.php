@@ -53,8 +53,14 @@ Route::prefix('customer')->name('customer.')->group(function () {
         Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
         Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
 
+        Route::get('/verify-registration-otp', [AuthController::class, 'showVerifyRegistrationOtp'])->name('verify-registration-otp');
+        Route::post('/verify-registration-otp', [AuthController::class, 'verifyRegistrationOtp'])->name('verify-registration-otp.submit');
+
         Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('forgot-password');
         Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('forgot-password.submit');
+
+        Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
+        Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
     });
 
     // Authenticated customer routes

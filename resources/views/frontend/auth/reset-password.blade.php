@@ -44,7 +44,7 @@
 
                         <form action="{{ route('password.update') }}" method="POST" class="auth-form">
                             @csrf
-                            <input type="hidden" name="token" value="{{ request()->route('token') }}">
+                            <input type="hidden" name="token" value="{{ $token ?? '' }}">
 
                             <div class="form-group mb-3">
                                 <label for="email" class="form-label">
@@ -52,7 +52,7 @@
                                 </label>
                                 <input type="email" class="form-control @error('email') is-invalid @enderror"
                                     id="email" name="email" placeholder="Enter your registered email"
-                                    value="{{ request('email') }}" required readonly>
+                                    value="{{ $email ?? old('email') }}" required>
                                 @error('email')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
