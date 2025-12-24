@@ -73,6 +73,7 @@ class AuthController extends Controller
         $user = User::create([
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
+            'name' => $validated['first_name'] . ' ' . $validated['last_name'],
             'email' => $validated['email'],
             'phone' => $validated['phone'],
             'password' => Hash::make($validated['password']),
@@ -149,7 +150,7 @@ class AuthController extends Controller
         return $status == Password::PASSWORD_RESET
             ? redirect()->route('customer.login')->with('success', __($status))
             : back()->withInput($request->only('email'))
-            ->withErrors(['email' => __($status)]);
+                ->withErrors(['email' => __($status)]);
     }
 
     /**

@@ -90,7 +90,7 @@
                             </div>
 
                             <button type="submit" class="btn btn-primary w-100 mb-3">
-                                <i class="bi bi-send me-2"></i>Send Reset Link
+                                <i class="bi bi-send me-2"></i>Submit
                             </button>
 
                             <div class="text-center">
