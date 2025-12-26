@@ -16,40 +16,47 @@ class RoomController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Room::with(['categories', 'amenities', 'house']);
+        // Eager load relationships to prevent N+1 queries
+        $query = Room::query()->with(['categories', 'amenities']);
 
-        // Filter by category
+        // Filter by category (by ID)
         if ($request->filled('category')) {
             $query->whereHas('categories', function ($q) use ($request) {
-                $q->where('categories.slug', $request->category);
+                $q->where('categories.id', $request->category);
             });
         }
 
-        // Filter by amenities
-        if ($request->filled('amenities') && is_array($request->amenities)) {
-            foreach ($request->amenities as $amenityId) {
-                $query->whereHas('amenities', function ($q) use ($amenityId) {
-                    $q->where('amenities.id', $amenityId);
-                });
-            }
+        // Filter by adults capacity
+        if ($request->filled('adults') && $request->adults > 0) {
+            $query->where('adults', '>=', $request->adults);
+        }
+
+        // Filter by children capacity
+        if ($request->filled('children') && $request->children > 0) {
+            $query->where('children', '>=', $request->children);
+        }
+
+        // Filter by check-in and check-out dates (availability)
+        if ($request->filled('check_in') && $request->filled('check_out')) {
+            $checkIn = $request->check_in;
+            $checkOut = $request->check_out;
+
+            // Exclude rooms that have overlapping bookings
+            $query->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
+                $q->where(function ($query) use ($checkIn, $checkOut) {
+                    // Check for any date overlap
+                    $query->where('check_in', '<', $checkOut)
+                        ->where('check_out', '>', $checkIn);
+                })->whereIn('status', ['confirmed', 'pending']);
+            });
         }
 
         // Filter by price range
         if ($request->filled('min_price')) {
-            $query->where('price', '>=', $request->min_price);
+            $query->where('price_per_night', '>=', $request->min_price);
         }
         if ($request->filled('max_price')) {
-            $query->where('price', '<=', $request->max_price);
-        }
-
-        // Filter by capacity (using adults field)
-        if ($request->filled('capacity')) {
-            $query->where('adults', '>=', $request->capacity);
-        }
-
-        // Filter by number of children
-        if ($request->filled('children')) {
-            $query->where('children', '>=', $request->children);
+            $query->where('price_per_night', '<=', $request->max_price);
         }
 
         // Search by name or description
@@ -85,8 +92,9 @@ class RoomController extends Controller
             ->paginate(12)
             ->appends($request->all());
 
-        $categories = Category::all();
-        $amenities = Amenity::all();
+        // Only fetch categories once
+        $categories = Category::select('id', 'name', 'slug')->get();
+        $amenities = Amenity::select('id', 'name')->get();
 
         return view('frontend.rooms.index', compact('rooms', 'categories', 'amenities'));
     }
@@ -96,7 +104,10 @@ class RoomController extends Controller
      */
     public function show($slug)
     {
-        $room = Room::with(['categories', 'amenities', 'house'])->where('slug', $slug)->active()->firstOrFail();
+        $room = Room::with(['categories', 'amenities', 'house'])
+            ->where('slug', $slug)
+            ->active()
+            ->firstOrFail();
 
         // Get similar rooms (rooms from same house)
         $similarRooms = Room::where('house_id', $room->house_id)

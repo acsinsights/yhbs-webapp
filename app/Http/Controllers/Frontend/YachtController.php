@@ -16,26 +16,49 @@ class YachtController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Yacht::with(['categories', 'amenities']);
+        // Optimize query with eager loading
+        $query = Yacht::query()->with(['categories', 'amenities']);
 
-        // Filter by category
+        // Filter by category (by ID)
         if ($request->filled('category')) {
             $query->whereHas('categories', function ($q) use ($request) {
-                $q->where('categories.slug', $request->category);
+                $q->where('categories.id', $request->category);
+            });
+        }
+
+        // Filter by adults capacity
+        if ($request->filled('adults') && $request->adults > 0) {
+            $query->where('max_guests', '>=', $request->adults);
+        }
+
+        // Filter by children
+        if ($request->filled('children') && $request->children > 0) {
+            // Yachts max_guests includes both adults and children
+            $totalGuests = $request->adults + $request->children;
+            $query->where('max_guests', '>=', $totalGuests);
+        }
+
+        // Filter by check-in and check-out dates (availability)
+        if ($request->filled('check_in') && $request->filled('check_out')) {
+            $checkIn = $request->check_in;
+            $checkOut = $request->check_out;
+
+            // Exclude yachts that have overlapping bookings
+            $query->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
+                $q->where(function ($query) use ($checkIn, $checkOut) {
+                    // Check for any date overlap
+                    $query->where('check_in', '<', $checkOut)
+                        ->where('check_out', '>', $checkIn);
+                })->whereIn('status', ['confirmed', 'pending']);
             });
         }
 
         // Filter by price range
         if ($request->filled('min_price')) {
-            $query->where('price', '>=', $request->min_price);
+            $query->where('price_per_hour', '>=', $request->min_price);
         }
         if ($request->filled('max_price')) {
-            $query->where('price', '<=', $request->max_price);
-        }
-
-        // Filter by capacity
-        if ($request->filled('capacity')) {
-            $query->where('max_guests', '>=', $request->capacity);
+            $query->where('price_per_hour', '<=', $request->max_price);
         }
 
         // Search by name or description
@@ -46,10 +69,33 @@ class YachtController extends Controller
             });
         }
 
-        $yachts = $query->active()->paginate(12);
+        // Sort options
+        $sortBy = $request->get('sort_by', 'latest');
+        switch ($sortBy) {
+            case 'price_low':
+                $query->orderBy('price_per_hour', 'asc');
+                break;
+            case 'price_high':
+                $query->orderBy('price_per_hour', 'desc');
+                break;
+            case 'name':
+                $query->orderBy('name', 'asc');
+                break;
+            case 'capacity':
+                $query->orderBy('max_guests', 'desc');
+                break;
+            default:
+                $query->latest();
+                break;
+        }
 
-        $categories = Category::all();
-        $amenities = Amenity::all();
+        $yachts = $query->active()
+            ->paginate(12)
+            ->appends($request->all());
+
+        // Only fetch needed columns
+        $categories = Category::select('id', 'name', 'slug')->get();
+        $amenities = Amenity::select('id', 'name')->get();
 
         return view('frontend.yachts.index', compact('yachts', 'categories', 'amenities'));
     }
@@ -59,23 +105,28 @@ class YachtController extends Controller
      */
     public function show($slug)
     {
-        $yacht = Yacht::with(['categories', 'amenities'])->where('slug', $slug)->active()->firstOrFail();
+        $yacht = Yacht::with(['categories', 'amenities'])
+            ->where('slug', $slug)
+            ->active()
+            ->firstOrFail();
 
-        // Get similar yachts (yachts with similar category)
+        // Get similar yachts with optimized query
         $categoryIds = $yacht->categories->pluck('id');
-        $similarYachts = Yacht::whereHas('categories', function ($q) use ($categoryIds) {
-            $q->whereIn('categories.id', $categoryIds);
-        })
+        $similarYachts = Yacht::select('id', 'name', 'slug', 'image', 'price_per_hour', 'max_guests')
+            ->whereHas('categories', function ($q) use ($categoryIds) {
+                $q->whereIn('categories.id', $categoryIds);
+            })
             ->where('id', '!=', $yacht->id)
             ->active()
-            ->take(3)
+            ->limit(3)
             ->get();
 
-        // Get booked dates for this yacht
+        // Get booked dates for this yacht (optimized)
         $bookedDates = Booking::where('bookingable_type', Yacht::class)
             ->where('bookingable_id', $yacht->id)
-            ->whereIn('status', ['pending', 'booked', 'checked_in'])
-            ->get(['check_in', 'check_out'])
+            ->whereIn('status', ['confirmed', 'pending'])
+            ->select('check_in', 'check_out')
+            ->get()
             ->flatMap(function ($booking) {
                 $dates = [];
                 $checkIn = new \DateTime($booking->check_in);

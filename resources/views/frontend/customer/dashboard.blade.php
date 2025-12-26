@@ -161,7 +161,6 @@
                                 <div class="text-center py-5">
                                     <i class="bi bi-inbox" style="font-size: 48px; color: #ccc;"></i>
                                     <p class="text-muted mt-3">No bookings yet</p>
-                                    <a href="{{ url('/rooms') }}" class="btn btn-primary">Browse Rooms</a>
                                 </div>
                             @endforelse
                         </div>

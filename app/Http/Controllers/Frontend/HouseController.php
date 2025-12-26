@@ -14,11 +14,21 @@ class HouseController extends Controller
      */
     public function index(Request $request)
     {
-        $query = House::with(['rooms']);
+        // Optimize query with selective eager loading
+        $query = House::query()->with([
+            'rooms' => function ($query) {
+                $query->select('id', 'house_id', 'name', 'room_number', 'price_per_night');
+            }
+        ]);
 
-        // Filter by capacity (using adults field)
-        if ($request->filled('capacity')) {
-            $query->where('adults', '>=', $request->capacity);
+        // Filter by adults capacity
+        if ($request->filled('adults') && $request->adults > 0) {
+            $query->where('adults', '>=', $request->adults);
+        }
+
+        // Filter by children capacity
+        if ($request->filled('children') && $request->children > 0) {
+            $query->where('children', '>=', $request->children);
         }
 
         // Filter by check-in and check-out dates (availability)
@@ -26,16 +36,13 @@ class HouseController extends Controller
             $checkIn = $request->check_in;
             $checkOut = $request->check_out;
 
-            // Get houses that have all rooms available for the date range
-            $query->whereDoesntHave('rooms.bookings', function ($q) use ($checkIn, $checkOut) {
-                $q->where(function ($q) use ($checkIn, $checkOut) {
-                    $q->whereBetween('check_in', [$checkIn, $checkOut])
-                        ->orWhereBetween('check_out', [$checkIn, $checkOut])
-                        ->orWhere(function ($q) use ($checkIn, $checkOut) {
-                            $q->where('check_in', '<=', $checkIn)
-                                ->where('check_out', '>=', $checkOut);
-                        });
-                })->whereIn('status', ['pending', 'booked', 'checked_in']);
+            // Exclude houses that have bookings overlapping with the requested dates
+            $query->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
+                $q->where(function ($query) use ($checkIn, $checkOut) {
+                    // Check for any date overlap
+                    $query->where('check_in', '<', $checkOut)
+                        ->where('check_out', '>', $checkIn);
+                })->whereIn('status', ['confirmed', 'pending']);
             });
         }
 
@@ -71,14 +78,18 @@ class HouseController extends Controller
      */
     public function show($slug)
     {
-        $house = House::with(['rooms'])->where('slug', $slug)->active()->firstOrFail();
+        $house = House::with(['rooms.amenities'])
+            ->where('slug', $slug)
+            ->active()
+            ->firstOrFail();
 
-        // Get similar houses (other houses with similar capacity)
-        $similarHouses = House::where('id', '!=', $house->id)
-            ->where('adults', '>=', $house->adults - 2)
+        // Get similar houses with optimized query
+        $similarHouses = House::select('id', 'name', 'slug', 'image', 'price_per_night', 'adults', 'children')
+            ->where('id', '!=', $house->id)
+            ->where('adults', '>=', max(1, $house->adults - 2))
             ->where('adults', '<=', $house->adults + 2)
             ->active()
-            ->take(3)
+            ->limit(3)
             ->get();
 
         return view('frontend.houses.show', compact('house', 'similarHouses'));

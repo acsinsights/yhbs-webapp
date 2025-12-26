@@ -171,10 +171,7 @@
                                 <div class="empty-state">
                                     <i class="bi bi-inbox"></i>
                                     <h4>No Bookings Found</h4>
-                                    <p class="text-muted">You haven't made any bookings yet</p>
-                                    <a href="{{ url('/rooms') }}" class="btn btn-primary">
-                                        <i class="bi bi-search me-2"></i>Browse Properties
-                                    </a>
+                                    <p class="text-muted">You haven't made any bookings yet</p> 
                                 </div>
                             </div>
                         @endforelse
