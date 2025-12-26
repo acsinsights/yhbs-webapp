@@ -125,8 +125,7 @@
                         </div>
 
                         @if ($yacht->description)
-                            <div class="mb-4">
-                                <h4>About This Yacht</h4>
+                            <div class="mb-4"> 
                                 <p>{!! $yacht->description !!}</p>
                             </div>
                         @endif

@@ -109,8 +109,7 @@
                         </div>
 
                         @if ($room->description)
-                            <div class="mb-4">
-                                <h4>About This Room</h4>
+                            <div class="mb-4"> 
                                 <p>{!! $room->description !!}</p>
                             </div>
                         @endif
