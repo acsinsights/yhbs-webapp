@@ -7,6 +7,8 @@
     'minCheckInDate' => null,
     'checkIn' => 'check_in',
     'checkOut' => 'check_out',
+    'dateRangeModel' => 'date_range',
+    'bookedDates' => [],
 ])
 
 <x-card class="bg-base-200">
@@ -19,10 +21,19 @@
         </div>
         <x-icon name="o-calendar" class="w-8 h-8 text-primary/70" />
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-        <x-input wire:model.live.debounce.300ms="{{ $checkIn }}" :label="$checkInLabel" type="datetime-local"
-            icon="o-calendar" :min="$minCheckInDate" :hint="$checkInHint" />
-        <x-input wire:model.live.debounce.300ms="{{ $checkOut }}" :label="$checkOutLabel" type="datetime-local"
-            icon="o-calendar" min="{{ $checkIn }}" :hint="$checkOutHint" />
+    <div class="mt-6">
+        <x-datepicker label="Select Date Range ({{ $checkInLabel }} to {{ $checkOutLabel }})"
+            wire:model.live="{{ $dateRangeModel }}" icon="o-calendar" :config="[
+                'mode' => 'range',
+                'dateFormat' => 'Y-m-d',
+                'altInput' => true,
+                'altFormat' => 'M d, Y',
+                'minDate' => 'today',
+                'disable' => $bookedDates,
+                'conjunction' => ' to ',
+                'allowInput' => false,
+                'clickOpens' => true,
+            ]"
+            hint="📅 Select {{ strtolower($checkInLabel) }} and {{ strtolower($checkOutLabel) }} dates. Time will be set automatically." />
     </div>
 </x-card>

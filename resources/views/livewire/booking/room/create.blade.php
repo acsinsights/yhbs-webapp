@@ -22,6 +22,7 @@ new class extends Component {
     public ?int $room_id = null;
     public ?string $check_in = null;
     public ?string $check_out = null;
+    public ?string $date_range = null;
     public int $adults = 1;
     public int $children = 0;
     public array $adultNames = [];
@@ -46,8 +47,37 @@ new class extends Component {
     public function mount(): void
     {
         // Set default dates
-        $this->check_in = Carbon::today()->format('Y-m-d\TH:i');
-        $this->check_out = Carbon::tomorrow()->format('Y-m-d\TH:i');
+        $this->check_in = Carbon::today()->setTime(12, 0)->format('Y-m-d\TH:i');
+        $this->check_out = Carbon::tomorrow()->setTime(12, 0)->format('Y-m-d\TH:i');
+        $this->date_range = Carbon::today()->format('Y-m-d') . ' to ' . Carbon::tomorrow()->format('Y-m-d');
+    }
+
+    public function updatedDateRange(): void
+    {
+        if (!$this->date_range) {
+            return;
+        }
+
+        // Parse date range (format: "2025-01-15 to 2025-01-20")
+        $dates = explode(' to ', $this->date_range);
+
+        if (count($dates) === 2) {
+            // Set check-in at 12:00 PM and check-out at 12:00 PM
+            $this->check_in = Carbon::parse(trim($dates[0]))
+                ->setTime(12, 0)
+                ->format('Y-m-d\TH:i');
+            $this->check_out = Carbon::parse(trim($dates[1]))
+                ->setTime(12, 0)
+                ->format('Y-m-d\TH:i');
+
+            $this->resetPage();
+            $this->room_id = null;
+
+            // Recalculate price when dates change
+            if (!$this->amountManuallySet) {
+                $this->calculatePrice();
+            }
+        }
     }
 
     public function updatedCheckIn(): void
@@ -420,7 +450,7 @@ new class extends Component {
                 <div class="grid gap-6 lg:grid-cols-3 lg:items-start">
                     <div class="space-y-6 lg:col-span-2">
                         {{-- Date Range Section --}}
-                        <x-booking.date-range-section stepNumber="1" :minCheckInDate="$minCheckInDate" />
+                        <x-booking.date-range-section stepNumber="1" :minCheckInDate="$minCheckInDate" dateRangeModel="date_range" />
                         {{-- Customer Section --}}
                         <x-booking.customer-section stepNumber="2" :customers="$customers" />
 

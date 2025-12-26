@@ -16,6 +16,7 @@ new class extends Component {
     public ?int $house_id = null;
     public ?string $check_in = null;
     public ?string $check_out = null;
+    public ?string $date_range = null;
     public int $adults = 1;
     public int $children = 0;
     public ?float $amount = null;
@@ -65,6 +66,12 @@ new class extends Component {
         $this->house_id = $booking->bookingable_id;
         $this->check_in = $booking->check_in ? $booking->check_in->format('Y-m-d\TH:i') : null;
         $this->check_out = $booking->check_out ? $booking->check_out->format('Y-m-d\TH:i') : null;
+
+        // Set date range from existing dates
+        if ($booking->check_in && $booking->check_out) {
+            $this->date_range = $booking->check_in->format('Y-m-d') . ' to ' . $booking->check_out->format('Y-m-d');
+        }
+
         $this->adults = $booking->adults ?? 1;
         $this->children = $booking->children ?? 0;
         $this->amount = $booking->price;
@@ -75,6 +82,36 @@ new class extends Component {
 
         // Calculate initial price breakdown
         $this->calculatePrice();
+    }
+
+    public function updatedDateRange(): void
+    {
+        if (!$this->date_range) {
+            return;
+        }
+
+        // Parse date range (format: "2025-01-15 to 2025-01-20")
+        $dates = explode(' to ', $this->date_range);
+
+        if (count($dates) === 2) {
+            // Set check-in at 12:00 PM and check-out at 12:00 PM
+            $this->check_in = Carbon::parse(trim($dates[0]))
+                ->setTime(12, 0)
+                ->format('Y-m-d\TH:i');
+            $this->check_out = Carbon::parse(trim($dates[1]))
+                ->setTime(12, 0)
+                ->format('Y-m-d\TH:i');
+
+            $this->resetPage();
+            if (!$this->amountManuallySet) {
+                $this->amount = null;
+            }
+
+            // Recalculate price if house is selected
+            if ($this->house_id && !$this->amountManuallySet) {
+                $this->calculatePrice();
+            }
+        }
     }
 
     public function updatedCheckIn(): void
@@ -417,7 +454,7 @@ new class extends Component {
                     <div class="space-y-6 lg:col-span-2">
                         {{-- Date Range Section --}}
                         <x-booking.date-range-section stepNumber="1" checkInLabel="Check In" checkOutLabel="Check Out"
-                            :minCheckInDate="$minCheckInDate" checkIn="check_in" checkOut="check_out" />
+                            :minCheckInDate="$minCheckInDate" dateRangeModel="date_range" />
 
                         {{-- Customer Section (Read-only) --}}
                         <x-card class="bg-base-200 opacity-75">

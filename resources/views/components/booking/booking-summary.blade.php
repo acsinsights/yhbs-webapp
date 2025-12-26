@@ -45,22 +45,22 @@
                     <div class="flex-1 min-w-0">
                         <p class="text-xs font-semibold text-base-content/60 mb-1">{{ $windowLabel }}</p>
                         @if ($checkInDate && $checkOutDate)
-                            <div class="space-y-1 flex justify-around">
+                            <div class="grid grid-cols-2 gap-3 mt-2">
                                 <div>
                                     <p class="text-xs font-semibold text-primary mb-0.5">{{ $checkInLabel }}</p>
                                     <p class="text-xs font-semibold text-base-content">
-                                        {{ $checkInDate->format('M d, Y') }},
+                                        {{ $checkInDate->format('M d, Y') }}
                                     </p>
-                                    <p class="text-xs font-semibold text-base-content">
+                                    <p class="text-xs text-base-content/60">
                                         {{ $checkInDate->format('g:i A') }}
                                     </p>
                                 </div>
                                 <div>
                                     <p class="text-xs font-semibold text-primary mb-0.5">{{ $checkOutLabel }}</p>
                                     <p class="text-xs font-semibold text-base-content">
-                                        {{ $checkOutDate->format('M d, Y') }},
+                                        {{ $checkOutDate->format('M d, Y') }}
                                     </p>
-                                    <p class="text-xs font-semibold text-base-content">
+                                    <p class="text-xs text-base-content/60">
                                         {{ $checkOutDate->format('g:i A') }}
                                     </p>
                                 </div>

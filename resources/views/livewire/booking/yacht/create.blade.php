@@ -22,6 +22,7 @@ new class extends Component {
     public ?int $yacht_id = null;
     public ?string $check_in = null;
     public ?string $check_out = null;
+    public ?string $date_range = null;
     public ?int $adults = 1;
     public ?int $children = 0;
     public array $adultNames = [];
@@ -43,8 +44,40 @@ new class extends Component {
 
     public function mount(): void
     {
-        $this->check_in = Carbon::now()->format('Y-m-d\TH:i');
-        $this->check_out = Carbon::tomorrow()->format('Y-m-d\TH:i');
+        $this->check_in = Carbon::now()->setTime(12, 0)->format('Y-m-d\TH:i');
+        $this->check_out = Carbon::tomorrow()->setTime(12, 0)->format('Y-m-d\TH:i');
+        $this->date_range = Carbon::today()->format('Y-m-d') . ' to ' . Carbon::tomorrow()->format('Y-m-d');
+    }
+
+    public function updatedDateRange(): void
+    {
+        if (!$this->date_range) {
+            return;
+        }
+
+        // Parse date range (format: "2025-01-15 to 2025-01-20")
+        $dates = explode(' to ', $this->date_range);
+
+        if (count($dates) === 2) {
+            // Set check-in at 12:00 PM and check-out at 12:00 PM
+            $this->check_in = Carbon::parse(trim($dates[0]))
+                ->setTime(12, 0)
+                ->format('Y-m-d\TH:i');
+            $this->check_out = Carbon::parse(trim($dates[1]))
+                ->setTime(12, 0)
+                ->format('Y-m-d\TH:i');
+
+            $this->resetPage();
+            $this->yacht_id = null;
+            if (!$this->amountManuallySet) {
+                $this->amount = null;
+            }
+
+            // Recalculate price if yacht is selected
+            if ($this->yacht_id && !$this->amountManuallySet) {
+                $this->calculatePrice();
+            }
+        }
     }
 
     public function updatedAdults(): void
@@ -437,7 +470,7 @@ new class extends Component {
                         {{-- Date Range Section --}}
                         <x-booking.date-range-section stepNumber="1" checkInLabel="Departure" checkOutLabel="Return"
                             checkInHint="Departure must be today or later" checkOutHint="Return must be after departure"
-                            :minCheckInDate="$minDepartureDate" />
+                            :minCheckInDate="$minDepartureDate" dateRangeModel="date_range" />
 
                         {{-- Customer Section --}}
                         <x-booking.customer-section stepNumber="2" :customers="$customers" />
