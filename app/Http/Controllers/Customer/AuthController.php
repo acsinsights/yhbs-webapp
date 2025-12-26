@@ -248,6 +248,63 @@ class AuthController extends Controller
     }
 
     /**
+     * Resend registration OTP
+     */
+    public function resendRegistrationOtp(Request $request)
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        if (!session('registration_data')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Registration session expired. Please register again.'
+            ], 400);
+        }
+
+        $email = $request->email;
+
+        // Get user name from registration data
+        $registrationData = session('registration_data');
+        $userName = $registrationData['first_name'] ?? 'User';
+
+        // Delete old OTPs for this email
+        DB::table('password_reset_otps')
+            ->where('email', $email)
+            ->where('type', 'registration')
+            ->delete();
+
+        // Generate new OTP
+        $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+        // Store OTP in database
+        DB::table('password_reset_otps')->insert([
+            'email' => $email,
+            'otp' => $otp,
+            'type' => 'registration',
+            'expires_at' => Carbon::now()->addMinutes(10),
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
+        ]);
+
+        // Send OTP via email
+        try {
+            Mail::to($email)->send(new RegistrationOtpMail($otp, $userName));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'OTP has been resent successfully!'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send OTP. Please try again.'
+            ], 500);
+        }
+    }
+
+    /**
      * Handle logout
      */
     public function logout(Request $request)

@@ -55,6 +55,7 @@ Route::prefix('customer')->name('customer.')->group(function () {
 
         Route::get('/verify-registration-otp', [AuthController::class, 'showVerifyRegistrationOtp'])->name('verify-registration-otp');
         Route::post('/verify-registration-otp', [AuthController::class, 'verifyRegistrationOtp'])->name('verify-registration-otp.submit');
+        Route::post('/resend-registration-otp', [AuthController::class, 'resendRegistrationOtp'])->name('resend-registration-otp');
 
         Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('forgot-password');
         Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('forgot-password.submit');

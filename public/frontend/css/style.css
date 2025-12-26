@@ -5405,7 +5405,32 @@ header.style-1.three .main-menu>ul>li .mega-menu .menu-row .menu-single-item ul 
     font-size: 80px;
     color: #cbd5e1;
 }
+  .auth-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem;
+        }
 
+        .icon-wrapper {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
+
+        .icon-wrapper i {
+            font-size: 2.5rem;
+            color: #ffffff;
+        }
+
+        .letter-spacing-3 {
+            letter-spacing: 0.5rem !important;
+        }
 /* Responsive Design */
 @media (max-width: 991px) {
     .stat-card {

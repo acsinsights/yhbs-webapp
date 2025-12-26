@@ -40,7 +40,7 @@
 
                             <div class="form-group mb-3">
                                 <label for="otp" class="form-label text-center d-block">
-                                    <i class="bi bi-123 me-2"></i>Enter Verification Code
+                                    Enter Verification Code
                                 </label>
                                 <input type="text"
                                     class="form-control text-center fw-bold fs-4 letter-spacing-3 @error('otp') is-invalid @enderror"
@@ -61,9 +61,12 @@
 
                             <div class="text-center">
                                 <p class="mb-2">Didn't receive the code?</p>
-                                <a href="{{ route('customer.register') }}" class="fw-bold text-decoration-none">
-                                    <i class="bi bi-arrow-clockwise me-1"></i>Register Again
-                                </a>
+                                <button type="button" id="resendBtn" class="btn btn-link fw-bold text-decoration-none p-0"
+                                    data-resend-url="{{ route('customer.resend-registration-otp') }}" disabled>
+                                    <i class="bi bi-arrow-clockwise me-1"></i>
+                                    <span id="resendText">Resend Code (<span id="countdown">60</span>s)</span>
+                                </button>
+                                <div id="resendMessage" class="mt-2"></div>
                             </div>
 
                             <hr class="my-3">
@@ -81,33 +84,4 @@
             </div>
         </div>
     </div>
-
-    <style>
-        .auth-card {
-            background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            padding: 2.5rem;
-        }
-
-        .icon-wrapper {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto;
-        }
-
-        .icon-wrapper i {
-            font-size: 2.5rem;
-            color: #ffffff;
-        }
-
-        .letter-spacing-3 {
-            letter-spacing: 0.5rem !important;
-        }
-    </style>
 @endsection
