@@ -131,7 +131,9 @@ new class extends Component {
             $maxAdults = $maxGuests - $this->children;
 
             if ($this->adults > $maxAdults) {
-                $this->adults = $maxAdults;
+                $this->errorMessage = "Number of adults cannot exceed $maxAdults. Please reduce the number of adults.";
+                $this->adults = 1; // Reset to minimum
+                return;
             }
             if ($this->adults < 1) {
                 $this->adults = 1;
@@ -141,12 +143,17 @@ new class extends Component {
             $maxAdults = $this->bookable->adults ?? 10;
 
             if ($this->adults > $maxAdults) {
-                $this->adults = $maxAdults;
+                $this->errorMessage = "Number of adults cannot exceed $maxAdults. Please reduce the number of adults.";
+                $this->adults = 1; // Reset to minimum
+                return;
             }
             if ($this->adults < 1) {
                 $this->adults = 1;
             }
         }
+
+        // Clear error if within limits
+        $this->errorMessage = '';
 
         // Initialize adult names array
         $currentCount = count($this->adultNames);
@@ -176,7 +183,9 @@ new class extends Component {
             $maxChildren = $maxGuests - $this->adults;
 
             if ($this->children > $maxChildren) {
-                $this->children = $maxChildren;
+                $this->errorMessage = "Number of children cannot exceed $maxChildren. Please reduce the number of children.";
+                $this->children = 0; // Reset to minimum
+                return;
             }
             if ($this->children < 0) {
                 $this->children = 0;
@@ -186,12 +195,17 @@ new class extends Component {
             $maxChildren = $this->bookable->children ?? 10;
 
             if ($this->children > $maxChildren) {
-                $this->children = $maxChildren;
+                $this->errorMessage = "Number of children cannot exceed $maxChildren. Please reduce the number of children.";
+                $this->children = 0; // Reset to minimum
+                return;
             }
             if ($this->children < 0) {
                 $this->children = 0;
             }
         }
+
+        // Clear error if within limits
+        $this->errorMessage = '';
 
         // Initialize children names array
         $currentCount = count($this->childrenNames);
@@ -546,7 +560,8 @@ new class extends Component {
                                 if (checkInTime === checkOutTime) {
                                     instance.clear();
                                     alert(
-                                        'Please select different dates for check-in and check-out. Minimum 2 days booking required.');
+                                        'Please select different dates for check-in and check-out. Minimum 2 days booking required.'
+                                    );
                                     return;
                                 }
 

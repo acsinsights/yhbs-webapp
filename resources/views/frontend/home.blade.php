@@ -3127,7 +3127,7 @@
     <!-- home2 offer banner Section End-->
 
     <!-- home2 offer package Section Start-->
-    <div class="home2-offer-package-section mb-100">
+    {{-- <div class="home2-offer-package-section mb-100">
         <div class="container">
             <div class="row justify-content-center mb-50 wow animate fadeInDown" data-wow-delay="200ms"
                 data-wow-duration="1500ms">
@@ -3554,7 +3554,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> --}}
     <!-- home2 offer package Section End-->
 
     <!-- home2 award banner Section Start-->

@@ -652,7 +652,7 @@
                                     </span>
                                 @else
                                     <span class="badge bg-warning">
-                                        <i class="bi bi-clock me-2"></i>Payment Pending
+                                        <i class="bi bi-clock me-2"></i>Payment Confirmation Pending
                                     </span>
                                     <p class="text-muted mt-2 mb-0">
                                         <small>Please complete the payment at the property.</small>
