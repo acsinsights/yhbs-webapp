@@ -1,54 +1,6 @@
 @extends('frontend.layouts.app')
 @section('title', 'Yatch Rentals')
 @section('content')
-    <style>
-        .card {
-            transition: all 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-        }
-
-        .form-control,
-        .form-select {
-            transition: all 0.3s ease;
-        }
-
-        .form-control:focus,
-        .form-select:focus {
-            background-color: #fff !important;
-            border-color: #0066cc !important;
-            box-shadow: 0 0 0 0.25rem rgba(0, 102, 204, 0.15) !important;
-            transform: translateY(-1px);
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
-            border: none;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #0052a3 0%, #004080 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 102, 204, 0.3);
-        }
-
-        .badge {
-            font-weight: 500;
-            letter-spacing: 0.3px;
-        }
-
-        .rounded-4 {
-            border-radius: 1rem !important;
-        }
-
-        .bg-light {
-            background-color: #f8f9fa !important;
-        }
-    </style>
-
     <!-- Breadcrumb section Start-->
     <div class="breadcrumb-section three"
         style="background-image:linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),  url({{ asset('frontend/img/home2/yatch/8.jpg') }});">
@@ -203,7 +155,7 @@
                                                 @endif
                                             </a>
                                             @if ($yacht->is_active)
-                                                <div class="batch">
+                                                <div class="batch batch-success">
                                                     <span>Available</span>
                                                 </div>
                                             @endif
