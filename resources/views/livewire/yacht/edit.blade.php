@@ -19,6 +19,8 @@ new class extends Component {
     public ?UploadedFile $image = null;
     public ?string $existing_image = null;
     public ?string $description = null;
+    public ?string $meta_description = null;
+    public ?string $meta_keywords = null;
     public ?int $sku = null;
     public ?float $price = null;
     public ?float $price_per_hour = null;
@@ -61,6 +63,8 @@ new class extends Component {
         $this->existing_image = $yacht->image;
         $this->image = null; // Keep null for file upload, use existing_image for display
         $this->description = $yacht->description;
+        $this->meta_description = $yacht->meta_description;
+        $this->meta_keywords = $yacht->meta_keywords;
         $this->sku = $yacht->sku;
         $this->price = $yacht->price;
         $this->price_per_hour = $yacht->price_per_hour;
@@ -117,6 +121,8 @@ new class extends Component {
             'name' => 'required|string|max:255|unique:yachts,name,' . $this->yacht->id,
             'files.*' => 'image|max:5000',
             'description' => 'nullable|string',
+            'meta_description' => 'nullable|string|max:150',
+            'meta_keywords' => 'nullable|string|max:255',
             'sku' => 'nullable|integer',
             'price' => 'nullable|numeric|min:0',
             'price_per_hour' => 'nullable|numeric|min:0',
@@ -157,6 +163,8 @@ new class extends Component {
             'slug' => $slug,
             'image' => $imagePath,
             'description' => $this->description,
+            'meta_description' => $this->meta_description,
+            'meta_keywords' => $this->meta_keywords,
             'sku' => $this->sku,
             'price' => $this->price,
             'price_per_hour' => $this->price_per_hour,
@@ -315,6 +323,14 @@ new class extends Component {
                 <x-input wire:model="max_fuel_capacity" type="number" label="Max Fuel Capacity (L)"
                     placeholder="Enter fuel capacity" icon="o-beaker" hint="Maximum fuel capacity in liters" />
             </div>
+            {{-- Meta Information Section --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-4 md:mt-6">
+                <x-textarea wire:model="meta_description" label="Meta Description" hint="Max 150 characters"
+                    rows="3" />
+
+                <x-textarea wire:model="meta_keywords" label="Meta Keywords" hint="Separated by commas"
+                    rows="3" />
+            </div>
 
             <div class="mt-4 md:mt-6">
                 <x-choices-offline wire:model="category_ids" label="Categories" placeholder="Select categories"
@@ -351,7 +367,6 @@ new class extends Component {
                 <x-editor wire:model="description" label="Description"
                     hint="Detailed description of the yacht (HTML code editing enabled)" :config="$editorConfig" />
             </div>
-
             <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-6 md:mt-8 pt-4 md:pt-6 border-t">
                 <x-button icon="o-x-mark" label="Cancel" link="{{ route('admin.yacht.index') }}"
                     class="btn-error btn-outline" responsive />

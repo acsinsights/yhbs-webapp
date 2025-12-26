@@ -16,6 +16,8 @@ class House extends Model
         'is_active',
         'image',
         'description',
+        'meta_description',
+        'meta_keywords',
         'price_per_night',
         'price_per_2night',
         'price_per_3night',

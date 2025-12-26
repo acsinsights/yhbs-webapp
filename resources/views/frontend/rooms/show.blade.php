@@ -1,5 +1,7 @@
 @extends('frontend.layouts.app')
 @section('title', $room->name)
+@section('meta_description', $room->meta_description ?? $room->name)
+@section('meta_keywords', $room->meta_keywords ?? $room->name)
 @section('styles')
     <!-- Flatpickr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -48,13 +50,6 @@
                         @if ($room->categories->first())
                             <div class="mb-3">
                                 <span class="badge bg-primary">{{ $room->categories->first()->name }}</span>
-                            </div>
-                        @endif
-
-                        @if ($room->description)
-                            <div class="mb-4">
-                                <h4>About This Room</h4>
-                                <p>{{ $room->description }}</p>
                             </div>
                         @endif
 
@@ -112,6 +107,14 @@
                                 </div>
                             </div>
                         </div>
+
+                        @if ($room->description)
+                            <div class="mb-4">
+                                <h4>About This Room</h4>
+                                <p>{!! $room->description !!}</p>
+                            </div>
+                        @endif
+
                     </div>
 
                     <!-- Similar Rooms -->

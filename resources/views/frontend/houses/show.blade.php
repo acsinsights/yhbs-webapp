@@ -1,5 +1,7 @@
 @extends('frontend.layouts.app')
 @section('title', $house->name)
+@section('meta_description', $house->meta_description ?? $house->name)
+@section('meta_keywords', $house->meta_keywords ?? $house->name)
 @section('styles')
     <!-- Flatpickr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -43,13 +45,6 @@
                         @if ($house->house_number)
                             <div class="mb-3">
                                 <span class="badge bg-primary">House #{{ $house->house_number }}</span>
-                            </div>
-                        @endif
-
-                        @if ($house->description)
-                            <div class="mb-4">
-                                <h4>About This House</h4>
-                                <p>{{ $house->description }}</p>
                             </div>
                         @endif
 
@@ -135,6 +130,13 @@
                                 </div>
                             </div>
                         </div>
+
+                        @if ($house->description)
+                            <div class="mb-4">
+                                <h4>About This House</h4>
+                                <p>{!! $house->description !!}</p>
+                            </div>
+                        @endif
                     </div>
 
                     <!-- Similar Houses -->

@@ -21,6 +21,8 @@ new class extends Component {
     public ?UploadedFile $image = null;
     public ?string $existing_image = null;
     public ?string $description = null;
+    public ?string $meta_description = null;
+    public ?string $meta_keywords = null;
     public ?float $price_per_night = null;
     public ?float $price_per_2night = null;
     public ?float $price_per_3night = null;
@@ -52,6 +54,8 @@ new class extends Component {
         $this->existing_image = $house->image;
         $this->image = null; // Keep null for file upload, use existing_image for display
         $this->description = $house->description;
+        $this->meta_description = $house->meta_description;
+        $this->meta_keywords = $house->meta_keywords;
         $this->price_per_night = $house->price_per_night;
         $this->price_per_2night = $house->price_per_2night;
         $this->price_per_3night = $house->price_per_3night;
@@ -71,6 +75,8 @@ new class extends Component {
             'image' => 'nullable|image|max:5000',
             'files.*' => 'image|max:5000',
             'description' => 'nullable|string',
+            'meta_description' => 'nullable|string|max:150',
+            'meta_keywords' => 'nullable|string|max:255',
             'price_per_night' => 'nullable|numeric|min:0|max:999999999.99',
             'price_per_2night' => 'nullable|numeric|min:0|max:999999999.99',
             'price_per_3night' => 'nullable|numeric|min:0|max:999999999.99',
@@ -94,6 +100,8 @@ new class extends Component {
             'is_active' => $this->is_active,
             'image' => $imagePath,
             'description' => $this->description,
+            'meta_description' => $this->meta_description,
+            'meta_keywords' => $this->meta_keywords,
             'price_per_night' => $this->price_per_night,
             'price_per_2night' => $this->price_per_2night,
             'price_per_3night' => $this->price_per_3night,
@@ -200,6 +208,14 @@ new class extends Component {
                 <x-input wire:model="children" label="Maximum Children" placeholder="0" icon="o-user-group"
                     type="number" min="0" hint="Maximum number of children" />
             </div>
+            {{-- Meta Information Section --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-4 md:mt-6">
+                <x-textarea wire:model="meta_description" label="Meta Description" hint="Max 150 characters"
+                    rows="3" />
+
+                <x-textarea wire:model="meta_keywords" label="Meta Keywords" hint="Separated by commas"
+                    rows="3" />
+            </div>
 
             {{-- Description Editor --}}
             <div class="mt-4 md:mt-6">
@@ -215,7 +231,6 @@ new class extends Component {
                 <x-editor wire:model="description" label="Description"
                     hint="Detailed description of the house (HTML code editing enabled)" :config="$editorConfig" />
             </div>
-
             {{-- Form Actions --}}
             <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-6 md:mt-8 pt-4 md:pt-6 border-t">
                 <x-button icon="o-x-mark" label="Cancel" link="{{ route('admin.houses.index') }}"

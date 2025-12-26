@@ -1,5 +1,7 @@
 @extends('frontend.layouts.app')
 @section('title', $yacht->name)
+@section('meta_description', $yacht->meta_description ?? $yacht->name)
+@section('meta_keywords', $yacht->meta_keywords ?? $yacht->name)
 @section('styles')
     <!-- Flatpickr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -48,13 +50,6 @@
                         @if ($yacht->categories->first())
                             <div class="mb-3">
                                 <span class="badge bg-primary">{{ $yacht->categories->first()->name }}</span>
-                            </div>
-                        @endif
-
-                        @if ($yacht->description)
-                            <div class="mb-4">
-                                <h4>About This Yacht</h4>
-                                <p>{{ $yacht->description }}</p>
                             </div>
                         @endif
 
@@ -128,6 +123,14 @@
                                 @endif
                             </div>
                         </div>
+
+                        @if ($yacht->description)
+                            <div class="mb-4">
+                                <h4>About This Yacht</h4>
+                                <p>{!! $yacht->description !!}</p>
+                            </div>
+                        @endif
+
                     </div>
 
                     <!-- Similar Yachts -->

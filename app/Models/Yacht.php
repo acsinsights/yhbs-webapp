@@ -16,6 +16,8 @@ class Yacht extends Model
         'slug',
         'image',
         'description',
+        'meta_description',
+        'meta_keywords',
         'sku',
         'price',
         'price_per_hour',

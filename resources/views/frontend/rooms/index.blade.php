@@ -225,7 +225,7 @@
                                             @endif
 
                                             @if ($room->description)
-                                                <p class="text-muted small mb-3">{{ Str::limit($room->description, 100) }}
+                                                <p class="text-muted small mb-3">{!! Str::limit($room->description, 100) !!}
                                                 </p>
                                             @endif
 

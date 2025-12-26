@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -20,6 +19,8 @@ return new class extends Migration
             $table->boolean('is_active')->default(false);
             $table->string('image')->nullable();
             $table->text('description')->nullable();
+            $table->string('meta_description')->nullable();
+            $table->string('meta_keywords')->nullable();
             $table->decimal('price_per_night', 10, 2)->nullable();
             $table->decimal('price_per_2night', 10, 2)->nullable();
             $table->decimal('price_per_3night', 10, 2)->nullable();

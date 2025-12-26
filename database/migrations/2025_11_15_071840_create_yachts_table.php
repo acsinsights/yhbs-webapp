@@ -17,6 +17,8 @@ return new class extends Migration {
             $table->string('slug')->unique();
             $table->string('image')->nullable();
             $table->text('description')->nullable();
+            $table->string('meta_description')->nullable();
+            $table->string('meta_keywords')->nullable();
             $table->integer('sku')->nullable();
             $table->decimal('price', 10, 2)->nullable();
             $table->decimal('price_per_hour', 10, 2)->nullable();

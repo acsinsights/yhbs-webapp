@@ -204,7 +204,7 @@
 
                                             @if ($yacht->description)
                                                 <p class="text-muted small mb-3">
-                                                    {{ Str::limit($yacht->description, 100) }}
+                                                    {!! Str::limit($yacht->description, 100) !!}
                                                 </p>
                                             @endif
 
