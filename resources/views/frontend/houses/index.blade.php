@@ -146,7 +146,7 @@
                                                 @if ($house->image)
                                                     <img src="{{ asset($house->image) }}" alt="{{ $house->name }}">
                                                 @else
-                                                    <img src="{{ asset('frontend/img/home2/hoses rooms/5.jpg') }}"
+                                                    <img src="{{ asset('frontend/img/home2/houses/5.jpg') }}"
                                                         alt="{{ $house->name }}">
                                                 @endif
                                             </a>
@@ -182,7 +182,7 @@
                                             </div>
 
                                             @if ($house->description)
-                                                <p class="text-muted small mb-3">{{ Str::limit($house->description, 100) }}
+                                                <p class="text-muted small mb-3">{!! Str::limit($house->description, 100) !!}
                                                 </p>
                                             @endif
 

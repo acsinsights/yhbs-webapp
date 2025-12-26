@@ -26,15 +26,20 @@ class YachtController extends Controller
             });
         }
 
-        // Filter by adults capacity
+        // Filter by capacity (total guests)
+        if ($request->filled('capacity') && $request->capacity > 0) {
+            $query->where('max_guests', '>=', $request->capacity);
+        }
+
+        // Fallback: Filter by adults capacity (for backward compatibility)
         if ($request->filled('adults') && $request->adults > 0) {
             $query->where('max_guests', '>=', $request->adults);
         }
 
-        // Filter by children
+        // Fallback: Filter by children (for backward compatibility)
         if ($request->filled('children') && $request->children > 0) {
             // Yachts max_guests includes both adults and children
-            $totalGuests = $request->adults + $request->children;
+            $totalGuests = ($request->adults ?? 0) + $request->children;
             $query->where('max_guests', '>=', $totalGuests);
         }
 

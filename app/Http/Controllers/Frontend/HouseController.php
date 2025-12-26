@@ -21,12 +21,19 @@ class HouseController extends Controller
             }
         ]);
 
-        // Filter by adults capacity
+        // Filter by capacity (total guests)
+        if ($request->filled('capacity') && $request->capacity > 0) {
+            $capacity = $request->capacity;
+            // Find houses where adults + children >= requested capacity
+            $query->whereRaw('(adults + COALESCE(children, 0)) >= ?', [$capacity]);
+        }
+
+        // Fallback: Filter by adults capacity (for backward compatibility)
         if ($request->filled('adults') && $request->adults > 0) {
             $query->where('adults', '>=', $request->adults);
         }
 
-        // Filter by children capacity
+        // Fallback: Filter by children capacity (for backward compatibility)
         if ($request->filled('children') && $request->children > 0) {
             $query->where('children', '>=', $request->children);
         }

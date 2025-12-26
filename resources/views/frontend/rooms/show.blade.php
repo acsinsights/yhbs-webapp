@@ -36,7 +36,7 @@
                                     class="img-fluid rounded">
                             @endif
                         @else
-                            <img src="{{ asset('frontend/img/home2/hoses rooms/5.jpg') }}" alt="{{ $room->name }}"
+                            <img src="{{ asset('frontend/img/home2/houses/5.jpg') }}" alt="{{ $room->name }}"
                                 class="img-fluid rounded">
                         @endif
                     </div>
@@ -133,7 +133,7 @@
                                                                 alt="{{ $similar->name }}">
                                                         @endif
                                                     @else
-                                                        <img src="{{ asset('frontend/img/home2/hoses rooms/5.jpg') }}"
+                                                        <img src="{{ asset('frontend/img/home2/houses/5.jpg') }}"
                                                             alt="{{ $similar->name }}">
                                                     @endif
                                                 </a>

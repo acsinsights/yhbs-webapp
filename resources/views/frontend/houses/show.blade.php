@@ -31,7 +31,7 @@
                         @if ($house->image)
                             <img src="{{ asset($house->image) }}" alt="{{ $house->name }}" class="img-fluid rounded">
                         @else
-                            <img src="{{ asset('frontend/img/home2/hoses rooms/5.jpg') }}" alt="{{ $house->name }}"
+                            <img src="{{ asset('frontend/img/home2/houses/5.jpg') }}" alt="{{ $house->name }}"
                                 class="img-fluid rounded">
                         @endif
                     </div>
@@ -151,7 +151,7 @@
                                                         <img src="{{ asset($similar->image) }}"
                                                             alt="{{ $similar->name }}">
                                                     @else
-                                                        <img src="{{ asset('frontend/img/home2/hoses rooms/5.jpg') }}"
+                                                        <img src="{{ asset('frontend/img/home2/houses/5.jpg') }}"
                                                             alt="{{ $similar->name }}">
                                                     @endif
                                                 </a>
