@@ -139,15 +139,7 @@
                                             Need help? Contact our support team
                                         </p>
                                     </td>
-                                </tr>
-                                <tr>
-                                    <td style="padding-bottom: 20px;">
-                                        <a href="mailto:{{ config('mail.from.address') }}"
-                                            style="color: #667eea; text-decoration: none; font-size: 14px; font-weight: 500;">
-                                            {{ config('mail.from.address') }}
-                                        </a>
-                                    </td>
-                                </tr>
+                                </tr> 
                                 <tr>
                                     <td>
                                         <p style="margin: 0; color: #9ca3af; font-size: 12px; line-height: 1.5;">
