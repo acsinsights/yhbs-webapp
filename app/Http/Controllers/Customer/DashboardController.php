@@ -184,12 +184,18 @@ class DashboardController extends Controller
             ->first();
         $booking->wallet_amount_used = $walletTransaction ? abs((float) $walletTransaction->amount) : 0;
 
-        // Calculate original subtotal (before discount)
-        // booking->price = subtotal after discount, so add discount back
-        $originalSubtotal = $booking->price + ($booking->discount_amount ?? 0);
-
-        // Calculate price per night from original subtotal
-        $booking->price_per_night = $nights > 0 ? ($originalSubtotal / $nights) : $originalSubtotal;
+        // Get actual price per night from the property (room/house/yacht)
+        if ($booking->bookingable) {
+            if ($booking->bookingable_type === \App\Models\Yacht::class) {
+                // For yachts, use price_per_hour or price
+                $booking->price_per_night = $booking->bookingable->price_per_hour ?? $booking->bookingable->price ?? 0;
+            } else {
+                // For rooms and houses, use price_per_night
+                $booking->price_per_night = $booking->bookingable->price_per_night ?? 0;
+            }
+        } else {
+            $booking->price_per_night = 0;
+        }
         $booking->nights = $nights;
 
         // Set service fee and tax (currently 0, but can be updated later)

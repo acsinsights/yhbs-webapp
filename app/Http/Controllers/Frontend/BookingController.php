@@ -561,8 +561,17 @@ class BookingController extends Controller
             $customerName .= ' ' . $customerInfo['last_name'];
         }
 
-        // Calculate price per night
-        $pricePerNight = $nights > 0 ? $booking->price / $nights : $booking->price;
+        // Get actual price per night from the property (room/house/yacht)
+        $pricePerNight = 0;
+        if ($booking->bookingable) {
+            if ($booking->bookingable_type === Yacht::class) {
+                // For yachts, use price_per_hour or price
+                $pricePerNight = $booking->bookingable->price_per_hour ?? $booking->bookingable->price ?? 0;
+            } else {
+                // For rooms and houses, use price_per_night
+                $pricePerNight = $booking->bookingable->price_per_night ?? 0;
+            }
+        }
 
         // Get coupon and discount info
         $couponCode = null;
