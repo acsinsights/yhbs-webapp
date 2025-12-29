@@ -18,7 +18,7 @@
     <!-- Checkout Section Start -->
     <div class="checkout-section pt-100 pb-100">
         <div class="container">
-            <form action="{{ route('booking.confirm') }}" method="POST" id="checkoutForm">
+            <form action="{{ route('booking.confirm') }}" method="POST" id="checkoutForm" novalidate>
                 @csrf
                 <div class="row">
                     <!-- Left Side - Customer Details -->
@@ -36,7 +36,7 @@
                                             id="first_name" name="first_name"
                                             value="{{ old('first_name', auth()->user()->first_name ?? '') }}" required>
                                         @error('first_name')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            <div class="invalid-feedback" data-backend>{{ $message }}</div>
                                         @enderror
                                     </div>
 
@@ -46,7 +46,7 @@
                                             id="last_name" name="last_name"
                                             value="{{ old('last_name', auth()->user()->last_name ?? '') }}" required>
                                         @error('last_name')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            <div class="invalid-feedback" data-backend>{{ $message }}</div>
                                         @enderror
                                     </div>
 
@@ -56,7 +56,7 @@
                                             id="email" name="email"
                                             value="{{ old('email', auth()->user()->email ?? '') }}" required>
                                         @error('email')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            <div class="invalid-feedback" data-backend>{{ $message }}</div>
                                         @enderror
                                     </div>
 
@@ -66,7 +66,7 @@
                                             id="phone" name="phone"
                                             value="{{ old('phone', auth()->user()->phone ?? '') }}" required>
                                         @error('phone')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            <div class="invalid-feedback" data-backend>{{ $message }}</div>
                                         @enderror
                                     </div>
 
@@ -74,7 +74,7 @@
                                         <label for="address" class="form-label">Address</label>
                                         <textarea class="form-control @error('address') is-invalid @enderror" id="address" name="address" rows="3">{{ old('address', auth()->user()->address ?? '') }}</textarea>
                                         @error('address')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            <div class="invalid-feedback" data-backend>{{ $message }}</div>
                                         @enderror
                                     </div>
                                 </div>
@@ -207,7 +207,7 @@
                                                             $badgeTypeText = $badgeValue . '% off';
                                                         } else {
                                                             $badgeTypeText =
-                                                                currency_format(number_format($badgeValue, 2)) . ' off';
+                                                                currency_format(round($badgeValue)) . ' off';
                                                         }
                                                     @endphp
                                                     <div class="text-sm" style="color: #059669;">
@@ -337,13 +337,13 @@
                                                         : null;
 
                                                 if ($discountType === 'percentage') {
-                                                    $displayDiscount = ($displayBase * $discountValue) / 100;
+                                                    $displayDiscount = round(($displayBase * $discountValue) / 100);
                                                     if ($maxDiscount && $displayDiscount > $maxDiscount) {
-                                                        $displayDiscount = $maxDiscount;
+                                                        $displayDiscount = round($maxDiscount);
                                                     }
                                                 } else {
                                                     // Fixed amount
-                                                    $displayDiscount = $discountValue;
+                                                    $displayDiscount = round($discountValue);
                                                 }
 
                                                 $displayDiscount = min($displayDiscount, $displayBase);
@@ -425,13 +425,13 @@
                                                         : null;
 
                                                 if ($discountType === 'percentage') {
-                                                    $discount = ($baseAmount * $discountValue) / 100;
+                                                    $discount = round(($baseAmount * $discountValue) / 100);
                                                     if ($maxDiscount && $discount > $maxDiscount) {
-                                                        $discount = $maxDiscount;
+                                                        $discount = round($maxDiscount);
                                                     }
                                                 } else {
                                                     // Fixed amount
-                                                    $discount = $discountValue;
+                                                    $discount = round($discountValue);
                                                 }
 
                                                 $discount = min($discount, $baseAmount);
@@ -500,7 +500,7 @@
                                         and <a href="#" class="text-decoration-none">Cancellation Policy</a>
                                     </label>
                                     @error('terms')
-                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        <div class="invalid-feedback" data-backend>{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
@@ -535,13 +535,13 @@
                                             : null;
 
                                     if ($discountType === 'percentage') {
-                                        $formDiscount = ($formBase * $discountValue) / 100;
+                                        $formDiscount = round(($formBase * $discountValue) / 100);
                                         if ($maxDiscount && $formDiscount > $maxDiscount) {
-                                            $formDiscount = $maxDiscount;
+                                            $formDiscount = round($maxDiscount);
                                         }
                                     } else {
                                         // Fixed amount
-                                        $formDiscount = $discountValue;
+                                        $formDiscount = round($discountValue);
                                     }
 
                                     $formDiscount = min($formDiscount, $formBase);
@@ -603,54 +603,7 @@
 
 @section('scripts')
     <script>
-        function applyCouponCode() {
-            const couponCode = document.getElementById('couponCodeInput').value.trim();
-            if (!couponCode) {
-                alert('Please enter a coupon code');
-                return;
-            }
-            document.getElementById('hiddenCouponCode').value = couponCode.toUpperCase();
-            document.getElementById('applyCouponForm').submit();
-        }
-
-        function toggleWalletUsage(checkbox) {
-            const originalTotal = parseFloat(document.getElementById('originalTotal').value);
-            const walletBalance = parseFloat(document.getElementById('walletBalance').value);
-            const walletAppliedRow = document.getElementById('walletAppliedRow');
-            const amountToPayRow = document.getElementById('amountToPayRow');
-            const walletAppliedAmount = document.getElementById('walletAppliedAmount');
-            const amountToPay = document.getElementById('amountToPay');
-
-            if (checkbox.checked) {
-                // Calculate wallet usage
-                const walletUsed = Math.min(walletBalance, originalTotal);
-                const finalAmount = Math.max(0, originalTotal - walletUsed);
-
-                // Format currency
-                const currencySymbol = '{{ currency_symbol() }}';
-
-                // Show wallet applied row with animation
-                walletAppliedRow.style.display = 'block';
-                setTimeout(() => {
-                    walletAppliedRow.classList.add('show');
-                }, 10);
-                walletAppliedAmount.textContent = '-' + currencySymbol + ' ' + walletUsed.toFixed(2);
-
-                // Show amount to pay row with animation
-                amountToPayRow.style.display = 'flex';
-                setTimeout(() => {
-                    amountToPayRow.classList.add('show');
-                }, 10);
-                amountToPay.innerHTML = '<strong>' + currencySymbol + ' ' + finalAmount.toFixed(2) + '</strong>';
-            } else {
-                // Hide wallet rows with animation
-                walletAppliedRow.classList.remove('show');
-                amountToPayRow.classList.remove('show');
-                setTimeout(() => {
-                    walletAppliedRow.style.display = 'none';
-                    amountToPayRow.style.display = 'none';
-                }, 300);
-            }
-        }
+        // Set currency symbol for JS functions
+        document.body.setAttribute('data-currency-symbol', '{{ currency_symbol() }}');
     </script>
 @endsection

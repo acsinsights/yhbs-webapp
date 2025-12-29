@@ -2851,4 +2851,138 @@
                 });
         });
     }
+
+    // Checkout form validation
+    const checkoutForm = document.getElementById('checkoutForm');
+    if (checkoutForm) {
+        checkoutForm.addEventListener('submit', function (e) {
+            // Remove all previous errors
+            document.querySelectorAll('.text-danger.small').forEach(el => el.remove());
+            document.querySelectorAll('.border-danger').forEach(el => el.classList.remove('border-danger'));
+
+            let hasError = false;
+            let firstErrorField = null;
+
+            // Check first name
+            const firstName = document.getElementById('first_name');
+            if (firstName && !firstName.value.trim()) {
+                showError(firstName, 'First name is required');
+                if (!firstErrorField) firstErrorField = firstName;
+                hasError = true;
+            }
+
+            // Check last name
+            const lastName = document.getElementById('last_name');
+            if (lastName && !lastName.value.trim()) {
+                showError(lastName, 'Last name is required');
+                if (!firstErrorField) firstErrorField = lastName;
+                hasError = true;
+            }
+
+            // Check email
+            const email = document.getElementById('email');
+            if (email && !email.value.trim()) {
+                showError(email, 'Email is required');
+                if (!firstErrorField) firstErrorField = email;
+                hasError = true;
+            }
+
+            // Check phone
+            const phone = document.getElementById('phone');
+            if (phone && !phone.value.trim()) {
+                showError(phone, 'Phone number is required');
+                if (!firstErrorField) firstErrorField = phone;
+                hasError = true;
+            }
+
+            // Check terms
+            const terms = document.getElementById('terms');
+            if (terms && !terms.checked) {
+                showError(terms, 'You must agree to terms and conditions');
+                if (!firstErrorField) firstErrorField = terms;
+                hasError = true;
+            }
+
+            if (hasError) {
+                e.preventDefault();
+                // Focus on first error field
+                if (firstErrorField) {
+                    firstErrorField.focus();
+                    firstErrorField.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                }
+                return false;
+            }
+        });
+    }
+
+    // Function to show error
+    function showError(field, message) {
+        field.classList.add('border-danger');
+        const error = document.createElement('small');
+        error.className = 'text-danger small d-block mt-1';
+        error.textContent = message;
+
+        // For checkbox, add error after the label
+        if (field.type === 'checkbox') {
+            field.closest('.form-check').appendChild(error);
+        } else {
+            field.parentElement.appendChild(error);
+        }
+    }
+
+    // Apply coupon code
+    window.applyCouponCode = function () {
+        const couponCode = document.getElementById('couponCodeInput').value.trim();
+        if (!couponCode) {
+            alert('Please enter a coupon code');
+            return;
+        }
+        document.getElementById('hiddenCouponCode').value = couponCode.toUpperCase();
+        document.getElementById('applyCouponForm').submit();
+    };
+
+    // Toggle wallet usage
+    window.toggleWalletUsage = function (checkbox) {
+        const originalTotal = parseFloat(document.getElementById('originalTotal').value);
+        const walletBalance = parseFloat(document.getElementById('walletBalance').value);
+        const walletAppliedRow = document.getElementById('walletAppliedRow');
+        const amountToPayRow = document.getElementById('amountToPayRow');
+        const walletAppliedAmount = document.getElementById('walletAppliedAmount');
+        const amountToPay = document.getElementById('amountToPay');
+
+        if (checkbox.checked) {
+            // Calculate wallet usage
+            const walletUsed = Math.min(walletBalance, originalTotal);
+            const finalAmount = Math.max(0, originalTotal - walletUsed);
+
+            // Get currency symbol from data attribute or default
+            const currencySymbol = document.body.getAttribute('data-currency-symbol') || '$';
+
+            // Show wallet applied row with animation
+            walletAppliedRow.style.display = 'block';
+            setTimeout(() => {
+                walletAppliedRow.classList.add('show');
+            }, 10);
+            walletAppliedAmount.textContent = '-' + currencySymbol + ' ' + walletUsed.toFixed(2);
+
+            // Show amount to pay row with animation
+            amountToPayRow.style.display = 'flex';
+            setTimeout(() => {
+                amountToPayRow.classList.add('show');
+            }, 10);
+            amountToPay.innerHTML = '<strong>' + currencySymbol + ' ' + finalAmount.toFixed(2) + '</strong>';
+        } else {
+            // Hide wallet rows with animation
+            walletAppliedRow.classList.remove('show');
+            amountToPayRow.classList.remove('show');
+            setTimeout(() => {
+                walletAppliedRow.style.display = 'none';
+                amountToPayRow.style.display = 'none';
+            }, 300);
+        }
+    };
+
 })(jQuery);
