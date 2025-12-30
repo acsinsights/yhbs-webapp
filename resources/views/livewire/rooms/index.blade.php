@@ -6,7 +6,7 @@ use Illuminate\Support\Str;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 use Livewire\Volt\Component;
-use App\Models\{House, Room};
+use App\Models\Room;
 
 new class extends Component {
     use Toast, WithPagination;
@@ -18,14 +18,8 @@ new class extends Component {
     public int $perPage = 10;
 
     public bool $createModal = false;
-    public int $house_id = 0;
     public string $name = '';
     public string $room_number = '';
-
-    public function mount()
-    {
-        $this->house_id = House::first()->id;
-    }
 
     // Delete action
     public function delete($id): void
@@ -39,9 +33,8 @@ new class extends Component {
     public function createRoom(): void
     {
         $this->validate([
-            'house_id' => 'required|exists:houses,id',
-            'name' => 'required|string|max:255|unique:rooms,name,NULL,id,house_id,' . $this->house_id,
-            'room_number' => 'required|string|max:255|unique:rooms,room_number,NULL,id,house_id,' . $this->house_id,
+            'name' => 'required|string|max:255|unique:rooms,name',
+            'room_number' => 'required|string|max:255|unique:rooms,room_number',
         ]);
 
         // Auto-generate slug from name
@@ -56,28 +49,25 @@ new class extends Component {
         }
 
         $room = Room::create([
-            'house_id' => $this->house_id,
             'name' => $this->name,
             'slug' => $slug,
             'room_number' => $this->room_number,
         ]);
 
         $this->createModal = false;
-        $this->reset('house_id', 'name', 'room_number');
+        $this->reset('name', 'room_number');
         $this->success('Room created successfully.', redirectTo: route('admin.rooms.edit', $room->id));
     }
 
     public function rendering(View $view)
     {
         $view->rooms = Room::query()
-            ->with(['house', 'categories', 'amenities'])
+            ->with(['categories', 'amenities'])
             ->search($this->search)
             ->orderBy(...array_values($this->sortBy))
             ->paginate($this->perPage);
 
-        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'name', 'label' => 'Name'], ['key' => 'room_number', 'label' => 'Room Number'], ['key' => 'house.name', 'label' => 'House', 'sortable' => false], ['key' => 'adults', 'label' => 'Adults'], ['key' => 'children', 'label' => 'Children'], ['key' => 'price_per_night', 'label' => 'Price Per Night', 'class' => 'whitespace-nowrap']];
-
-        $view->houses = House::latest()->get();
+        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'name', 'label' => 'Name'], ['key' => 'room_number', 'label' => 'Room Number'], ['key' => 'adults', 'label' => 'Adults'], ['key' => 'children', 'label' => 'Children'], ['key' => 'price_per_night', 'label' => 'Price Per Night', 'class' => 'whitespace-nowrap']];
     }
 }; ?>
 
@@ -123,13 +113,6 @@ new class extends Component {
 
             @scope('cell_room_number', $room)
                 <x-badge :value="$room->room_number" class="badge-soft badge-primary" />
-            @endscope
-
-            @scope('cell_hotel.name', $room)
-                <x-button tooltip="{{ $room->hotel->name }}" link="{{ route('admin.hotels.edit', $room->hotel->id) }}"
-                    class="btn-circle btn-sm text-base-content/50">
-                    <x-icon name="o-building-office-2" class="w-4 h-4" />
-                </x-button>
             @endscope
 
             @scope('cell_adults', $room)
@@ -180,10 +163,6 @@ new class extends Component {
     <x-modal wire:model="createModal" title="Create Room" class="backdrop-blur" max-width="md">
         <x-form wire:submit="createRoom">
             <div class="space-y-4">
-                <x-select wire:model="house_id" label="House" placeholder="Select a house" :options="$houses"
-                    option-value="id" option-label="name" icon="o-building-office-2"
-                    hint="Select the house this room belongs to" />
-
                 <x-input wire:model="name" label="Room Name" placeholder="e.g., Standard Room, Deluxe Suite"
                     icon="o-tag" hint="Display name for the room (slug will be auto-generated)" />
 

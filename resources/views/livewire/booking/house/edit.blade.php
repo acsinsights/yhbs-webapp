@@ -368,20 +368,18 @@ new class extends Component {
 
         if ($checkIn && $checkOut && $checkIn->lt($checkOut)) {
             // Get available houses excluding current booking
-            $query = House::active()
-                ->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
-                    $q->where('id', '!=', $this->booking->id)
-                        ->whereIn('status', ['pending', 'booked', 'checked_in'])
-                        ->where(function ($query) use ($checkIn, $checkOut) {
-                            $query
-                                ->whereBetween('check_in', [$checkIn, $checkOut])
-                                ->orWhereBetween('check_out', [$checkIn, $checkOut])
-                                ->orWhere(function ($q) use ($checkIn, $checkOut) {
-                                    $q->where('check_in', '<=', $checkIn)->where('check_out', '>=', $checkOut);
-                                });
-                        });
-                })
-                ->with('rooms');
+            $query = House::active()->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
+                $q->where('id', '!=', $this->booking->id)
+                    ->whereIn('status', ['pending', 'booked', 'checked_in'])
+                    ->where(function ($query) use ($checkIn, $checkOut) {
+                        $query
+                            ->whereBetween('check_in', [$checkIn, $checkOut])
+                            ->orWhereBetween('check_out', [$checkIn, $checkOut])
+                            ->orWhere(function ($q) use ($checkIn, $checkOut) {
+                                $q->where('check_in', '<=', $checkIn)->where('check_out', '>=', $checkOut);
+                            });
+                    });
+            });
 
             // Filter by search term
             if (!empty($this->house_search)) {
@@ -479,7 +477,7 @@ new class extends Component {
                         @php
                             $selectedHouse =
                                 $availableHouses->firstWhere('id', $house_id) ??
-                                ($house_id ? House::with('rooms')->find($house_id) : null);
+                                ($house_id ? House::find($house_id) : null);
                             $maxAdults = $selectedHouse?->adults ?? 10;
                             $maxChildren = $selectedHouse?->children ?? 10;
                         @endphp
@@ -578,11 +576,11 @@ new class extends Component {
                                                                             class="text-xs text-base-content/60 line-clamp-1">
                                                                             House #{{ $house->house_number }}</p>
                                                                     @endif
-                                                                    @if ($house->rooms->count() > 0)
+                                                                    @if (($house->number_of_rooms ?? 0) > 0)
                                                                         <p
                                                                             class="text-xs text-primary font-medium mt-1">
-                                                                            {{ $house->rooms->count() }}
-                                                                            {{ $house->rooms->count() === 1 ? 'room' : 'rooms' }}
+                                                                            {{ $house->number_of_rooms ?? 0 }}
+                                                                            {{ ($house->number_of_rooms ?? 0) === 1 ? 'room' : 'rooms' }}
                                                                         </p>
                                                                     @endif
                                                                 </div>
@@ -738,8 +736,8 @@ new class extends Component {
                                                 <p class="text-xs font-bold text-base-content line-clamp-1">
                                                     {{ $selectedHouse->name }}</p>
                                                 <p class="text-xs text-base-content/60">
-                                                    {{ $selectedHouse->rooms->count() }}
-                                                    {{ $selectedHouse->rooms->count() === 1 ? 'room' : 'rooms' }}
+                                                    {{ $selectedHouse->number_of_rooms ?? 0 }}
+                                                    {{ ($selectedHouse->number_of_rooms ?? 0) === 1 ? 'room' : 'rooms' }}
                                                     included
                                                 </p>
                                             @else

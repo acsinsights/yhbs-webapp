@@ -177,7 +177,7 @@
                                                         </path>
                                                     </svg>
                                                     <span>Capacity: {{ $house->adults ?? 0 }} guests |
-                                                        {{ $house->rooms->count() }} rooms</span>
+                                                        {{ $house->number_of_rooms ?? 0 }} rooms</span>
                                                 </div>
                                             </div>
 

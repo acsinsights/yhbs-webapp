@@ -181,8 +181,8 @@
                                     $discount = $booking->discount_amount ?? 0;
                                     $walletUsed = $booking->wallet_amount_used ?? 0;
 
-                                    // Calculate subtotal (price_per_night × nights)
-                                    $subtotal = $pricePerNight * $nights;
+                                    // Use actual stored price (accounts for tiered pricing)
+                                    $subtotal = $booking->price ?? $pricePerNight * $nights;
                                 @endphp
 
                                 <div class="payment-row">

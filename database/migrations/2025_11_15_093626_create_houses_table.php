@@ -27,6 +27,7 @@ return new class extends Migration {
             $table->decimal('additional_night_price', 10, 2)->nullable();
             $table->integer('adults')->nullable();
             $table->integer('children')->nullable();
+            $table->integer('number_of_rooms')->nullable();
             $table->json('library')->nullable();
 
             $table->timestamps();

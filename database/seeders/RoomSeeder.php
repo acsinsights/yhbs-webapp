@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Room;
-use App\Models\House;
 use App\Models\Category;
 use App\Models\Amenity;
 use Illuminate\Database\Seeder;
@@ -15,18 +14,16 @@ class RoomSeeder extends Seeder
      */
     public function run(): void
     {
-        $houses = House::all();
         $categories = Category::all();
         $amenities = Amenity::all();
 
-        if ($houses->isEmpty() || $categories->isEmpty()) {
-            $this->command->warn('Please run HouseSeeder and CategorySeeder first!');
+        if ($categories->isEmpty()) {
+            $this->command->warn('Please run CategorySeeder first!');
             return;
         }
 
         $rooms = [
             [
-                'house_id' => $houses->random()->id,
                 'name' => 'Double Room',
                 'slug' => 'double-room',
                 'room_number' => '101',
@@ -43,7 +40,6 @@ class RoomSeeder extends Seeder
                 'children' => 5,
             ],
             [
-                'house_id' => $houses->random()->id,
                 'name' => 'Sea View Room',
                 'slug' => 'sea-view-room',
                 'room_number' => '201',
@@ -60,7 +56,6 @@ class RoomSeeder extends Seeder
                 'children' => 5,
             ],
             [
-                'house_id' => $houses->random()->id,
                 'name' => 'Pool View Room',
                 'slug' => 'pool-view-room',
                 'room_number' => '301',
@@ -77,7 +72,6 @@ class RoomSeeder extends Seeder
                 'children' => 5,
             ],
             [
-                'house_id' => $houses->random()->id,
                 'name' => 'Suite Room',
                 'slug' => 'suite-room',
                 'room_number' => '401',
@@ -98,7 +92,6 @@ class RoomSeeder extends Seeder
         foreach ($rooms as $roomData) {
             $room = Room::updateOrCreate(
                 [
-                    'house_id' => $roomData['house_id'],
                     'room_number' => $roomData['room_number'],
                 ],
                 $roomData

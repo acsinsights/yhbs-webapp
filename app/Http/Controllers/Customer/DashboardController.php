@@ -140,14 +140,7 @@ class DashboardController extends Controller
         $bookings = Booking::where('user_id', $user->id)
             ->with('bookingable')
             ->latest()
-            ->paginate(10)
-            ->through(function ($booking) {
-                // Eager load house relationship only for Room bookings
-                if ($booking->bookingable instanceof \App\Models\Room) {
-                    $booking->bookingable->load('house');
-                }
-                return $booking;
-            });
+            ->paginate(10);
 
         return view('frontend.customer.bookings', compact('bookings'));
     }
@@ -249,11 +242,6 @@ class DashboardController extends Controller
         // Check if booking has been checked in (only show receipt after check-in)
         if (!$booking->isCheckedIn() && !$booking->isCheckedOut()) {
             abort(403, 'Receipt is only available after check-in.');
-        }
-
-        // Load house relationship if it's a room booking
-        if ($booking->bookingable instanceof \App\Models\Room) {
-            $booking->bookingable->load('house');
         }
 
         // Generate PDF

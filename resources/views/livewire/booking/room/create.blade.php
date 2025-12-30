@@ -377,17 +377,13 @@ new class extends Component {
         $checkOut = $this->check_out ? Carbon::parse($this->check_out) : null;
 
         if ($checkIn && $checkOut && $checkIn->lt($checkOut)) {
-            $query = Room::active()->available($checkIn, $checkOut)->with('house');
+            $query = Room::active()->available($checkIn, $checkOut);
 
             // Filter by search term
             if (!empty($this->room_search)) {
                 $search = $this->room_search;
                 $query->where(function ($q) use ($search) {
-                    $q->where('room_number', 'like', "%{$search}%")
-                        ->orWhere('name', 'like', "%{$search}%")
-                        ->orWhereHas('house', function ($houseQuery) use ($search) {
-                            $houseQuery->where('name', 'like', "%{$search}%");
-                        });
+                    $q->where('room_number', 'like', "%{$search}%")->orWhere('name', 'like', "%{$search}%");
                 });
             }
 
@@ -555,11 +551,6 @@ new class extends Component {
                                                                             class="text-xs text-base-content/60 line-clamp-1">
                                                                             {{ $room->name }}</p>
                                                                     @endif
-                                                                    @if ($room->house)
-                                                                        <p
-                                                                            class="text-xs text-primary font-medium mt-1">
-                                                                            {{ $room->house->name }}</p>
-                                                                    @endif
                                                                 </div>
                                                                 {{-- Selection Indicator --}}
                                                                 <div
@@ -704,11 +695,6 @@ new class extends Component {
                                             @if ($selectedRoom)
                                                 <p class="text-xs font-bold text-base-content line-clamp-1">
                                                     {{ $selectedRoom->room_number }}</p>
-                                                @if ($selectedRoom->house)
-                                                    <p class="text-xs text-base-content/60">
-                                                        {{ $selectedRoom->house->name }}
-                                                    </p>
-                                                @endif
                                             @else
                                                 <p class="text-xs text-base-content/50 italic">No room selected</p>
                                             @endif

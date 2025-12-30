@@ -20,11 +20,6 @@ class BookingController extends Controller
             abort(403, 'Receipt is only available after check-in.');
         }
 
-        // Load house relationship if it's a room booking
-        if ($booking->bookingable instanceof \App\Models\Room) {
-            $booking->bookingable->load('house');
-        }
-
         // Generate PDF
         $pdf = Pdf::loadView('pdf.booking-receipt', compact('booking'));
 

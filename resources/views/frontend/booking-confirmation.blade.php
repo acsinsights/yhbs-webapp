@@ -570,53 +570,63 @@
                         </div>
                         <div class="card-body">
                             <div class="payment-breakdown">
+                                @php
+                                    // Get values from booking object (already calculated in controller)
+                                    $nights = $booking->nights ?? 1;
+                                    $pricePerNight = $booking->price_per_night ?? 0;
+                                    $serviceFee = $booking->service_fee ?? 0;
+                                    $tax = $booking->tax ?? 0;
+                                    $discount = $booking->discount_amount ?? 0;
+                                    $walletUsed = $booking->wallet_amount_used ?? 0;
+
+                                    // Use actual stored price (accounts for tiered pricing)
+                                    $subtotal = $booking->price ?? $pricePerNight * $nights;
+                                @endphp
+
                                 <div class="payment-row">
                                     <span>Price per night</span>
-                                    <span>{{ currency_format(number_format($booking->price_per_night ?? 0, 2)) }}</span>
+                                    <span>{{ currency_format($pricePerNight) }}</span>
                                 </div>
                                 <div class="payment-row">
-                                    <span>× {{ $booking->nights ?? '1' }} nights</span>
-                                    <span>{{ currency_format(number_format(($booking->price_per_night ?? 0) * ($booking->nights ?? 1), 2)) }}</span>
+                                    <span>× {{ $nights }} {{ $nights > 1 ? 'nights' : 'night' }}</span>
+                                    <span>{{ currency_format($subtotal) }}</span>
                                 </div>
-                                @if (($booking->service_fee ?? 0) > 0)
+
+                                @if ($serviceFee > 0)
                                     <div class="payment-row">
                                         <span>Service fee</span>
-                                        <span>{{ currency_format(number_format($booking->service_fee ?? 0, 2)) }}</span>
-                                    </div>
-                                @endif
-                                @if (($booking->tax ?? 0) > 0)
-                                    <div class="payment-row">
-                                        <span>Taxes</span>
-                                        <span>{{ currency_format(number_format($booking->tax ?? 0, 2)) }}</span>
+                                        <span>{{ currency_format($serviceFee) }}</span>
                                     </div>
                                 @endif
 
-                                <!-- Subtotal before discount -->
-                                @php
-                                    $subtotal =
-                                        ($booking->price_per_night ?? 0) * ($booking->nights ?? 1) +
-                                        ($booking->service_fee ?? 0) +
-                                        ($booking->tax ?? 0);
-                                @endphp
-                                @if (isset($booking->discount_amount) && $booking->discount_amount > 0)
+                                @if ($tax > 0)
+                                    <div class="payment-row">
+                                        <span>Taxes</span>
+                                        <span>{{ currency_format($tax) }}</span>
+                                    </div>
+                                @endif
+
+                                {{-- Only show divider if discount or wallet is used --}}
+                                @if ($discount > 0 || $walletUsed > 0)
+                                    <div class="divider"></div>
+                                @endif
+
+                                @if ($discount > 0)
                                     <div class="payment-row" style="color: #28a745;">
                                         <span>
                                             <i class="bi bi-tag-fill me-2"></i>Discount
-                                            @if (isset($booking->coupon_code))
+                                            @if ($booking->coupon_code)
                                                 <small class="ms-2">({{ strtoupper($booking->coupon_code) }})</small>
                                             @endif
                                         </span>
-                                        <span>-
-                                            {{ currency_format(number_format($booking->discount_amount ?? 0, 2)) }}</span>
+                                        <span>-{{ currency_format($discount) }}</span>
                                     </div>
                                 @endif
 
-                                <!-- Wallet Amount Used -->
-                                @if (isset($booking->wallet_amount_used) && $booking->wallet_amount_used > 0)
+                                @if ($walletUsed > 0)
                                     <div class="payment-row" style="color: #0dcaf0;">
                                         <span><i class="bi bi-wallet2 me-2"></i>Wallet Amount Used</span>
-                                        <span>-
-                                            {{ currency_format(number_format($booking->wallet_amount_used ?? 0, 2)) }}</span>
+                                        <span>-{{ currency_format($walletUsed) }}</span>
                                     </div>
                                 @endif
                             </div>
@@ -625,7 +635,7 @@
 
                             <div class="total-amount">
                                 <span>Total Paid</span>
-                                <span>{{ currency_format(number_format($booking->total ?? 0, 2)) }}</span>
+                                <span>{{ currency_format($booking->total ?? 0) }}</span>
                             </div>
 
                             @if (

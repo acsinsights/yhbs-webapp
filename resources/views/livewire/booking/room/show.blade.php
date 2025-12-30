@@ -26,7 +26,7 @@ new class extends Component {
 
     public function mount(Booking $booking): void
     {
-        $this->booking = $booking->load(['bookingable.house', 'user']);
+        $this->booking = $booking->load(['bookingable', 'user']);
         $this->payment_status = $booking->payment_status->value;
         $this->payment_method = $booking->payment_method->value;
         $this->loadBookedDates();
@@ -385,16 +385,13 @@ new class extends Component {
                                 <div class="text-sm text-base-content/50 mb-1">Check In</div>
                                 <div class="font-semibold">
                                     {{ $booking->check_in->format('M d, Y') }}
-                                </div>
-                                <div class="text-xs text-base-content/50">
-                                    {{ $booking->check_in->format('h:i A') }}
-                                </div>
+                                </div> 
                             </div>
                             <div>
                                 <div class="text-sm text-base-content/50 mb-1">Check Out</div>
                                 <div class="font-semibold">
                                     {{ $booking->check_out->format('M d, Y') }}
-                                </div> 
+                                </div>
                             </div>
                         </div>
                     @endif
@@ -441,10 +438,6 @@ new class extends Component {
                                 <div class="text-sm text-base-content/50 mb-1">Room Name</div>
                                 <div class="font-semibold">{{ $booking->bookingable->name }}</div>
                             </div>
-                        </div>
-                        <div>
-                            <div class="text-sm text-base-content/50 mb-1">House</div>
-                            <div class="font-semibold">{{ $booking->bookingable->house->name ?? 'N/A' }}</div>
                         </div>
                         @if ($booking->bookingable->description)
                             <div>

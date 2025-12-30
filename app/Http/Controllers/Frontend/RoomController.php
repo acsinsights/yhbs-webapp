@@ -104,14 +104,13 @@ class RoomController extends Controller
      */
     public function show($slug)
     {
-        $room = Room::with(['categories', 'amenities', 'house'])
+        $room = Room::with(['categories', 'amenities'])
             ->where('slug', $slug)
             ->active()
             ->firstOrFail();
 
-        // Get similar rooms (rooms from same house)
-        $similarRooms = Room::where('house_id', $room->house_id)
-            ->where('id', '!=', $room->id)
+        // Get similar rooms
+        $similarRooms = Room::where('id', '!=', $room->id)
             ->active()
             ->take(3)
             ->get();

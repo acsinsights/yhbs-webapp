@@ -42,7 +42,7 @@ class BookingController extends Controller
         $price = 0;
 
         if ($type === 'room') {
-            $property = Room::with('house')->find($id);
+            $property = Room::find($id);
             if ($property) {
                 // CRITICAL DEBUG: Check property right after fetch
                 \Log::info('Property Fetched', [
@@ -61,7 +61,7 @@ class BookingController extends Controller
                     }
                 }
                 $propertyName = $property->name;
-                $location = $property->house->name ?? 'N/A';
+                $location = 'Room #' . ($property->room_number ?? 'N/A');
                 $price = $property->price_per_night ?? 0;
             }
         } elseif ($type === 'yacht') {
@@ -407,6 +407,23 @@ class BookingController extends Controller
             'special_requests' => $validated['special_requests'] ?? null,
         ];
 
+        // Calculate nights and pricing breakdown
+        $checkInDate = Carbon::parse($validated['check_in'])->startOfDay();
+        $checkOutDate = Carbon::parse($validated['check_out'])->startOfDay();
+        $nights = max(1, $checkInDate->diffInDays($checkOutDate) ?: 1);
+
+        // Get price per night from property
+        $pricePerNight = 0;
+        if ($validated['type'] === 'yacht') {
+            $pricePerNight = $property->price_per_hour ?? $property->price_per_night ?? 0;
+        } else {
+            $pricePerNight = $property->price_per_night ?? 0;
+        }
+
+        // Service fee and tax (currently 0, but structured for future use)
+        $serviceFee = 0;
+        $tax = 0;
+
         // Create the booking
         $booking = Booking::create([
             'bookingable_type' => $bookingableType,
@@ -418,6 +435,10 @@ class BookingController extends Controller
             'check_in' => Carbon::parse($validated['check_in'])->format('Y-m-d'),
             'check_out' => Carbon::parse($validated['check_out'])->format('Y-m-d'),
             'price' => $validated['total'],
+            'price_per_night' => $pricePerNight,
+            'nights' => $nights,
+            'service_fee' => $serviceFee,
+            'tax' => $tax,
             'coupon_id' => $couponId,
             'discount_amount' => $discountAmount,
             'total_amount' => $finalTotal,
@@ -476,7 +497,7 @@ class BookingController extends Controller
                     }
                 }
                 $propertyName = $room->name;
-                $location = $room->house->name ?? 'N/A';
+                $location = 'Room #' . ($room->room_number ?? 'N/A');
                 $propertyType = 'Room';
             }
         } elseif ($booking->bookingable_type === Yacht::class) {
@@ -541,16 +562,8 @@ class BookingController extends Controller
         $checkInDate = Carbon::parse($booking->check_in)->startOfDay();
         $checkOutDate = Carbon::parse($booking->check_out)->startOfDay();
 
-        // Calculate nights based on property type
-        if ($booking->bookingable_type === Yacht::class) {
-            // For yachts, still calculate by hours (days * 24)
-            $days = $checkInDate->diffInDays($checkOutDate);
-            $nights = max(1, $days === 0 ? 1 : $days);
-        } else {
-            // For rooms and houses, calculate by days
-            $nights = $checkInDate->diffInDays($checkOutDate);
-            $nights = max(1, $nights === 0 ? 1 : $nights);
-        }
+        // Get nights from booking record (or calculate as fallback)
+        $nights = $booking->nights ?? max(1, $checkInDate->diffInDays($checkOutDate) ?: 1);
 
         // Get customer info from guest_details or user
         $guestDetails = $booking->guest_details ?? [];
@@ -561,14 +574,12 @@ class BookingController extends Controller
             $customerName .= ' ' . $customerInfo['last_name'];
         }
 
-        // Get actual price per night from the property (room/house/yacht)
-        $pricePerNight = 0;
-        if ($booking->bookingable) {
+        // Get price per night from booking record (or from property as fallback)
+        $pricePerNight = $booking->price_per_night ?? 0;
+        if (!$pricePerNight && $booking->bookingable) {
             if ($booking->bookingable_type === Yacht::class) {
-                // For yachts, use price_per_hour or price
                 $pricePerNight = $booking->bookingable->price_per_hour ?? $booking->bookingable->price ?? 0;
             } else {
-                // For rooms and houses, use price_per_night
                 $pricePerNight = $booking->bookingable->price_per_night ?? 0;
             }
         }
@@ -613,9 +624,10 @@ class BookingController extends Controller
             'payment_status' => ucfirst($booking->payment_status->value),
             'status' => ucfirst(str_replace('_', ' ', $booking->status->value)),
             'total' => $booking->total_amount ?? $booking->price,
+            'price' => $booking->price,
             'price_per_night' => $pricePerNight,
-            'service_fee' => 0,
-            'tax' => 0,
+            'service_fee' => $booking->service_fee ?? 0,
+            'tax' => $booking->tax ?? 0,
             'discount_amount' => $discountAmount,
             'coupon_code' => $couponCode,
             'wallet_amount_used' => $walletAmountUsed,
@@ -628,14 +640,6 @@ class BookingController extends Controller
             'refund_amount' => $booking->refund_amount,
             'refund_status' => $booking->refund_status,
         ];
-
-        // Log for debugging
-        \Log::info('Booking Confirmation Image Debug', [
-            'booking_id' => $booking->id,
-            'bookingable_type' => $booking->bookingable_type,
-            'property_image' => $propertyImage,
-            'bookingable' => $booking->bookingable ? get_class($booking->bookingable) : null,
-        ]);
 
         return view('frontend.booking-confirmation', ['booking' => $bookingData]);
     }

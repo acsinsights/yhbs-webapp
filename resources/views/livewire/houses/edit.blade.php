@@ -29,6 +29,7 @@ new class extends Component {
     public ?float $additional_night_price = null;
     public ?int $adults = null;
     public ?int $children = null;
+    public ?int $number_of_rooms = null;
 
     // Image library properties
     public array $files = [];
@@ -62,6 +63,7 @@ new class extends Component {
         $this->additional_night_price = $house->additional_night_price;
         $this->adults = $house->adults;
         $this->children = $house->children;
+        $this->number_of_rooms = $house->number_of_rooms;
         $this->library = $house->library ?? new Collection();
     }
 
@@ -83,6 +85,7 @@ new class extends Component {
             'additional_night_price' => 'nullable|numeric|min:0|max:999999999.99',
             'adults' => 'nullable|integer|min:0|max:999',
             'children' => 'nullable|integer|min:0|max:999',
+            'number_of_rooms' => 'nullable|integer|min:0|max:999',
             'library' => 'nullable',
         ]);
 
@@ -108,6 +111,7 @@ new class extends Component {
             'additional_night_price' => $this->additional_night_price,
             'adults' => $this->adults,
             'children' => $this->children,
+            'number_of_rooms' => $this->number_of_rooms,
         ]);
 
         // Sync media files and update library metadata
@@ -201,12 +205,15 @@ new class extends Component {
             </div>
 
             {{-- Capacity Section --}}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-4 md:mt-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-4 md:mt-6">
                 <x-input wire:model="adults" label="Maximum Adults" placeholder="0" icon="o-user" type="number"
                     min="0" hint="Maximum number of adults" />
 
                 <x-input wire:model="children" label="Maximum Children" placeholder="0" icon="o-user-group"
                     type="number" min="0" hint="Maximum number of children" />
+
+                <x-input wire:model="number_of_rooms" label="Number of Rooms" placeholder="0" icon="o-home"
+                    type="number" min="0" hint="Total number of rooms in house" />
             </div>
             {{-- Meta Information Section --}}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-4 md:mt-6">

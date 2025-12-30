@@ -2067,7 +2067,8 @@
                                                         </svg>
                                                         <div class="tooltip-text">Includes: <span>Comfortable
                                                                 bed</span><br /> <span>Private bathroom</span><br />
-                                                            <span>Air-conditioning</span></div>
+                                                            <span>Air-conditioning</span>
+                                                        </div>
                                                     </div>
                                                 </li>
                                                 <li>
@@ -2176,7 +2177,8 @@
                                                         </svg>
                                                         <div class="tooltip-text">Amenities: <span>Free WiFi</span><br />
                                                             <span>Telescope provided</span><br /> <span>Premium
-                                                                toiletries</span></div>
+                                                                toiletries</span>
+                                                        </div>
                                                     </div>
                                                 </li>
                                             </ul>
@@ -2231,7 +2233,8 @@
                                                         </svg>
                                                         <div class="tooltip-text">Includes: <span>Spacious
                                                                 bedroom</span><br /> <span>Separate living area</span><br />
-                                                            <span>Luxury bathroom</span></div>
+                                                            <span>Luxury bathroom</span>
+                                                        </div>
                                                     </div>
                                                 </li>
                                                 <li>
@@ -2258,7 +2261,8 @@
                                                         </svg>
                                                         <div class="tooltip-text">Amenities: <span>Bathrobes &
                                                                 slippers</span><br /> <span>Jetted tub</span><br />
-                                                            <span>Complimentary breakfast</span></div>
+                                                            <span>Complimentary breakfast</span>
+                                                        </div>
                                                     </div>
                                                 </li>
                                             </ul>
@@ -2313,7 +2317,8 @@
                                                         </svg>
                                                         <div class="tooltip-text">Includes: <span>Pool view
                                                                 balcony</span><br /> <span>Modern amenities</span><br />
-                                                            <span>Comfortable seating</span></div>
+                                                            <span>Comfortable seating</span>
+                                                        </div>
                                                     </div>
                                                 </li>
                                                 <li>
@@ -2395,7 +2400,8 @@
                                                         </svg>
                                                         <div class="tooltip-text">Includes: <span>Panoramic sea
                                                                 views</span><br /> <span>Deluxe furnishings</span><br />
-                                                            <span>Premium suite</span></div>
+                                                            <span>Premium suite</span>
+                                                        </div>
                                                     </div>
                                                 </li>
                                                 <li>
@@ -2422,7 +2428,8 @@
                                                         </svg>
                                                         <div class="tooltip-text">Amenities: <span>Concierge
                                                                 service</span><br /> <span>Premium spa</span><br />
-                                                            <span>Gourmet dining</span></div>
+                                                            <span>Gourmet dining</span>
+                                                        </div>
                                                     </div>
                                                 </li>
                                             </ul>
@@ -2503,10 +2510,11 @@
                                                         d="M0 3L5 5.88675V0.113249L0 3ZM25 3L20 0.113249V5.88675L25 3ZM4.5 3.5H20.5V2.5H4.5V3.5Z">
                                                     </path>
                                                 </svg>
-                                                <span>{{ $house->rooms->count() }} Rooms</span>
+                                                <span>{{ $house->number_of_rooms ?? 0 }} Rooms</span>
                                             </div>
                                             <div class="btn-and-price-area">
-                                                <a href="{{ route('houses.show', $house->slug) }}" class="primary-btn1">
+                                                <a href="{{ route('houses.show', $house->slug) }}"
+                                                    class="primary-btn1">
                                                     <span>
                                                         View Details
                                                         <svg width="10" height="10" viewbox="0 0 10 10"
@@ -2598,7 +2606,8 @@
                                                                 <span>Accommodation,
                                                                     Daily Meals, Entry Fees & Local Transfers</span> to
                                                                 ensure a
-                                                                worry-free trip.</div>
+                                                                worry-free trip.
+                                                            </div>
                                                         </div>
                                                     </li>
                                                 </ul>
@@ -2703,7 +2712,8 @@
                                                         </svg>
                                                         <div class="tooltip-text">Includes: <span>Professional
                                                                 captain</span><br /> <span>Safety equipment</span><br />
-                                                            <span>Navigation systems</span></div>
+                                                            <span>Navigation systems</span>
+                                                        </div>
                                                     </div>
                                                 </li>
                                                 <li>
@@ -2730,7 +2740,8 @@
                                                         </svg>
                                                         <div class="tooltip-text">Amenities: <span>Fuel
                                                                 included</span><br /> <span>Insurance covered</span><br />
-                                                            <span>Mooring facilities</span></div>
+                                                            <span>Mooring facilities</span>
+                                                        </div>
                                                     </div>
                                                 </li>
                                             </ul>
@@ -2785,7 +2796,8 @@
                                                         </svg>
                                                         <div class="tooltip-text">Includes: <span>Luxury
                                                                 cabin</span><br /> <span>Crew on board</span><br />
-                                                            <span>Premium service</span></div>
+                                                            <span>Premium service</span>
+                                                        </div>
                                                     </div>
                                                 </li>
                                                 <li>
@@ -2812,7 +2824,8 @@
                                                         </svg>
                                                         <div class="tooltip-text">Amenities: <span>Fuel
                                                                 included</span><br /> <span>Insurance covered</span><br />
-                                                            <span>VIP service</span></div>
+                                                            <span>VIP service</span>
+                                                        </div>
                                                     </div>
                                                 </li>
                                             </ul>
@@ -2867,7 +2880,8 @@
                                                         </svg>
                                                         <div class="tooltip-text">Includes: <span>Sturdy hull
                                                                 design</span><br /> <span>Cargo capacity</span><br />
-                                                            <span>Utility features</span></div>
+                                                            <span>Utility features</span>
+                                                        </div>
                                                     </div>
                                                 </li>
                                                 <li>
@@ -2894,7 +2908,8 @@
                                                         </svg>
                                                         <div class="tooltip-text">Amenities: <span>Fuel
                                                                 included</span><br /> <span>Loading equipment</span><br />
-                                                            <span>Safety systems</span></div>
+                                                            <span>Safety systems</span>
+                                                        </div>
                                                     </div>
                                                 </li>
                                             </ul>
@@ -2948,7 +2963,8 @@
                                                         </svg>
                                                         <div class="tooltip-text">Includes: <span>Twin-hull
                                                                 design</span><br /> <span>Spacious deck</span><br />
-                                                            <span>Stable sailing</span></div>
+                                                            <span>Stable sailing</span>
+                                                        </div>
                                                     </div>
                                                 </li>
                                                 <li>
@@ -2975,7 +2991,8 @@
                                                         </svg>
                                                         <div class="tooltip-text">Amenities: <span>Fuel
                                                                 included</span><br /> <span>Crew assistance</span><br />
-                                                            <span>Comfort cabin</span></div>
+                                                            <span>Comfort cabin</span>
+                                                        </div>
                                                     </div>
                                                 </li>
                                             </ul>
@@ -3029,7 +3046,8 @@
                                                         </svg>
                                                         <div class="tooltip-text">Includes: <span>Fast
                                                                 cruising</span><br /> <span>Comfortable seating</span><br />
-                                                            <span>Modern facilities</span></div>
+                                                            <span>Modern facilities</span>
+                                                        </div>
                                                     </div>
                                                 </li>
                                                 <li>
@@ -3056,7 +3074,8 @@
                                                         </svg>
                                                         <div class="tooltip-text">Amenities: <span>Fuel
                                                                 included</span><br /> <span>Onboard dining</span><br />
-                                                            <span>Restrooms</span></div>
+                                                            <span>Restrooms</span>
+                                                        </div>
                                                     </div>
                                                 </li>
                                             </ul>

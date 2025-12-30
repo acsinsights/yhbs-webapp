@@ -349,16 +349,11 @@ new class extends Component {
         $availableHouses = House::available($checkIn, $checkOut)->where('id', $this->house_id)->exists();
 
         if (!$availableHouses) {
-            $this->error('Selected house is not available for the chosen dates. One or more rooms are already booked.');
+            $this->error('Selected house is not available for the chosen dates.');
             return;
         }
 
-        $house = House::with('rooms')->findOrFail($this->house_id);
-
-        if ($house->rooms->count() === 0) {
-            $this->error('This house has no rooms available for booking.');
-            return;
-        }
+        $house = House::findOrFail($this->house_id);
 
         // Create a single booking for the entire house
         $guestDetails = [
@@ -383,7 +378,7 @@ new class extends Component {
             'notes' => $this->notes,
         ]);
 
-        $this->success('House booking created successfully with ' . $house->rooms->count() . ' room(s).', redirectTo: route('admin.bookings.house.index'));
+        $this->success('House booking created successfully.', redirectTo: route('admin.bookings.house.index'));
     }
 
     public function rendering(View $view)
@@ -392,7 +387,7 @@ new class extends Component {
         $checkOut = $this->check_out ? Carbon::parse($this->check_out) : null;
 
         if ($checkIn && $checkOut && $checkIn->lt($checkOut)) {
-            $query = House::active()->available($checkIn, $checkOut)->with('rooms');
+            $query = House::active()->available($checkIn, $checkOut);
 
             // Filter by search term
             if (!empty($this->house_search)) {
@@ -469,7 +464,7 @@ new class extends Component {
                         @php
                             $selectedHouse =
                                 $availableHouses->firstWhere('id', $house_id) ??
-                                ($house_id ? House::with('rooms')->find($house_id) : null);
+                                ($house_id ? House::find($house_id) : null);
                             $maxAdults = $selectedHouse?->adults ?? 10;
                             $maxChildren = $selectedHouse?->children ?? 10;
                         @endphp
@@ -549,7 +544,7 @@ new class extends Component {
                                             @foreach ($availableHouses as $house)
                                                 @php
                                                     $isSelected = $house_id == $house->id;
-                                                    $totalRooms = $house->rooms->count();
+                                                    $totalRooms = $house->number_of_rooms ?? 0;
                                                     // Use house's price_per_night instead of summing room prices
                                                     $totalPrice = $house->price_per_night ?? 0;
                                                 @endphp
@@ -711,8 +706,8 @@ new class extends Component {
                                                 <p class="text-xs font-bold text-base-content line-clamp-1">
                                                     {{ $selectedHouse->name }}</p>
                                                 <p class="text-xs text-base-content/60">
-                                                    {{ $selectedHouse->rooms->count() }}
-                                                    {{ $selectedHouse->rooms->count() === 1 ? 'room' : 'rooms' }}
+                                                    {{ $selectedHouse->number_of_rooms ?? 0 }}
+                                                    {{ ($selectedHouse->number_of_rooms ?? 0) === 1 ? 'room' : 'rooms' }}
                                                     included
                                                 </p>
                                             @else

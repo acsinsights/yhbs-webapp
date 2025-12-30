@@ -7,14 +7,13 @@ use Illuminate\Http\UploadedFile;
 use Livewire\WithFileUploads;
 use Livewire\Volt\Component;
 use Mary\Traits\{Toast, WithMediaSync};
-use App\Models\{Amenity, Category, House, Room};
+use App\Models\{Amenity, Category, Room};
 
 new class extends Component {
     use Toast, WithFileUploads, WithMediaSync;
 
     public Room $room;
 
-    public int $house_id = 0;
     public string $name = '';
     public string $slug = '';
     public string $room_number = '';
@@ -59,7 +58,6 @@ new class extends Component {
     public function mount(Room $room): void
     {
         $this->room = $room;
-        $this->house_id = $room->house_id;
         $this->name = $room->name ?? '';
         $this->slug = $room->slug ?? '';
         $this->room_number = $room->room_number;
@@ -97,7 +95,6 @@ new class extends Component {
     public function update(): void
     {
         $this->validate([
-            'house_id' => 'required|exists:houses,id',
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:rooms,slug,' . $this->room->id,
             'room_number' => 'required|string|max:255',
@@ -124,7 +121,6 @@ new class extends Component {
         }
 
         $this->room->update([
-            'house_id' => $this->house_id,
             'name' => $this->name,
             'slug' => $this->slug,
             'room_number' => $this->room_number,
@@ -203,7 +199,6 @@ new class extends Component {
 
     public function rendering(View $view): void
     {
-        $view->houses = House::latest()->get();
         $view->categories = Category::type('room')->latest()->get();
         $view->amenities = Amenity::type('room')->latest()->get();
     }
@@ -247,10 +242,6 @@ new class extends Component {
     <x-card shadow class="mt-3 md:mt-5">
         <x-form wire:submit="update">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                <x-select wire:model="house_id" label="House" placeholder="Select a house" :options="$houses"
-                    option-value="id" option-label="name" icon="o-building-office-2"
-                    hint="Select the house this room belongs to" />
-
                 <x-input wire:model="name" label="Room Name" placeholder="e.g., Standard Room, Deluxe Suite"
                     icon="o-tag" hint="Display name for the room (slug will be auto-generated)" />
 

@@ -14,12 +14,8 @@ class HouseController extends Controller
      */
     public function index(Request $request)
     {
-        // Optimize query with selective eager loading
-        $query = House::query()->with([
-            'rooms' => function ($query) {
-                $query->select('id', 'house_id', 'name', 'room_number', 'price_per_night');
-            }
-        ]);
+        // Optimize query
+        $query = House::query();
 
         // Filter by capacity (total guests)
         if ($request->filled('capacity') && $request->capacity > 0) {
@@ -85,8 +81,7 @@ class HouseController extends Controller
      */
     public function show($slug)
     {
-        $house = House::with(['rooms.amenities'])
-            ->where('slug', $slug)
+        $house = House::where('slug', $slug)
             ->active()
             ->firstOrFail();
 

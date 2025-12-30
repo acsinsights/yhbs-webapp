@@ -96,7 +96,6 @@ new class extends Component {
                 @if ($booking->check_in)
                     <div class="flex flex-col">
                         <span>{{ $booking->check_in->format('M d, Y') }}</span>
-                        <span class="text-xs text-base-content/50">{{ $booking->check_in->format('h:i A') }}</span>
                     </div>
                 @else
                     <span class="text-base-content/50">—</span>
@@ -106,7 +105,7 @@ new class extends Component {
             @scope('cell_check_out', $booking)
                 @if ($booking->check_out)
                     <div class="flex flex-col">
-                        <span>{{ $booking->check_out->format('M d, Y') }}</span> 
+                        <span>{{ $booking->check_out->format('M d, Y') }}</span>
                     </div>
                 @else
                     <span class="text-base-content/50">—</span>

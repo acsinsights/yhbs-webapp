@@ -387,16 +387,13 @@ new class extends Component {
                                 <div class="text-sm text-base-content/50 mb-1">Departure</div>
                                 <div class="font-semibold">
                                     {{ $booking->check_in->format('M d, Y') }}
-                                </div>
-                                <div class="text-xs text-base-content/50">
-                                    {{ $booking->check_in->format('h:i A') }}
-                                </div>
+                                </div> 
                             </div>
                             <div>
                                 <div class="text-sm text-base-content/50 mb-1">Return</div>
                                 <div class="font-semibold">
                                     {{ $booking->check_out->format('M d, Y') }}
-                                </div> 
+                                </div>
                             </div>
                         </div>
                     @endif

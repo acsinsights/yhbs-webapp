@@ -48,36 +48,6 @@
                             </div>
                         @endif
 
-                        <!-- Rooms in House -->
-                        @if ($house->rooms && $house->rooms->count() > 0)
-                            <div class="mb-4">
-                                <h4>Rooms ({{ $house->rooms->count() }})</h4>
-                                <div class="row">
-                                    @foreach ($house->rooms as $room)
-                                        <div class="col-md-6 mb-3">
-                                            <div class="card">
-                                                <div class="card-body">
-                                                    <h6 class="card-title">{{ $room->name }}</h6>
-                                                    <p class="card-text small text-muted mb-2">Room
-                                                        #{{ $room->room_number }}</p>
-                                                    <div class="d-flex justify-content-between align-items-center">
-                                                        <span
-                                                            class="badge {{ $room->is_active ? 'bg-success' : 'bg-danger' }}">
-                                                            {{ $room->is_active ? 'Available' : 'Not Available' }}
-                                                        </span>
-                                                        <a href="{{ route('rooms.show', $room->slug) }}"
-                                                            class="btn btn-sm btn-outline-primary">
-                                                            View Room
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        @endif
-
                         <!-- House Details -->
                         <div class="mb-4">
                             <h4>House Details</h4>
@@ -90,7 +60,7 @@
                                 @endif
                                 <div class="col-md-6 mb-3">
                                     <strong><i class="bi bi-door-open me-2"></i>Rooms:</strong>
-                                    {{ $house->rooms->count() }}
+                                    {{ $house->number_of_rooms ?? 0 }}
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <strong><i class="bi bi-people me-2"></i>Adults:</strong> {{ $house->adults ?? 0 }}
@@ -132,7 +102,7 @@
                         </div>
 
                         @if ($house->description)
-                            <div class="mb-4"> 
+                            <div class="mb-4">
                                 <p>{!! $house->description !!}</p>
                             </div>
                         @endif
@@ -192,7 +162,7 @@
                                 @endif
                                 <li class="mb-2">
                                     <i class="bi bi-door-open me-2"></i>
-                                    <strong>Rooms:</strong> {{ $house->rooms->count() }}
+                                    <strong>Rooms:</strong> {{ $house->number_of_rooms ?? 0 }}
                                 </li>
                                 <li class="mb-2">
                                     <i class="bi bi-people me-2"></i>

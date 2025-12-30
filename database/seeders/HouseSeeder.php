@@ -35,6 +35,7 @@ class HouseSeeder extends Seeder
                 'additional_night_price' => 400.00,
                 'adults' => 10,
                 'children' => 5,
+                'number_of_rooms' => 4,
                 'rooms' => [
                     [
                         'name' => 'Master Suite',
@@ -92,6 +93,7 @@ class HouseSeeder extends Seeder
                 'additional_night_price' => 500.00,
                 'adults' => 12,
                 'children' => 6,
+                'number_of_rooms' => 4,
                 'rooms' => [
                     [
                         'name' => 'Sea View Master Suite',
@@ -162,6 +164,7 @@ class HouseSeeder extends Seeder
                 'additional_night_price' => 350.00,
                 'adults' => 8,
                 'children' => 4,
+                'number_of_rooms' => 3,
                 'rooms' => [
                     [
                         'name' => 'Mountain Suite',
@@ -207,43 +210,15 @@ class HouseSeeder extends Seeder
         ];
 
         foreach ($houses as $houseData) {
-            $rooms = $houseData['rooms'] ?? [];
+            // Remove rooms data from house creation
             unset($houseData['rooms']);
 
             $house = House::updateOrCreate(
                 ['slug' => $houseData['slug']],
                 $houseData
             );
-
-            // Create rooms for this house
-            foreach ($rooms as $roomData) {
-                $roomData['house_id'] = $house->id;
-                $roomData['is_active'] = true;
-                $roomData['meta_description'] = substr($roomData['description'], 0, 160);
-                $roomData['meta_keywords'] = $house->name . ', ' . $roomData['name'];
-
-                $room = Room::updateOrCreate(
-                    [
-                        'house_id' => $house->id,
-                        'room_number' => $roomData['room_number'],
-                    ],
-                    $roomData
-                );
-
-                // Attach random categories if available
-                if ($categories->isNotEmpty()) {
-                    $randomCategories = $categories->random(min(2, $categories->count()));
-                    $room->categories()->sync($randomCategories->pluck('id'));
-                }
-
-                // Attach random amenities if available
-                if ($amenities->isNotEmpty()) {
-                    $randomAmenities = $amenities->random(min(5, $amenities->count()));
-                    $room->amenities()->sync($randomAmenities->pluck('id'));
-                }
-            }
         }
 
-        $this->command->info('Created ' . count($houses) . ' houses with their rooms.');
+        $this->command->info('Created ' . count($houses) . ' houses.');
     }
 }

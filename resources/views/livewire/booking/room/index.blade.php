@@ -99,12 +99,7 @@ new class extends Component {
             @scope('cell_room_number', $booking)
                 @if ($booking->bookingable)
                     <div class="flex gap-2 items-center">
-                        <x-button tooltip="{{ $booking->bookingable->house->name }}"
-                            link="{{ route('admin.houses.show', $booking->bookingable->house->id) }}"
-                            class="btn-ghost btn-sm">
-                            <x-icon name="o-building-office-2" class="w-4 h-4" />
-                            <span class="font-semibold">{{ $booking->bookingable->room_number }}</span>
-                        </x-button>
+                        <x-badge value="{{ $booking->bookingable->room_number }}" class="badge-primary" />
                     </div>
                 @else
                     <span class="text-base-content/50">—</span>
@@ -114,7 +109,7 @@ new class extends Component {
             @scope('cell_check_in', $booking)
                 @if ($booking->check_in)
                     <div class="flex flex-col">
-                        <span>{{ $booking->check_in->format('M d, Y') }}</span> 
+                        <span>{{ $booking->check_in->format('M d, Y') }}</span>
                     </div>
                 @else
                     <span class="text-base-content/50">—</span>
