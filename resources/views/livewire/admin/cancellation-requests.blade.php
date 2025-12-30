@@ -35,7 +35,7 @@ new class extends Component {
     public function openApproveModal($bookingId): void
     {
         $this->selectedBooking = Booking::with(['user', 'bookingable'])->findOrFail($bookingId);
-        $this->refundAmount = $this->selectedBooking->total ?? ($this->selectedBooking->price ?? 0);
+        $this->refundAmount = $this->selectedBooking->total_amount ?? ($this->selectedBooking->price ?? 0);
         $this->showApproveModal = true;
     }
 
@@ -63,7 +63,16 @@ new class extends Component {
 
     public function approveCancellation(): void
     {
-        $this->validate(['refundAmount' => 'required|numeric|min:0']);
+        $maxRefund = $this->selectedBooking->total_amount ?? ($this->selectedBooking->price ?? 0);
+
+        $this->validate(
+            [
+                'refundAmount' => ['required', 'numeric', 'min:0', 'max:' . $maxRefund],
+            ],
+            [
+                'refundAmount.max' => 'Refund amount cannot exceed the amount paid by customer (' . currency_format($maxRefund) . ')',
+            ],
+        );
 
         if (!$this->selectedBooking) {
             $this->error('Booking not found.');
