@@ -95,7 +95,7 @@ class Boat extends Model
 
     public function getServiceTypeLabelAttribute(): string
     {
-        return match($this->service_type) {
+        return match ($this->service_type) {
             'marina_trip' => 'Marina Trip',
             'taxi' => 'Private Taxi',
             'ferry' => 'Ferry Service',
@@ -106,7 +106,7 @@ class Boat extends Model
 
     public function getDisplayPriceAttribute(): string
     {
-        return match($this->service_type) {
+        return match ($this->service_type) {
             'marina_trip', 'taxi' => $this->price_1hour ? "KD {$this->price_1hour}/hour" : "KD {$this->price_per_hour}/hour",
             'ferry' => $this->price_per_person_adult ? "KD {$this->price_per_person_adult}/person" : "From KD {$this->private_trip_price}",
             'limousine' => $this->price_15min ? "KD {$this->price_15min}/15min" : "KD {$this->price_full_boat}",

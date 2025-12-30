@@ -6,6 +6,7 @@ use App\Http\Controllers\Customer\AuthController;
 use App\Http\Controllers\Customer\DashboardController;
 use App\Http\Controllers\Frontend\RoomController;
 use App\Http\Controllers\Frontend\HouseController;
+use App\Http\Controllers\Frontend\BoatController;
 use App\Http\Controllers\Frontend\BookingController;
 
 // Frontend Home Page
@@ -99,6 +100,10 @@ Route::get('/rooms/{slug}', [RoomController::class, 'show'])->name('rooms.show')
 // Houses Routes
 Route::get('/houses', [HouseController::class, 'index'])->name('houses.index');
 Route::get('/houses/{slug}', [HouseController::class, 'show'])->name('houses.show');
+
+// Boats Routes
+Route::get('/boats', [BoatController::class, 'index'])->name('boats.index');
+Route::get('/boats/{slug}', [BoatController::class, 'show'])->name('boats.show');
 
 // Blog Routes
 Route::get('/blogs', [App\Http\Controllers\Frontend\BlogController::class, 'index'])->name('blogs.index');

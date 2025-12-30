@@ -84,6 +84,8 @@
                         link="{{ route('admin.bookings.room.index') }}" />
                     <x-menu-item title="House Bookings" icon="o-building-office"
                         link="{{ route('admin.bookings.house.index') }}" />
+                    <x-menu-item title="Boat Bookings" icon="o-circle-stack"
+                        link="{{ route('admin.bookings.boat.index') }}" />
                     <x-menu-item title="Coupons" icon="o-ticket" link="{{ route('admin.coupons.index') }}" />
 
                     @php
@@ -105,6 +107,9 @@
                     </div>
                     <x-menu-item title="Houses" icon="o-building-office" link="{{ route('admin.houses.index') }}" />
                     <x-menu-item title="Rooms" icon="o-home-modern" link="{{ route('admin.rooms.index') }}" />
+                    <x-menu-item title="Boats & Marine" icon="o-circle-stack" link="{{ route('admin.boats.index') }}" />
+                    <x-menu-item title="Boat Service Types" icon="o-squares-2x2"
+                        link="{{ route('admin.boats.service-types.index') }}" />
                     <x-menu-item title="Categories" icon="o-tag" link="{{ route('admin.category.index') }}" />
                     <x-menu-item title="Amenities" icon="o-star" link="{{ route('admin.amenity.index') }}" />
 

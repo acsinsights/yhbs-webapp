@@ -65,7 +65,7 @@ class BoatSeeder extends Seeder
                 'is_featured' => false,
                 'sort_order' => 3,
             ],
-            
+
             // Private Taxi
             [
                 'name' => 'Taxi 2',
@@ -81,7 +81,7 @@ class BoatSeeder extends Seeder
                 'is_featured' => false,
                 'sort_order' => 4,
             ],
-            
+
             // Ferry Services to Failaka
             [
                 'name' => 'Taxi 2 Ferry',
@@ -151,7 +151,7 @@ class BoatSeeder extends Seeder
                 'is_featured' => false,
                 'sort_order' => 8,
             ],
-            
+
             // Limousine Service
             [
                 'name' => 'VIP Limousine',
