@@ -23,9 +23,4 @@ class Category extends Model
     {
         return $this->belongsToMany(Room::class);
     }
-
-    public function yachts(): BelongsToMany
-    {
-        return $this->belongsToMany(Yacht::class);
-    }
 }

@@ -22,7 +22,7 @@
                             <a href="{{ url('/about') }}">About Us</a>
                         </li>
                         <li
-                            class="menu-item-has-children {{ request()->is('rooms*') || request()->is('yachts*') ? 'active' : '' }}">
+                            class="menu-item-has-children {{ request()->is('rooms*') || request()->is('houses*') ? 'active' : '' }}">
                             <a href="#" class="drop-down">
                                 Our Services
                                 <i class="bi bi-caret-down-fill"></i>
@@ -34,9 +34,6 @@
                                 </li>
                                 <li class="{{ request()->is('rooms*') ? 'active' : '' }}">
                                     <a href="{{ route('rooms.index') }}">Rooms</a>
-                                </li>
-                                <li class="{{ request()->is('yachts*') ? 'active' : '' }}">
-                                    <a href="{{ route('yachts.index') }}">Yachts</a>
                                 </li>
                             </ul>
                         </li>

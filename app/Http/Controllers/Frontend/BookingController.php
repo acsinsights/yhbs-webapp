@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Frontend;
 use App\Models\Booking;
 use App\Models\Coupon;
 use App\Models\Room;
-use App\Models\Yacht;
 use App\Models\House;
 use App\Services\CouponService;
 use App\Services\WalletService;
@@ -64,20 +63,6 @@ class BookingController extends Controller
                 $location = 'Room #' . ($property->room_number ?? 'N/A');
                 $price = $property->price_per_night ?? 0;
             }
-        } elseif ($type === 'yacht') {
-            $property = Yacht::find($id);
-            if ($property) {
-                if ($property->image) {
-                    if (str_starts_with($property->image, '/default')) {
-                        $propertyImage = asset($property->image);
-                    } else {
-                        $propertyImage = asset('storage/' . $property->image);
-                    }
-                }
-                $propertyName = $property->name;
-                $location = $property->location ?? 'N/A';
-                $price = $property->price_per_hour ?? $property->price_per_night ?? 0;
-            }
         } elseif ($type === 'house') {
             $property = House::find($id);
             if ($property) {
@@ -132,12 +117,7 @@ class BookingController extends Controller
         }
 
         // Calculate price based on property type and nights
-        if ($type === 'yacht') {
-            $hours = $nights * 24;
-            $subtotal = $hours * ($property->price_per_hour ?? ($property->price_per_night ?? 0));
-            // For display, show the actual per-night rate for yachts too
-            $price = $property->price_per_night ?? ($property->price_per_hour ? $property->price_per_hour * 24 : 0);
-        } elseif ($type === 'house') {
+        if ($type === 'house') {
             // Houses: use tiered pricing structure like rooms
             if ($nights == 1) {
                 $subtotal = $property->price_per_night ?? 0;

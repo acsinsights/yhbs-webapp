@@ -201,8 +201,8 @@
                                 <a href="{{ url('/rooms') }}" class="btn btn-outline-primary">
                                     <i class="bi bi-search me-2"></i>Browse Rooms
                                 </a>
-                                <a href="{{ url('/yachts') }}" class="btn btn-outline-primary">
-                                    <i class="bi bi-water me-2"></i>Browse Yachts
+                                <a href="{{ url('/houses') }}" class="btn btn-outline-primary">
+                                    <i class="bi bi-house me-2"></i>Browse Houses
                                 </a>
                                 <a href="{{ route('customer.bookings') }}" class="btn btn-outline-primary">
                                     <i class="bi bi-calendar-check me-2"></i>My Bookings

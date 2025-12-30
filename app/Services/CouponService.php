@@ -105,8 +105,6 @@ class CouponService
                 $isApplicable = in_array((int) $propertyId, array_map('intval', $coupon->applicable_rooms));
             } elseif ($propertyType === 'house' && $coupon->applicable_houses) {
                 $isApplicable = in_array((int) $propertyId, array_map('intval', $coupon->applicable_houses));
-            } elseif ($propertyType === 'yacht' && $coupon->applicable_yachts) {
-                $isApplicable = in_array((int) $propertyId, array_map('intval', $coupon->applicable_yachts));
             }
 
             if (!$isApplicable) {

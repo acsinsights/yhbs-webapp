@@ -6,7 +6,7 @@ use Illuminate\View\View;
 use Livewire\WithPagination;
 use Livewire\Volt\Component;
 use App\Enums\RolesEnum;
-use App\Models\{Booking, Room, User, House, Yacht};
+use App\Models\{Booking, Room, User, House};
 
 new class extends Component {
     use Toast, WithPagination;
@@ -43,11 +43,6 @@ new class extends Component {
         // Redirect if booking is not for a House
         if ($booking->bookingable_type === Room::class) {
             $this->warning('This is a room booking. Redirecting to room booking edit page.', redirectTo: route('admin.bookings.room.edit', $booking->id));
-            return;
-        }
-
-        if ($booking->bookingable_type === Yacht::class) {
-            $this->warning('This is a yacht booking. Redirecting to yacht booking edit page.', redirectTo: route('admin.bookings.yacht.edit', $booking->id));
             return;
         }
 

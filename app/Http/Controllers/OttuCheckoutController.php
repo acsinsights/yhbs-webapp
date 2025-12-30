@@ -33,7 +33,7 @@ class OttuCheckoutController extends Controller
      */
     public function checkout(Request $request, int $bookingId): View|RedirectResponse
     {
-        $booking = Booking::with(['user', 'yacht', 'house', 'room', 'coupon'])->findOrFail($bookingId);
+        $booking = Booking::with(['user', 'house', 'room', 'coupon'])->findOrFail($bookingId);
 
         // Check if booking belongs to authenticated user or is authorized
         if ($booking->user_id !== Auth::id() && !hasAuthRole('admin')) {
@@ -71,7 +71,7 @@ class OttuCheckoutController extends Controller
             'language' => app()->getLocale(),
             'extra' => [
                 'booking_id' => $booking->id,
-                'booking_type' => $booking->yacht_id ? 'yacht' : ($booking->house_id ? 'house' : 'room'),
+                'booking_type' => $booking->house_id ? 'house' : 'room',
             ],
         ];
 

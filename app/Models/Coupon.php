@@ -26,7 +26,6 @@ class Coupon extends Model
         'applicable_to',
         'applicable_rooms',
         'applicable_houses',
-        'applicable_yachts',
     ];
 
     protected $casts = [
@@ -42,7 +41,6 @@ class Coupon extends Model
         'is_active' => 'boolean',
         'applicable_rooms' => 'array',
         'applicable_houses' => 'array',
-        'applicable_yachts' => 'array',
     ];
 
     /**

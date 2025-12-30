@@ -264,29 +264,6 @@
             1200: { slidesPerView: 3, spaceBetween: 24 },
         },
     });
-    // Yacht Package Slider
-    var swiper = new Swiper(".yacht-trip-slider", {
-        slidesPerView: 1,
-        speed: 1500,
-        spaceBetween: 24,
-        autoplay: {
-            delay: 2500,
-            pauseOnMouseEnter: true,
-            disableOnInteraction: false,
-        },
-        pagination: {
-            el: ".yacht-pagination",
-            clickable: true,
-        },
-        breakpoints: {
-            280: { slidesPerView: 1 },
-            386: { slidesPerView: 1 },
-            576: { slidesPerView: 1 },
-            768: { slidesPerView: 2, spaceBetween: 15 },
-            992: { slidesPerView: 3, spaceBetween: 20 },
-            1200: { slidesPerView: 3, spaceBetween: 24 },
-        },
-    });
     // Traditional Houses Slider
     var swiper = new Swiper(".traditional-houses-slider", {
         slidesPerView: 1,

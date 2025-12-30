@@ -25,11 +25,6 @@ return new class extends Migration {
             $table->foreignId('amenity_id')->constrained('amenities');
             $table->foreignId('room_id')->constrained('rooms');
         });
-
-        Schema::create('amenity_yacht', function (Blueprint $table) {
-            $table->foreignId('amenity_id')->constrained('amenities');
-            $table->foreignId('yacht_id')->constrained('yachts');
-        });
     }
 
     /**

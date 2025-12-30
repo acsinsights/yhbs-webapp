@@ -43,36 +43,6 @@ class CategorySeeder extends Seeder
                 'icon' => 'https://placehold.co/100x100/EF4444/FFFFFF?text=Presidential',
                 'type' => 'room',
             ],
-            [
-                'name' => 'Luxury Yacht',
-                'slug' => 'luxury-yacht',
-                'icon' => 'https://placehold.co/100x100/111827/FFFFFF?text=Luxury',
-                'type' => 'yacht',
-            ],
-            [
-                'name' => 'Expedition Yacht',
-                'slug' => 'expedition-yacht',
-                'icon' => 'https://placehold.co/100x100/0F766E/FFFFFF?text=Explore',
-                'type' => 'yacht',
-            ],
-            [
-                'name' => 'Party Yacht',
-                'slug' => 'party-yacht',
-                'icon' => 'https://placehold.co/100x100/BE185D/FFFFFF?text=Party',
-                'type' => 'yacht',
-            ],
-            [
-                'name' => 'Family Cruiser',
-                'slug' => 'family-cruiser',
-                'icon' => 'https://placehold.co/100x100/CA8A04/FFFFFF?text=Family',
-                'type' => 'yacht',
-            ],
-            [
-                'name' => 'Corporate Charter',
-                'slug' => 'corporate-charter',
-                'icon' => 'https://placehold.co/100x100/2563EB/FFFFFF?text=Biz',
-                'type' => 'yacht',
-            ],
         ];
 
         foreach ($categories as $category) {

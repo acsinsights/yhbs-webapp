@@ -117,9 +117,9 @@ if (!function_exists('getPageMeta')) {
 
         // Return default meta
         return (object) [
-            'title' => config('app.name') . ' - Yacht & House Booking System',
-            'description' => 'Book luxury yachts and premium houses with our advanced booking system.',
-            'keywords' => 'yacht booking, house rental, luxury rentals',
+            'title' => config('app.name') . ' - House & Room Booking System',
+            'description' => 'Book premium houses and comfortable rooms with our advanced booking system.',
+            'keywords' => 'house rental, room booking, luxury rentals',
         ];
     }
 }

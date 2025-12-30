@@ -6,7 +6,6 @@ use App\Models\Booking;
 use App\Models\User;
 use App\Models\Room;
 use App\Models\House;
-use App\Models\Yacht;
 use App\Enums\BookingStatusEnum;
 use Illuminate\Database\Seeder;
 use Carbon\Carbon;
@@ -21,7 +20,6 @@ class BookingSeeder extends Seeder
         $users = User::all();
         $rooms = Room::all();
         $houses = House::all();
-        $yachts = Yacht::all();
 
         if ($users->isEmpty()) {
             $this->command->warn('Please run RoleSeeder first to create users!');
@@ -93,28 +91,6 @@ class BookingSeeder extends Seeder
                         'notes' => 'House booking created via seeder for ' . $nights . ' night(s).',
                     ];
                 }
-            }
-        }
-
-        // Create yacht bookings
-        if ($yachts->isNotEmpty()) {
-            foreach ($yachts->take(3) as $yacht) {
-                $checkIn = Carbon::now();
-                $checkOut = $checkIn->copy()->addDays(rand(1, 3));
-
-                $bookings[] = [
-                    'bookingable_type' => Yacht::class,
-                    'bookingable_id' => $yacht->id,
-                    'user_id' => $users->random()->id,
-                    'check_in' => $checkIn,
-                    'check_out' => $checkOut,
-                    'price' => $yacht->price,
-                    'price_per_hour' => $yacht->price_per_hour,
-                    'status' => BookingStatusEnum::cases()[array_rand(BookingStatusEnum::cases())]->value,
-                    'payment_status' => ['pending', 'paid', 'failed'][array_rand(['pending', 'paid', 'failed'])],
-                    'payment_method' => ['cash', 'card', 'other', 'online'][array_rand(['cash', 'card', 'other', 'online'])],
-                    'notes' => 'Yacht booking created via seeder.',
-                ];
             }
         }
 
