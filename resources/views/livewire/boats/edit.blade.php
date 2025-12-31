@@ -47,6 +47,9 @@ new class extends Component {
     public ?float $price_30min = null;
     public ?float $price_full_boat = null;
 
+    // Buffer time
+    public int $buffer_time = 0;
+
     // Meta & Status
     public ?string $meta_description = null;
     public ?string $meta_keywords = null;
@@ -73,6 +76,24 @@ new class extends Component {
         ];
     }
 
+    // Livewire lifecycle hook - convert library to Collection after hydration
+    public function hydrate(): void
+    {
+        if (is_array($this->library)) {
+            // Flatten nested arrays if they exist
+            $flatLibrary = [];
+            foreach ($this->library as $item) {
+                if (is_array($item) && count($item) === 1 && isset($item[0])) {
+                    // This is a nested array from Livewire serialization
+                    $flatLibrary[] = $item[0];
+                } else {
+                    $flatLibrary[] = $item;
+                }
+            }
+            $this->library = collect($flatLibrary);
+        }
+    }
+
     public function mount(Boat $boat): void
     {
         $this->boat = $boat;
@@ -88,13 +109,14 @@ new class extends Component {
         $this->price_2hours = $boat->price_2hours;
         $this->price_3hours = $boat->price_3hours;
         $this->additional_hour_price = $boat->additional_hour_price;
-        $this->price_per_person_adult = $boat->price_per_person_adult;
-        $this->price_per_person_child = $boat->price_per_person_child;
-        $this->private_trip_price = $boat->private_trip_price;
-        $this->private_trip_return_price = $boat->private_trip_return_price;
+        $this->ferry_private_weekday = $boat->ferry_private_weekday;
+        $this->ferry_private_weekend = $boat->ferry_private_weekend;
+        $this->ferry_public_weekday = $boat->ferry_public_weekday;
+        $this->ferry_public_weekend = $boat->ferry_public_weekend;
         $this->price_15min = $boat->price_15min;
         $this->price_30min = $boat->price_30min;
         $this->price_full_boat = $boat->price_full_boat;
+        $this->buffer_time = $boat->buffer_time ?? 0;
         $this->meta_description = $boat->meta_description;
         $this->meta_keywords = $boat->meta_keywords;
         $this->is_active = $boat->is_active;
@@ -130,6 +152,11 @@ new class extends Component {
 
     public function save(): void
     {
+        // Ensure library is a collection before validation
+        if (is_array($this->library)) {
+            $this->library = collect($this->library);
+        }
+
         $validated = $this->validate([
             'name' => 'required|string|max:255',
             'slug' => 'required|string|unique:boats,slug,' . $this->boat->id,
@@ -162,13 +189,14 @@ new class extends Component {
             'price_2hours' => $this->price_2hours,
             'price_3hours' => $this->price_3hours,
             'additional_hour_price' => $this->additional_hour_price,
-            'price_per_person_adult' => $this->price_per_person_adult,
-            'price_per_person_child' => $this->price_per_person_child,
-            'private_trip_price' => $this->private_trip_price,
-            'private_trip_return_price' => $this->private_trip_return_price,
+            'ferry_private_weekday' => $this->ferry_private_weekday,
+            'ferry_private_weekend' => $this->ferry_private_weekend,
+            'ferry_public_weekday' => $this->ferry_public_weekday,
+            'ferry_public_weekend' => $this->ferry_public_weekend,
             'price_15min' => $this->price_15min,
             'price_30min' => $this->price_30min,
             'price_full_boat' => $this->price_full_boat,
+            'buffer_time' => $this->buffer_time,
             'meta_description' => $this->meta_description,
             'meta_keywords' => $this->meta_keywords,
             'is_active' => $this->is_active,
@@ -285,6 +313,9 @@ new class extends Component {
                             @click="$wire.addAmenityModal = true" responsive />
                     </x-slot:append>
                 </x-choices-offline>
+
+                <x-input wire:model="buffer_time" type="number" label="Buffer Time (Minutes)" placeholder="0"
+                    icon="o-clock" hint="Time between bookings for cleaning/preparation" min="0" />
             </div>
             {{-- Pricing Section --}}
             <div class="mt-6 md:mt-8">
@@ -307,7 +338,8 @@ new class extends Component {
                             <h4 class="font-semibold text-base">Private Trip Pricing (Per Hour)</h4>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <x-input label="Weekday (KD/hour)" type="number" step="0.01"
-                                    wire:model="ferry_private_weekday" placeholder="0.00" hint="Sunday to Thursday" />
+                                    wire:model="ferry_private_weekday" placeholder="0.00"
+                                    hint="Sunday to Thursday" />
                                 <x-input label="Weekend (KD/hour)" type="number" step="0.01"
                                     wire:model="ferry_private_weekend" placeholder="0.00"
                                     hint="Friday to Saturday" />

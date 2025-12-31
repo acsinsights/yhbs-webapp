@@ -168,16 +168,20 @@ new class extends Component {
             $startTime = Carbon::parse($this->check_in)->setTime(floor($currentHour), ($currentHour - floor($currentHour)) * 60);
             $endTime = $startTime->copy()->addMinutes($durationHours * 60);
 
-            // Check if this slot is already booked
+            // Add buffer time from boat configuration
+            $bufferMinutes = $this->selectedBoat->buffer_time ?? 0;
+            $endTimeWithBuffer = $endTime->copy()->addMinutes($bufferMinutes);
+
+            // Check if this slot is already booked (including buffer time)
             $isBooked = Booking::where('bookingable_type', Boat::class)
                 ->where('bookingable_id', $this->selectedBoat->id)
                 ->whereDate('check_in', $this->check_in)
-                ->where(function ($query) use ($startTime, $endTime) {
+                ->where(function ($query) use ($startTime, $endTimeWithBuffer) {
                     $query
-                        ->whereBetween('check_in', [$startTime, $endTime])
-                        ->orWhereBetween('check_out', [$startTime, $endTime])
-                        ->orWhere(function ($q) use ($startTime, $endTime) {
-                            $q->where('check_in', '<=', $startTime)->where('check_out', '>=', $endTime);
+                        ->whereBetween('check_in', [$startTime, $endTimeWithBuffer])
+                        ->orWhereBetween('check_out', [$startTime, $endTimeWithBuffer])
+                        ->orWhere(function ($q) use ($startTime, $endTimeWithBuffer) {
+                            $q->where('check_in', '<=', $startTime)->where('check_out', '>=', $endTimeWithBuffer);
                         });
                 })
                 ->exists();
@@ -291,6 +295,25 @@ new class extends Component {
 
         $checkInDateTime = Carbon::parse($validated['check_in'] . ' ' . $validated['check_in_time']);
 
+        // Calculate checkout time based on duration and add buffer for yachts
+        $durationHours = match ($this->duration_slot) {
+            '1h' => 1,
+            '2h' => 2,
+            '3h' => 3,
+            'custom' => $this->custom_hours ?? 1,
+            '15min' => 0.25,
+            '30min' => 0.5,
+            '1hour_full' => 1,
+            default => 1,
+        };
+
+        $checkOutDateTime = $checkInDateTime->copy()->addMinutes($durationHours * 60);
+
+        // Add buffer time from boat configuration
+        if ($this->selectedBoat->buffer_time) {
+            $checkOutDateTime->addMinutes($this->selectedBoat->buffer_time);
+        }
+
         $guestDetails = [
             'adults' => array_values(array_filter($this->adultNames)),
             'children' => array_values(array_filter($this->childrenNames)),
@@ -310,7 +333,7 @@ new class extends Component {
             'bookingable_id' => $validated['boat_id'],
             'user_id' => $validated['user_id'],
             'check_in' => $checkInDateTime,
-            'check_out' => $checkInDateTime->copy()->addHours(1),
+            'check_out' => $checkOutDateTime,
             'adults' => $validated['adults'],
             'children' => $validated['children'],
             'guest_details' => $guestDetails,
@@ -332,6 +355,7 @@ new class extends Component {
         if ($this->selectedBoat) {
             $durationOptions = match ($this->selectedBoat->service_type) {
                 'yacht', 'taxi' => [['id' => '1h', 'name' => '1 Hour - KD ' . number_format($this->selectedBoat->price_1hour, 2)], ['id' => '2h', 'name' => '2 Hours - KD ' . number_format($this->selectedBoat->price_2hours, 2)], ['id' => '3h', 'name' => '3 Hours - KD ' . number_format($this->selectedBoat->price_3hours, 2)], ['id' => 'custom', 'name' => 'Custom Hours (KD ' . number_format($this->selectedBoat->additional_hour_price, 2) . '/hour)']],
+                'ferry' => [['id' => '1h', 'name' => '1 Hour'], ['id' => '2h', 'name' => '2 Hours'], ['id' => '3h', 'name' => '3 Hours'], ['id' => 'custom', 'name' => 'Custom Hours']],
                 'limousine' => [['id' => '15min', 'name' => '15 Minutes - KD ' . number_format($this->selectedBoat->price_15min, 2)], ['id' => '30min', 'name' => '30 Minutes - KD ' . number_format($this->selectedBoat->price_30min, 2)], ['id' => '1hour_full', 'name' => '1 Hour / Full Boat - KD ' . number_format($this->selectedBoat->price_full_boat, 2)]],
                 default => [],
             };
@@ -369,6 +393,7 @@ new class extends Component {
         if ($this->selectedBoat) {
             $durationOptions = match ($this->selectedBoat->service_type) {
                 'yacht', 'taxi' => [['id' => '1h', 'name' => '1 Hour - KD ' . number_format($this->selectedBoat->price_1hour, 2)], ['id' => '2h', 'name' => '2 Hours - KD ' . number_format($this->selectedBoat->price_2hours, 2)], ['id' => '3h', 'name' => '3 Hours - KD ' . number_format($this->selectedBoat->price_3hours, 2)], ['id' => 'custom', 'name' => 'Custom Hours (KD ' . number_format($this->selectedBoat->additional_hour_price, 2) . '/hour)']],
+                'ferry' => [['id' => '1h', 'name' => '1 Hour'], ['id' => '2h', 'name' => '2 Hours'], ['id' => '3h', 'name' => '3 Hours'], ['id' => 'custom', 'name' => 'Custom Hours']],
                 'limousine' => [['id' => '15min', 'name' => '15 Minutes - KD ' . number_format($this->selectedBoat->price_15min, 2)], ['id' => '30min', 'name' => '30 Minutes - KD ' . number_format($this->selectedBoat->price_30min, 2)], ['id' => '1hour_full', 'name' => '1 Hour / Full Boat - KD ' . number_format($this->selectedBoat->price_full_boat, 2)]],
                 default => [],
             };
@@ -481,14 +506,12 @@ new class extends Component {
                                             <x-icon name="o-user-group" class="w-8 h-8 text-primary/70" />
                                         </div>
                                         <div class="mt-6">
-                                            <x-radio label="Select Trip Type *" wire:model.live="booking_type"
-                                                :options="[
-                                                    ['value' => 'private', 'label' => '🔒 Private Trip (Per Hour)'],
-                                                    [
-                                                        'value' => 'public',
-                                                        'label' => '👥 Public Trip (Per Person/Hour)',
-                                                    ],
-                                                ]" />
+                                            <x-select label="Select Trip Type *" icon="o-user-group"
+                                                wire:model.live="booking_type" :options="[
+                                                    ['id' => 'private', 'name' => '🔒 Private Trip (Per Hour)'],
+                                                    ['id' => 'public', 'name' => '👥 Public Trip (Per Person/Hour)'],
+                                                ]"
+                                                placeholder="Choose trip type..." />
                                         </div>
                                     </x-card>
                                 @endif

@@ -48,6 +48,7 @@ new class extends Component {
             'service_type' => $this->service_type,
             'min_passengers' => 1,
             'max_passengers' => 10,
+            'buffer_time' => 0,
             'is_active' => false,
         ]);
 

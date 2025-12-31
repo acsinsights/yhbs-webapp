@@ -19,6 +19,16 @@ class BoatServiceTypeSeeder extends Seeder
                 'is_active' => true,
             ],
             [
+                'name' => 'Taxi',
+                'slug' => 'taxi',
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Ferry',
+                'slug' => 'ferry',
+                'is_active' => true,
+            ],
+            [
                 'name' => 'Limousine Service',
                 'slug' => 'limousine',
                 'is_active' => true,

@@ -48,6 +48,9 @@ return new class extends Migration {
             $table->text('meta_description')->nullable();
             $table->text('meta_keywords')->nullable();
 
+            // Buffer time in minutes (for cleaning/preparation between bookings)
+            $table->integer('buffer_time')->default(0)->comment('Buffer time in minutes');
+
             $table->boolean('is_active')->default(true);
             $table->boolean('is_featured')->default(false);
             $table->integer('sort_order')->default(0);
