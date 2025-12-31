@@ -36,11 +36,11 @@ new class extends Component {
     public ?float $price_3hours = null;
     public ?float $additional_hour_price = null;
 
-    // Ferry Pricing
-    public ?float $price_per_person_adult = null;
-    public ?float $price_per_person_child = null;
-    public ?float $private_trip_price = null;
-    public ?float $private_trip_return_price = null;
+    // Ferry Pricing (Private: per hour, Public: per person/hour with weekday/weekend rates)
+    public ?float $ferry_private_weekday = null;
+    public ?float $ferry_private_weekend = null;
+    public ?float $ferry_public_weekday = null;
+    public ?float $ferry_public_weekend = null;
 
     // Limousine Pricing
     public ?float $price_15min = null;
@@ -304,19 +304,20 @@ new class extends Component {
                         </div>
                     @elseif($service_type === 'ferry')
                         <div class="space-y-4">
-                            <h4 class="font-semibold text-base">Per Person Pricing</h4>
+                            <h4 class="font-semibold text-base">Private Trip Pricing (Per Hour)</h4>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <x-input label="Adult Price (KD)" type="number" step="0.01"
-                                    wire:model="price_per_person_adult" placeholder="0.00" />
-                                <x-input label="Child Price (KD)" type="number" step="0.01"
-                                    wire:model="price_per_person_child" placeholder="0.00" />
+                                <x-input label="Weekday (KD/hour)" type="number" step="0.01"
+                                    wire:model="ferry_private_weekday" placeholder="0.00" hint="Sunday to Thursday" />
+                                <x-input label="Weekend (KD/hour)" type="number" step="0.01"
+                                    wire:model="ferry_private_weekend" placeholder="0.00"
+                                    hint="Friday to Saturday" />
                             </div>
-                            <h4 class="font-semibold text-base mt-4">Private Trip Pricing</h4>
+                            <h4 class="font-semibold text-base mt-4">Public Trip Pricing (Per Person/Hour)</h4>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <x-input label="One Way (KD)" type="number" step="0.01"
-                                    wire:model="private_trip_price" placeholder="0.00" />
-                                <x-input label="Return (KD)" type="number" step="0.01"
-                                    wire:model="private_trip_return_price" placeholder="0.00" />
+                                <x-input label="Weekday (KD/person/hour)" type="number" step="0.01"
+                                    wire:model="ferry_public_weekday" placeholder="0.00" hint="Sunday to Thursday" />
+                                <x-input label="Weekend (KD/person/hour)" type="number" step="0.01"
+                                    wire:model="ferry_public_weekend" placeholder="0.00" hint="Friday to Saturday" />
                             </div>
                         </div>
                     @elseif($service_type === 'limousine')
@@ -379,8 +380,8 @@ new class extends Component {
             <div class="flex flex-col sm:flex-row justify-between gap-2 sm:gap-3 mt-6 md:mt-8 pt-4 md:pt-6 border-t">
                 <x-button icon="o-x-mark" label="Cancel" link="{{ route('admin.boats.index') }}"
                     class="btn-error btn-outline" responsive />
-                <x-button icon="o-check" label="Update Boat" type="submit" class="btn-primary"
-                    spinner="save" responsive />
+                <x-button icon="o-check" label="Update Boat" type="submit" class="btn-primary" spinner="save"
+                    responsive />
             </div>
         </x-form>
     </x-card>

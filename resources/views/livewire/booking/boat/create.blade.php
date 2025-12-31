@@ -214,8 +214,7 @@ new class extends Component {
         $amount = 0;
 
         match ($boat->service_type) {
-            'yacht', 'taxi' => ($amount = $this->calculateHourlyPrice($boat)),
-            'ferry' => ($amount = $this->calculateFerryPrice($boat)),
+            'yacht', 'taxi', 'ferry' => ($amount = $this->calculateHourlyPrice($boat)),
             'limousine' => ($amount = $this->calculateLimousinePrice($boat)),
             default => ($amount = 0),
         };
@@ -225,6 +224,36 @@ new class extends Component {
 
     private function calculateHourlyPrice(Boat $boat): float
     {
+        // For ferry, calculate based on trip type and weekday/weekend
+        if ($boat->service_type === 'ferry') {
+            if (!$this->duration_slot || !$this->check_in) {
+                return 0;
+            }
+
+            $date = Carbon::parse($this->check_in);
+            // Weekend = Friday to Saturday, Weekdays = Sunday to Thursday
+            $isWeekend = in_array($date->dayOfWeek, [Carbon::FRIDAY, Carbon::SATURDAY]);
+
+            $hours = match ($this->duration_slot) {
+                '1h' => 1,
+                '2h' => 2,
+                '3h' => 3,
+                'custom' => $this->custom_hours ?? 0,
+                default => 0,
+            };
+
+            // Private trip - per hour
+            if ($this->booking_type === 'private') {
+                $pricePerHour = $isWeekend ? $boat->ferry_private_weekend ?? 0 : $boat->ferry_private_weekday ?? 0;
+                return $pricePerHour * $hours;
+            }
+
+            // Public trip - per person per hour
+            $pricePerPersonPerHour = $isWeekend ? $boat->ferry_public_weekend ?? 0 : $boat->ferry_public_weekday ?? 0;
+            return $pricePerPersonPerHour * $hours * $this->adults;
+        }
+
+        // For yacht/taxi - fixed hourly pricing
         return match ($this->duration_slot) {
             '1h' => $boat->price_1hour ?? 0,
             '2h' => $boat->price_2hours ?? 0,
@@ -232,19 +261,6 @@ new class extends Component {
             'custom' => ($boat->additional_hour_price ?? 0) * ($this->custom_hours ?? 0),
             default => 0,
         };
-    }
-
-    private function calculateFerryPrice(Boat $boat): float
-    {
-        if ($this->booking_type === 'private') {
-            return $boat->private_trip_price ?? 0;
-        }
-
-        // Public trip - per person
-        $adultPrice = ($boat->price_per_person_adult ?? 0) * $this->adults;
-        $childPrice = ($boat->price_per_person_child ?? 0) * $this->children;
-
-        return $adultPrice + $childPrice;
     }
 
     private function calculateLimousinePrice(Boat $boat): float
@@ -447,13 +463,42 @@ new class extends Component {
 
 
                         @if ($selectedBoat)
-                            {{-- Yacht / Taxi (Hourly Booking) --}}
-                            @if (in_array($selectedBoat->service_type, ['yacht', 'taxi']))
-                                {{-- Step 4: Duration Selection --}}
+                            {{-- Yacht / Taxi / Ferry (Hourly Booking) --}}
+                            @if (in_array($selectedBoat->service_type, ['yacht', 'taxi', 'ferry']))
+                                {{-- Ferry Trip Type Selection --}}
+                                @if ($selectedBoat->service_type === 'ferry')
+                                    <x-card class="bg-base-200">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div>
+                                                <p class="text-xs uppercase tracking-wide text-primary font-semibold">
+                                                    Step 3
+                                                </p>
+                                                <h3 class="text-xl font-semibold text-base-content mt-1">Trip Type
+                                                </h3>
+                                                <p class="text-sm text-base-content/60 mt-1">Select private or public
+                                                    trip</p>
+                                            </div>
+                                            <x-icon name="o-user-group" class="w-8 h-8 text-primary/70" />
+                                        </div>
+                                        <div class="mt-6">
+                                            <x-radio label="Select Trip Type *" wire:model.live="booking_type"
+                                                :options="[
+                                                    ['value' => 'private', 'label' => '🔒 Private Trip (Per Hour)'],
+                                                    [
+                                                        'value' => 'public',
+                                                        'label' => '👥 Public Trip (Per Person/Hour)',
+                                                    ],
+                                                ]" />
+                                        </div>
+                                    </x-card>
+                                @endif
+
+                                {{-- Step 3/4: Duration Selection --}}
                                 <x-card class="bg-base-200">
                                     <div class="flex items-start justify-between gap-3">
                                         <div>
-                                            <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step 4
+                                            <p class="text-xs uppercase tracking-wide text-primary font-semibold">
+                                                {{ $selectedBoat->service_type === 'ferry' ? 'Step 4' : 'Step 3' }}
                                             </p>
                                             <h3 class="text-xl font-semibold text-base-content mt-1">Select Duration
                                             </h3>
@@ -559,139 +604,6 @@ new class extends Component {
                                 @endif
                             @endif
 
-                            {{-- Ferry Service (Private or Public) --}}
-                            @if ($selectedBoat->service_type === 'ferry')
-                                <x-card class="bg-base-200">
-                                    <div class="flex items-start justify-between gap-3">
-                                        <div>
-                                            <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step
-                                                3</p>
-                                            <h3 class="text-xl font-semibold text-base-content mt-1">Trip Type & Guests
-                                            </h3>
-                                            <p class="text-sm text-base-content/60 mt-1">Select trip type and number of
-                                                guests</p>
-                                        </div>
-                                        <x-icon name="o-bolt" class="w-8 h-8 text-primary/70" />
-                                    </div>
-                                    <div class="mt-6">
-                                        <x-radio label="Select Trip Type *" wire:model.live="booking_type"
-                                            :options="[
-                                                [
-                                                    'value' => 'private',
-                                                    'label' =>
-                                                        '🔒 Private Trip - KD ' .
-                                                        number_format($selectedBoat->private_trip_price, 2),
-                                                ],
-                                                ['value' => 'public', 'label' => '👥 Public Trip (Per Person)'],
-                                            ]" />
-                                    </div>
-
-                                    @if ($booking_type === 'public' || !$booking_type)
-                                        @php
-                                            $maxAdults = $selectedBoat->max_passengers ?? 10;
-                                            $maxChildren = $selectedBoat->max_passengers ?? 10;
-                                        @endphp
-                                        <div class="mt-6">
-                                            <h4
-                                                class="text-sm font-semibold text-base-content mb-3 flex items-center gap-2">
-                                                <x-icon name="o-user-group" class="w-4 h-4" />
-                                                Guest Details
-                                            </h4>
-                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                                <x-input wire:model.live="adults" label="Adults" type="number"
-                                                    min="1" icon="o-user-group" :max="$maxAdults"
-                                                    hint="Adult: KD {{ number_format($selectedBoat->price_per_person_adult, 2) }} per person" />
-                                                <x-input wire:model.live="children" label="Children" type="number"
-                                                    min="0" icon="o-face-smile" :max="$maxChildren"
-                                                    hint="Child: KD {{ number_format($selectedBoat->price_per_person_child, 2) }} per person" />
-                                            </div>
-
-                                            {{-- Adult Names --}}
-                                            @if ($adults > 0)
-                                                <div class="mb-4">
-                                                    <h5
-                                                        class="text-sm font-semibold text-base-content mb-3 flex items-center gap-2">
-                                                        <x-icon name="o-user" class="w-4 h-4" />
-                                                        Adult Names
-                                                    </h5>
-                                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                        @for ($i = 0; $i < $adults; $i++)
-                                                            <x-input wire:model="adultNames.{{ $i }}"
-                                                                label="Adult {{ $i + 1 }} Name"
-                                                                placeholder="Enter full name" icon="o-user" />
-                                                        @endfor
-                                                    </div>
-                                                </div>
-                                            @endif
-
-                                            {{-- Children Names --}}
-                                            @if ($children > 0)
-                                                <div>
-                                                    <h5
-                                                        class="text-sm font-semibold text-base-content mb-3 flex items-center gap-2">
-                                                        <x-icon name="o-face-smile" class="w-4 h-4" />
-                                                        Children Names
-                                                    </h5>
-                                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                        @for ($i = 0; $i < $children; $i++)
-                                                            <x-input wire:model="childrenNames.{{ $i }}"
-                                                                label="Child {{ $i + 1 }} Name"
-                                                                placeholder="Enter full name (optional)"
-                                                                icon="o-user" />
-                                                        @endfor
-                                                    </div>
-                                                </div>
-                                            @endif
-                                        </div>
-                                    @endif
-                                </x-card>
-
-                                {{-- Step 4: Date & Time Selection for Ferry --}}
-                                <x-card class="bg-base-200">
-                                    <div class="flex items-start justify-between gap-3">
-                                        <div>
-                                            <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step
-                                                4</p>
-                                            <h3 class="text-xl font-semibold text-base-content mt-1">Select Date & Time
-                                            </h3>
-                                            <p class="text-sm text-base-content/60 mt-1">Choose trip date and time</p>
-                                        </div>
-                                        <x-icon name="o-calendar" class="w-8 h-8 text-primary/70" />
-                                    </div>
-                                    <div class="grid gap-4 mt-6">
-                                        <x-input label="Trip Date *" icon="o-calendar" type="date"
-                                            wire:model.live="check_in" hint="Select date" />
-
-                                        @if ($check_in)
-                                            <x-input label="Departure Time *" icon="o-clock" type="time"
-                                                wire:model="check_in_time" hint="Select departure time" />
-                                        @endif
-                                    </div>
-                                </x-card>
-                                {{-- Step 4: Date & Time Selection for Ferry --}}
-                                <x-card class="bg-base-200">
-                                    <div class="flex items-start justify-between gap-3">
-                                        <div>
-                                            <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step
-                                                4</p>
-                                            <h3 class="text-xl font-semibold text-base-content mt-1">Select Date & Time
-                                            </h3>
-                                            <p class="text-sm text-base-content/60 mt-1">Choose trip date and time</p>
-                                        </div>
-                                        <x-icon name="o-calendar" class="w-8 h-8 text-primary/70" />
-                                    </div>
-                                    <div class="grid gap-4 mt-6">
-                                        <x-input label="Trip Date *" icon="o-calendar" type="date"
-                                            wire:model.live="check_in" hint="Select date" />
-
-                                        @if ($check_in)
-                                            <x-input label="Departure Time *" icon="o-clock" type="time"
-                                                wire:model="check_in_time" hint="Select departure time" />
-                                        @endif
-                                    </div>
-                                </x-card>
-                            @endif
-
                             {{-- Limousine Service (Time-based) --}}
                             @if ($selectedBoat->service_type === 'limousine')
                                 {{-- Step 3: Duration Selection --}}
@@ -713,13 +625,14 @@ new class extends Component {
                                     </div>
                                 </x-card>
 
-                                {{-- Step 4: Date & Time Slot Selection --}}
+                                {{-- Step 4/5: Date & Time Slot Selection --}}
                                 @if ($duration_slot)
                                     <x-card class="bg-base-200">
                                         <div class="flex items-start justify-between gap-3">
                                             <div>
                                                 <p class="text-xs uppercase tracking-wide text-primary font-semibold">
-                                                    Step 4</p>
+                                                    {{ $selectedBoat && $selectedBoat->service_type === 'ferry' ? 'Step 5' : 'Step 4' }}
+                                                </p>
                                                 <h3 class="text-xl font-semibold text-base-content mt-1">Select Date &
                                                     Time Slot</h3>
                                                 <p class="text-sm text-base-content/60 mt-1">Choose your preferred date
@@ -789,13 +702,13 @@ new class extends Component {
                             @endif
                         @endif
 
-                        {{-- Universal Guests Section (for all boat types except Ferry with public trip that already has it) --}}
-                        @if ($selectedBoat && !($selectedBoat->service_type === 'ferry' && ($booking_type === 'public' || !$booking_type)))
+                        {{-- Universal Guests Section (for all boat types) --}}
+                        @if ($selectedBoat)
                             @php
                                 $maxAdults = $selectedBoat->max_passengers ?? 10;
                                 $maxChildren = $selectedBoat->max_passengers ?? 10;
                             @endphp
-                            <x-booking.guest-section stepNumber="4" :maxAdults="$maxAdults" :maxChildren="$maxChildren"
+                            <x-booking.guest-section :stepNumber="$selectedBoat->service_type === 'ferry' ? 6 : 5" :maxAdults="$maxAdults" :maxChildren="$maxChildren"
                                 :adults="$adults" :children="$children" />
                         @endif
 
@@ -804,7 +717,7 @@ new class extends Component {
                             <div class="flex items-start justify-between gap-3">
                                 <div>
                                     <p class="text-xs uppercase tracking-wide text-primary font-semibold">
-                                        {{ $selectedBoat && $selectedBoat->service_type === 'ferry' && ($booking_type === 'public' || !$booking_type) ? 'Step 4' : 'Step 5' }}
+                                        Step 5
                                     </p>
                                     <h3 class="text-xl font-semibold text-base-content mt-1">Payment Details</h3>
                                     <p class="text-sm text-base-content/60 mt-1">Payment information for this booking
@@ -828,7 +741,7 @@ new class extends Component {
                             <div class="flex items-start justify-between gap-3">
                                 <div>
                                     <p class="text-xs uppercase tracking-wide text-primary font-semibold">
-                                        {{ $selectedBoat && $selectedBoat->service_type === 'ferry' && ($booking_type === 'public' || !$booking_type) ? 'Step 5' : 'Step 6' }}
+                                        {{ $selectedBoat && $selectedBoat->service_type === 'ferry' ? 'Step 7' : 'Step 6' }}
                                     </p>
                                     <h3 class="text-xl font-semibold text-base-content mt-1">Additional Notes</h3>
                                     <p class="text-sm text-base-content/60 mt-1">Special requests or information</p>
