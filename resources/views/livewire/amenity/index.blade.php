@@ -5,12 +5,11 @@ use Illuminate\View\View;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
-use Livewire\WithFileUploads;
 use Livewire\Volt\Component;
 use App\Models\Amenity;
 
 new class extends Component {
-    use Toast, WithPagination, WithFileUploads;
+    use Toast, WithPagination;
 
     #[Url]
     public string $search = '';
@@ -20,17 +19,12 @@ new class extends Component {
 
     public bool $createModal = false;
     public string $name = '';
-    public $icon = null;
     public string $type = 'room';
 
     public bool $editModal = false;
     public ?Amenity $editingAmenity = null;
     public string $edit_name = '';
-    public $edit_icon = null;
-    public ?string $existing_icon = null;
     public string $edit_type = 'room';
-
-    public $config = ['aspectRatio' => 1];
 
     // Delete action
     public function delete($id): void
@@ -45,25 +39,17 @@ new class extends Component {
     {
         $this->validate([
             'name' => 'required|string|max:255|unique:amenities,name',
-            'icon' => 'nullable|image|mimes:jpeg,jpg,svg|max:2500',
             'type' => 'required|in:room,yacht',
         ]);
-
-        $iconPath = null;
-        if ($this->icon) {
-            $url = $this->icon->store('amenities', 'public');
-            $iconPath = "/storage/$url";
-        }
 
         Amenity::create([
             'name' => $this->name,
             'slug' => Str::slug($this->name),
-            'icon' => $iconPath,
             'type' => $this->type,
         ]);
 
         $this->createModal = false;
-        $this->reset('name', 'icon', 'type');
+        $this->reset('name', 'type');
         $this->success('Amenity created successfully.');
     }
 
@@ -71,8 +57,6 @@ new class extends Component {
     {
         $this->editingAmenity = Amenity::findOrFail($id);
         $this->edit_name = $this->editingAmenity->name;
-        $this->existing_icon = $this->editingAmenity->icon;
-        $this->edit_icon = null;
         $this->edit_type = $this->editingAmenity->type ?? 'room';
         $this->editModal = true;
     }
@@ -81,25 +65,17 @@ new class extends Component {
     {
         $this->validate([
             'edit_name' => 'required|string|max:255|unique:amenities,name,' . $this->editingAmenity->id,
-            'edit_icon' => 'nullable|image|mimes:jpeg,jpg,svg|max:2500',
             'edit_type' => 'required|in:room,yacht',
         ]);
-
-        $iconPath = $this->existing_icon;
-        if ($this->edit_icon) {
-            $url = $this->edit_icon->store('amenities', 'public');
-            $iconPath = "/storage/$url";
-        }
 
         $this->editingAmenity->update([
             'name' => $this->edit_name,
             'slug' => Str::slug($this->edit_name),
-            'icon' => $iconPath,
             'type' => $this->edit_type,
         ]);
 
         $this->editModal = false;
-        $this->reset('edit_name', 'edit_icon', 'existing_icon', 'edit_type', 'editingAmenity');
+        $this->reset('edit_name', 'edit_type', 'editingAmenity');
         $this->success('Amenity updated successfully.');
     }
 
@@ -112,13 +88,9 @@ new class extends Component {
             ->orderBy(...array_values($this->sortBy))
             ->paginate($this->perPage);
 
-        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'name', 'label' => 'Name', 'sortable' => true], ['key' => 'slug', 'label' => 'Slug', 'sortable' => true], ['key' => 'icon', 'label' => 'Icon', 'sortable' => false], ['key' => 'type', 'label' => 'Type', 'sortable' => true]];
+        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'name', 'label' => 'Name', 'sortable' => true], ['key' => 'type', 'label' => 'Type', 'sortable' => true]];
     }
 }; ?>
-@section('cdn')
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
-@endsection
 <div>
     @php
         $breadcrumbs = [
@@ -199,12 +171,6 @@ new class extends Component {
 
                 <x-select wire:model="type" label="Type" placeholder="Select type" :options="[['id' => 'room', 'name' => 'Room'], ['id' => 'yacht', 'name' => 'Yacht']]" option-value="id"
                     option-label="name" icon="o-sparkles" hint="Amenity type" />
-
-                <x-file wire:model="icon" label="Amenity Icon" placeholder="Upload amenity icon" crop-after-change
-                    :crop-config="$config" hint="Max: 2MB (JPG, JPEG, SVG)">
-                    <img src="https://placehold.co/300" alt="Amenity Icon"
-                        class="rounded-md w-full max-w-xs h-48 object-cover mx-auto" />
-                </x-file>
             </div>
 
             <x-slot:actions>
@@ -227,20 +193,14 @@ new class extends Component {
 
                 <x-select wire:model="edit_type" label="Type" placeholder="Select type" :options="[['id' => 'room', 'name' => 'Room'], ['id' => 'yacht', 'name' => 'Yacht']]"
                     option-value="id" option-label="name" icon="o-sparkles" hint="Amenity type" />
-
-                <x-file wire:model="edit_icon" label="Amenity Icon" placeholder="Upload amenity icon" crop-after-change
-                    :crop-config="$config" hint="Max: 2MB (JPG, JPEG, SVG)">
-                    <img src="{{ $existing_icon ? (str_starts_with($existing_icon, 'http') ? $existing_icon : asset($existing_icon)) : 'https://placehold.co/300' }}"
-                        alt="Amenity Icon" class="rounded-md w-full max-w-xs h-48 object-cover mx-auto" />
-                </x-file>
             </div>
 
             <x-slot:actions>
                 <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
                     <x-button icon="o-x-mark" label="Cancel" @click="$wire.editModal = false"
                         class="btn-ghost w-full sm:w-auto" responsive />
-                    <x-button icon="o-check" label="Update Amenity" type="submit"
-                        class="btn-primary w-full sm:w-auto" spinner="updateAmenity" responsive />
+                    <x-button icon="o-check" label="Update Amenity" type="submit" class="btn-primary w-full sm:w-auto"
+                        spinner="updateAmenity" responsive />
                 </div>
             </x-slot:actions>
         </x-form>

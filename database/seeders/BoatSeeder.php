@@ -13,11 +13,11 @@ class BoatSeeder extends Seeder
     public function run(): void
     {
         $boats = [
-            // Marina Trips
+            // Yacht (Marina Trips)
             [
                 'name' => 'Marina 1',
                 'slug' => 'marina-1',
-                'service_type' => 'marina_trip',
+                'service_type' => 'yacht',
                 'description' => 'Luxury marina boat perfect for large groups and special occasions. Accommodates up to 60 passengers with premium amenities.',
                 'min_passengers' => 1,
                 'max_passengers' => 60,
@@ -34,7 +34,7 @@ class BoatSeeder extends Seeder
             [
                 'name' => 'Marina 2',
                 'slug' => 'marina-2',
-                'service_type' => 'marina_trip',
+                'service_type' => 'yacht',
                 'description' => 'Spacious marina boat ideal for family trips and celebrations. Holds up to 60 passengers comfortably.',
                 'min_passengers' => 1,
                 'max_passengers' => 60,
@@ -51,7 +51,7 @@ class BoatSeeder extends Seeder
             [
                 'name' => 'Marina 4',
                 'slug' => 'marina-4',
-                'service_type' => 'marina_trip',
+                'service_type' => 'yacht',
                 'description' => 'Intimate marina boat perfect for small groups and private tours. Accommodates up to 10 passengers.',
                 'min_passengers' => 1,
                 'max_passengers' => 10,

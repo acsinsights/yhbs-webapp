@@ -1,86 +1,102 @@
 <?php
 
-use function Livewire\Volt\{state, with, usesPagination, uses};
-
-use App\Models\BoatServiceType;
 use Mary\Traits\Toast;
+use Illuminate\View\View;
+use Illuminate\Support\Str;
+use Livewire\Attributes\Url;
+use Livewire\WithPagination;
+use Livewire\Volt\Component;
+use App\Models\BoatServiceType;
 
-uses([Toast::class]);
-usesPagination(theme: 'tailwind');
+new class extends Component {
+    use Toast, WithPagination;
 
-state([
-    'search' => '',
-    'perPage' => 10,
-    'showCreateModal' => false,
-    'showEditModal' => false,
-    'editingServiceType' => null,
-    'name' => '',
-    'is_active' => true,
-]);
+    #[Url]
+    public string $search = '';
 
-$headers = [['key' => 'id', 'label' => '#', 'class' => 'w-16'], ['key' => 'name', 'label' => 'Name', 'sortable' => true], ['key' => 'slug', 'label' => 'Slug'], ['key' => 'boats_count', 'label' => 'Boats'], ['key' => 'is_active', 'label' => 'Status'], ['key' => 'actions', 'label' => 'Actions', 'class' => 'w-32']];
+    public array $sortBy = ['column' => 'name', 'direction' => 'asc'];
+    public int $perPage = 10;
 
-$openCreateModal = function () {
-    $this->showCreateModal = true;
-    $this->name = '';
-    $this->is_active = true;
-};
+    public bool $showEditModal = false;
+    public ?BoatServiceType $editingServiceType = null;
+    public string $name = '';
+    public bool $is_active = true;
 
-$create = function () {
-    $validated = $this->validate([
-        'name' => 'required|string|max:255|unique:boat_service_types,name',
-        'is_active' => 'boolean',
-    ]);
+    public bool $showDeleteModal = false;
+    public ?BoatServiceType $deletingServiceType = null;
 
-    BoatServiceType::create($validated);
+    public function create(): void
+    {
+        $validated = $this->validate([
+            'name' => 'required|string|max:255|unique:boat_service_types,name',
+            'is_active' => 'boolean',
+        ]);
 
-    $this->success('Service type created successfully!');
-    $this->showCreateModal = false;
-    $this->name = '';
-};
+        $validated['slug'] = Str::slug($validated['name']);
 
-$openEditModal = function (BoatServiceType $serviceType) {
-    $this->editingServiceType = $serviceType;
-    $this->name = $serviceType->name;
-    $this->is_active = $serviceType->is_active;
-    $this->showEditModal = true;
-};
+        BoatServiceType::create($validated);
 
-$update = function () {
-    if (!$this->editingServiceType) {
-        return;
+        $this->success('Service type created successfully!');
+        $this->showCreateModal = false;
+        $this->reset('name', 'is_active');
     }
 
-    $validated = $this->validate([
-        'name' => 'required|string|max:255|unique:boat_service_types,name,' . $this->editingServiceType->id,
-        'is_active' => 'boolean',
-    ]);
-
-    $this->editingServiceType->update($validated);
-
-    $this->success('Service type updated successfully!');
-    $this->showEditModal = false;
-    $this->editingServiceType = null;
-};
-
-$delete = function (BoatServiceType $serviceType) {
-    if ($serviceType->boats()->count() > 0) {
-        $this->error('Cannot delete service type with boats assigned to it.');
-        return;
+    public function openEditModal(BoatServiceType $serviceType): void
+    {
+        $this->editingServiceType = $serviceType;
+        $this->name = $serviceType->name;
+        $this->is_active = $serviceType->is_active;
+        $this->showEditModal = true;
     }
 
-    $serviceType->delete();
-    $this->success('Service type deleted successfully!');
-};
+    public function update(): void
+    {
+        if (!$this->editingServiceType) {
+            return;
+        }
 
-with(
-    fn() => [
-        'serviceTypes' => BoatServiceType::query()->withCount('boats')->when($this->search, fn($q) => $q->where('name', 'like', "%{$this->search}%"))->orderBy('name')->paginate($this->perPage),
-        'headers' => $headers,
-    ],
-);
+        $validated = $this->validate([
+            'name' => 'required|string|max:255|unique:boat_service_types,name,' . $this->editingServiceType->id,
+            'is_active' => 'boolean',
+        ]);
 
-?>
+        $validated['slug'] = Str::slug($validated['name']);
+
+        $this->editingServiceType->update($validated);
+
+        $this->success('Service type updated successfully!');
+        $this->showEditModal = false;
+        $this->editingServiceType = null;
+    }
+
+    public function openDeleteModal(int $id): void
+    {
+        $this->deletingServiceType = BoatServiceType::findOrFail($id);
+        $this->showDeleteModal = true;
+    }
+
+    public function delete(): void
+    {
+        if ($this->deletingServiceType->boats()->count() > 0) {
+            $this->error('Cannot delete service type with boats assigned to it.');
+            $this->showDeleteModal = false;
+            $this->deletingServiceType = null;
+            return;
+        }
+
+        $this->deletingServiceType->delete();
+        $this->success('Service type deleted successfully!');
+        $this->showDeleteModal = false;
+        $this->deletingServiceType = null;
+    }
+
+    public function rendering(View $view): void
+    {
+        $view->serviceTypes = BoatServiceType::query()->withCount('boats')->when($this->search, fn($q) => $q->where('name', 'like', "%{$this->search}%"))->orderBy(...array_values($this->sortBy))->paginate($this->perPage);
+
+        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'name', 'label' => 'Name'], ['key' => 'slug', 'label' => 'Slug'], ['key' => 'boats_count', 'label' => 'Boats']];
+    }
+}; ?>
 
 <div>
     @php
@@ -91,94 +107,99 @@ with(
             ],
             [
                 'label' => 'Boat Service Types',
+                'icon' => 'o-tag',
             ],
         ];
     @endphp
 
-    <x-header title="Boat Service Types" separator progress-indicator>
+    <x-header title="Boat Service Types" separator>
         <x-slot:subtitle>
             <p class="text-sm text-base-content/50 mb-2">Manage boat service types</p>
             <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
         </x-slot:subtitle>
+
         <x-slot:actions>
-            <x-button label="Add Service Type" icon="o-plus" wire:click="openCreateModal" class="btn-primary" />
+            <x-input icon="o-magnifying-glass" placeholder="Search..." wire:model.live.debounce="search" clearable />
         </x-slot:actions>
     </x-header>
 
     <x-card shadow>
-        {{-- Filters --}}
-        <div class="mb-6 flex gap-4">
-            <x-input placeholder="Search service types..." wire:model.live.debounce="search" clearable
-                icon="o-magnifying-glass" class="flex-1" />
+        <x-table :headers="$headers" :rows="$serviceTypes" :sort-by="$sortBy" with-pagination per-page="perPage"
+            :per-page-values="[10, 25, 50, 100]">
 
-            <x-select wire:model.live="perPage" :options="[
-                ['id' => 10, 'name' => '10 per page'],
-                ['id' => 25, 'name' => '25 per page'],
-                ['id' => 50, 'name' => '50 per page'],
-            ]" />
-        </div>
-
-        {{-- Table --}}
-        <x-table :headers="$headers" :rows="$serviceTypes" with-pagination>
             @scope('cell_name', $serviceType)
-                <div class="font-semibold">{{ $serviceType->name }}</div>
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full {{ $serviceType->is_active ? 'bg-green-500' : 'bg-red-500' }}"></span>
+                    <span class="font-medium">
+                        {{ $serviceType->name }}
+                    </span>
+                </div>
             @endscope
 
             @scope('cell_slug', $serviceType)
-                <code class="text-xs bg-base-200 px-2 py-1 rounded">{{ $serviceType->slug }}</code>
+                <x-badge :value="$serviceType->slug" class="badge-soft badge-primary" />
             @endscope
 
             @scope('cell_boats_count', $serviceType)
-                <x-badge :value="$serviceType->boats_count" class="badge-ghost" />
+                <x-badge :value="$serviceType->boats_count" class="badge-soft badge-info" />
             @endscope
 
-            @scope('cell_is_active', $serviceType)
-                <x-badge :value="$serviceType->is_active ? 'Active' : 'Inactive'" class="{{ $serviceType->is_active ? 'badge-success' : 'badge-error' }}" />
-            @endscope
-
-            @scope('cell_actions', $serviceType)
-                <div class="flex gap-2">
-                    <x-button icon="o-pencil" wire:click="openEditModal({{ $serviceType->id }})" class="btn-sm btn-ghost"
+            @scope('actions', $serviceType)
+                <div class="flex items-center gap-2">
+                    <x-button icon="o-pencil" wire:click="openEditModal({{ $serviceType->id }})" class="btn-ghost btn-sm"
                         tooltip="Edit" />
-                    <x-button icon="o-trash" wire:click="delete({{ $serviceType->id }})"
-                        wire:confirm="Are you sure you want to delete this service type?"
-                        class="btn-sm btn-ghost text-error" tooltip="Delete" spinner />
+                    <x-button icon="o-trash" wire:click="openDeleteModal({{ $serviceType->id }})"
+                        class="btn-ghost btn-sm text-error" tooltip="Delete" />
                 </div>
             @endscope
+
+            <x-slot:empty>
+                <x-empty icon="o-tag" message="No service types found" />
+            </x-slot:empty>
         </x-table>
     </x-card>
 
-    {{-- Create Modal --}}
-    <x-modal wire:model="showCreateModal" title="Add Service Type" class="backdrop-blur">
-        <x-form wire:submit="create">
+    {{-- Edit Modal --}}
+    <x-modal wire:model="showEditModal" title="Edit Service Type" class="backdrop-blur" max-width="md">
+        <x-form wire:submit="update">
             <div class="space-y-4">
                 <x-input label="Service Type Name *" wire:model="name" icon="o-tag"
-                    placeholder="e.g., Marina Trip, Taxi, Ferry..." />
+                    placeholder="e.g., Yacht, Water Taxi, Ferry..." hint="Display name (slug will be auto-generated)" />
 
                 <x-checkbox label="Active" wire:model="is_active" />
             </div>
 
             <x-slot:actions>
-                <x-button label="Cancel" @click="$wire.showCreateModal = false" />
-                <x-button label="Create" type="submit" icon="o-check" class="btn-primary" spinner="create" />
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+                    <x-button icon="o-x-mark" label="Cancel" @click="$wire.showEditModal = false"
+                        class="btn-ghost w-full sm:w-auto" responsive />
+                    <x-button icon="o-check" label="Update Service Type" type="submit"
+                        class="btn-primary w-full sm:w-auto" spinner="update" responsive />
+                </div>
             </x-slot:actions>
         </x-form>
     </x-modal>
 
-    {{-- Edit Modal --}}
-    <x-modal wire:model="showEditModal" title="Edit Service Type" class="backdrop-blur">
-        <x-form wire:submit="update">
+    {{-- Delete Confirmation Modal --}}
+    <x-modal wire:model="showDeleteModal" title="Confirm Deletion" class="backdrop-blur" max-width="md">
+        @if($deletingServiceType)
             <div class="space-y-4">
-                <x-input label="Service Type Name *" wire:model="name" icon="o-tag"
-                    placeholder="e.g., Marina Trip, Taxi, Ferry..." />
-
-                <x-checkbox label="Active" wire:model="is_active" />
+                <x-alert icon="o-exclamation-triangle" class="alert-warning">
+                    Are you sure you want to delete <strong>{{ $deletingServiceType->name }}</strong>?
+                </x-alert>
+                <p class="text-sm text-base-content/70">
+                    This action cannot be undone. This service type has <strong>{{ $deletingServiceType->boats()->count() }}</strong> boat(s) associated with it.
+                </p>
             </div>
 
             <x-slot:actions>
-                <x-button label="Cancel" @click="$wire.showEditModal = false" />
-                <x-button label="Update" type="submit" icon="o-check" class="btn-primary" spinner="update" />
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+                    <x-button icon="o-x-mark" label="Cancel" @click="$wire.showDeleteModal = false"
+                        class="btn-ghost w-full sm:w-auto" responsive />
+                    <x-button icon="o-trash" label="Delete" wire:click="delete"
+                        class="btn-error w-full sm:w-auto" spinner="delete" responsive />
+                </div>
             </x-slot:actions>
-        </x-form>
+        @endif
     </x-modal>
 </div>

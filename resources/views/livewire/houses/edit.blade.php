@@ -162,9 +162,6 @@ new class extends Component {
                 <x-input wire:model="name" label="House Name" placeholder="Enter house name" icon="o-building-office-2"
                     hint="The slug will be auto-generated from the name" />
 
-                <x-input wire:model="slug" label="Slug" placeholder="house-slug" icon="o-link"
-                    hint="URL-friendly version of the name" />
-
                 <x-input wire:model="house_number" label="House Number" placeholder="Enter house number"
                     icon="o-hashtag" hint="Optional unique house number" />
 

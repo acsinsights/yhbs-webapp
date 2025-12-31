@@ -14,7 +14,7 @@ new class extends Component {
 
     public function mount($room): void
     {
-        $this->room = $room instanceof Room ? $room->load(['house', 'categories', 'amenities']) : Room::with(['house', 'categories', 'amenities'])->findOrFail($room);
+        $this->room = $room instanceof Room ? $room->load(['categories', 'amenities']) : Room::with(['categories', 'amenities'])->findOrFail($room);
     }
 
     public function delete(): void

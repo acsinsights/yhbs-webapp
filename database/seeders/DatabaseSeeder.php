@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             AmenitySeeder::class,
             RoomSeeder::class,
+            BoatServiceTypeSeeder::class,
             BoatSeeder::class,
             BookingSeeder::class,
             WebsiteSettingSeeder::class,

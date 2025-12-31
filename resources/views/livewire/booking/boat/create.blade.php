@@ -214,7 +214,7 @@ new class extends Component {
         $amount = 0;
 
         match ($boat->service_type) {
-            'marina_trip', 'taxi' => ($amount = $this->calculateHourlyPrice($boat)),
+            'yacht', 'taxi' => ($amount = $this->calculateHourlyPrice($boat)),
             'ferry' => ($amount = $this->calculateFerryPrice($boat)),
             'limousine' => ($amount = $this->calculateLimousinePrice($boat)),
             default => ($amount = 0),
@@ -315,7 +315,7 @@ new class extends Component {
         $durationOptions = [];
         if ($this->selectedBoat) {
             $durationOptions = match ($this->selectedBoat->service_type) {
-                'marina_trip', 'taxi' => [['id' => '1h', 'name' => '1 Hour - KD ' . number_format($this->selectedBoat->price_1hour, 2)], ['id' => '2h', 'name' => '2 Hours - KD ' . number_format($this->selectedBoat->price_2hours, 2)], ['id' => '3h', 'name' => '3 Hours - KD ' . number_format($this->selectedBoat->price_3hours, 2)], ['id' => 'custom', 'name' => 'Custom Hours (KD ' . number_format($this->selectedBoat->additional_hour_price, 2) . '/hour)']],
+                'yacht', 'taxi' => [['id' => '1h', 'name' => '1 Hour - KD ' . number_format($this->selectedBoat->price_1hour, 2)], ['id' => '2h', 'name' => '2 Hours - KD ' . number_format($this->selectedBoat->price_2hours, 2)], ['id' => '3h', 'name' => '3 Hours - KD ' . number_format($this->selectedBoat->price_3hours, 2)], ['id' => 'custom', 'name' => 'Custom Hours (KD ' . number_format($this->selectedBoat->additional_hour_price, 2) . '/hour)']],
                 'limousine' => [['id' => '15min', 'name' => '15 Minutes - KD ' . number_format($this->selectedBoat->price_15min, 2)], ['id' => '30min', 'name' => '30 Minutes - KD ' . number_format($this->selectedBoat->price_30min, 2)], ['id' => '1hour_full', 'name' => '1 Hour / Full Boat - KD ' . number_format($this->selectedBoat->price_full_boat, 2)]],
                 default => [],
             };
@@ -352,7 +352,7 @@ new class extends Component {
         $durationOptions = [];
         if ($this->selectedBoat) {
             $durationOptions = match ($this->selectedBoat->service_type) {
-                'marina_trip', 'taxi' => [['id' => '1h', 'name' => '1 Hour - KD ' . number_format($this->selectedBoat->price_1hour, 2)], ['id' => '2h', 'name' => '2 Hours - KD ' . number_format($this->selectedBoat->price_2hours, 2)], ['id' => '3h', 'name' => '3 Hours - KD ' . number_format($this->selectedBoat->price_3hours, 2)], ['id' => 'custom', 'name' => 'Custom Hours (KD ' . number_format($this->selectedBoat->additional_hour_price, 2) . '/hour)']],
+                'yacht', 'taxi' => [['id' => '1h', 'name' => '1 Hour - KD ' . number_format($this->selectedBoat->price_1hour, 2)], ['id' => '2h', 'name' => '2 Hours - KD ' . number_format($this->selectedBoat->price_2hours, 2)], ['id' => '3h', 'name' => '3 Hours - KD ' . number_format($this->selectedBoat->price_3hours, 2)], ['id' => 'custom', 'name' => 'Custom Hours (KD ' . number_format($this->selectedBoat->additional_hour_price, 2) . '/hour)']],
                 'limousine' => [['id' => '15min', 'name' => '15 Minutes - KD ' . number_format($this->selectedBoat->price_15min, 2)], ['id' => '30min', 'name' => '30 Minutes - KD ' . number_format($this->selectedBoat->price_30min, 2)], ['id' => '1hour_full', 'name' => '1 Hour / Full Boat - KD ' . number_format($this->selectedBoat->price_full_boat, 2)]],
                 default => [],
             };
@@ -419,9 +419,9 @@ new class extends Component {
                             </div>
                             <div class="mt-6 space-y-4">
                                 {{-- Service Type Selection --}}
-                                <x-select label="Select Service Type *" icon="o-tag"
+                                <x-choices-offline label="Select Service Type *" icon="o-tag"
                                     wire:model.live="service_type_slug" :options="$serviceTypes"
-                                    placeholder="Choose service type..." />
+                                    placeholder="Choose service type..." single searchable />
 
                                 {{-- Boat Selection (shown after service type selected) --}}
                                 @if ($service_type_slug)
@@ -447,8 +447,8 @@ new class extends Component {
 
 
                         @if ($selectedBoat)
-                            {{-- Marina Trip / Taxi (Hourly Booking) --}}
-                            @if (in_array($selectedBoat->service_type, ['marina_trip', 'taxi']))
+                            {{-- Yacht / Taxi (Hourly Booking) --}}
+                            @if (in_array($selectedBoat->service_type, ['yacht', 'taxi']))
                                 {{-- Step 4: Duration Selection --}}
                                 <x-card class="bg-base-200">
                                     <div class="flex items-start justify-between gap-3">

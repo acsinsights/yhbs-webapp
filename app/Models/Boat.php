@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\{BelongsToMany, MorphMany};
 use Illuminate\Support\Str;
 
 class Boat extends Model
@@ -78,9 +78,24 @@ class Boat extends Model
         return $this->morphMany(Booking::class, 'bookingable');
     }
 
+    /**
+     * The amenities that belong to the boat.
+     */
+    public function amenities(): BelongsToMany
+    {
+        return $this->belongsToMany(Amenity::class);
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    public function scopeSearch($query, $search)
+    {
+        return $query->where('name', 'like', "%{$search}%")
+            ->orWhere('description', 'like', "%{$search}%")
+            ->orWhere('location', 'like', "%{$search}%");
     }
 
     public function scopeFeatured($query)
@@ -96,7 +111,7 @@ class Boat extends Model
     public function getServiceTypeLabelAttribute(): string
     {
         return match ($this->service_type) {
-            'marina_trip' => 'Marina Trip',
+            'yacht' => 'Yacht',
             'taxi' => 'Private Taxi',
             'ferry' => 'Ferry Service',
             'limousine' => 'Limousine Service',
@@ -107,7 +122,7 @@ class Boat extends Model
     public function getDisplayPriceAttribute(): string
     {
         return match ($this->service_type) {
-            'marina_trip', 'taxi' => $this->price_1hour ? "KD {$this->price_1hour}/hour" : "KD {$this->price_per_hour}/hour",
+            'yacht', 'taxi' => $this->price_1hour ? "KD {$this->price_1hour}/hour" : "KD {$this->price_per_hour}/hour",
             'ferry' => $this->price_per_person_adult ? "KD {$this->price_per_person_adult}/person" : "From KD {$this->private_trip_price}",
             'limousine' => $this->price_15min ? "KD {$this->price_15min}/15min" : "KD {$this->price_full_boat}",
             default => 'Contact for price',

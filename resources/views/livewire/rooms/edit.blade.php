@@ -42,7 +42,6 @@ new class extends Component {
 
     public bool $addAmenityModal = false;
     public string $amenity_name = '';
-    public $amenity_icon = null;
 
     public $config = ['aspectRatio' => 1];
     public $config2 = ['aspectRatio' => 16 / 9];
@@ -175,25 +174,17 @@ new class extends Component {
     {
         $this->validate([
             'amenity_name' => 'required|string|max:255',
-            'amenity_icon' => 'nullable|image|max:2500',
         ]);
-
-        $icon = null;
-        if ($this->amenity_icon) {
-            $url = $this->amenity_icon->store('amenities', 'public');
-            $icon = "/storage/$url";
-        }
 
         $amenity = Amenity::create([
             'name' => $this->amenity_name,
             'slug' => Str::slug($this->amenity_name),
-            'icon' => $icon,
             'type' => 'room',
         ]);
 
         $this->success('Amenity created successfully.');
         $this->addAmenityModal = false;
-        $this->reset('amenity_name', 'amenity_icon');
+        $this->reset('amenity_name');
         $this->amenity_ids = array_merge($this->amenity_ids, [$amenity->id]);
     }
 
@@ -362,14 +353,7 @@ new class extends Component {
 
     <x-modal wire:model="addAmenityModal" title="Add Amenity" class="backdrop-blur" max-width="md">
         <x-form wire:submit="saveAmenity">
-            <div class="space-y-4">
-                <x-input wire:model="amenity_name" label="Amenity Name" placeholder="Enter amenity name" />
-                <x-file wire:model="amenity_icon" label="Amenity Icon" placeholder="Enter amenity icon"
-                    crop-after-change :crop-config="$config" hint="Max: 2MB">
-                    <img src="https://placehold.co/300" alt="Amenity Icon"
-                        class="rounded-md w-full max-w-xs h-48 object-cover mx-auto" />
-                </x-file>
-            </div>
+            <x-input wire:model="amenity_name" label="Amenity Name" placeholder="Enter amenity name" />
 
             <x-slot:actions>
                 <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">

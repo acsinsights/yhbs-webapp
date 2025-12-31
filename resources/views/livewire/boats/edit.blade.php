@@ -1,13 +1,15 @@
 <?php
 
-use Mary\Traits\Toast;
+use Mary\Traits\{Toast, WithMediaSync};
 use Livewire\Volt\Component;
 use Livewire\WithFileUploads;
-use App\Models\{Boat, BoatServiceType};
-use Illuminate\Support\Str;
+use App\Models\{Amenity, Boat, BoatServiceType};
+use Illuminate\Support\{Str, Collection};
+use Illuminate\View\View;
+use Illuminate\Http\UploadedFile;
 
 new class extends Component {
-    use Toast, WithFileUploads;
+    use Toast, WithFileUploads, WithMediaSync;
 
     public Boat $boat;
 
@@ -18,16 +20,17 @@ new class extends Component {
     public ?string $description = null;
     public ?string $location = null;
     public ?string $features = null;
+    public array $amenity_ids = [];
 
-    // Inline service type creation
-    public bool $addServiceTypeModal = false;
-    public string $service_type_name = '';
+    // Inline amenity creation
+    public bool $addAmenityModal = false;
+    public string $amenity_name = '';
 
     // Capacity
     public int $min_passengers = 1;
     public int $max_passengers = 10;
 
-    // Marina/Taxi Pricing
+    // Yacht/Taxi Pricing
     public ?float $price_1hour = null;
     public ?float $price_2hours = null;
     public ?float $price_3hours = null;
@@ -51,12 +54,78 @@ new class extends Component {
     public bool $is_featured = false;
     public int $sort_order = 0;
 
-    public $image;
+    // Image handling
+    public ?UploadedFile $image = null;
+    public ?string $existing_image = null;
+
+    // Image library properties
+    public array $files = [];
+    public Collection $library;
+
+    public $config = ['aspectRatio' => 1];
+    public $config2 = ['aspectRatio' => 16 / 9];
+
+    public function rules(): array
+    {
+        return [
+            'files.*' => 'image|max:5000',
+            'library' => 'nullable',
+        ];
+    }
 
     public function mount(Boat $boat): void
     {
         $this->boat = $boat;
-        $this->fill($boat->toArray());
+        $this->name = $boat->name;
+        $this->slug = $boat->slug;
+        $this->service_type = $boat->service_type;
+        $this->description = $boat->description;
+        $this->location = $boat->location;
+        $this->features = $boat->features;
+        $this->min_passengers = $boat->min_passengers;
+        $this->max_passengers = $boat->max_passengers;
+        $this->price_1hour = $boat->price_1hour;
+        $this->price_2hours = $boat->price_2hours;
+        $this->price_3hours = $boat->price_3hours;
+        $this->additional_hour_price = $boat->additional_hour_price;
+        $this->price_per_person_adult = $boat->price_per_person_adult;
+        $this->price_per_person_child = $boat->price_per_person_child;
+        $this->private_trip_price = $boat->private_trip_price;
+        $this->private_trip_return_price = $boat->private_trip_return_price;
+        $this->price_15min = $boat->price_15min;
+        $this->price_30min = $boat->price_30min;
+        $this->price_full_boat = $boat->price_full_boat;
+        $this->meta_description = $boat->meta_description;
+        $this->meta_keywords = $boat->meta_keywords;
+        $this->is_active = $boat->is_active;
+        $this->is_featured = $boat->is_featured;
+        $this->sort_order = $boat->sort_order;
+        $this->existing_image = $boat->image;
+        $this->image = null;
+        $this->amenity_ids = $boat->amenities->pluck('id')->toArray();
+
+        // Handle images array for gallery
+        $this->library = is_array($boat->images)
+            ? collect($boat->images)->map(function ($img) {
+                if (is_string($img)) {
+                    return ['path' => $img, 'url' => asset('storage/' . $img)];
+                }
+                return $img;
+            })
+            : new Collection();
+    }
+
+    public function updatedName(): void
+    {
+        $this->slug = Str::slug($this->name);
+
+        // Ensure slug is unique (excluding current boat)
+        $originalSlug = $this->slug;
+        $counter = 1;
+        while (Boat::where('slug', $this->slug)->where('id', '!=', $this->boat->id)->exists()) {
+            $this->slug = $originalSlug . '-' . $counter;
+            $counter++;
+        }
     }
 
     public function save(): void
@@ -67,220 +136,267 @@ new class extends Component {
             'service_type' => 'required|string|exists:boat_service_types,slug',
             'min_passengers' => 'required|integer|min:1',
             'max_passengers' => 'required|integer|min:1',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'nullable|image|max:5000',
+            'files.*' => 'image|max:5000',
+            'library' => 'nullable',
         ]);
 
-        if ($this->image) {
-            $path = $this->image->store('boats', 'public');
-            $validated['image'] = $path;
+        // Handle single image upload - keep existing if no new upload
+        $imagePath = $this->existing_image;
+        if ($this->image instanceof UploadedFile) {
+            $url = $this->image->store('boats', 'public');
+            $imagePath = $url;
         }
 
-        $this->boat->update([...$validated, 'description' => $this->description, 'location' => $this->location, 'features' => $this->features, 'price_1hour' => $this->price_1hour, 'price_2hours' => $this->price_2hours, 'price_3hours' => $this->price_3hours, 'additional_hour_price' => $this->additional_hour_price, 'price_per_person_adult' => $this->price_per_person_adult, 'price_per_person_child' => $this->price_per_person_child, 'private_trip_price' => $this->private_trip_price, 'private_trip_return_price' => $this->private_trip_return_price, 'price_15min' => $this->price_15min, 'price_30min' => $this->price_30min, 'price_full_boat' => $this->price_full_boat, 'meta_description' => $this->meta_description, 'meta_keywords' => $this->meta_keywords, 'is_active' => $this->is_active, 'is_featured' => $this->is_featured, 'sort_order' => $this->sort_order]);
+        $this->boat->update([
+            'name' => $this->name,
+            'slug' => $this->slug,
+            'service_type' => $this->service_type,
+            'description' => $this->description,
+            'location' => $this->location,
+            'features' => $this->features,
+            'min_passengers' => $this->min_passengers,
+            'max_passengers' => $this->max_passengers,
+            'image' => $imagePath,
+            'price_1hour' => $this->price_1hour,
+            'price_2hours' => $this->price_2hours,
+            'price_3hours' => $this->price_3hours,
+            'additional_hour_price' => $this->additional_hour_price,
+            'price_per_person_adult' => $this->price_per_person_adult,
+            'price_per_person_child' => $this->price_per_person_child,
+            'private_trip_price' => $this->private_trip_price,
+            'private_trip_return_price' => $this->private_trip_return_price,
+            'price_15min' => $this->price_15min,
+            'price_30min' => $this->price_30min,
+            'price_full_boat' => $this->price_full_boat,
+            'meta_description' => $this->meta_description,
+            'meta_keywords' => $this->meta_keywords,
+            'is_active' => $this->is_active,
+            'is_featured' => $this->is_featured,
+            'sort_order' => $this->sort_order,
+        ]);
+
+        // Sync media files and update library metadata
+        $this->syncMedia(model: $this->boat, library: 'library', files: 'files', storage_subpath: '/boats/library', model_field: 'images', visibility: 'public', disk: 'public');
+
+        $this->boat->amenities()->sync($this->amenity_ids);
 
         $this->success('Boat updated successfully.', redirectTo: route('admin.boats.index'));
     }
 
-    public function updatedName(): void
-    {
-        $this->slug = Str::slug($this->name);
-    }
-
-    public function saveServiceType(): void
+    public function saveAmenity(): void
     {
         $this->validate([
-            'service_type_name' => 'required|string|max:255|unique:boat_service_types,name',
+            'amenity_name' => 'required|string|max:255',
         ]);
 
-        $serviceType = BoatServiceType::create([
-            'name' => $this->service_type_name,
-            'slug' => Str::slug($this->service_type_name),
-            'is_active' => true,
+        $amenity = Amenity::create([
+            'name' => $this->amenity_name,
+            'slug' => Str::slug($this->amenity_name),
+            'type' => 'boat',
         ]);
 
-        $this->success('Service type created successfully.');
-        $this->addServiceTypeModal = false;
-        $this->reset('service_type_name');
-        $this->service_type = $serviceType->slug;
+        $this->success('Amenity created successfully.');
+        $this->addAmenityModal = false;
+        $this->reset('amenity_name');
+        $this->amenity_ids = array_merge($this->amenity_ids, [$amenity->id]);
     }
 
-    public function with(): array
+    public function rendering(View $view): void
     {
-        $serviceTypes = BoatServiceType::active()->ordered()->get()->map(fn($type) => ['id' => $type->slug, 'name' => $type->name]);
-
-        return [
-            'serviceTypes' => $serviceTypes,
-            'breadcrumbs' => [['label' => 'Dashboard', 'url' => route('admin.index')], ['label' => 'Boats', 'link' => route('admin.boats.index')], ['label' => 'Edit ' . $this->boat->name]],
-        ];
+        $view->serviceTypes = BoatServiceType::active()->ordered()->get()->map(fn($type) => ['id' => $type->slug, 'name' => $type->name]);
+        $view->amenities = Amenity::orderBy('name')->get()->map(fn($amenity) => ['id' => $amenity->id, 'name' => $amenity->name]);
     }
 }; ?>
 
-<div>
+@section('cdn')
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.2.1/tinymce.min.js" referrerpolicy="origin"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+@endsection
+
+<div class="pb-4">
+    @php
+        $breadcrumbs = [
+            [
+                'link' => route('admin.index'),
+                'icon' => 's-home',
+            ],
+            [
+                'label' => 'Boats',
+                'link' => route('admin.boats.index'),
+                'icon' => 'o-circle-stack',
+            ],
+            [
+                'label' => 'Edit Boat',
+                'icon' => 'o-pencil',
+            ],
+        ];
+    @endphp
+
     <x-header title="Edit Boat" separator>
-        <x-slot:middle>
-            <x-breadcrumbs :items="$breadcrumbs" class="text-sm text-gray-500" />
-        </x-slot:middle>
+        <x-slot:subtitle>
+            <p class="text-sm text-base-content/50 mb-2">Update boat information</p>
+            <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
+        </x-slot:subtitle>
         <x-slot:actions>
-            <x-button icon="o-arrow-left" label="Back to Boats" link="{{ route('admin.boats.index') }}" class="btn-outline"
-                responsive />
+            <x-button icon="o-arrow-left" label="Back to Boats" link="{{ route('admin.boats.index') }}"
+                class="btn-primary btn-soft" responsive />
         </x-slot:actions>
     </x-header>
 
-    <form wire:submit="save">
-        <div class="grid gap-5 lg:grid-cols-3">
-            {{-- Main Form --}}
-            <div class="lg:col-span-2 space-y-5">
-                {{-- Basic Information --}}
-                <x-card title="Basic Information">
-                    <div class="grid gap-4">
-                        <x-input label="Boat Name *" wire:model.blur="name" placeholder="Enter boat name" />
-                        <x-input label="Slug *" wire:model="slug" placeholder="boat-slug" hint="URL-friendly name" />
+    <x-card shadow class="mt-3 md:mt-5">
+        <x-form wire:submit="save">
+            {{-- Basic Information --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <x-input wire:model.blur="name" label="Boat Name" placeholder="e.g., Marina 1, VIP Limousine"
+                    icon="o-tag" hint="Display name for the boat (slug will be auto-generated)" />
 
-                        <x-choices-offline label="Service Type *" icon="o-tag" wire:model.live="service_type"
-                            :options="$serviceTypes" placeholder="Select service type..." single searchable>
-                            <x-slot:append>
-                                <x-button icon="o-plus" label="Add" class="btn-primary join-item btn-sm"
-                                    @click="$wire.addServiceTypeModal = true" responsive />
-                            </x-slot:append>
-                        </x-choices-offline>
+                <x-choices-offline wire:model.live="service_type" label="Service Type" icon="o-squares-2x2"
+                    :options="$serviceTypes" placeholder="Select service type..." single searchable />
 
-                        <x-textarea label="Description" wire:model="description" placeholder="Enter boat description"
-                            rows="4" />
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <x-input wire:model="location" label="Location" placeholder="e.g., Marina Bay, Terminal 1"
+                        icon="o-map-pin" hint="Where the boat is stationed" />
+                    <x-input wire:model="sort_order" type="number" label="Sort Order" placeholder="0"
+                        icon="o-arrows-up-down" hint="Display order (lower numbers appear first)" />
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <x-input wire:model="min_passengers" type="number" label="Minimum Passengers" placeholder="e.g., 1"
+                        icon="o-users" hint="Minimum capacity" min="1" />
 
-                        <div class="grid grid-cols-2 gap-4">
-                            <x-input label="Location" wire:model="location" placeholder="Marina, Terminal, etc." />
-                            <x-input label="Sort Order" type="number" wire:model="sort_order" />
-                        </div>
-
-                        <x-textarea label="Features" wire:model="features"
-                            placeholder="List boat features and amenities" rows="3" />
+                    <x-input wire:model="max_passengers" type="number" label="Maximum Passengers"
+                        placeholder="e.g., 10" icon="o-users" hint="Maximum capacity" min="1" />
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex items-center">
+                        <x-toggle wire:model="is_active" label="Active Status" hint="Enable or disable this boat" />
                     </div>
-                </x-card>
 
-                {{-- Capacity --}}
-                <x-card title="Passenger Capacity">
-                    <div class="grid grid-cols-2 gap-4">
-                        <x-input label="Minimum Passengers *" type="number" wire:model="min_passengers"
-                            min="1" />
-                        <x-input label="Maximum Passengers *" type="number" wire:model="max_passengers"
-                            min="1" />
+                    <div class="flex items-center">
+                        <x-toggle wire:model="is_featured" label="Featured" hint="Show on homepage" />
                     </div>
-                </x-card>
-
-                {{-- Pricing based on Service Type --}}
-                <x-card title="Pricing Information">
-                    @if ($service_type === 'marina_trip' || $service_type === 'taxi')
-                        <div class="space-y-3">
-                            <h4 class="font-semibold">Hourly Pricing</h4>
-                            <div class="grid grid-cols-2 gap-4">
+                </div>
+                <x-choices-offline wire:model="amenity_ids" label="Amenities & Features" placeholder="Select amenities"
+                    :options="$amenities" icon="o-sparkles" hint="Select one or more amenities available on this boat"
+                    searchable clearable>
+                    <x-slot:append>
+                        <x-button icon="o-plus" label="Add Amenity" class="btn-primary join-item btn-sm md:btn-md"
+                            @click="$wire.addAmenityModal = true" responsive />
+                    </x-slot:append>
+                </x-choices-offline>
+            </div>
+            {{-- Pricing Section --}}
+            <div class="mt-6 md:mt-8">
+                <x-card class="px-0" shadow>
+                    @if ($service_type === 'yacht' || $service_type === 'taxi')
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <x-input label="1 Hour Price (KD)" type="number" step="0.01"
-                                    wire:model="price_1hour" />
+                                    wire:model="price_1hour" placeholder="0.00" />
                                 <x-input label="2 Hours Price (KD)" type="number" step="0.01"
-                                    wire:model="price_2hours" />
+                                    wire:model="price_2hours" placeholder="0.00" />
                                 <x-input label="3 Hours Price (KD)" type="number" step="0.01"
-                                    wire:model="price_3hours" />
+                                    wire:model="price_3hours" placeholder="0.00" />
                                 <x-input label="Additional Hour (KD)" type="number" step="0.01"
-                                    wire:model="additional_hour_price" />
+                                    wire:model="additional_hour_price" placeholder="0.00" />
                             </div>
                         </div>
                     @elseif($service_type === 'ferry')
-                        <div class="space-y-3">
-                            <h4 class="font-semibold">Per Person Pricing</h4>
-                            <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-4">
+                            <h4 class="font-semibold text-base">Per Person Pricing</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <x-input label="Adult Price (KD)" type="number" step="0.01"
-                                    wire:model="price_per_person_adult" />
+                                    wire:model="price_per_person_adult" placeholder="0.00" />
                                 <x-input label="Child Price (KD)" type="number" step="0.01"
-                                    wire:model="price_per_person_child" />
+                                    wire:model="price_per_person_child" placeholder="0.00" />
                             </div>
-                            <h4 class="font-semibold mt-4">Private Trip Pricing</h4>
-                            <div class="grid grid-cols-2 gap-4">
+                            <h4 class="font-semibold text-base mt-4">Private Trip Pricing</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <x-input label="One Way (KD)" type="number" step="0.01"
-                                    wire:model="private_trip_price" />
+                                    wire:model="private_trip_price" placeholder="0.00" />
                                 <x-input label="Return (KD)" type="number" step="0.01"
-                                    wire:model="private_trip_return_price" />
+                                    wire:model="private_trip_return_price" placeholder="0.00" />
                             </div>
                         </div>
                     @elseif($service_type === 'limousine')
-                        <div class="space-y-3">
-                            <h4 class="font-semibold">Time-based Pricing</h4>
-                            <div class="grid grid-cols-3 gap-4">
+                        <div class="space-y-4">
+                            <h4 class="font-semibold text-base">Time-based Pricing</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <x-input label="15 Minutes (KD)" type="number" step="0.01"
-                                    wire:model="price_15min" />
+                                    wire:model="price_15min" placeholder="0.00" />
                                 <x-input label="30 Minutes (KD)" type="number" step="0.01"
-                                    wire:model="price_30min" />
+                                    wire:model="price_30min" placeholder="0.00" />
                                 <x-input label="Full Boat/Hour (KD)" type="number" step="0.01"
-                                    wire:model="price_full_boat" />
+                                    wire:model="price_full_boat" placeholder="0.00" />
                             </div>
                         </div>
                     @else
-                        <div class="text-center text-gray-500 py-4">
-                            Select a service type to configure pricing
+                        <div class="text-center text-base-content/50 py-8">
+                            <x-icon name="o-information-circle" class="w-12 h-12 mx-auto mb-2" />
+                            <p>Select a service type to configure pricing</p>
                         </div>
                     @endif
-                </x-card>
-
-                {{-- SEO --}}
-                <x-card title="SEO Information">
-                    <div class="grid gap-4">
-                        <x-textarea label="Meta Description" wire:model="meta_description"
-                            placeholder="Brief description for search engines" rows="2" />
-                        <x-input label="Meta Keywords" wire:model="meta_keywords"
-                            placeholder="keyword1, keyword2, keyword3" />
-                    </div>
                 </x-card>
             </div>
+            {{-- Meta & Display --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-4 md:mt-6">
+                <x-textarea wire:model="meta_keywords" label="Meta Keywords" hint="Separated by commas"
+                    rows="3" />
 
-            {{-- Sidebar --}}
-            <div class="space-y-5">
-                {{-- Image Upload --}}
-                <x-card title="Boat Image">
-                    @if ($boat->image && !$image)
-                        <div class="mb-4">
-                            <img src="{{ asset('storage/' . $boat->image) }}" alt="{{ $boat->name }}"
-                                class="w-full rounded-lg">
-                        </div>
-                    @endif
-
-                    @if ($image)
-                        <div class="mb-4">
-                            <img src="{{ $image->temporaryUrl() }}" class="w-full rounded-lg">
-                        </div>
-                    @endif
-
-                    <x-file wire:model="image" accept="image/*" />
-                    <div class="text-xs text-gray-500 mt-2">Max size: 2MB. Formats: JPG, PNG</div>
-                </x-card>
-
-                {{-- Status --}}
-                <x-card title="Status & Visibility">
-                    <div class="space-y-3">
-                        <x-checkbox label="Active" wire:model="is_active" hint="Make boat available for bookings" />
-                        <x-checkbox label="Featured" wire:model="is_featured" hint="Show on homepage" />
-                    </div>
-                </x-card>
-
-                {{-- Actions --}}
-                <x-card>
-                    <div class="space-y-2">
-                        <x-button label="Save Changes" type="submit" icon="o-check" class="btn-primary w-full"
-                            spinner="save" />
-                        <x-button label="Cancel" link="{{ route('admin.boats.index') }}" icon="o-x-mark"
-                            class="btn-outline w-full" />
-                    </div>
-                </x-card>
+                <x-textarea wire:model="meta_description" label="Meta Description" hint="Max 150 characters"
+                    rows="3" class="md:col-span-2" />
             </div>
-        </div>
-    </form>
 
-    {{-- Add Service Type Modal --}}
-    <x-modal wire:model="addServiceTypeModal" title="Add Service Type" class="backdrop-blur">
-        <x-form wire:submit="saveServiceType">
-            <x-input label="Service Type Name *" wire:model="service_type_name" icon="o-tag"
-                placeholder="e.g., Marina Trip, Water Taxi, Ferry..." />
+            {{-- Description Editor --}}
+            <div class="mt-6 md:mt-8">
+                @php
+                    $editorConfig = [
+                        'valid_elements' => '*[*]',
+                        'extended_valid_elements' => '*[*]',
+                        'plugins' => 'code',
+                        'toolbar' =>
+                            'undo redo | align bullist numlist | outdent indent | quickimage quicktable | code',
+                    ];
+                @endphp
+                <x-editor wire:model="description" label="Description"
+                    hint="Detailed description of the boat (HTML code editing enabled)" :config="$editorConfig" />
+            </div>
+            {{-- Images Section --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-4 md:mt-6">
+                <x-file wire:model="image" label="Main Boat Image" placeholder="Upload boat image" crop-after-change
+                    :crop-config="$config2" hint="Max: 5MB">
+                    <img src="{{ $existing_image ? asset('storage/' . $existing_image) : 'https://placehold.co/600x400' }}"
+                        alt="Boat Image" class="rounded-md object-cover w-full h-35 md:h-40" />
+                </x-file>
+
+                <x-image-library wire:model="files" wire:library="library" :preview="$library" label="Gallery Images"
+                    hint="Max 5MB per image" change-text="Change" crop-text="Crop" remove-text="Remove"
+                    crop-title-text="Crop image" crop-cancel-text="Cancel" crop-save-text="Crop"
+                    add-files-text="Add images" />
+            </div>
+            {{-- Form Actions --}}
+            <div class="flex flex-col sm:flex-row justify-between gap-2 sm:gap-3 mt-6 md:mt-8 pt-4 md:pt-6 border-t">
+                <x-button icon="o-x-mark" label="Cancel" link="{{ route('admin.boats.index') }}"
+                    class="btn-error btn-outline" responsive />
+                <x-button icon="o-check" label="Update Boat" type="submit" class="btn-primary"
+                    spinner="save" responsive />
+            </div>
+        </x-form>
+    </x-card>
+
+    {{-- Add Amenity Modal --}}
+    <x-modal wire:model="addAmenityModal" title="Add Amenity" class="backdrop-blur" max-width="md">
+        <x-form wire:submit="saveAmenity">
+            <x-input wire:model="amenity_name" label="Amenity Name" placeholder="Enter amenity name" />
 
             <x-slot:actions>
-                <x-button label="Cancel" @click="$wire.addServiceTypeModal = false" />
-                <x-button label="Create" type="submit" icon="o-check" class="btn-primary"
-                    spinner="saveServiceType" />
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+                    <x-button icon="o-x-mark" label="Cancel" @click="$wire.addAmenityModal = false"
+                        class="btn-ghost w-full sm:w-auto" responsive />
+                    <x-button icon="o-check" label="Add Amenity" type="submit" class="btn-primary w-full sm:w-auto"
+                        spinner="saveAmenity" responsive />
+                </div>
             </x-slot:actions>
         </x-form>
     </x-modal>

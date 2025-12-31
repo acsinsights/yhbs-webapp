@@ -73,19 +73,22 @@
             </a>
 
             <x-menu activate-by-route>
+                {{-- Dashboard --}}
                 <x-menu-item title="Dashboard" icon="o-presentation-chart-bar" link="{{ route('admin.index') }}" />
 
                 @role('reception|admin|superadmin')
-                    <div class="divider divider-start my-1">
-                        <small class="hidden-when-collapsed">Bookings</small>
-                    </div>
+                    {{-- Bookings Section --}}
+                    <x-menu-separator title="Bookings" />
 
-                    <x-menu-item title="Room Bookings" icon="o-home-modern"
-                        link="{{ route('admin.bookings.room.index') }}" />
-                    <x-menu-item title="House Bookings" icon="o-building-office"
-                        link="{{ route('admin.bookings.house.index') }}" />
-                    <x-menu-item title="Boat Bookings" icon="o-circle-stack"
-                        link="{{ route('admin.bookings.boat.index') }}" />
+                    <x-menu-sub title="All Bookings" icon="o-calendar-days">
+                        <x-menu-item title="Room Bookings" icon="o-home-modern"
+                            link="{{ route('admin.bookings.room.index') }}" />
+                        <x-menu-item title="House Bookings" icon="o-building-office"
+                            link="{{ route('admin.bookings.house.index') }}" />
+                        <x-menu-item title="Boat Bookings" icon="o-circle-stack"
+                            link="{{ route('admin.bookings.boat.index') }}" />
+                    </x-menu-sub>
+
                     <x-menu-item title="Coupons" icon="o-ticket" link="{{ route('admin.coupons.index') }}" />
 
                     @php
@@ -102,34 +105,34 @@
                 @endrole
 
                 @role('admin|superadmin')
-                    <div class="divider divider-start my-1">
-                        <small class="hidden-when-collapsed">Property Management</small>
-                    </div>
-                    <x-menu-item title="Houses" icon="o-building-office" link="{{ route('admin.houses.index') }}" />
-                    <x-menu-item title="Rooms" icon="o-home-modern" link="{{ route('admin.rooms.index') }}" />
-                    <x-menu-item title="Boats & Marine" icon="o-circle-stack" link="{{ route('admin.boats.index') }}" />
-                    <x-menu-item title="Boat Service Types" icon="o-squares-2x2"
-                        link="{{ route('admin.boats.service-types.index') }}" />
-                    <x-menu-item title="Categories" icon="o-tag" link="{{ route('admin.category.index') }}" />
+                    {{-- Property Management Section --}}
+                    <x-menu-separator title="Property Management" />
+
+                    <x-menu-sub title="Accommodations" icon="o-building-office-2">
+                        <x-menu-item title="Houses" icon="o-building-office" link="{{ route('admin.houses.index') }}" />
+                        <x-menu-item title="Rooms" icon="o-home-modern" link="{{ route('admin.rooms.index') }}" />
+                        <x-menu-item title="Categories" icon="o-tag" link="{{ route('admin.category.index') }}" />
+                    </x-menu-sub>
+
+                    <x-menu-sub title="Marine Services" icon="o-circle-stack">
+                        <x-menu-item title="Boats" icon="o-circle-stack" link="{{ route('admin.boats.index') }}" />
+                        <x-menu-item title="Service Types" icon="o-squares-2x2"
+                            link="{{ route('admin.boats.service-types.index') }}" />
+                    </x-menu-sub>
+
                     <x-menu-item title="Amenities" icon="o-star" link="{{ route('admin.amenity.index') }}" />
 
-                    <div class="divider divider-start my-1">
-                        <small class="hidden-when-collapsed">Content</small>
-                    </div>
+                    {{-- Content Section --}}
+                    <x-menu-separator title="Content" />
+
                     <x-menu-item title="Blogs" icon="o-document-text" link="{{ route('admin.blogs.index') }}" />
                     <x-menu-item title="Contact Submissions" icon="o-envelope"
                         link="{{ route('admin.contacts.index') }}" />
-
-                    <div class="divider divider-start my-1">
-                        <small class="hidden-when-collapsed">Reports</small>
-                    </div>
-                    <x-menu-item title="Booking Reports" icon="o-chart-bar" link="###" />
-                    <x-menu-item title="Revenue Reports" icon="o-currency-dollar" link="###" />
                 @endrole
 
-                <div class="divider divider-start my-1">
-                    <small class="hidden-when-collapsed">Settings</small>
-                </div>
+                {{-- Settings Section --}}
+                <x-menu-separator title="Settings" />
+
                 <x-menu-item title="Website Settings" icon="o-cog-6-tooth"
                     link="{{ route('admin.website-settings.index') }}" />
                 <x-menu-item title="Page Meta" icon="o-document-magnifying-glass"

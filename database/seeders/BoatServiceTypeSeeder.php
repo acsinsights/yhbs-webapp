@@ -14,8 +14,8 @@ class BoatServiceTypeSeeder extends Seeder
     {
         $serviceTypes = [
             [
-                'name' => 'Marina Trip',
-                'slug' => 'marina_trip',
+                'name' => 'Yacht',
+                'slug' => 'yacht',
                 'is_active' => true,
             ],
             [

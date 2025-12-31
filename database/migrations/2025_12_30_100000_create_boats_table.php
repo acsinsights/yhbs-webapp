@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->string('name');
             $table->string('slug')->unique();
-            $table->enum('service_type', ['marina_trip', 'taxi', 'ferry', 'limousine'])->default('marina_trip');
+            $table->enum('service_type', ['yacht', 'taxi', 'ferry', 'limousine'])->default('yacht');
             $table->text('description')->nullable();
             $table->text('image')->nullable();
             $table->json('images')->nullable();
