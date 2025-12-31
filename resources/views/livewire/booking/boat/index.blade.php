@@ -57,12 +57,6 @@ new class extends Component {
         $view->bookings = $query->orderBy(...array_values($this->sortBy))->paginate($this->perPage);
         $view->boats = Boat::active()->orderBy('name')->get();
 
-        // Stats
-        $view->totalBookings = Booking::where('bookingable_type', Boat::class)->count();
-        $view->pendingBookings = Booking::where('bookingable_type', Boat::class)->where('status', BookingStatusEnum::PENDING)->count();
-        $view->bookedBookings = Booking::where('bookingable_type', Boat::class)->where('status', BookingStatusEnum::BOOKED)->count();
-        $view->totalRevenue = Booking::where('bookingable_type', Boat::class)->where('payment_status', 'paid')->sum('total_amount');
-
         $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'user.name', 'label' => 'Customer', 'sortable' => false, 'class' => 'whitespace-nowrap'], ['key' => 'boat_name', 'label' => 'Boat', 'sortable' => false, 'class' => 'w-64'], ['key' => 'check_in', 'label' => 'Check In', 'sortable' => true, 'class' => 'whitespace-nowrap'], ['key' => 'price', 'label' => 'Amount', 'sortable' => true, 'class' => 'whitespace-nowrap'], ['key' => 'payment_status', 'label' => 'Payment Status', 'class' => 'whitespace-nowrap'], ['key' => 'payment_method', 'label' => 'Payment Method', 'class' => 'whitespace-nowrap'], ['key' => 'status', 'label' => 'Status', 'class' => 'whitespace-nowrap']];
     }
 }; ?>
@@ -92,15 +86,6 @@ new class extends Component {
                 link="{{ route('admin.bookings.boat.create') }}" />
         </x-slot:actions>
     </x-header>
-
-    {{-- Stats Cards --}}
-    <div class="grid gap-4 md:grid-cols-4 mb-6">
-        <x-stat title="Total Bookings" :value="$totalBookings" icon="o-calendar" color="text-primary" />
-        <x-stat title="Pending" :value="$pendingBookings" icon="o-clock" color="text-warning" />
-        <x-stat title="Booked" :value="$bookedBookings" icon="o-check-circle" color="text-info" />
-        <x-stat title="Revenue" value="KD {{ number_format($totalRevenue, 2) }}" icon="o-currency-dollar"
-            color="text-success" />
-    </div>
 
     <x-card shadow>
         <x-table :headers="$headers" :rows="$bookings" :sort-by="$sortBy" with-pagination per-page="perPage"
