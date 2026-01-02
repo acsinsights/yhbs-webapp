@@ -393,38 +393,112 @@
                                                 <i class="bi bi-calendar-check"></i>
                                             </div>
                                             <div>
-                                                <small class="text-muted">Check-in</small>
+                                                <small class="text-muted">
+                                                    @if ($booking->property_type === 'Boat')
+                                                        Booking Date
+                                                    @else
+                                                        Check-in
+                                                    @endif
+                                                </small>
                                                 <p class="mb-0">{{ $booking->check_in ?? 'N/A' }}</p>
                                             </div>
                                         </div>
 
-                                        <div class="detail-item">
-                                            <div class="detail-icon">
-                                                <i class="bi bi-calendar-x"></i>
+                                        @if ($booking->property_type !== 'Boat')
+                                            <div class="detail-item">
+                                                <div class="detail-icon">
+                                                    <i class="bi bi-calendar-x"></i>
+                                                </div>
+                                                <div>
+                                                    <small class="text-muted">Check-out</small>
+                                                    <p class="mb-0">{{ $booking->check_out ?? 'N/A' }}</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <small class="text-muted">Check-out</small>
-                                                <p class="mb-0">{{ $booking->check_out ?? 'N/A' }}</p>
-                                            </div>
-                                        </div>
+                                        @endif
 
-                                        <div class="detail-item">
-                                            <div class="detail-icon">
-                                                <i class="bi bi-moon"></i>
+                                        @if ($booking->property_type === 'Boat')
+                                            <!-- Boat-specific details -->
+                                            @if (isset($booking->start_time))
+                                                <div class="detail-item">
+                                                    <div class="detail-icon">
+                                                        <i class="bi bi-clock"></i>
+                                                    </div>
+                                                    <div>
+                                                        <small class="text-muted">Start Time</small>
+                                                        <p class="mb-0">{{ $booking->start_time }}</p>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                            @if (isset($booking->duration))
+                                                <div class="detail-item">
+                                                    <div class="detail-icon">
+                                                        <i class="bi bi-hourglass-split"></i>
+                                                    </div>
+                                                    <div>
+                                                        <small class="text-muted">Duration</small>
+                                                        <p class="mb-0">{{ $booking->duration }} Hour(s)</p>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                            @if (isset($booking->ferry_type))
+                                                <div class="detail-item">
+                                                    <div class="detail-icon">
+                                                        <i class="bi bi-ticket"></i>
+                                                    </div>
+                                                    <div>
+                                                        <small class="text-muted">Ferry Type</small>
+                                                        <p class="mb-0">
+                                                            {{ ucfirst(str_replace('_', ' ', $booking->ferry_type)) }}</p>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                            @if (isset($booking->experience_duration))
+                                                <div class="detail-item">
+                                                    <div class="detail-icon">
+                                                        <i class="bi bi-star"></i>
+                                                    </div>
+                                                    <div>
+                                                        <small class="text-muted">Experience</small>
+                                                        <p class="mb-0">
+                                                            @if ($booking->experience_duration === 'full')
+                                                                Full Boat Experience
+                                                            @else
+                                                                {{ $booking->experience_duration }} Minutes
+                                                            @endif
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        @else
+                                            <div class="detail-item">
+                                                <div class="detail-icon">
+                                                    <i class="bi bi-moon"></i>
+                                                </div>
+                                                <div>
+                                                    <small class="text-muted">Duration</small>
+                                                    <p class="mb-0">{{ $booking->nights ?? '1' }} Nights</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <small class="text-muted">Duration</small>
-                                                <p class="mb-0">{{ $booking->nights ?? '1' }} Nights</p>
-                                            </div>
-                                        </div>
+                                        @endif
 
                                         <div class="detail-item">
                                             <div class="detail-icon">
                                                 <i class="bi bi-people"></i>
                                             </div>
                                             <div>
-                                                <small class="text-muted">Guests</small>
-                                                <p class="mb-0">{{ $booking->guests ?? '2' }} Adults
+                                                <small class="text-muted">
+                                                    @if ($booking->property_type === 'Boat')
+                                                        Passengers
+                                                    @else
+                                                        Guests
+                                                    @endif
+                                                </small>
+                                                <p class="mb-0">{{ $booking->guests ?? '2' }}
+                                                    @if ($booking->property_type === 'Boat')
+                                                        Passenger(s)
+                                                    @else
+                                                        Adults
+                                                    @endif
                                                     @if (($booking->children ?? 0) > 0)
                                                         , {{ $booking->children }} Children
                                                     @endif

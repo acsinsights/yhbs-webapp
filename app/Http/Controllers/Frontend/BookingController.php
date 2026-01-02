@@ -6,6 +6,7 @@ use App\Models\Booking;
 use App\Models\Coupon;
 use App\Models\Room;
 use App\Models\House;
+use App\Models\Boat;
 use App\Services\CouponService;
 use App\Services\WalletService;
 use Illuminate\Http\Request;
@@ -82,6 +83,24 @@ class BookingController extends Controller
                 $location = 'House #' . ($property->house_number ?? 'N/A');
                 $price = $property->price_per_night ?? 0;
             }
+        } elseif ($type === 'boat') {
+            $property = Boat::find($id);
+            if ($property) {
+                if ($property->image) {
+                    if (str_starts_with($property->image, 'http')) {
+                        $propertyImage = $property->image;
+                    } elseif (str_starts_with($property->image, 'default/') || str_starts_with($property->image, '/default') || str_starts_with($property->image, 'frontend/') || str_starts_with($property->image, '/frontend')) {
+                        $propertyImage = asset($property->image);
+                    } elseif (str_starts_with($property->image, 'storage/')) {
+                        $propertyImage = asset($property->image);
+                    } else {
+                        $propertyImage = asset('storage/' . $property->image);
+                    }
+                }
+                $propertyName = $property->name;
+                $location = $property->location ?? 'Marina';
+                $price = 0; // Will be calculated based on service type
+            }
         }
 
         if (!$property) {
@@ -101,14 +120,29 @@ class BookingController extends Controller
         $adultNames = $request->get('adult_names', []);
         $childrenNames = $request->get('children_names', []);
 
-        if (!$checkIn || !$checkOut) {
-            return redirect()->back()->with('error', 'Please select check-in and check-out dates.');
+        // Boat-specific parameters
+        $startTime = $request->get('start_time');
+        $duration = $request->get('duration');
+        $ferryType = $request->get('ferry_type');
+        $experienceDuration = $request->get('experience_duration');
+
+        // For boats, we only need check_in date (single day booking)
+        if ($type === 'boat') {
+            if (!$checkIn) {
+                return redirect()->back()->with('error', 'Please select a booking date.');
+            }
+            // Set check_out same as check_in for boats (single day)
+            $checkOut = $checkIn;
+        } else {
+            if (!$checkIn || !$checkOut) {
+                return redirect()->back()->with('error', 'Please select check-in and check-out dates.');
+            }
         }
 
         $checkInDate = Carbon::parse($checkIn)->startOfDay();
         $checkOutDate = Carbon::parse($checkOut)->startOfDay();
 
-        // Calculate nights
+        // Calculate nights (or hours for boats)
         $nights = $checkInDate->diffInDays($checkOutDate);
 
         // Allow same-day bookings (0 nights = 1 day booking)
@@ -117,7 +151,72 @@ class BookingController extends Controller
         }
 
         // Calculate price based on property type and nights
-        if ($type === 'house') {
+        if ($type === 'boat') {
+            // Boat pricing based on service type
+            $subtotal = 0;
+
+            if (in_array($property->service_type, ['yacht', 'taxi'])) {
+                // Hourly boat rental (yacht/taxi)
+                $durationHours = (int) $duration;
+
+                if ($durationHours == 1 && $property->price_1hour) {
+                    $subtotal = $property->price_1hour;
+                } elseif ($durationHours == 2 && $property->price_2hours) {
+                    $subtotal = $property->price_2hours;
+                } elseif ($durationHours == 3 && $property->price_3hours) {
+                    $subtotal = $property->price_3hours;
+                } elseif ($durationHours > 3) {
+                    // Base price for 3 hours + additional hours
+                    $basePrice = $property->price_3hours ?? 0;
+                    $additionalHours = $durationHours - 3;
+                    $subtotal = $basePrice + ($additionalHours * ($property->additional_hour_price ?? 0));
+                }
+
+                $nights = $durationHours; // Store duration in nights field for display
+            } elseif ($property->service_type == 'ferry') {
+                // Ferry service pricing
+                switch ($ferryType) {
+                    case 'private_weekday':
+                        $subtotal = $property->ferry_private_weekday ?? 0;
+                        break;
+                    case 'private_weekend':
+                        $subtotal = $property->ferry_private_weekend ?? 0;
+                        break;
+                    case 'public_weekday':
+                        $subtotal = $property->ferry_public_weekday ?? 0;
+                        break;
+                    case 'public_weekend':
+                        $subtotal = $property->ferry_public_weekend ?? 0;
+                        break;
+                    default:
+                        $subtotal = $property->ferry_private_weekday ?? 0;
+                }
+            } elseif ($property->service_type == 'limousine') {
+                // Experience pricing (limousine)
+                switch ($experienceDuration) {
+                    case '15':
+                        $subtotal = $property->price_15min ?? 0;
+                        break;
+                    case '30':
+                        $subtotal = $property->price_30min ?? 0;
+                        break;
+                    case 'full':
+                        $subtotal = $property->price_full_boat ?? 0;
+                        break;
+                    default:
+                        $subtotal = $property->price_15min ?? 0;
+                }
+            }
+
+            \Log::info('Boat Booking Calculation', [
+                'boat_id' => $id,
+                'service_type' => $property->service_type,
+                'duration' => $duration,
+                'ferry_type' => $ferryType,
+                'experience_duration' => $experienceDuration,
+                'calculated_subtotal' => $subtotal,
+            ]);
+        } elseif ($type === 'house') {
             // Houses: use tiered pricing structure like rooms
             if ($nights == 1) {
                 $subtotal = $property->price_per_night ?? 0;
@@ -225,6 +324,17 @@ class BookingController extends Controller
         // Ensure price_per_night is a valid number
         $pricePerNight = floatval($property->price_per_night ?? 0);
 
+        // For boats, price_per_night represents the unit price (per hour, per trip, etc.)
+        if ($type === 'boat') {
+            if ($property->service_type == 'hourly') {
+                $pricePerNight = floatval($property->price_per_hour ?? 0);
+            } elseif ($property->service_type == 'ferry_service') {
+                $pricePerNight = floatval($property->ferry_private_weekday ?? 0);
+            } elseif ($property->service_type == 'experience') {
+                $pricePerNight = floatval($property->price_15min ?? 0);
+            }
+        }
+
         // Add debug logging for houses
         if ($type === 'house') {
             \Log::info('House Booking Object Creation', [
@@ -257,6 +367,12 @@ class BookingController extends Controller
             'service_fee' => $serviceFee,
             'tax' => $tax,
             'total' => $total,
+            // Boat-specific data
+            'service_type' => $type === 'boat' ? $property->service_type : null,
+            'start_time' => $startTime,
+            'duration' => $duration,
+            'ferry_type' => $ferryType,
+            'experience_duration' => $experienceDuration,
         ];
 
         return view('frontend.checkout', compact('booking'));
@@ -265,10 +381,10 @@ class BookingController extends Controller
     public function confirm(Request $request)
     {
         $validated = $request->validate([
-            'type' => 'required|in:room,yacht,house',
+            'type' => 'required|in:room,house,boat',
             'property_id' => 'required|integer',
             'check_in' => 'required|date',
-            'check_out' => 'required|date|after:check_in',
+            'check_out' => 'required|date|after_or_equal:check_in',
             'adults' => 'required|integer|min:1',
             'children' => 'nullable|integer|min:0',
             'adult_names' => 'nullable|array',
@@ -284,15 +400,20 @@ class BookingController extends Controller
             'coupon_code' => 'nullable|string',
             'discount_amount' => 'nullable|numeric|min:0',
             'use_wallet_balance' => 'nullable|boolean',
+            // Boat-specific fields
+            'start_time' => 'nullable|string',
+            'duration' => 'nullable|integer',
+            'ferry_type' => 'nullable|string',
+            'experience_duration' => 'nullable|string',
         ]);
 
         // Determine bookingable type and get the property
         if ($validated['type'] === 'room') {
             $bookingableType = Room::class;
             $property = Room::findOrFail($validated['property_id']);
-        } elseif ($validated['type'] === 'yacht') {
-            $bookingableType = Yacht::class;
-            $property = Yacht::findOrFail($validated['property_id']);
+        } elseif ($validated['type'] === 'boat') {
+            $bookingableType = Boat::class;
+            $property = Boat::findOrFail($validated['property_id']);
         } else {
             $bookingableType = House::class;
             $property = House::findOrFail($validated['property_id']);
@@ -387,15 +508,38 @@ class BookingController extends Controller
             'special_requests' => $validated['special_requests'] ?? null,
         ];
 
+        // Add boat-specific details if applicable
+        if ($validated['type'] === 'boat') {
+            $guestDetails['boat_details'] = [
+                'start_time' => $validated['start_time'] ?? null,
+                'duration' => $validated['duration'] ?? null,
+                'ferry_type' => $validated['ferry_type'] ?? null,
+                'experience_duration' => $validated['experience_duration'] ?? null,
+            ];
+        }
+
         // Calculate nights and pricing breakdown
         $checkInDate = Carbon::parse($validated['check_in'])->startOfDay();
         $checkOutDate = Carbon::parse($validated['check_out'])->startOfDay();
-        $nights = max(1, $checkInDate->diffInDays($checkOutDate) ?: 1);
+
+        // For boats, nights represents duration/hours
+        if ($validated['type'] === 'boat') {
+            $nights = $validated['duration'] ?? 1;
+        } else {
+            $nights = max(1, $checkInDate->diffInDays($checkOutDate) ?: 1);
+        }
 
         // Get price per night from property
         $pricePerNight = 0;
-        if ($validated['type'] === 'yacht') {
-            $pricePerNight = $property->price_per_hour ?? $property->price_per_night ?? 0;
+        if ($validated['type'] === 'boat') {
+            // For boats, store the unit price based on service type
+            if ($property->service_type == 'hourly') {
+                $pricePerNight = $property->price_per_hour ?? 0;
+            } elseif ($property->service_type == 'ferry_service') {
+                $pricePerNight = $property->ferry_private_weekday ?? 0;
+            } elseif ($property->service_type == 'experience') {
+                $pricePerNight = $property->price_15min ?? 0;
+            }
         } else {
             $pricePerNight = $property->price_per_night ?? 0;
         }
@@ -480,20 +624,6 @@ class BookingController extends Controller
                 $location = 'Room #' . ($room->room_number ?? 'N/A');
                 $propertyType = 'Room';
             }
-        } elseif ($booking->bookingable_type === Yacht::class) {
-            $yacht = $booking->bookingable;
-            if ($yacht) {
-                if ($yacht->image) {
-                    if (str_starts_with($yacht->image, '/default')) {
-                        $propertyImage = asset($yacht->image);
-                    } else {
-                        $propertyImage = asset('storage/' . $yacht->image);
-                    }
-                }
-                $propertyName = $yacht->name;
-                $location = $yacht->location ?? 'N/A';
-                $propertyType = 'Yacht';
-            }
         } elseif ($booking->bookingable_type === House::class) {
             $house = $booking->bookingable;
             if ($house) {
@@ -533,6 +663,26 @@ class BookingController extends Controller
                 $location = 'House #' . ($house->house_number ?? 'N/A');
                 $propertyType = 'House';
             }
+        } elseif ($booking->bookingable_type === Boat::class) {
+            $boat = $booking->bookingable;
+            if ($boat) {
+                if ($boat->image) {
+                    if (str_starts_with($boat->image, 'http')) {
+                        $propertyImage = $boat->image;
+                    } elseif (str_starts_with($boat->image, '/default') || str_starts_with($boat->image, '/frontend')) {
+                        $propertyImage = asset($boat->image);
+                    } elseif (str_starts_with($boat->image, 'default/') || str_starts_with($boat->image, 'frontend/')) {
+                        $propertyImage = asset($boat->image);
+                    } elseif (str_starts_with($boat->image, 'storage/')) {
+                        $propertyImage = asset($boat->image);
+                    } else {
+                        $propertyImage = asset('storage/' . $boat->image);
+                    }
+                }
+                $propertyName = $boat->name;
+                $location = $boat->location ?? 'Marina';
+                $propertyType = 'Boat';
+            }
         }
 
         if (!$propertyImage) {
@@ -557,12 +707,22 @@ class BookingController extends Controller
         // Get price per night from booking record (or from property as fallback)
         $pricePerNight = $booking->price_per_night ?? 0;
         if (!$pricePerNight && $booking->bookingable) {
-            if ($booking->bookingable_type === Yacht::class) {
-                $pricePerNight = $booking->bookingable->price_per_hour ?? $booking->bookingable->price ?? 0;
+            if ($booking->bookingable_type === Boat::class) {
+                $boat = $booking->bookingable;
+                if ($boat->service_type == 'hourly') {
+                    $pricePerNight = $boat->price_per_hour ?? 0;
+                } elseif ($boat->service_type == 'ferry_service') {
+                    $pricePerNight = $boat->ferry_private_weekday ?? 0;
+                } elseif ($boat->service_type == 'experience') {
+                    $pricePerNight = $boat->price_15min ?? 0;
+                }
             } else {
                 $pricePerNight = $booking->bookingable->price_per_night ?? 0;
             }
         }
+
+        // Extract boat-specific details from guest_details
+        $boatDetails = $guestDetails['boat_details'] ?? null;
 
         // Get coupon and discount info
         $couponCode = null;
@@ -577,7 +737,7 @@ class BookingController extends Controller
             ->where('type', 'debit')
             ->first();
         if ($walletTransaction) {
-            $walletAmountUsed = abs($walletTransaction->amount);
+            $walletAmountUsed = abs(floatval($walletTransaction->amount));
         }
 
         $bookingData = (object) [
@@ -612,6 +772,12 @@ class BookingController extends Controller
             'coupon_code' => $couponCode,
             'wallet_amount_used' => $walletAmountUsed,
             'created_at' => $booking->created_at->format('M d, Y'),
+            // Boat-specific details
+            'boat_details' => $boatDetails,
+            'start_time' => $boatDetails['start_time'] ?? null,
+            'duration' => $boatDetails['duration'] ?? null,
+            'ferry_type' => $boatDetails['ferry_type'] ?? null,
+            'experience_duration' => $boatDetails['experience_duration'] ?? null,
             // Cancellation info
             'cancellation_requested_at' => $booking->cancellation_requested_at,
             'cancellation_status' => $booking->cancellation_status,

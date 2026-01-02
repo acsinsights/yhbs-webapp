@@ -15,43 +15,23 @@
         </div>
         <x-icon name="o-user-group" class="w-8 h-8 text-primary/70" />
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-        <x-input wire:model.live.debounce.350ms="adults" label="Adults" type="number" min="1" icon="o-user-group"
-            :max="$maxAdults" />
-        <x-input wire:model.live.debounce.350ms="children" label="Children" type="number" min="0"
-            icon="o-face-smile" :max="$maxChildren" />
+    <div class="grid grid-cols-1 gap-4 mt-6">
+        <x-input wire:model.live.debounce.350ms="adults" label="Number of Passengers" type="number" min="1"
+            icon="o-user-group" :max="$maxAdults" />
     </div>
 
-    {{-- Adult Names --}}
+    {{-- Passenger Names --}}
     @if ($adults > 0)
         <div class="mt-6">
             <h4 class="text-sm font-semibold text-base-content mb-3 flex items-center gap-2">
                 <x-icon name="o-user" class="w-4 h-4" />
-                Adult Names
+                Passenger Names
             </h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @for ($i = 0; $i < $adults; $i++)
                     <div wire:key="adult-{{ $i }}">
-                        <x-input wire:model="adultNames.{{ $i }}" label="Adult {{ $i + 1 }} Name"
+                        <x-input wire:model="adultNames.{{ $i }}" label="Passenger {{ $i + 1 }} Name"
                             placeholder="Enter full name" icon="o-user" />
-                    </div>
-                @endfor
-            </div>
-        </div>
-    @endif
-
-    {{-- Children Names --}}
-    @if ($children > 0)
-        <div class="mt-6">
-            <h4 class="text-sm font-semibold text-base-content mb-3 flex items-center gap-2">
-                <x-icon name="o-face-smile" class="w-4 h-4" />
-                Children Names
-            </h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                @for ($i = 0; $i < $children; $i++)
-                    <div wire:key="child-{{ $i }}">
-                        <x-input wire:model="childrenNames.{{ $i }}" label="Child {{ $i + 1 }} Name"
-                            placeholder="Enter full name (optional)" icon="o-user" />
                     </div>
                 @endfor
             </div>

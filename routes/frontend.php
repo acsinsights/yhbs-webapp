@@ -70,7 +70,7 @@ Route::prefix('customer')->name('customer.')->group(function () {
 
         Route::get('/profile', [DashboardController::class, 'profile'])->name('profile');
         Route::put('/profile', [DashboardController::class, 'updateProfile'])->name('profile.update');
-        Route::put('/password', [DashboardController::class, 'updatePassword'])->name('password.update');
+        Route::put('/password', [DashboardController::class, 'updatePassword'])->name('password.change');
 
         Route::get('/bookings', [DashboardController::class, 'bookings'])->name('bookings');
         Route::get('/bookings/{id}', [DashboardController::class, 'bookingDetails'])->name('booking.details');
@@ -104,11 +104,8 @@ Route::get('/houses/{slug}', [HouseController::class, 'show'])->name('houses.sho
 // Boats Routes
 Route::get('/boats', [BoatController::class, 'index'])->name('boats.index');
 Route::get('/boats/{slug}', [BoatController::class, 'show'])->name('boats.show');
+Route::post('/boats/available-time-slots', [BoatController::class, 'getAvailableTimeSlots'])->name('boats.timeslots');
 
 // Blog Routes
 Route::get('/blogs', [App\Http\Controllers\Frontend\BlogController::class, 'index'])->name('blogs.index');
 Route::get('/blog/{slug}', [App\Http\Controllers\Frontend\BlogController::class, 'show'])->name('blogs.show');
-
-// Password Reset Routes (handled by Customer AuthController)
-Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
-Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');

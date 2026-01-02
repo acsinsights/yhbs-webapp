@@ -141,35 +141,98 @@
                                     <div class="booking-details-summary">
                                         <div class="detail-row">
                                             <div class="detail-label">
-                                                <i class="bi bi-calendar-check me-2"></i>Check-in
+                                                <i class="bi bi-calendar-check me-2"></i>
+                                                @if ($booking->type === 'boat')
+                                                    Booking Date
+                                                @else
+                                                    Check-in
+                                                @endif
                                             </div>
                                             <div class="detail-value">
                                                 {{ $booking->check_in_display ?? ($booking->check_in ?? 'N/A') }}
                                             </div>
                                         </div>
-                                        <div class="detail-row">
-                                            <div class="detail-label">
-                                                <i class="bi bi-calendar-x me-2"></i>Check-out
+
+                                        @if ($booking->type !== 'boat')
+                                            <div class="detail-row">
+                                                <div class="detail-label">
+                                                    <i class="bi bi-calendar-x me-2"></i>Check-out
+                                                </div>
+                                                <div class="detail-value">
+                                                    {{ $booking->check_out_display ?? ($booking->check_out ?? 'N/A') }}
+                                                </div>
                                             </div>
-                                            <div class="detail-value">
-                                                {{ $booking->check_out_display ?? ($booking->check_out ?? 'N/A') }}
+                                        @endif
+
+                                        @if ($booking->type === 'boat')
+                                            <!-- Boat-specific details -->
+                                            @if ($booking->service_type === 'hourly' && isset($booking->start_time))
+                                                <div class="detail-row">
+                                                    <div class="detail-label">
+                                                        <i class="bi bi-clock me-2"></i>Start Time
+                                                    </div>
+                                                    <div class="detail-value">
+                                                        {{ $booking->start_time }}
+                                                    </div>
+                                                </div>
+                                                <div class="detail-row">
+                                                    <div class="detail-label">
+                                                        <i class="bi bi-hourglass-split me-2"></i>Duration
+                                                    </div>
+                                                    <div class="detail-value">
+                                                        {{ $booking->duration ?? 1 }} Hour(s)
+                                                    </div>
+                                                </div>
+                                            @elseif ($booking->service_type === 'ferry_service' && isset($booking->ferry_type))
+                                                <div class="detail-row">
+                                                    <div class="detail-label">
+                                                        <i class="bi bi-ticket me-2"></i>Ferry Type
+                                                    </div>
+                                                    <div class="detail-value">
+                                                        {{ ucfirst(str_replace('_', ' ', $booking->ferry_type)) }}
+                                                    </div>
+                                                </div>
+                                            @elseif ($booking->service_type === 'experience' && isset($booking->experience_duration))
+                                                <div class="detail-row">
+                                                    <div class="detail-label">
+                                                        <i class="bi bi-star me-2"></i>Experience
+                                                    </div>
+                                                    <div class="detail-value">
+                                                        @if ($booking->experience_duration === 'full')
+                                                            Full Boat Experience
+                                                        @else
+                                                            {{ $booking->experience_duration }} Minutes
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        @else
+                                            <div class="detail-row">
+                                                <div class="detail-label">
+                                                    <i class="bi bi-moon me-2"></i>Nights
+                                                </div>
+                                                <div class="detail-value">
+                                                    {{ $booking->nights ?? '1' }} Nights
+                                                </div>
                                             </div>
-                                        </div>
+                                        @endif
 
                                         <div class="detail-row">
                                             <div class="detail-label">
-                                                <i class="bi bi-moon me-2"></i>Nights
+                                                <i class="bi bi-people me-2"></i>
+                                                @if ($booking->type === 'boat')
+                                                    Passengers
+                                                @else
+                                                    Guests
+                                                @endif
                                             </div>
                                             <div class="detail-value">
-                                                {{ $booking->nights ?? '1' }} Nights
-                                            </div>
-                                        </div>
-                                        <div class="detail-row">
-                                            <div class="detail-label">
-                                                <i class="bi bi-people me-2"></i>Guests
-                                            </div>
-                                            <div class="detail-value">
-                                                {{ $booking->guests ?? '2' }} Adults
+                                                {{ $booking->guests ?? '2' }}
+                                                @if ($booking->type === 'boat')
+                                                    Passenger(s)
+                                                @else
+                                                    Adults
+                                                @endif
                                                 @if (isset($booking->children) && $booking->children > 0)
                                                     , {{ $booking->children }} Children
                                                 @endif
@@ -247,7 +310,21 @@
 
                                     <div class="price-breakdown">
                                         <div class="price-row">
-                                            <span>Price per night</span>
+                                            <span>
+                                                @if ($booking->type === 'boat')
+                                                    @if ($booking->service_type === 'hourly')
+                                                        Price per hour
+                                                    @elseif ($booking->service_type === 'ferry_service')
+                                                        Ferry price
+                                                    @elseif ($booking->service_type === 'experience')
+                                                        Experience price
+                                                    @else
+                                                        Unit price
+                                                    @endif
+                                                @else
+                                                    Price per night
+                                                @endif
+                                            </span>
                                             <span
                                                 id="pricePerNight">{{ currency_format($booking->price_per_night ?? 0) }}</span>
                                         </div>
@@ -512,6 +589,24 @@
                             <input type="hidden" name="check_out" value="{{ $booking->check_out }}">
                             <input type="hidden" name="adults" value="{{ $booking->guests }}">
                             <input type="hidden" name="children" value="{{ $booking->children }}">
+
+                            @if ($booking->type === 'boat')
+                                <!-- Boat-specific hidden fields -->
+                                @if (isset($booking->start_time))
+                                    <input type="hidden" name="start_time" value="{{ $booking->start_time }}">
+                                @endif
+                                @if (isset($booking->duration))
+                                    <input type="hidden" name="duration" value="{{ $booking->duration }}">
+                                @endif
+                                @if (isset($booking->ferry_type))
+                                    <input type="hidden" name="ferry_type" value="{{ $booking->ferry_type }}">
+                                @endif
+                                @if (isset($booking->experience_duration))
+                                    <input type="hidden" name="experience_duration"
+                                        value="{{ $booking->experience_duration }}">
+                                @endif
+                            @endif
+
                             @php
                                 // Calculate form total - always prefer backend if available
                                 $calculated =

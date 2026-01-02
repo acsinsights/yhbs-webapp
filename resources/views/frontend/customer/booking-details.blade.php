@@ -103,52 +103,115 @@
 
                             <!-- Booking Details Grid -->
                             <div class="detail-grid">
+                                @php
+                                    $isBoat = $booking->bookingable_type === \App\Models\Boat::class;
+                                    $boatDetails = $booking->guest_details['boat_details'] ?? null;
+                                @endphp
+
                                 <div class="detail-item">
                                     <div class="detail-icon">
                                         <i class="bi bi-calendar-check"></i>
                                     </div>
                                     <div>
-                                        <small>Check-in</small>
+                                        <small>{{ $isBoat ? 'Booking Date' : 'Check-in' }}</small>
                                         <p>{{ $booking->check_in ? \Carbon\Carbon::parse($booking->check_in)->format('M d, Y') : 'N/A' }}
                                         </p>
                                     </div>
                                 </div>
 
-                                <div class="detail-item">
-                                    <div class="detail-icon">
-                                        <i class="bi bi-calendar-x"></i>
+                                @if (!$isBoat)
+                                    <div class="detail-item">
+                                        <div class="detail-icon">
+                                            <i class="bi bi-calendar-x"></i>
+                                        </div>
+                                        <div>
+                                            <small>Check-out</small>
+                                            <p>{{ $booking->check_out ? \Carbon\Carbon::parse($booking->check_out)->format('M d, Y') : 'N/A' }}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <small>Check-out</small>
-                                        <p>{{ $booking->check_out ? \Carbon\Carbon::parse($booking->check_out)->format('M d, Y') : 'N/A' }}
-                                        </p>
-                                    </div>
-                                </div>
 
-                                <div class="detail-item">
-                                    <div class="detail-icon">
-                                        <i class="bi bi-moon-stars"></i>
+                                    <div class="detail-item">
+                                        <div class="detail-icon">
+                                            <i class="bi bi-moon-stars"></i>
+                                        </div>
+                                        <div>
+                                            <small>Duration</small>
+                                            <p>
+                                                @if ($booking->check_in && $booking->check_out)
+                                                    {{ \Carbon\Carbon::parse($booking->check_in)->diffInDays(\Carbon\Carbon::parse($booking->check_out)) }}
+                                                    Nights
+                                                @else
+                                                    N/A
+                                                @endif
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <small>Duration</small>
-                                        <p>
-                                            @if ($booking->check_in && $booking->check_out)
-                                                {{ \Carbon\Carbon::parse($booking->check_in)->diffInDays(\Carbon\Carbon::parse($booking->check_out)) }}
-                                                Nights
-                                            @else
-                                                N/A
-                                            @endif
-                                        </p>
-                                    </div>
-                                </div>
+                                @else
+                                    <!-- Boat-specific fields -->
+                                    @if ($boatDetails && isset($boatDetails['start_time']))
+                                        <div class="detail-item">
+                                            <div class="detail-icon">
+                                                <i class="bi bi-clock"></i>
+                                            </div>
+                                            <div>
+                                                <small>Start Time</small>
+                                                <p>{{ $boatDetails['start_time'] }}</p>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if ($boatDetails && isset($boatDetails['duration']))
+                                        <div class="detail-item">
+                                            <div class="detail-icon">
+                                                <i class="bi bi-hourglass-split"></i>
+                                            </div>
+                                            <div>
+                                                <small>Duration</small>
+                                                <p>{{ $boatDetails['duration'] }} Hour(s)</p>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if ($boatDetails && isset($boatDetails['ferry_type']))
+                                        <div class="detail-item">
+                                            <div class="detail-icon">
+                                                <i class="bi bi-ticket"></i>
+                                            </div>
+                                            <div>
+                                                <small>Ferry Type</small>
+                                                <p>{{ ucfirst(str_replace('_', ' ', $boatDetails['ferry_type'])) }}</p>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if ($boatDetails && isset($boatDetails['experience_duration']))
+                                        <div class="detail-item">
+                                            <div class="detail-icon">
+                                                <i class="bi bi-star"></i>
+                                            </div>
+                                            <div>
+                                                <small>Experience</small>
+                                                <p>
+                                                    @if ($boatDetails['experience_duration'] === 'full')
+                                                        Full Experience
+                                                    @else
+                                                        {{ $boatDetails['experience_duration'] }} Minutes
+                                                    @endif
+                                                </p>
+                                            </div>
+                                        </div>
+                                    @endif
+                                @endif
 
                                 <div class="detail-item">
                                     <div class="detail-icon">
                                         <i class="bi bi-people"></i>
                                     </div>
                                     <div>
-                                        <small>Guests</small>
-                                        <p>{{ ($booking->adults ?? 0) + ($booking->children ?? 0) }} Guests</p>
+                                        <small>{{ $isBoat ? 'Passengers' : 'Guests' }}</small>
+                                        <p>{{ ($booking->adults ?? 0) + ($booking->children ?? 0) }}
+                                            {{ $isBoat ? 'Passenger(s)' : 'Guests' }}</p>
                                     </div>
                                 </div>
                             </div>
