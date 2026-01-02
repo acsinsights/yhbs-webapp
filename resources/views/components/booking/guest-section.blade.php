@@ -31,8 +31,10 @@
             </h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @for ($i = 0; $i < $adults; $i++)
-                    <x-input wire:model="adultNames.{{ $i }}" label="Adult {{ $i + 1 }} Name"
-                        placeholder="Enter full name" icon="o-user" />
+                    <div wire:key="adult-{{ $i }}">
+                        <x-input wire:model="adultNames.{{ $i }}" label="Adult {{ $i + 1 }} Name"
+                            placeholder="Enter full name" icon="o-user" />
+                    </div>
                 @endfor
             </div>
         </div>
@@ -47,8 +49,10 @@
             </h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @for ($i = 0; $i < $children; $i++)
-                    <x-input wire:model="childrenNames.{{ $i }}" label="Child {{ $i + 1 }} Name"
-                        placeholder="Enter full name (optional)" icon="o-user" />
+                    <div wire:key="child-{{ $i }}">
+                        <x-input wire:model="childrenNames.{{ $i }}" label="Child {{ $i + 1 }} Name"
+                            placeholder="Enter full name (optional)" icon="o-user" />
+                    </div>
                 @endfor
             </div>
         </div>

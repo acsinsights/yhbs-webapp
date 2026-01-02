@@ -87,10 +87,18 @@ new class extends Component {
             'payment_method' => 'required|in:cash,card,online,other',
         ]);
 
+        $oldPaymentStatus = $this->booking->payment_status->value;
         $this->booking->update([
             'payment_status' => $this->payment_status,
             'payment_method' => $this->payment_method,
         ]);
+
+        // Log payment update
+        activity()
+            ->performedOn($this->booking)
+            ->causedBy(auth()->user())
+            ->withProperties(['payment_status' => $this->payment_status, 'payment_method' => $this->payment_method])
+            ->log('Payment updated: ' . $this->payment_method . ' - ' . $this->payment_status);
 
         $this->showPaymentModal = false;
         $this->success('Payment details updated successfully.');
@@ -103,9 +111,17 @@ new class extends Component {
             'booking_status' => 'required|in:pending,booked,cancelled',
         ]);
 
+        $oldStatus = $this->booking->status->value;
         $this->booking->update([
             'status' => $this->booking_status,
         ]);
+
+        // Log status change
+        activity()
+            ->performedOn($this->booking)
+            ->causedBy(auth()->user())
+            ->withProperties(['old_status' => $oldStatus, 'new_status' => $this->booking_status])
+            ->log('Status changed from ' . $oldStatus . ' to ' . $this->booking_status);
 
         $this->showStatusModal = false;
         $this->success('Booking status updated successfully.');
@@ -150,12 +166,28 @@ new class extends Component {
             $durationHours = $this->booking->check_in->diffInHours($this->booking->check_out);
         }
 
+        $oldCheckIn = $this->booking->check_in->format('M d, Y h:i A');
+        $oldCheckOut = $this->booking->check_out->format('M d, Y h:i A');
+        $newCheckOut = $newCheckIn->copy()->addHours($durationHours);
+
         // Update booking with new date/time
         $this->booking->update([
             'check_in' => $newCheckIn,
-            'check_out' => $newCheckIn->copy()->addHours($durationHours),
-            'notes' => ($this->booking->notes ? $this->booking->notes . "\n\n" : '') . 'Rescheduled: ' . ($this->reschedule_notes ?? 'No notes provided'),
+            'check_out' => $newCheckOut,
         ]);
+
+        // Log rescheduling
+        activity()
+            ->performedOn($this->booking)
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'old_check_in' => $oldCheckIn,
+                'old_check_out' => $oldCheckOut,
+                'new_check_in' => $newCheckIn->format('M d, Y h:i A'),
+                'new_check_out' => $newCheckOut->format('M d, Y h:i A'),
+                'notes' => $this->reschedule_notes,
+            ])
+            ->log('Booking rescheduled from ' . $oldCheckIn . ' to ' . $newCheckIn->format('M d, Y h:i A') . ($this->reschedule_notes ? '. Reason: ' . $this->reschedule_notes : ''));
 
         $this->showRescheduleModal = false;
         $this->success('Booking rescheduled successfully.');
@@ -303,23 +335,16 @@ new class extends Component {
                     </div>
 
                     @if ($booking->check_in)
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <div class="text-sm text-base-content/50 mb-1">Departure Time</div>
-                                <div class="font-semibold">
-                                    {{ $booking->check_in->format('M d, Y') }}<br>
-                                    <span class="text-primary">{{ $booking->check_in->format('h:i A') }}</span>
-                                </div>
+                        <div>
+                            <div class="text-sm text-base-content/50 mb-1">Time Slot</div>
+                            <div class="font-semibold">
+                                {{ $booking->check_in->format('M d, Y') }}<br>
+                                <span class="text-primary">{{ $booking->check_in->format('h:i A') }}</span>
+                                @if ($booking->check_out)
+                                    <span class="text-base-content/30"> → </span>
+                                    <span class="text-success">{{ $booking->check_out->format('h:i A') }}</span>
+                                @endif
                             </div>
-                            @if ($booking->check_out)
-                                <div>
-                                    <div class="text-sm text-base-content/50 mb-1">Return Time</div>
-                                    <div class="font-semibold">
-                                        {{ $booking->check_out->format('M d, Y') }}<br>
-                                        <span class="text-success">{{ $booking->check_out->format('h:i A') }}</span>
-                                    </div>
-                                </div>
-                            @endif
                         </div>
                     @endif
 

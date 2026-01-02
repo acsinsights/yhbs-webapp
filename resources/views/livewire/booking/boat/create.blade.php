@@ -34,6 +34,7 @@ new class extends Component {
 
     // Slot/Duration based fields
     public ?string $booking_type = 'private';
+    public ?string $trip_type = null; // For ferry: private or public
     public ?string $duration_slot = null; // 1h, 2h, 3h, 15min, 30min, 1hour_full
     public ?int $custom_hours = null;
 
@@ -164,18 +165,11 @@ new class extends Component {
         $startHour = 9; // 9 AM
         $endHour = 18; // 6 PM
 
-        // Get buffer time in hours
-        $bufferMinutes = $this->selectedBoat->buffer_time ?? 0;
-        $bufferHours = $bufferMinutes / 60;
-
-        // Generate slots based on duration + buffer time
+        // Generate slots based on duration only (no buffer time in slots)
         $currentHour = $startHour;
         while ($currentHour + $durationHours <= $endHour) {
             $startTime = Carbon::parse($this->check_in)->setTime(floor($currentHour), ($currentHour - floor($currentHour)) * 60);
             $endTime = $startTime->copy()->addMinutes($durationHours * 60);
-
-            // Add buffer time from boat configuration
-            $endTimeWithBuffer = $endTime->copy()->addMinutes($bufferMinutes);
 
             // Check if slot is in the past (for today's date)
             $now = Carbon::now();
@@ -184,29 +178,9 @@ new class extends Component {
                 $isPast = $startTime->lessThanOrEqualTo($now);
             }
 
-            // Check if this slot is already booked (including buffer time)
-            $isBooked = Booking::where('bookingable_type', Boat::class)
-                ->where('bookingable_id', $this->selectedBoat->id)
-                ->where('status', '!=', 'cancelled')
-                ->whereDate('check_in', $this->check_in)
-                ->where(function ($query) use ($startTime, $endTimeWithBuffer) {
-                    // Check for any overlap:
-                    // 1. Booking starts during our slot
-                    // 2. Booking ends during our slot
-                    // 3. Booking completely contains our slot
-                    // 4. Our slot completely contains booking
-                    $query->where(function ($q) use ($startTime, $endTimeWithBuffer) {
-                        $q->whereBetween('check_in', [$startTime, $endTimeWithBuffer])
-                            ->orWhereBetween('check_out', [$startTime, $endTimeWithBuffer])
-                            ->orWhere(function ($q2) use ($startTime, $endTimeWithBuffer) {
-                                $q2->where('check_in', '<=', $startTime)->where('check_out', '>=', $endTimeWithBuffer);
-                            })
-                            ->orWhere(function ($q2) use ($startTime, $endTimeWithBuffer) {
-                                $q2->where('check_in', '>=', $startTime)->where('check_out', '<=', $endTimeWithBuffer);
-                            });
-                    });
-                })
-                ->exists();
+            // Check if this slot is already booked (no buffer time)
+            // Standard interval overlap: booking overlaps if booking.start < slot.end AND booking.end > slot.start
+            $isBooked = Booking::where('bookingable_type', Boat::class)->where('bookingable_id', $this->selectedBoat->id)->where('status', '!=', 'cancelled')->whereDate('check_in', $this->check_in)->where('check_in', '<', $endTime)->where('check_out', '>', $startTime)->exists();
 
             // Mark as unavailable if booked OR if the time has passed
             $isAvailable = !$isBooked && !$isPast;
@@ -221,8 +195,8 @@ new class extends Component {
                 'duration' => $durationHours,
             ]);
 
-            // Move to next slot (step by duration + buffer time)
-            $currentHour += $durationHours + $bufferHours;
+            // Move to next slot (step by duration only, no buffer time)
+            $currentHour += $durationHours;
         }
 
         return $timeSlots;
@@ -322,7 +296,7 @@ new class extends Component {
 
             // VIP Limousine - Same day allowed, operational 8 AM - 10 PM
             if ($this->selectedBoat->name === 'VIP Limousine') {
-                $checkInDateTime = Carbon::parse($this->check_in . ' ' . $this->check_in_time);
+                $checkInDateTime = Carbon::parse($this->check_in)->setTimeFromTimeString($this->check_in_time);
                 $operationalStart = $checkInDateTime->copy()->setTime(8, 0);
                 $operationalEnd = $checkInDateTime->copy()->setTime(22, 0);
 
@@ -360,8 +334,9 @@ new class extends Component {
             'booking_type' => 'nullable|string',
         ]);
 
-        // Parse check_in as date only and set time separately to avoid double time specification error
-        $checkInDateTime = Carbon::parse($validated['check_in'])->setTimeFromTimeString($validated['check_in_time']);
+        // Parse check_in date and combine with time
+        $checkInDate = Carbon::parse($validated['check_in'])->startOfDay();
+        $checkInDateTime = $checkInDate->copy()->setTimeFromTimeString($validated['check_in_time']);
 
         // Calculate checkout time based on duration and add buffer for yachts
         $durationHours = match ($this->duration_slot) {
@@ -377,23 +352,20 @@ new class extends Component {
 
         $checkOutDateTime = $checkInDateTime->copy()->addMinutes($durationHours * 60);
 
-        // Add buffer time from boat configuration
-        if ($this->selectedBoat->buffer_time) {
-            $checkOutDateTime->addMinutes($this->selectedBoat->buffer_time);
-        }
+        // Buffer time not added to booking duration (handled separately by admin)
 
         $guestDetails = [
             'adults' => array_values(array_filter($this->adultNames)),
             'children' => array_values(array_filter($this->childrenNames)),
         ];
 
-        $notesText = $this->notes ?? '';
-        $notesText .= "\n\nDuration/Slot: " . ($this->duration_slot ?? 'N/A');
+        // Build separate system notes
+        $systemNotes = 'Duration/Slot: ' . ($this->duration_slot ?? 'N/A');
         if ($this->duration_slot === 'custom' && $this->custom_hours) {
-            $notesText .= " ({$this->custom_hours} hours)";
+            $systemNotes .= " ({$this->custom_hours} hours)";
         }
-        if ($this->booking_type) {
-            $notesText .= "\nBooking Type: " . $this->booking_type;
+        if ($this->trip_type) {
+            $systemNotes .= ' Booking Type: ' . $this->trip_type;
         }
 
         $booking = Booking::create([
@@ -410,25 +382,21 @@ new class extends Component {
             'payment_method' => $validated['payment_method'],
             'payment_status' => $validated['payment_status'],
             'status' => BookingStatusEnum::BOOKED->value,
-            'notes' => $notesText,
+            'notes' => trim($this->notes) ?: $systemNotes,
         ]);
+
+        // Log the booking creation with details
+        activity()
+            ->performedOn($booking)
+            ->causedBy(auth()->user())
+            ->withProperties(['system_info' => $systemNotes])
+            ->log('Booking created');
 
         $this->success('Boat booking created successfully.', redirectTo: route('admin.bookings.boat.show', $booking->id));
     }
 
     public function with(): array
     {
-        // Duration options based on boat type
-        $durationOptions = [];
-        if ($this->selectedBoat) {
-            $durationOptions = match ($this->selectedBoat->service_type) {
-                'yacht' => [['id' => '1h', 'name' => '1 Hour - KD ' . number_format($this->selectedBoat->price_1hour, 2)], ['id' => '2h', 'name' => '2 Hours - KD ' . number_format($this->selectedBoat->price_2hours, 2)], ['id' => '3h', 'name' => '3 Hours - KD ' . number_format($this->selectedBoat->price_3hours, 2)], ['id' => 'custom', 'name' => 'Custom Hours (KD ' . number_format($this->selectedBoat->additional_hour_price, 2) . '/hour)']],
-                'ferry' => [['id' => '1h', 'name' => '1 Hour'], ['id' => '2h', 'name' => '2 Hours'], ['id' => '3h', 'name' => '3 Hours'], ['id' => 'custom', 'name' => 'Custom Hours']],
-                'limousine' => [['id' => '15min', 'name' => '15 Minutes - KD ' . number_format($this->selectedBoat->price_15min, 2)], ['id' => '30min', 'name' => '30 Minutes - KD ' . number_format($this->selectedBoat->price_30min, 2)], ['id' => '1hour_full', 'name' => '1 Hour / Full Boat - KD ' . number_format($this->selectedBoat->price_full_boat, 2)]],
-                default => [],
-            };
-        }
-
         // Get all active service types
         $serviceTypes = BoatServiceType::active()
             ->ordered()
@@ -461,6 +429,7 @@ new class extends Component {
         if ($this->selectedBoat) {
             $durationOptions = match ($this->selectedBoat->service_type) {
                 'yacht' => [['id' => '1h', 'name' => '1 Hour - KD ' . number_format($this->selectedBoat->price_1hour, 2)], ['id' => '2h', 'name' => '2 Hours - KD ' . number_format($this->selectedBoat->price_2hours, 2)], ['id' => '3h', 'name' => '3 Hours - KD ' . number_format($this->selectedBoat->price_3hours, 2)], ['id' => 'custom', 'name' => 'Custom Hours (KD ' . number_format($this->selectedBoat->additional_hour_price, 2) . '/hour)']],
+                'ferry' => [['id' => '1h', 'name' => '1 Hour'], ['id' => '2h', 'name' => '2 Hours'], ['id' => '3h', 'name' => '3 Hours'], ['id' => 'custom', 'name' => 'Custom Hours']],
                 'limousine' => [['id' => '15min', 'name' => '15 Minutes - KD ' . number_format($this->selectedBoat->price_15min, 2)], ['id' => '30min', 'name' => '30 Minutes - KD ' . number_format($this->selectedBoat->price_30min, 2)], ['id' => '1hour_full', 'name' => '1 Hour / Full Boat - KD ' . number_format($this->selectedBoat->price_full_boat, 2)]],
                 default => [],
             };
@@ -812,30 +781,57 @@ new class extends Component {
 
                             {{-- Limousine Service (Time-based) --}}
                             @if ($selectedBoat->service_type === 'limousine')
-                                {{-- Step 3: Duration Selection --}}
+                                {{-- Step 3: Trip Type Selection --}}
                                 <x-card class="bg-base-200">
                                     <div class="flex items-start justify-between gap-3">
                                         <div>
                                             <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step
                                                 3</p>
-                                            <h3 class="text-xl font-semibold text-base-content mt-1">Select Service
-                                                Duration</h3>
-                                            <p class="text-sm text-base-content/60 mt-1">Choose service duration</p>
+                                            <h3 class="text-xl font-semibold text-base-content mt-1">Select Trip Type
+                                            </h3>
+                                            <p class="text-sm text-base-content/60 mt-1">Choose between Private or
+                                                Public trip</p>
                                         </div>
-                                        <x-icon name="o-clock" class="w-8 h-8 text-primary/70" />
+                                        <x-icon name="o-ticket" class="w-8 h-8 text-primary/70" />
                                     </div>
                                     <div class="mt-6">
-                                        <x-choices-offline label="Select Duration *" icon="o-clock" :options="$durationOptions"
-                                            wire:model.live="duration_slot" placeholder="Choose duration..." single
-                                            searchable />
+                                        <x-choices-offline label="Select Trip Type *" icon="o-ticket"
+                                            :options="[
+                                                ['id' => 'private', 'name' => 'Private Trip'],
+                                                ['id' => 'public', 'name' => 'Public Trip'],
+                                            ]" wire:model.live="trip_type"
+                                            placeholder="Choose trip type..." single searchable />
                                     </div>
                                 </x-card>
 
-                                {{-- Step 4/5: Date & Time Slot Selection --}}
+                                {{-- Step 4: Duration Selection --}}
+                                @if ($trip_type)
+                                    <x-card class="bg-base-200">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div>
+                                                <p class="text-xs uppercase tracking-wide text-primary font-semibold">
+                                                    Step
+                                                    4</p>
+                                                <h3 class="text-xl font-semibold text-base-content mt-1">Select Service
+                                                    Duration</h3>
+                                                <p class="text-sm text-base-content/60 mt-1">Choose service duration
+                                                </p>
+                                            </div>
+                                            <x-icon name="o-clock" class="w-8 h-8 text-primary/70" />
+                                        </div>
+                                        <div class="mt-6">
+                                            <x-choices-offline label="Select Duration *" icon="o-clock"
+                                                :options="$durationOptions" wire:model.live="duration_slot"
+                                                placeholder="Choose duration..." single searchable />
+                                        </div>
+                                    </x-card>
+                                @endif
+
+                                {{-- Step 5: Date & Time Slot Selection --}}
                                 @if ($duration_slot)
                                     @php
                                         // Calculate dynamic step number for Date & Time section
-                                        $dateTimeStepNumber = $selectedBoat->service_type === 'limousine' ? 3 : 4;
+                                        $dateTimeStepNumber = 5;
                                     @endphp
                                     <x-card class="bg-base-200">
                                         <div class="flex items-start justify-between gap-3">
@@ -931,7 +927,8 @@ new class extends Component {
                                     $notesStepNumber = 7;
                                 }
                             @endphp
-                            <x-booking.guest-section :stepNumber="$guestStepNumber" :maxAdults="$maxAdults" :maxChildren="$maxChildren" />
+                            <x-booking.guest-section :stepNumber="$guestStepNumber" :maxAdults="$maxAdults" :maxChildren="$maxChildren"
+                                :adults="$adults" :children="$children" />
 
                             {{-- Payment Details Section --}}
                             <x-card class="bg-base-200">
@@ -1014,6 +1011,13 @@ new class extends Component {
                                         <x-icon name="o-user-group" class="w-4 h-4" />
                                         <span>{{ $adults }}
                                             Adults{{ $children > 0 ? ', ' . $children . ' Children' : '' }}</span>
+                                    </div>
+                                @endif
+
+                                @if ($selected_time_slot)
+                                    <div class="flex items-center gap-2 text-base-content/70">
+                                        <x-icon name="o-clock" class="w-4 h-4" />
+                                        <span>{{ $selected_time_slot }}</span>
                                     </div>
                                 @endif
                             </div>

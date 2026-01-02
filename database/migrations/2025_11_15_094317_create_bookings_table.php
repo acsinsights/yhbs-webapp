@@ -18,9 +18,9 @@ return new class extends Migration {
             $table->integer('adults')->nullable();
             $table->integer('children')->nullable();
             $table->json('guest_details')->nullable()->comment('Array of guest names');
-            $table->date('check_in')->nullable();
+            $table->datetime('check_in')->nullable();
+            $table->datetime('check_out')->nullable();
             $table->time('arrival_time')->nullable()->comment('Expected arrival time');
-            $table->date('check_out')->nullable();
             $table->decimal('price', 10, 2)->nullable();
             $table->decimal('price_per_hour', 10, 2)->nullable();
             $table->foreignId('coupon_id')->nullable()->constrained()->nullOnDelete();

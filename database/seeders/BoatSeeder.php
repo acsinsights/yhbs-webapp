@@ -87,23 +87,6 @@ class BoatSeeder extends Seeder
 
             // Ferry Services to Failaka
             [
-                'name' => 'Taxi 2 Ferry',
-                'slug' => 'taxi-2-ferry',
-                'service_type' => 'ferry',
-                'description' => 'Ferry service to Failaka Island. Available for private charter or public trips.',
-                'min_passengers' => 1,
-                'max_passengers' => 20,
-                'ferry_private_weekday' => 70.00,
-                'ferry_private_weekend' => 90.00,
-                'ferry_public_weekday' => 15.00,
-                'ferry_public_weekend' => 20.00,
-                'location' => 'Ferry Terminal',
-                'features' => 'Island transport, Comfortable journey, Safety certified, Scheduled departures',
-                'is_active' => true,
-                'is_featured' => true,
-                'sort_order' => 5,
-            ],
-            [
                 'name' => 'Sea Bus',
                 'slug' => 'sea-bus',
                 'service_type' => 'ferry',
@@ -118,7 +101,7 @@ class BoatSeeder extends Seeder
                 'features' => 'Large capacity, Air conditioned, Restrooms, Snack bar',
                 'is_active' => true,
                 'is_featured' => true,
-                'sort_order' => 6,
+                'sort_order' => 5,
             ],
             [
                 'name' => 'Bint Al-Khair',
@@ -135,7 +118,7 @@ class BoatSeeder extends Seeder
                 'features' => 'Traditional design, Scenic views, Safety certified, Experienced crew',
                 'is_active' => true,
                 'is_featured' => false,
-                'sort_order' => 7,
+                'sort_order' => 6,
             ],
             [
                 'name' => 'Abu Al-Khair',
@@ -152,7 +135,7 @@ class BoatSeeder extends Seeder
                 'features' => 'Premium seating, Entertainment, Catering available, VIP lounge',
                 'is_active' => true,
                 'is_featured' => false,
-                'sort_order' => 8,
+                'sort_order' => 7,
             ],
 
             // Limousine Service
@@ -170,7 +153,7 @@ class BoatSeeder extends Seeder
                 'features' => 'Luxury interior, VIP service, Champagne service, Premium captain',
                 'is_active' => true,
                 'is_featured' => true,
-                'sort_order' => 9,
+                'sort_order' => 8,
             ],
         ];
 

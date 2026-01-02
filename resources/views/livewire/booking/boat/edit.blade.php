@@ -240,8 +240,9 @@ new class extends Component {
             'status' => 'required|in:pending,booked,cancelled',
         ]);
 
-        // Parse check_in as date only and set time separately to avoid double time specification error
-        $checkInDateTime = \Carbon\Carbon::parse($this->check_in)->setTimeFromTimeString($validated['check_in_time']);
+        // Parse check_in date and combine with time
+        $checkInDate = \Carbon\Carbon::parse($this->check_in)->startOfDay();
+        $checkInDateTime = $checkInDate->copy()->setTimeFromTimeString($validated['check_in_time']);
 
         // Calculate checkout time based on duration
         $durationHours = match ($this->duration_slot) {
@@ -291,6 +292,12 @@ new class extends Component {
             'status' => $validated['status'],
             'notes' => $notesText,
         ]);
+
+        // Log booking edit
+        activity()
+            ->performedOn($this->booking)
+            ->causedBy(auth()->user())
+            ->log('Booking details updated');
 
         $this->success('Booking updated successfully.', redirectTo: route('admin.bookings.boat.show', $this->booking->id));
     }
@@ -429,7 +436,6 @@ new class extends Component {
                                     wire:model.live="custom_hours" min="1" class="mt-4" />
                             @endif
                         </x-card>
-                        @endif
 
                         {{-- Time Slot Selection --}}
                         @if ($duration_slot && count($this->availableTimeSlots) > 0)

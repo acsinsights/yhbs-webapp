@@ -57,7 +57,7 @@ new class extends Component {
         $view->bookings = $query->orderBy(...array_values($this->sortBy))->paginate($this->perPage);
         $view->boats = Boat::active()->orderBy('name')->get();
 
-        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'user.name', 'label' => 'Customer', 'sortable' => false, 'class' => 'whitespace-nowrap'], ['key' => 'boat_name', 'label' => 'Boat', 'sortable' => false, 'class' => 'w-64'], ['key' => 'check_in', 'label' => 'Departure', 'sortable' => true, 'class' => 'whitespace-nowrap'], ['key' => 'price', 'label' => 'Amount', 'sortable' => true, 'class' => 'whitespace-nowrap'], ['key' => 'payment_status', 'label' => 'Payment Status', 'class' => 'whitespace-nowrap'], ['key' => 'payment_method', 'label' => 'Payment Method', 'class' => 'whitespace-nowrap'], ['key' => 'status', 'label' => 'Status', 'class' => 'whitespace-nowrap']];
+        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'user.name', 'label' => 'Customer', 'sortable' => false, 'class' => 'whitespace-nowrap'], ['key' => 'boat_name', 'label' => 'Boat', 'sortable' => false, 'class' => 'w-64'], ['key' => 'check_in', 'label' => 'Time Slot', 'sortable' => true, 'class' => 'whitespace-nowrap'], ['key' => 'price', 'label' => 'Amount', 'sortable' => true, 'class' => 'whitespace-nowrap'], ['key' => 'payment_status', 'label' => 'Payment Status', 'class' => 'whitespace-nowrap'], ['key' => 'payment_method', 'label' => 'Payment Method', 'class' => 'whitespace-nowrap'], ['key' => 'status', 'label' => 'Status', 'class' => 'whitespace-nowrap']];
     }
 }; ?>
 
@@ -111,13 +111,11 @@ new class extends Component {
             <span class="font-semibold">{{ $booking->check_in->format('M d, Y') }}</span>
             <div class="flex items-center gap-2 text-xs">
                 <span class="text-primary font-medium">
-                    <x-icon name="o-arrow-right-circle" class="w-3 h-3 inline" />
                     {{ $booking->check_in->format('h:i A') }}
                 </span>
                 @if ($booking->check_out)
                     <span class="text-base-content/30">→</span>
                     <span class="text-success font-medium">
-                        <x-icon name="o-arrow-left-circle" class="w-3 h-3 inline" />
                         {{ $booking->check_out->format('h:i A') }}
                     </span>
                 @endif
