@@ -146,27 +146,42 @@ new class extends Component {
             // Add buffer time from boat configuration
             $endTimeWithBuffer = $endTime->copy()->addMinutes($bufferMinutes);
 
+            // Check if slot is in the past (for today's date)
+            $now = \Carbon\Carbon::now();
+            $isPast = false;
+            if (\Carbon\Carbon::parse($this->check_in)->isToday()) {
+                $isPast = $startTime->lessThanOrEqualTo($now);
+            }
+
             // Check if this slot is already booked (including buffer time)
             // Exclude current booking from availability check
             $isBooked = Booking::where('bookingable_type', Boat::class)
                 ->where('bookingable_id', $boat->id)
                 ->where('id', '!=', $this->booking->id) // Exclude current booking
+                ->where('status', '!=', 'cancelled')
                 ->whereDate('check_in', $this->check_in)
                 ->where(function ($query) use ($startTime, $endTimeWithBuffer) {
-                    $query
-                        ->whereBetween('check_in', [$startTime, $endTimeWithBuffer])
-                        ->orWhereBetween('check_out', [$startTime, $endTimeWithBuffer])
-                        ->orWhere(function ($q) use ($startTime, $endTimeWithBuffer) {
-                            $q->where('check_in', '<=', $startTime)->where('check_out', '>=', $endTimeWithBuffer);
-                        });
+                    $query->where(function ($q) use ($startTime, $endTimeWithBuffer) {
+                        $q->whereBetween('check_in', [$startTime, $endTimeWithBuffer])
+                            ->orWhereBetween('check_out', [$startTime, $endTimeWithBuffer])
+                            ->orWhere(function ($q2) use ($startTime, $endTimeWithBuffer) {
+                                $q2->where('check_in', '<=', $startTime)->where('check_out', '>=', $endTimeWithBuffer);
+                            })
+                            ->orWhere(function ($q2) use ($startTime, $endTimeWithBuffer) {
+                                $q2->where('check_in', '>=', $startTime)->where('check_out', '<=', $endTimeWithBuffer);
+                            });
+                    });
                 })
                 ->exists();
+
+            // Mark as unavailable if booked OR if the time has passed
+            $isAvailable = !$isBooked && !$isPast;
 
             $timeSlots->push([
                 'start_time' => $startTime->format('H:i'),
                 'end_time' => $endTime->format('H:i'),
                 'display' => $startTime->format('h:i A') . ' - ' . $endTime->format('h:i A'),
-                'is_available' => !$isBooked,
+                'is_available' => $isAvailable,
                 'value' => $startTime->format('H:i'),
                 'duration' => $durationHours,
             ]);
@@ -188,13 +203,14 @@ new class extends Component {
     {
         // Validate booking cut-off rules
         if ($this->booking->bookingable) {
-            $checkInDate = Carbon::parse($this->check_in);
-            $now = Carbon::now();
+            $checkInDate = \Carbon\Carbon::parse($this->check_in);
+            $now = \Carbon\Carbon::now();
 
             // Marina 1, 2, 4 - Must book by 11:59 PM day before
             if (in_array($this->booking->bookingable->name, ['Marina 1', 'Marina 2', 'Marina 4'])) {
                 $cutoffTime = $checkInDate->copy()->subDay()->endOfDay();
                 if ($now->greaterThan($cutoffTime)) {
+                    $this->addError('check_in', 'Marina bookings must be made by 11:59 PM the day before the trip. Please select a later date.');
                     $this->error('Marina bookings must be made by 11:59 PM the day before the trip. Please select a later date.');
                     return;
                 }
@@ -207,18 +223,8 @@ new class extends Component {
                 $operationalEnd = $checkInDateTime->copy()->setTime(22, 0);
 
                 if ($checkInDateTime->lessThan($operationalStart) || $checkInDateTime->greaterThan($operationalEnd)) {
+                    $this->addError('check_in_time', 'VIP Limousine operates between 8:00 AM and 10:00 PM only.');
                     $this->error('VIP Limousine operates between 8:00 AM and 10:00 PM only.');
-                    return;
-                }
-            }
-
-            // Abu Al Khair, Bint Al Khair, Sea Bus - Month-by-month only
-            if (in_array($this->booking->bookingable->name, ['Abu Al Khair', 'Bint Al Khair', 'Sea Bus'])) {
-                $maxAdvanceMonths = 1;
-                $maxBookingDate = $now->copy()->addMonths($maxAdvanceMonths)->endOfMonth();
-
-                if ($checkInDate->greaterThan($maxBookingDate)) {
-                    $this->error('Ferry services can only be booked within the current and next month. Schedule depends on weather & tide conditions.');
                     return;
                 }
             }
@@ -234,7 +240,8 @@ new class extends Component {
             'status' => 'required|in:pending,booked,cancelled',
         ]);
 
-        $checkInDateTime = \Carbon\Carbon::parse($this->check_in . ' ' . $validated['check_in_time']);
+        // Parse check_in as date only and set time separately to avoid double time specification error
+        $checkInDateTime = \Carbon\Carbon::parse($this->check_in)->setTimeFromTimeString($validated['check_in_time']);
 
         // Calculate checkout time based on duration
         $durationHours = match ($this->duration_slot) {
@@ -294,8 +301,7 @@ new class extends Component {
 
         // Duration options based on boat type
         $durationOptions = match ($boat->service_type) {
-            'yacht', 'taxi' => [['id' => '1h', 'name' => '1 Hour - KD ' . number_format($boat->price_1hour, 2)], ['id' => '2h', 'name' => '2 Hours - KD ' . number_format($boat->price_2hours, 2)], ['id' => '3h', 'name' => '3 Hours - KD ' . number_format($boat->price_3hours, 2)], ['id' => 'custom', 'name' => 'Custom Hours (KD ' . number_format($boat->additional_hour_price, 2) . '/hour)']],
-            'ferry' => [['id' => '1h', 'name' => '1 Hour'], ['id' => '2h', 'name' => '2 Hours'], ['id' => '3h', 'name' => '3 Hours'], ['id' => 'custom', 'name' => 'Custom Hours']],
+            'yacht' => [['id' => '1h', 'name' => '1 Hour - KD ' . number_format($boat->price_1hour, 2)], ['id' => '2h', 'name' => '2 Hours - KD ' . number_format($boat->price_2hours, 2)], ['id' => '3h', 'name' => '3 Hours - KD ' . number_format($boat->price_3hours, 2)], ['id' => 'custom', 'name' => 'Custom Hours (KD ' . number_format($boat->additional_hour_price, 2) . '/hour)']],
             'limousine' => [['id' => '15min', 'name' => '15 Minutes - KD ' . number_format($boat->price_15min, 2)], ['id' => '30min', 'name' => '30 Minutes - KD ' . number_format($boat->price_30min, 2)], ['id' => '1hour_full', 'name' => '1 Hour / Full Boat - KD ' . number_format($boat->price_full_boat, 2)]],
             default => [],
         };
@@ -404,44 +410,25 @@ new class extends Component {
                                     <span>Date & Time</span>
                                 </div>
                             </x-slot:title>
-                            <x-datepicker label="Departure Date *" icon="o-calendar" wire:model.live="check_in" />
+                            <x-datepicker label="Departure Date *" icon="o-calendar" wire:model.live="check_in"
+                                min="{{ now()->format('Y-m-d') }}" />
                         </x-card>
 
-                        {{-- Duration & Trip Type Section --}}
-                        @if ($booking->bookingable->service_type === 'ferry')
-                            <x-card class="bg-gradient-to-r from-base-200/50 to-base-300/30">
-                                <x-slot:title>
-                                    <div class="flex items-center gap-2 text-sm">
-                                        <x-icon name="o-ticket" class="w-5 h-5 text-warning" />
-                                        <span>Trip Type & Duration</span>
-                                    </div>
-                                </x-slot:title>
-                                <div class="grid md:grid-cols-2 gap-4">
-                                    <x-choices-offline label="Booking Type" icon="o-user-group" :options="$bookingTypes"
-                                        wire:model="booking_type" searchable single />
-                                    <x-choices-offline label="Duration" icon="o-clock" :options="$durationOptions"
-                                        wire:model.live="duration_slot" searchable single />
+                        {{-- Duration Selection --}}
+                        <x-card class="bg-gradient-to-r from-base-200/50 to-base-300/30">
+                            <x-slot:title>
+                                <div class="flex items-center gap-2 text-sm">
+                                    <x-icon name="o-clock" class="w-5 h-5 text-warning" />
+                                    <span>Duration Selection</span>
                                 </div>
-                                @if ($duration_slot === 'custom')
-                                    <x-input label="Custom Hours" icon="o-clock" type="number"
-                                        wire:model.live="custom_hours" min="1" class="mt-4" />
-                                @endif
-                            </x-card>
-                        @else
-                            <x-card class="bg-gradient-to-r from-base-200/50 to-base-300/30">
-                                <x-slot:title>
-                                    <div class="flex items-center gap-2 text-sm">
-                                        <x-icon name="o-clock" class="w-5 h-5 text-warning" />
-                                        <span>Duration Selection</span>
-                                    </div>
-                                </x-slot:title>
-                                <x-choices-offline label="Duration/Slot *" icon="o-clock" :options="$durationOptions"
-                                    wire:model.live="duration_slot" searchable single />
-                                @if ($duration_slot === 'custom')
-                                    <x-input label="Custom Hours" icon="o-clock" type="number"
-                                        wire:model.live="custom_hours" min="1" class="mt-4" />
-                                @endif
-                            </x-card>
+                            </x-slot:title>
+                            <x-choices-offline label="Duration/Slot *" icon="o-clock" :options="$durationOptions"
+                                wire:model.live="duration_slot" searchable single />
+                            @if ($duration_slot === 'custom')
+                                <x-input label="Custom Hours" icon="o-clock" type="number"
+                                    wire:model.live="custom_hours" min="1" class="mt-4" />
+                            @endif
+                        </x-card>
                         @endif
 
                         {{-- Time Slot Selection --}}
@@ -454,15 +441,21 @@ new class extends Component {
                                     </div>
                                 </x-slot:title>
                                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                                    @foreach ($this->availableTimeSlots->where('is_available', true) as $slot)
+                                    @foreach ($this->availableTimeSlots as $slot)
                                         <button type="button" wire:click="selectTimeSlot('{{ $slot['value'] }}')"
-                                            @class([
-                                                'btn btn-sm text-xs transition-all',
+                                            @disabled(!$slot['is_available']) @class([
+                                                'btn btn-sm text-xs transition-all relative',
                                                 'btn-primary' => $selected_time_slot === $slot['value'],
                                                 'btn-outline' => $selected_time_slot !== $slot['value'],
+                                                'btn-disabled opacity-50' => !$slot['is_available'],
                                             ])>
-                                            <x-icon name="o-clock" class="w-4 h-4" />
+                                            <x-icon name="{{ $slot['is_available'] ? 'o-clock' : 'o-lock-closed' }}"
+                                                class="w-4 h-4" />
                                             {{ $slot['display'] }}
+                                            @if (!$slot['is_available'])
+                                                <span class="absolute -top-1 -right-1 badge badge-xs badge-error">Not
+                                                    Available</span>
+                                            @endif
                                         </button>
                                     @endforeach
                                 </div>

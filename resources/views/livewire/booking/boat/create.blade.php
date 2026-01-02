@@ -33,7 +33,7 @@ new class extends Component {
     public string $customer_email = '';
 
     // Slot/Duration based fields
-    public ?string $booking_type = 'private'; // private or public (for ferry)
+    public ?string $booking_type = 'private';
     public ?string $duration_slot = null; // 1h, 2h, 3h, 15min, 30min, 1hour_full
     public ?int $custom_hours = null;
 
@@ -177,25 +177,46 @@ new class extends Component {
             // Add buffer time from boat configuration
             $endTimeWithBuffer = $endTime->copy()->addMinutes($bufferMinutes);
 
+            // Check if slot is in the past (for today's date)
+            $now = Carbon::now();
+            $isPast = false;
+            if (Carbon::parse($this->check_in)->isToday()) {
+                $isPast = $startTime->lessThanOrEqualTo($now);
+            }
+
             // Check if this slot is already booked (including buffer time)
             $isBooked = Booking::where('bookingable_type', Boat::class)
                 ->where('bookingable_id', $this->selectedBoat->id)
+                ->where('status', '!=', 'cancelled')
                 ->whereDate('check_in', $this->check_in)
                 ->where(function ($query) use ($startTime, $endTimeWithBuffer) {
-                    $query
-                        ->whereBetween('check_in', [$startTime, $endTimeWithBuffer])
-                        ->orWhereBetween('check_out', [$startTime, $endTimeWithBuffer])
-                        ->orWhere(function ($q) use ($startTime, $endTimeWithBuffer) {
-                            $q->where('check_in', '<=', $startTime)->where('check_out', '>=', $endTimeWithBuffer);
-                        });
+                    // Check for any overlap:
+                    // 1. Booking starts during our slot
+                    // 2. Booking ends during our slot
+                    // 3. Booking completely contains our slot
+                    // 4. Our slot completely contains booking
+                    $query->where(function ($q) use ($startTime, $endTimeWithBuffer) {
+                        $q->whereBetween('check_in', [$startTime, $endTimeWithBuffer])
+                            ->orWhereBetween('check_out', [$startTime, $endTimeWithBuffer])
+                            ->orWhere(function ($q2) use ($startTime, $endTimeWithBuffer) {
+                                $q2->where('check_in', '<=', $startTime)->where('check_out', '>=', $endTimeWithBuffer);
+                            })
+                            ->orWhere(function ($q2) use ($startTime, $endTimeWithBuffer) {
+                                $q2->where('check_in', '>=', $startTime)->where('check_out', '<=', $endTimeWithBuffer);
+                            });
+                    });
                 })
                 ->exists();
 
+            // Mark as unavailable if booked OR if the time has passed
+            $isAvailable = !$isBooked && !$isPast;
+
+            // Push all slots (available and booked) so we can show them with disabled state
             $timeSlots->push([
                 'start_time' => $startTime->format('H:i'),
                 'end_time' => $endTime->format('H:i'),
                 'display' => $startTime->format('h:i A') . ' - ' . $endTime->format('h:i A'),
-                'is_available' => !$isBooked,
+                'is_available' => $isAvailable,
                 'value' => $startTime->format('H:i'),
                 'duration' => $durationHours,
             ]);
@@ -223,7 +244,7 @@ new class extends Component {
         $amount = 0;
 
         match ($boat->service_type) {
-            'yacht', 'taxi', 'ferry' => ($amount = $this->calculateHourlyPrice($boat)),
+            'yacht', 'ferry' => ($amount = $this->calculateHourlyPrice($boat)),
             'limousine' => ($amount = $this->calculateLimousinePrice($boat)),
             default => ($amount = 0),
         };
@@ -262,7 +283,7 @@ new class extends Component {
             return $pricePerPersonPerHour * $hours * $this->adults;
         }
 
-        // For yacht/taxi - fixed hourly pricing
+        // For yacht - fixed hourly pricing
         return match ($this->duration_slot) {
             '1h' => $boat->price_1hour ?? 0,
             '2h' => $boat->price_2hours ?? 0,
@@ -293,6 +314,7 @@ new class extends Component {
             if (in_array($this->selectedBoat->name, ['Marina 1', 'Marina 2', 'Marina 4'])) {
                 $cutoffTime = $checkInDate->copy()->subDay()->endOfDay();
                 if ($now->greaterThan($cutoffTime)) {
+                    $this->addError('check_in', 'Marina bookings must be made by 11:59 PM the day before the trip. Please select a later date.');
                     $this->error('Marina bookings must be made by 11:59 PM the day before the trip. Please select a later date.');
                     return;
                 }
@@ -305,6 +327,7 @@ new class extends Component {
                 $operationalEnd = $checkInDateTime->copy()->setTime(22, 0);
 
                 if ($checkInDateTime->lessThan($operationalStart) || $checkInDateTime->greaterThan($operationalEnd)) {
+                    $this->addError('check_in_time', 'VIP Limousine operates between 8:00 AM and 10:00 PM only.');
                     $this->error('VIP Limousine operates between 8:00 AM and 10:00 PM only.');
                     return;
                 }
@@ -316,6 +339,7 @@ new class extends Component {
                 $maxBookingDate = $now->copy()->addMonths($maxAdvanceMonths)->endOfMonth();
 
                 if ($checkInDate->greaterThan($maxBookingDate)) {
+                    $this->addError('check_in', 'Ferry services can only be booked within the current and next month. Schedule depends on weather & tide conditions.');
                     $this->error('Ferry services can only be booked within the current and next month. Schedule depends on weather & tide conditions.');
                     return;
                 }
@@ -336,7 +360,8 @@ new class extends Component {
             'booking_type' => 'nullable|string',
         ]);
 
-        $checkInDateTime = Carbon::parse($validated['check_in'] . ' ' . $validated['check_in_time']);
+        // Parse check_in as date only and set time separately to avoid double time specification error
+        $checkInDateTime = Carbon::parse($validated['check_in'])->setTimeFromTimeString($validated['check_in_time']);
 
         // Calculate checkout time based on duration and add buffer for yachts
         $durationHours = match ($this->duration_slot) {
@@ -397,7 +422,7 @@ new class extends Component {
         $durationOptions = [];
         if ($this->selectedBoat) {
             $durationOptions = match ($this->selectedBoat->service_type) {
-                'yacht', 'taxi' => [['id' => '1h', 'name' => '1 Hour - KD ' . number_format($this->selectedBoat->price_1hour, 2)], ['id' => '2h', 'name' => '2 Hours - KD ' . number_format($this->selectedBoat->price_2hours, 2)], ['id' => '3h', 'name' => '3 Hours - KD ' . number_format($this->selectedBoat->price_3hours, 2)], ['id' => 'custom', 'name' => 'Custom Hours (KD ' . number_format($this->selectedBoat->additional_hour_price, 2) . '/hour)']],
+                'yacht' => [['id' => '1h', 'name' => '1 Hour - KD ' . number_format($this->selectedBoat->price_1hour, 2)], ['id' => '2h', 'name' => '2 Hours - KD ' . number_format($this->selectedBoat->price_2hours, 2)], ['id' => '3h', 'name' => '3 Hours - KD ' . number_format($this->selectedBoat->price_3hours, 2)], ['id' => 'custom', 'name' => 'Custom Hours (KD ' . number_format($this->selectedBoat->additional_hour_price, 2) . '/hour)']],
                 'ferry' => [['id' => '1h', 'name' => '1 Hour'], ['id' => '2h', 'name' => '2 Hours'], ['id' => '3h', 'name' => '3 Hours'], ['id' => 'custom', 'name' => 'Custom Hours']],
                 'limousine' => [['id' => '15min', 'name' => '15 Minutes - KD ' . number_format($this->selectedBoat->price_15min, 2)], ['id' => '30min', 'name' => '30 Minutes - KD ' . number_format($this->selectedBoat->price_30min, 2)], ['id' => '1hour_full', 'name' => '1 Hour / Full Boat - KD ' . number_format($this->selectedBoat->price_full_boat, 2)]],
                 default => [],
@@ -435,8 +460,7 @@ new class extends Component {
         $durationOptions = [];
         if ($this->selectedBoat) {
             $durationOptions = match ($this->selectedBoat->service_type) {
-                'yacht', 'taxi' => [['id' => '1h', 'name' => '1 Hour - KD ' . number_format($this->selectedBoat->price_1hour, 2)], ['id' => '2h', 'name' => '2 Hours - KD ' . number_format($this->selectedBoat->price_2hours, 2)], ['id' => '3h', 'name' => '3 Hours - KD ' . number_format($this->selectedBoat->price_3hours, 2)], ['id' => 'custom', 'name' => 'Custom Hours (KD ' . number_format($this->selectedBoat->additional_hour_price, 2) . '/hour)']],
-                'ferry' => [['id' => '1h', 'name' => '1 Hour'], ['id' => '2h', 'name' => '2 Hours'], ['id' => '3h', 'name' => '3 Hours'], ['id' => 'custom', 'name' => 'Custom Hours']],
+                'yacht' => [['id' => '1h', 'name' => '1 Hour - KD ' . number_format($this->selectedBoat->price_1hour, 2)], ['id' => '2h', 'name' => '2 Hours - KD ' . number_format($this->selectedBoat->price_2hours, 2)], ['id' => '3h', 'name' => '3 Hours - KD ' . number_format($this->selectedBoat->price_3hours, 2)], ['id' => 'custom', 'name' => 'Custom Hours (KD ' . number_format($this->selectedBoat->additional_hour_price, 2) . '/hour)']],
                 'limousine' => [['id' => '15min', 'name' => '15 Minutes - KD ' . number_format($this->selectedBoat->price_15min, 2)], ['id' => '30min', 'name' => '30 Minutes - KD ' . number_format($this->selectedBoat->price_30min, 2)], ['id' => '1hour_full', 'name' => '1 Hour / Full Boat - KD ' . number_format($this->selectedBoat->price_full_boat, 2)]],
                 default => [],
             };
@@ -531,40 +555,14 @@ new class extends Component {
 
 
                         @if ($selectedBoat)
-                            {{-- Yacht / Taxi / Ferry (Hourly Booking) --}}
-                            @if (in_array($selectedBoat->service_type, ['yacht', 'taxi', 'ferry']))
-                                {{-- Ferry Trip Type Selection --}}
-                                @if ($selectedBoat->service_type === 'ferry')
-                                    <x-card class="bg-base-200">
-                                        <div class="flex items-start justify-between gap-3">
-                                            <div>
-                                                <p class="text-xs uppercase tracking-wide text-primary font-semibold">
-                                                    Step 3
-                                                </p>
-                                                <h3 class="text-xl font-semibold text-base-content mt-1">Trip Type
-                                                </h3>
-                                                <p class="text-sm text-base-content/60 mt-1">Select private or public
-                                                    trip</p>
-                                            </div>
-                                            <x-icon name="o-user-group" class="w-8 h-8 text-primary/70" />
-                                        </div>
-                                        <div class="mt-6">
-                                            <x-select label="Select Trip Type *" icon="o-user-group"
-                                                wire:model.live="booking_type" :options="[
-                                                    ['id' => 'private', 'name' => '🔒 Private Trip (Per Hour)'],
-                                                    ['id' => 'public', 'name' => '👥 Public Trip (Per Person/Hour)'],
-                                                ]"
-                                                placeholder="Choose trip type..." />
-                                        </div>
-                                    </x-card>
-                                @endif
-
-                                {{-- Step 3/4: Duration Selection --}}
+                            {{-- Yacht (Hourly Booking) --}}
+                            @if ($selectedBoat->service_type === 'yacht')
+                                {{-- Step 3: Duration Selection --}}
                                 <x-card class="bg-base-200">
                                     <div class="flex items-start justify-between gap-3">
                                         <div>
                                             <p class="text-xs uppercase tracking-wide text-primary font-semibold">
-                                                {{ $selectedBoat->service_type === 'ferry' ? 'Step 4' : 'Step 3' }}
+                                                Step 3
                                             </p>
                                             <h3 class="text-xl font-semibold text-base-content mt-1">Select Duration
                                             </h3>
@@ -604,7 +602,8 @@ new class extends Component {
                                         </div>
                                         <div class="mt-6">
                                             <x-datepicker label="Booking Date *" icon="o-calendar"
-                                                wire:model.live="check_in" hint="Select date" />
+                                                wire:model.live="check_in" hint="Select date"
+                                                min="{{ now()->format('Y-m-d') }}" />
 
                                             {{-- Step 3: Time Slots based on duration --}}
                                             @if ($check_in && $this->availableTimeSlots->isNotEmpty())
@@ -612,7 +611,7 @@ new class extends Component {
                                                     <label class="label">
                                                         <span class="label-text font-semibold">
                                                             <x-icon name="o-clock" class="w-4 h-4 inline mr-1" />
-                                                            Available Time Slots
+                                                            Time Slots
                                                             ({{ $duration_slot === 'custom'
                                                                 ? $custom_hours . ' Hours'
                                                                 : match ($duration_slot) {
@@ -628,17 +627,17 @@ new class extends Component {
                                                         class="max-h-64 overflow-y-auto border border-base-300 rounded-lg">
                                                         @foreach ($this->availableTimeSlots as $slot)
                                                             <div wire:key="slot-{{ $slot['start_time'] }}"
-                                                                class="flex items-center justify-between p-3 border-b border-base-200 hover:bg-base-200/50 transition-colors
+                                                                class="flex items-center justify-between p-3 border-b border-base-200 transition-colors
                                                                 {{ $selected_time_slot === $slot['value'] ? 'bg-primary/10 border-l-4 border-l-primary' : '' }}
-                                                                {{ !$slot['is_available'] ? 'opacity-50' : 'cursor-pointer' }}"
+                                                                {{ $slot['is_available'] ? 'cursor-pointer hover:bg-base-200/50' : 'opacity-50 cursor-not-allowed bg-base-300/30' }}"
                                                                 @if ($slot['is_available']) wire:click="selectTimeSlot('{{ $slot['value'] }}')" @endif>
 
                                                                 <div class="flex items-center gap-3">
                                                                     <x-icon
-                                                                        name="{{ $selected_time_slot === $slot['value'] ? 'o-check-circle' : 'o-clock' }}"
-                                                                        class="w-5 h-5 {{ $selected_time_slot === $slot['value'] ? 'text-primary' : 'text-base-content/50' }}" />
+                                                                        name="{{ $selected_time_slot === $slot['value'] ? 'o-check-circle' : ($slot['is_available'] ? 'o-clock' : 'o-lock-closed') }}"
+                                                                        class="w-5 h-5 {{ $selected_time_slot === $slot['value'] ? 'text-primary' : ($slot['is_available'] ? 'text-base-content/50' : 'text-error/50') }}" />
                                                                     <span
-                                                                        class="font-medium">{{ $slot['display'] }}</span>
+                                                                        class="font-medium {{ !$slot['is_available'] ? 'line-through text-base-content/40' : '' }}">{{ $slot['display'] }}</span>
                                                                 </div>
 
                                                                 <div>
@@ -646,7 +645,7 @@ new class extends Component {
                                                                         <x-badge value="Available"
                                                                             class="badge-success badge-sm" />
                                                                     @else
-                                                                        <x-badge value="Booked"
+                                                                        <x-badge value="Not Available"
                                                                             class="badge-error badge-sm" />
                                                                     @endif
                                                                 </div>
@@ -657,6 +656,147 @@ new class extends Component {
                                                         <div class="label">
                                                             <span class="label-text-alt text-warning">Please select a
                                                                 time slot</span>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            @elseif ($check_in && $this->availableTimeSlots->isEmpty())
+                                                <x-alert icon="o-exclamation-triangle" class="alert-warning mt-4">
+                                                    No available time slots for selected date and duration.
+                                                </x-alert>
+                                            @endif
+                                        </div>
+                                    </x-card>
+                                @endif
+                            @endif
+
+                            {{-- Ferry Service (Trip Type Selection) --}}
+                            @if ($selectedBoat->service_type === 'ferry')
+                                {{-- Step 3: Trip Type Selection --}}
+                                <x-card class="bg-base-200">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div>
+                                            <p class="text-xs uppercase tracking-wide text-primary font-semibold">Step
+                                                3</p>
+                                            <h3 class="text-xl font-semibold text-base-content mt-1">Select Trip Type
+                                            </h3>
+                                            <p class="text-sm text-base-content/60 mt-1">Choose between Private or
+                                                Public trip</p>
+                                        </div>
+                                        <x-icon name="o-ticket" class="w-8 h-8 text-primary/70" />
+                                    </div>
+                                    <div class="mt-6">
+                                        <x-choices-offline label="Select Trip Type *" icon="o-ticket" :options="[
+                                            ['id' => 'private', 'name' => 'Private Trip'],
+                                            ['id' => 'public', 'name' => 'Public Trip'],
+                                        ]"
+                                            wire:model.live="trip_type" placeholder="Choose trip type..." single
+                                            searchable />
+                                    </div>
+                                </x-card>
+
+                                {{-- Step 4: Duration Selection --}}
+                                @if ($trip_type)
+                                    <x-card class="bg-base-200">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div>
+                                                <p class="text-xs uppercase tracking-wide text-primary font-semibold">
+                                                    Step 4
+                                                </p>
+                                                <h3 class="text-xl font-semibold text-base-content mt-1">Select
+                                                    Duration
+                                                </h3>
+                                                <p class="text-sm text-base-content/60 mt-1">Choose booking duration
+                                                </p>
+                                            </div>
+                                            <x-icon name="o-clock" class="w-8 h-8 text-primary/70" />
+                                        </div>
+                                        <div class="mt-6">
+                                            <x-choices-offline label="Select Duration *" icon="o-clock"
+                                                :options="$durationOptions" wire:model.live="duration_slot"
+                                                placeholder="Choose duration..." single searchable />
+                                        </div>
+
+                                        @if ($duration_slot === 'custom')
+                                            <div class="mt-4">
+                                                <x-input label="Number of Hours *" icon="o-clock" type="number"
+                                                    wire:model.live="custom_hours" min="1" max="12"
+                                                    hint="Enter custom duration" />
+                                            </div>
+                                        @endif
+                                    </x-card>
+                                @endif
+
+                                {{-- Step 5: Date & Time Slot Selection --}}
+                                @if ($trip_type && $duration_slot)
+                                    <x-card class="bg-base-200">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div>
+                                                <p class="text-xs uppercase tracking-wide text-primary font-semibold">
+                                                    Step 5</p>
+                                                <h3 class="text-xl font-semibold text-base-content mt-1">Select Date &
+                                                    Time Slot</h3>
+                                                <p class="text-sm text-base-content/60 mt-1">Choose your preferred date
+                                                    and time</p>
+                                            </div>
+                                            <x-icon name="o-calendar" class="w-8 h-8 text-primary/70" />
+                                        </div>
+                                        <div class="mt-6">
+                                            <x-datepicker label="Booking Date *" icon="o-calendar"
+                                                wire:model.live="check_in" hint="Select date"
+                                                min="{{ now()->format('Y-m-d') }}" />
+
+                                            {{-- Step 3: Time Slots based on duration --}}
+                                            @if ($check_in && $this->availableTimeSlots->isNotEmpty())
+                                                <div class="mt-4">
+                                                    <label class="label">
+                                                        <span class="label-text font-semibold">
+                                                            <x-icon name="o-clock" class="w-4 h-4 inline mr-1" />
+                                                            Time Slots
+                                                            ({{ $duration_slot === 'custom'
+                                                                ? $custom_hours . ' Hours'
+                                                                : match ($duration_slot) {
+                                                                    '1h' => '1 Hour',
+                                                                    '2h' => '2 Hours',
+                                                                    '3h' => '3 Hours',
+                                                                    default => '',
+                                                                } }})
+                                                            *
+                                                        </span>
+                                                    </label>
+                                                    <div
+                                                        class="max-h-64 overflow-y-auto border border-base-300 rounded-lg">
+                                                        @foreach ($this->availableTimeSlots as $slot)
+                                                            <div wire:key="slot-{{ $slot['start_time'] }}"
+                                                                class="flex items-center justify-between p-3 border-b border-base-200 transition-colors
+                                                                {{ $selected_time_slot === $slot['value'] ? 'bg-primary/10 border-l-4 border-l-primary' : '' }}
+                                                                {{ $slot['is_available'] ? 'cursor-pointer hover:bg-base-200/50' : 'opacity-50 cursor-not-allowed bg-base-300/30' }}"
+                                                                @if ($slot['is_available']) wire:click="selectTimeSlot('{{ $slot['value'] }}')" @endif>
+
+                                                                <div class="flex items-center gap-3">
+                                                                    <x-icon
+                                                                        name="{{ $selected_time_slot === $slot['value'] ? 'o-check-circle' : ($slot['is_available'] ? 'o-clock' : 'o-lock-closed') }}"
+                                                                        class="w-5 h-5 {{ $selected_time_slot === $slot['value'] ? 'text-primary' : ($slot['is_available'] ? 'text-base-content/50' : 'text-error/50') }}" />
+                                                                    <span
+                                                                        class="font-medium {{ !$slot['is_available'] ? 'line-through text-base-content/40' : '' }}">{{ $slot['display'] }}</span>
+                                                                </div>
+
+                                                                <div>
+                                                                    @if ($slot['is_available'])
+                                                                        <x-badge value="Available"
+                                                                            class="badge-success badge-sm" />
+                                                                    @else
+                                                                        <x-badge value="Not Available"
+                                                                            class="badge-error badge-sm" />
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                    @if ($selected_time_slot)
+                                                        <div class="mt-3 p-3 bg-primary/10 rounded-lg">
+                                                            <p class="text-sm font-medium text-primary">Selected:
+                                                                {{ collect($this->availableTimeSlots)->where('value', $selected_time_slot)->first()['display'] ?? '' }}
+                                                            </p>
                                                         </div>
                                                     @endif
                                                 </div>
@@ -695,14 +835,7 @@ new class extends Component {
                                 @if ($duration_slot)
                                     @php
                                         // Calculate dynamic step number for Date & Time section
-                                        if ($selectedBoat->service_type === 'limousine') {
-                                            $dateTimeStepNumber = 3;
-                                        } elseif ($selectedBoat->service_type === 'ferry') {
-                                            $dateTimeStepNumber = 5;
-                                        } else {
-                                            // yacht, taxi, or other
-                                            $dateTimeStepNumber = 4;
-                                        }
+                                        $dateTimeStepNumber = $selectedBoat->service_type === 'limousine' ? 3 : 4;
                                     @endphp
                                     <x-card class="bg-base-200">
                                         <div class="flex items-start justify-between gap-3">
@@ -719,7 +852,8 @@ new class extends Component {
                                         </div>
                                         <div class="mt-6">
                                             <x-datepicker label="Service Date *" icon="o-calendar"
-                                                wire:model.live="check_in" hint="Select date" />
+                                                wire:model.live="check_in" hint="Select date"
+                                                min="{{ now()->format('Y-m-d') }}" />
 
                                             {{-- Time Slots based on duration --}}
                                             @if ($check_in && $this->availableTimeSlots->isNotEmpty())
@@ -728,7 +862,7 @@ new class extends Component {
                                                     <label class="label">
                                                         <span class="label-text font-semibold">
                                                             <x-icon name="o-clock" class="w-4 h-4 inline mr-1" />
-                                                            Available Time Slots
+                                                            Time Slots
                                                             ({{ $duration_slot === '15min' ? '15 Minutes' : ($duration_slot === '30min' ? '30 Minutes' : '1 Hour') }})
                                                             *
                                                         </span>
@@ -737,17 +871,17 @@ new class extends Component {
                                                         class="max-h-64 overflow-y-auto border border-base-300 rounded-lg">
                                                         @foreach ($this->availableTimeSlots as $slot)
                                                             <div wire:key="slot-{{ $boat_id }}-{{ $slot['start_time'] }}"
-                                                                class="flex items-center justify-between p-3 border-b border-base-200 hover:bg-base-200/50 transition-colors
+                                                                class="flex items-center justify-between p-3 border-b border-base-200 transition-colors
                                                                 {{ $selected_time_slot === $slot['value'] ? 'bg-primary/10 border-l-4 border-l-primary' : '' }}
-                                                                {{ !$slot['is_available'] ? 'opacity-50' : 'cursor-pointer' }}"
+                                                                {{ $slot['is_available'] ? 'cursor-pointer hover:bg-base-200/50' : 'opacity-50 cursor-not-allowed bg-base-300/30' }}"
                                                                 @if ($slot['is_available']) wire:click="selectTimeSlot('{{ $slot['value'] }}')" @endif>
 
                                                                 <div class="flex items-center gap-3">
                                                                     <x-icon
-                                                                        name="{{ $selected_time_slot === $slot['value'] ? 'o-check-circle' : 'o-clock' }}"
-                                                                        class="w-5 h-5 {{ $selected_time_slot === $slot['value'] ? 'text-primary' : 'text-base-content/50' }}" />
+                                                                        name="{{ $selected_time_slot === $slot['value'] ? 'o-check-circle' : ($slot['is_available'] ? 'o-clock' : 'o-lock-closed') }}"
+                                                                        class="w-5 h-5 {{ $selected_time_slot === $slot['value'] ? 'text-primary' : ($slot['is_available'] ? 'text-base-content/50' : 'text-error/50') }}" />
                                                                     <span
-                                                                        class="font-medium">{{ $slot['display'] }}</span>
+                                                                        class="font-medium {{ !$slot['is_available'] ? 'line-through text-base-content/40' : '' }}">{{ $slot['display'] }}</span>
                                                                 </div>
 
                                                                 <div>
@@ -755,7 +889,7 @@ new class extends Component {
                                                                         <x-badge value="Available"
                                                                             class="badge-success badge-sm" />
                                                                     @else
-                                                                        <x-badge value="Booked"
+                                                                        <x-badge value="Not Available"
                                                                             class="badge-error badge-sm" />
                                                                     @endif
                                                                 </div>
@@ -790,12 +924,8 @@ new class extends Component {
                                     $guestStepNumber = 4;
                                     $paymentStepNumber = 5;
                                     $notesStepNumber = 6;
-                                } elseif ($selectedBoat->service_type === 'ferry') {
-                                    $guestStepNumber = 6;
-                                    $paymentStepNumber = 7;
-                                    $notesStepNumber = 8;
                                 } else {
-                                    // yacht, taxi, or other
+                                    // yacht or other
                                     $guestStepNumber = 5;
                                     $paymentStepNumber = 6;
                                     $notesStepNumber = 7;

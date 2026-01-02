@@ -107,11 +107,21 @@ new class extends Component {
 
 @scope('cell_check_in', $booking)
     @if ($booking->check_in)
-        <div class="flex flex-col">
+        <div class="flex flex-col gap-1">
             <span class="font-semibold">{{ $booking->check_in->format('M d, Y') }}</span>
-            <span class="text-xs text-base-content/50">
-                {{ $booking->check_in->format('h:i A') }}
-            </span>
+            <div class="flex items-center gap-2 text-xs">
+                <span class="text-primary font-medium">
+                    <x-icon name="o-arrow-right-circle" class="w-3 h-3 inline" />
+                    {{ $booking->check_in->format('h:i A') }}
+                </span>
+                @if ($booking->check_out)
+                    <span class="text-base-content/30">→</span>
+                    <span class="text-success font-medium">
+                        <x-icon name="o-arrow-left-circle" class="w-3 h-3 inline" />
+                        {{ $booking->check_out->format('h:i A') }}
+                    </span>
+                @endif
+            </div>
             @php
                 // Extract duration from notes if available
                 $durationInfo = '';
@@ -123,7 +133,7 @@ new class extends Component {
                 }
             @endphp
             @if ($durationInfo)
-                <span class="text-xs badge badge-sm badge-primary mt-1">{{ $durationInfo }}</span>
+                <span class="text-xs badge badge-sm badge-neutral mt-1">{{ $durationInfo }}</span>
             @endif
         </div>
     @else

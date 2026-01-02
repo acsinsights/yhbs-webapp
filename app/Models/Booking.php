@@ -48,8 +48,8 @@ class Booking extends Model
 
     protected $casts = [
         'guest_details' => 'array',
-        'check_in' => 'date',
-        'check_out' => 'date',
+        'check_in' => 'datetime',
+        'check_out' => 'datetime',
         'status' => BookingStatusEnum::class,
         'payment_status' => PaymentStatusEnum::class,
         'payment_method' => PaymentMethodEnum::class,

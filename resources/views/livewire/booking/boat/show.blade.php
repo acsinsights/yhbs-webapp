@@ -307,14 +307,16 @@ new class extends Component {
                             <div>
                                 <div class="text-sm text-base-content/50 mb-1">Departure Time</div>
                                 <div class="font-semibold">
-                                    {{ $booking->check_in->format('M d, Y h:i A') }}
+                                    {{ $booking->check_in->format('M d, Y') }}<br>
+                                    <span class="text-primary">{{ $booking->check_in->format('h:i A') }}</span>
                                 </div>
                             </div>
                             @if ($booking->check_out)
                                 <div>
                                     <div class="text-sm text-base-content/50 mb-1">Return Time</div>
                                     <div class="font-semibold">
-                                        {{ $booking->check_out->format('M d, Y h:i A') }}
+                                        {{ $booking->check_out->format('M d, Y') }}<br>
+                                        <span class="text-success">{{ $booking->check_out->format('h:i A') }}</span>
                                     </div>
                                 </div>
                             @endif
