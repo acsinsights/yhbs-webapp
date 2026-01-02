@@ -196,9 +196,9 @@ new class extends Component {
                         active</p>
                 </div>
 
-                <x-input label="Valid From *" wire:model="valid_from" type="date" icon="o-calendar" inline />
+                <x-datepicker label="Valid From *" wire:model="valid_from" icon="o-calendar" inline />
 
-                <x-input label="Valid Until *" wire:model="valid_until" type="date" icon="o-calendar" inline />
+                <x-datepicker label="Valid Until *" wire:model="valid_until" icon="o-calendar" inline />
 
                 <!-- Usage Limits Section -->
                 <div class="col-span-2 bg-orange-50 dark:bg-gray-800 rounded-lg p-4 mb-4 mt-6">

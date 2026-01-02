@@ -565,7 +565,7 @@ new class extends Component {
                                             <x-icon name="o-calendar" class="w-8 h-8 text-primary/70" />
                                         </div>
                                         <div class="mt-6">
-                                            <x-input label="Booking Date *" icon="o-calendar" type="date"
+                                            <x-datepicker label="Booking Date *" icon="o-calendar"
                                                 wire:model.live="check_in" hint="Select date" />
 
                                             {{-- Step 3: Time Slots based on duration --}}
@@ -680,7 +680,7 @@ new class extends Component {
                                             <x-icon name="o-calendar" class="w-8 h-8 text-primary/70" />
                                         </div>
                                         <div class="mt-6">
-                                            <x-input label="Service Date *" icon="o-calendar" type="date"
+                                            <x-datepicker label="Service Date *" icon="o-calendar"
                                                 wire:model.live="check_in" hint="Select date" />
 
                                             {{-- Time Slots based on duration --}}

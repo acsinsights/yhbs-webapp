@@ -111,22 +111,19 @@ new class extends Component {
             <span class="font-semibold">{{ $booking->check_in->format('M d, Y') }}</span>
             <span class="text-xs text-base-content/50">
                 {{ $booking->check_in->format('h:i A') }}
-                @if ($booking->check_out)
-                    - {{ $booking->check_out->format('h:i A') }}
-                @endif
             </span>
             @php
-                // Extract time slot from notes if available
-                $timeSlotInfo = '';
+                // Extract duration from notes if available
+                $durationInfo = '';
                 if ($booking->notes && str_contains($booking->notes, 'Duration/Slot:')) {
-                    preg_match('/Duration\/Slot: ([^\n]+)/', $booking->notes, $matches);
+                    preg_match('/Duration\/Slot: ([^\n\(]+)/', $booking->notes, $matches);
                     if (!empty($matches[1])) {
-                        $timeSlotInfo = $matches[1];
+                        $durationInfo = trim($matches[1]);
                     }
                 }
             @endphp
-            @if ($timeSlotInfo)
-                <span class="text-xs badge badge-sm badge-primary mt-1">{{ $timeSlotInfo }}</span>
+            @if ($durationInfo)
+                <span class="text-xs badge badge-sm badge-primary mt-1">{{ $durationInfo }}</span>
             @endif
         </div>
     @else

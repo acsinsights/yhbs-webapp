@@ -13,6 +13,8 @@ new class extends Component {
     public bool $showPaymentModal = false;
     public string $payment_status = '';
     public string $payment_method = '';
+    public bool $showStatusModal = false;
+    public string $booking_status = '';
     public bool $showCancelModal = false;
     public string $cancellation_reason = '';
     public ?float $refund_amount = null;
@@ -35,6 +37,7 @@ new class extends Component {
 
         $this->payment_status = $booking->payment_status->value;
         $this->payment_method = $booking->payment_method->value;
+        $this->booking_status = $booking->status->value;
 
         // Extract duration from notes
         if ($booking->notes && preg_match('/Duration\/Slot: (\d+)h/', $booking->notes, $matches)) {
@@ -91,6 +94,21 @@ new class extends Component {
 
         $this->showPaymentModal = false;
         $this->success('Payment details updated successfully.');
+        $this->booking->refresh();
+    }
+
+    public function updateStatus(): void
+    {
+        $this->validate([
+            'booking_status' => 'required|in:pending,booked,cancelled',
+        ]);
+
+        $this->booking->update([
+            'status' => $this->booking_status,
+        ]);
+
+        $this->showStatusModal = false;
+        $this->success('Booking status updated successfully.');
         $this->booking->refresh();
     }
 
@@ -263,7 +281,13 @@ new class extends Component {
                     </div>
                 </x-slot:title>
                 <x-slot:menu>
-                    <x-badge :value="$booking->status->label()" class="{{ $booking->status->badgeColor() }}" />
+                    <div class="flex items-center gap-2">
+                        <x-badge :value="$booking->status->label()" class="{{ $booking->status->badgeColor() }}" />
+                        @if ($booking->status->value !== 'cancelled')
+                            <x-button icon="o-pencil" label="Update Status" wire:click="$set('showStatusModal', true)"
+                                class="btn-ghost btn-sm" />
+                        @endif
+                    </div>
                 </x-slot:menu>
 
                 <div class="space-y-4">
@@ -460,19 +484,38 @@ new class extends Component {
     {{-- Payment Update Modal --}}
     <x-modal wire:model="showPaymentModal" title="Update Payment Details" class="backdrop-blur">
         <div class="space-y-4">
-            <x-select label="Payment Status" wire:model="payment_status" :options="[['id' => 'pending', 'name' => 'Pending'], ['id' => 'paid', 'name' => 'Paid']]" icon="o-credit-card" />
+            <x-choices-offline label="Payment Status *" wire:model="payment_status" :options="[['id' => 'pending', 'name' => 'Pending'], ['id' => 'paid', 'name' => 'Paid']]"
+                icon="o-credit-card" searchable single />
 
-            <x-select label="Payment Method" wire:model="payment_method" :options="[
+            <x-choices-offline label="Payment Method *" wire:model="payment_method" :options="[
                 ['id' => 'cash', 'name' => 'Cash'],
                 ['id' => 'card', 'name' => 'Card'],
                 ['id' => 'online', 'name' => 'Online'],
                 ['id' => 'other', 'name' => 'Other'],
-            ]" icon="o-banknotes" />
+            ]"
+                icon="o-banknotes" searchable single />
         </div>
 
         <x-slot:actions>
             <x-button label="Cancel" @click="$wire.showPaymentModal = false" />
             <x-button label="Update" wire:click="updatePayment" class="btn-primary" spinner="updatePayment" />
+        </x-slot:actions>
+    </x-modal>
+
+    {{-- Booking Status Update Modal --}}
+    <x-modal wire:model="showStatusModal" title="Update Booking Status" class="backdrop-blur">
+        <div class="space-y-4 h-50 py-2">
+            <x-choices-offline label="Booking Status *" wire:model="booking_status" :options="[
+                ['id' => 'pending', 'name' => 'Pending'],
+                ['id' => 'booked', 'name' => 'Booked'],
+                ['id' => 'cancelled', 'name' => 'Cancelled'],
+            ]" icon="o-flag"
+                searchable single />
+        </div>
+
+        <x-slot:actions>
+            <x-button label="Cancel" @click="$wire.showStatusModal = false" />
+            <x-button label="Update" wire:click="updateStatus" class="btn-primary" spinner="updateStatus" />
         </x-slot:actions>
     </x-modal>
 

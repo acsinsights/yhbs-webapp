@@ -228,9 +228,9 @@ new class extends Component {
                     <h3 class="text-lg font-semibold mb-4 text-primary">Validity Period</h3>
                 </div>
 
-                <x-input label="Valid From *" wire:model="valid_from" type="date" icon="o-calendar" inline />
+                <x-datepicker label="Valid From *" wire:model="valid_from" icon="o-calendar" inline />
 
-                <x-input label="Valid Until *" wire:model="valid_until" type="date" icon="o-calendar" inline />
+                <x-datepicker label="Valid Until *" wire:model="valid_until" icon="o-calendar" inline />
 
                 <!-- Usage Limits -->
                 <div class="col-span-2 mt-4">
