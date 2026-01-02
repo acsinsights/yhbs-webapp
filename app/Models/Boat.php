@@ -37,6 +37,10 @@ class Boat extends Model
         'is_active',
         'is_featured',
         'sort_order',
+        'booking_policy',
+        'allows_same_day_booking',
+        'requires_advance_booking',
+        'is_monthly_schedule',
     ];
 
     protected $casts = [
@@ -55,6 +59,9 @@ class Boat extends Model
         'price_15min' => 'decimal:2',
         'price_30min' => 'decimal:2',
         'price_full_boat' => 'decimal:2',
+        'allows_same_day_booking' => 'boolean',
+        'requires_advance_booking' => 'boolean',
+        'is_monthly_schedule' => 'boolean',
     ];
 
     protected static function boot()

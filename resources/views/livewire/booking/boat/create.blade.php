@@ -284,6 +284,44 @@ new class extends Component {
 
     public function save(): void
     {
+        // Validate booking cut-off rules
+        if ($this->selectedBoat) {
+            $checkInDate = Carbon::parse($this->check_in);
+            $now = Carbon::now();
+
+            // Marina 1, 2, 4 - Must book by 11:59 PM day before
+            if (in_array($this->selectedBoat->name, ['Marina 1', 'Marina 2', 'Marina 4'])) {
+                $cutoffTime = $checkInDate->copy()->subDay()->endOfDay();
+                if ($now->greaterThan($cutoffTime)) {
+                    $this->error('Marina bookings must be made by 11:59 PM the day before the trip. Please select a later date.');
+                    return;
+                }
+            }
+
+            // VIP Limousine - Same day allowed, operational 8 AM - 10 PM
+            if ($this->selectedBoat->name === 'VIP Limousine') {
+                $checkInDateTime = Carbon::parse($this->check_in . ' ' . $this->check_in_time);
+                $operationalStart = $checkInDateTime->copy()->setTime(8, 0);
+                $operationalEnd = $checkInDateTime->copy()->setTime(22, 0);
+
+                if ($checkInDateTime->lessThan($operationalStart) || $checkInDateTime->greaterThan($operationalEnd)) {
+                    $this->error('VIP Limousine operates between 8:00 AM and 10:00 PM only.');
+                    return;
+                }
+            }
+
+            // Abu Al Khair, Bint Al Khair, Sea Bus - Month-by-month only
+            if (in_array($this->selectedBoat->name, ['Abu Al Khair', 'Bint Al Khair', 'Sea Bus'])) {
+                $maxAdvanceMonths = 1;
+                $maxBookingDate = $now->copy()->addMonths($maxAdvanceMonths)->endOfMonth();
+
+                if ($checkInDate->greaterThan($maxBookingDate)) {
+                    $this->error('Ferry services can only be booked within the current and next month. Schedule depends on weather & tide conditions.');
+                    return;
+                }
+            }
+        }
+
         $validated = $this->validate([
             'boat_id' => 'required|exists:boats,id',
             'user_id' => 'required|exists:users,id',
