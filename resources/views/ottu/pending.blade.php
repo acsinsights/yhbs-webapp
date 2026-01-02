@@ -56,7 +56,7 @@
             <div class="space-y-3">
                 <div class="flex justify-between border-b pb-2">
                     <span class="text-gray-600">Booking ID:</span>
-                    <span class="font-medium">#{{ $booking->id }}</span>
+                    <span class="font-medium">#{{ $booking->booking_id }}</span>
                 </div>
 
                 <div class="flex justify-between border-b pb-2">

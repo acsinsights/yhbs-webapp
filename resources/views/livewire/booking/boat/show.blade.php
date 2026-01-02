@@ -22,6 +22,7 @@ new class extends Component {
     public ?string $reschedule_notes = null;
     public bool $showHistoryDrawer = false;
     public $activities = [];
+    public ?string $reschedule_duration = null;
 
     public function mount(Booking $booking): void
     {
@@ -34,6 +35,14 @@ new class extends Component {
 
         $this->payment_status = $booking->payment_status->value;
         $this->payment_method = $booking->payment_method->value;
+
+        // Extract duration from notes
+        if ($booking->notes && preg_match('/Duration\/Slot: (\d+)h/', $booking->notes, $matches)) {
+            $this->reschedule_duration = $matches[1] . 'h';
+        } elseif ($booking->check_in && $booking->check_out) {
+            $hours = $booking->check_in->diffInHours($booking->check_out);
+            $this->reschedule_duration = $hours . 'h';
+        }
 
         // Explicitly set modal states to false
         $this->showRescheduleModal = false;
@@ -51,6 +60,11 @@ new class extends Component {
 
         if ($property === 'showHistoryDrawer' && $this->showHistoryDrawer) {
             $this->loadActivities();
+        }
+
+        // Reset selected time slot when date changes
+        if ($property === 'new_check_in') {
+            $this->new_time_slot = null;
         }
     }
 
@@ -95,7 +109,7 @@ new class extends Component {
         // Add refund to customer's wallet if amount is specified
         if ($this->refund_amount && $this->refund_amount > 0) {
             $walletService = app(WalletService::class);
-            $walletService->addCredit($this->booking->user, $this->refund_amount, $this->booking, "Refund for cancelled booking #{$this->booking->id}", 'booking_cancellation');
+            $walletService->addCredit($this->booking->user, $this->refund_amount, $this->booking, "Refund for cancelled booking #{$this->booking->booking_id}", 'booking_cancellation');
         }
 
         $this->showCancelModal = false;
@@ -112,10 +126,16 @@ new class extends Component {
 
         $newCheckIn = Carbon::parse($this->new_check_in . ' ' . $this->new_time_slot);
 
+        // Calculate duration from current booking
+        $durationHours = 1;
+        if ($this->booking->check_in && $this->booking->check_out) {
+            $durationHours = $this->booking->check_in->diffInHours($this->booking->check_out);
+        }
+
         // Update booking with new date/time
         $this->booking->update([
             'check_in' => $newCheckIn,
-            'check_out' => $newCheckIn->copy()->addHours(1), // Adjust based on service type
+            'check_out' => $newCheckIn->copy()->addHours($durationHours),
             'notes' => ($this->booking->notes ? $this->booking->notes . "\n\n" : '') . 'Rescheduled: ' . ($this->reschedule_notes ?? 'No notes provided'),
         ]);
 
@@ -124,10 +144,68 @@ new class extends Component {
         $this->booking->refresh();
     }
 
+    public function getAvailableTimeSlotsProperty()
+    {
+        if (!$this->new_check_in || !$this->booking->bookingable || !$this->reschedule_duration) {
+            return collect();
+        }
+
+        // Determine duration in hours
+        $durationHours = (int) str_replace('h', '', $this->reschedule_duration);
+
+        $timeSlots = collect();
+        $startHour = 9; // 9 AM
+        $endHour = 18; // 6 PM
+
+        // Generate slots based on duration
+        $currentHour = $startHour;
+        while ($currentHour + $durationHours <= $endHour) {
+            $startTime = Carbon::parse($this->new_check_in)->setTime(floor($currentHour), ($currentHour - floor($currentHour)) * 60);
+            $endTime = $startTime->copy()->addMinutes($durationHours * 60);
+
+            // Add buffer time from boat configuration
+            $bufferMinutes = $this->booking->bookingable->buffer_time ?? 0;
+            $endTimeWithBuffer = $endTime->copy()->addMinutes($bufferMinutes);
+
+            // Check if this slot is already booked (excluding current booking)
+            $isBooked = Booking::where('bookingable_type', Boat::class)
+                ->where('bookingable_id', $this->booking->bookingable_id)
+                ->where('id', '!=', $this->booking->id)
+                ->whereDate('check_in', $this->new_check_in)
+                ->where(function ($query) use ($startTime, $endTimeWithBuffer) {
+                    $query
+                        ->whereBetween('check_in', [$startTime, $endTimeWithBuffer])
+                        ->orWhereBetween('check_out', [$startTime, $endTimeWithBuffer])
+                        ->orWhere(function ($q) use ($startTime, $endTimeWithBuffer) {
+                            $q->where('check_in', '<=', $startTime)->where('check_out', '>=', $endTimeWithBuffer);
+                        });
+                })
+                ->exists();
+
+            // Check if this is the current booking slot
+            $isCurrentSlot = $this->booking->check_in && $this->booking->check_in->format('Y-m-d') === $this->new_check_in && $this->booking->check_in->format('H:i') === $startTime->format('H:i');
+
+            $timeSlots->push([
+                'start_time' => $startTime->format('H:i'),
+                'end_time' => $endTime->format('H:i'),
+                'display' => $startTime->format('h:i A') . ' - ' . $endTime->format('h:i A'),
+                'is_available' => !$isBooked,
+                'is_current' => $isCurrentSlot,
+                'value' => $startTime->format('H:i'),
+                'duration' => $durationHours,
+            ]);
+
+            // Move to next slot (step by duration)
+            $currentHour += $durationHours;
+        }
+
+        return $timeSlots;
+    }
+
     public function with(): array
     {
         return [
-            'breadcrumbs' => [['label' => 'Dashboard', 'url' => route('admin.index')], ['label' => 'Boat Bookings', 'link' => route('admin.bookings.boat.index')], ['label' => 'Booking #' . $this->booking->id]],
+            'breadcrumbs' => [['label' => 'Dashboard', 'url' => route('admin.index')], ['label' => 'Boat Bookings', 'link' => route('admin.bookings.boat.index')], ['label' => 'Booking #' . $this->booking->booking_id]],
         ];
     }
 }; ?>
@@ -192,7 +270,7 @@ new class extends Component {
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <div class="text-sm text-base-content/50 mb-1">Booking ID</div>
-                            <div class="font-semibold">#{{ $booking->id }}</div>
+                            <div class="font-semibold">#{{ $booking->booking_id }}</div>
                         </div>
                         <div>
                             <div class="text-sm text-base-content/50 mb-1">Booking Date</div>
@@ -203,14 +281,14 @@ new class extends Component {
                     @if ($booking->check_in)
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <div class="text-sm text-base-content/50 mb-1">Check In</div>
+                                <div class="text-sm text-base-content/50 mb-1">Departure Time</div>
                                 <div class="font-semibold">
                                     {{ $booking->check_in->format('M d, Y h:i A') }}
                                 </div>
                             </div>
                             @if ($booking->check_out)
                                 <div>
-                                    <div class="text-sm text-base-content/50 mb-1">Check Out</div>
+                                    <div class="text-sm text-base-content/50 mb-1">Return Time</div>
                                     <div class="font-semibold">
                                         {{ $booking->check_out->format('M d, Y h:i A') }}
                                     </div>
@@ -240,8 +318,8 @@ new class extends Component {
                                         ? json_decode($booking->guest_details, true)
                                         : $booking->guest_details;
                                 @endphp
-                                @if (isset($guestDetails['adultNames']))
-                                    @foreach ($guestDetails['adultNames'] as $index => $name)
+                                @if (isset($guestDetails['adults']) && is_array($guestDetails['adults']))
+                                    @foreach ($guestDetails['adults'] as $index => $name)
                                         @if ($name)
                                             <div class="text-sm">
                                                 <x-icon name="o-user" class="w-4 h-4 inline" /> Adult
@@ -251,8 +329,8 @@ new class extends Component {
                                         @endif
                                     @endforeach
                                 @endif
-                                @if (isset($guestDetails['childrenNames']))
-                                    @foreach ($guestDetails['childrenNames'] as $index => $name)
+                                @if (isset($guestDetails['children']) && is_array($guestDetails['children']))
+                                    @foreach ($guestDetails['children'] as $index => $name)
                                         @if ($name)
                                             <div class="text-sm">
                                                 <x-icon name="o-user" class="w-4 h-4 inline" /> Child
@@ -424,13 +502,56 @@ new class extends Component {
     {{-- Reschedule Booking Modal --}}
     <x-modal wire:model="showRescheduleModal" title="Reschedule Booking" class="backdrop-blur">
         <div class="space-y-4">
-            <x-alert title="Current Booking" description="Check-in: {{ $booking->check_in->format('M d, Y h:i A') }}"
+            <x-alert title="Current Booking"
+                description="Departure: {{ $booking->check_in->format('M d, Y h:i A') }} | Return: {{ $booking->check_out->format('M d, Y h:i A') }}"
                 icon="o-information-circle" class="alert-info" />
 
-            <x-input label="New Date *" type="date" icon="o-calendar" wire:model="new_check_in"
+            <x-input label="New Date *" type="date" icon="o-calendar" wire:model.live="new_check_in"
                 min="{{ now()->format('Y-m-d') }}" />
 
-            <x-input label="New Time Slot *" type="time" icon="o-clock" wire:model="new_time_slot" />
+            @if ($new_check_in && $this->availableTimeSlots->isNotEmpty())
+                <div>
+                    <label class="label">
+                        <span class="label-text">Select Time Slot *</span>
+                    </label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        @foreach ($this->availableTimeSlots as $slot)
+                            <div wire:key="slot-{{ $slot['value'] }}"
+                                class="border rounded-lg p-3 transition-all
+                                {{ $new_time_slot === $slot['value'] ? 'border-primary bg-primary/10' : 'border-base-300' }}
+                                {{ !$slot['is_available'] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-primary' }}
+                                {{ $slot['is_current'] ? 'ring-2 ring-warning' : '' }}"
+                                @if ($slot['is_available']) wire:click="$set('new_time_slot', '{{ $slot['value'] }}')" @endif>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex-1">
+                                        <div class="font-semibold text-sm">{{ $slot['display'] }}</div>
+                                        <div class="text-xs text-base-content/60 mt-1">
+                                            {{ $slot['duration'] }} hour{{ $slot['duration'] > 1 ? 's' : '' }}
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col gap-1 items-end">
+                                        @if ($slot['is_current'])
+                                            <x-badge value="Current" class="badge-warning badge-sm" />
+                                        @endif
+                                        @if ($slot['is_available'])
+                                            <x-badge value="Available" class="badge-success badge-sm" />
+                                        @else
+                                            <x-badge value="Booked" class="badge-error badge-sm" />
+                                        @endif
+                                        @if ($new_time_slot === $slot['value'])
+                                            <x-icon name="o-check-circle" class="w-5 h-5 text-primary" />
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @elseif ($new_check_in && $this->availableTimeSlots->isEmpty())
+                <x-alert title="No Slots Available"
+                    description="No time slots available for the selected date. Please choose another date."
+                    icon="o-exclamation-triangle" class="alert-warning" />
+            @endif
 
             <x-textarea label="Reason for Rescheduling (Optional)" wire:model="reschedule_notes"
                 placeholder="Enter reason for rescheduling..." rows="3"

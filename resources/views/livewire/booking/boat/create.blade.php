@@ -70,6 +70,8 @@ new class extends Component {
             $this->selectedBoat = Boat::find($value);
             $this->duration_slot = null;
             $this->custom_hours = null;
+            $this->selected_time_slot = null;
+            $this->check_in = now()->format('Y-m-d');
             $this->calculateAmount();
         }
     }
@@ -162,14 +164,17 @@ new class extends Component {
         $startHour = 9; // 9 AM
         $endHour = 18; // 6 PM
 
-        // Generate slots based on duration
+        // Get buffer time in hours
+        $bufferMinutes = $this->selectedBoat->buffer_time ?? 0;
+        $bufferHours = $bufferMinutes / 60;
+
+        // Generate slots based on duration + buffer time
         $currentHour = $startHour;
         while ($currentHour + $durationHours <= $endHour) {
             $startTime = Carbon::parse($this->check_in)->setTime(floor($currentHour), ($currentHour - floor($currentHour)) * 60);
             $endTime = $startTime->copy()->addMinutes($durationHours * 60);
 
             // Add buffer time from boat configuration
-            $bufferMinutes = $this->selectedBoat->buffer_time ?? 0;
             $endTimeWithBuffer = $endTime->copy()->addMinutes($bufferMinutes);
 
             // Check if this slot is already booked (including buffer time)
@@ -195,8 +200,8 @@ new class extends Component {
                 'duration' => $durationHours,
             ]);
 
-            // Move to next slot (step by duration)
-            $currentHour += $durationHours;
+            // Move to next slot (step by duration + buffer time)
+            $currentHour += $durationHours + $bufferHours;
         }
 
         return $timeSlots;
@@ -650,11 +655,22 @@ new class extends Component {
 
                                 {{-- Step 4/5: Date & Time Slot Selection --}}
                                 @if ($duration_slot)
+                                    @php
+                                        // Calculate dynamic step number for Date & Time section
+                                        if ($selectedBoat->service_type === 'limousine') {
+                                            $dateTimeStepNumber = 3;
+                                        } elseif ($selectedBoat->service_type === 'ferry') {
+                                            $dateTimeStepNumber = 5;
+                                        } else {
+                                            // yacht, taxi, or other
+                                            $dateTimeStepNumber = 4;
+                                        }
+                                    @endphp
                                     <x-card class="bg-base-200">
                                         <div class="flex items-start justify-between gap-3">
                                             <div>
                                                 <p class="text-xs uppercase tracking-wide text-primary font-semibold">
-                                                    {{ $selectedBoat && $selectedBoat->service_type === 'ferry' ? 'Step 5' : 'Step 4' }}
+                                                    Step {{ $dateTimeStepNumber }}
                                                 </p>
                                                 <h3 class="text-xl font-semibold text-base-content mt-1">Select Date &
                                                     Time Slot</h3>
@@ -669,7 +685,8 @@ new class extends Component {
 
                                             {{-- Time Slots based on duration --}}
                                             @if ($check_in && $this->availableTimeSlots->isNotEmpty())
-                                                <div class="mt-4">
+                                                <div class="mt-4"
+                                                    wire:key="time-slots-{{ $boat_id }}-{{ $duration_slot }}-{{ $check_in }}">
                                                     <label class="label">
                                                         <span class="label-text font-semibold">
                                                             <x-icon name="o-clock" class="w-4 h-4 inline mr-1" />
@@ -681,7 +698,7 @@ new class extends Component {
                                                     <div
                                                         class="max-h-64 overflow-y-auto border border-base-300 rounded-lg">
                                                         @foreach ($this->availableTimeSlots as $slot)
-                                                            <div wire:key="slot-{{ $slot['start_time'] }}"
+                                                            <div wire:key="slot-{{ $boat_id }}-{{ $slot['start_time'] }}"
                                                                 class="flex items-center justify-between p-3 border-b border-base-200 hover:bg-base-200/50 transition-colors
                                                                 {{ $selected_time_slot === $slot['value'] ? 'bg-primary/10 border-l-4 border-l-primary' : '' }}
                                                                 {{ !$slot['is_available'] ? 'opacity-50' : 'cursor-pointer' }}"
@@ -730,53 +747,70 @@ new class extends Component {
                             @php
                                 $maxAdults = $selectedBoat->max_passengers ?? 10;
                                 $maxChildren = $selectedBoat->max_passengers ?? 10;
+                                // Calculate dynamic step numbers based on boat type
+                                if ($selectedBoat->service_type === 'limousine') {
+                                    $guestStepNumber = 4;
+                                    $paymentStepNumber = 5;
+                                    $notesStepNumber = 6;
+                                } elseif ($selectedBoat->service_type === 'ferry') {
+                                    $guestStepNumber = 6;
+                                    $paymentStepNumber = 7;
+                                    $notesStepNumber = 8;
+                                } else {
+                                    // yacht, taxi, or other
+                                    $guestStepNumber = 5;
+                                    $paymentStepNumber = 6;
+                                    $notesStepNumber = 7;
+                                }
                             @endphp
-                            <x-booking.guest-section :stepNumber="$selectedBoat->service_type === 'ferry' ? 6 : 5" :maxAdults="$maxAdults" :maxChildren="$maxChildren"
-                                :adults="$adults" :children="$children" />
+                            <x-booking.guest-section :stepNumber="$guestStepNumber" :maxAdults="$maxAdults" :maxChildren="$maxChildren" />
+
+                            {{-- Payment Details Section --}}
+                            <x-card class="bg-base-200">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p class="text-xs uppercase tracking-wide text-primary font-semibold">
+                                            Step {{ $paymentStepNumber }}
+                                        </p>
+                                        <h3 class="text-xl font-semibold text-base-content mt-1">Payment Details</h3>
+                                        <p class="text-sm text-base-content/60 mt-1">Payment information for this
+                                            booking
+                                        </p>
+                                    </div>
+                                    <x-icon name="o-credit-card" class="w-8 h-8 text-primary/70" />
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                                    <x-input wire:model.live="amount" label="Amount" type="number" step="0.01"
+                                        min="0" icon="o-currency-dollar"
+                                        hint="Total booking amount (auto-calculated)" />
+                                    <x-select label="Payment Method *" :options="$paymentMethods" option-value="id"
+                                        option-label="name" wire:model="payment_method" icon="o-credit-card" />
+                                    <x-select label="Payment Status *" :options="$paymentStatuses" option-value="id"
+                                        option-label="name" wire:model="payment_status" icon="o-check-circle" />
+                                </div>
+                            </x-card>
+
+                            {{-- Notes Section --}}
+                            <x-card class="bg-base-200">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p class="text-xs uppercase tracking-wide text-primary font-semibold">
+                                            Step {{ $notesStepNumber }}
+                                        </p>
+                                        <h3 class="text-xl font-semibold text-base-content mt-1">Additional Notes</h3>
+                                        <p class="text-sm text-base-content/60 mt-1">Special requests or information
+                                        </p>
+                                    </div>
+                                    <x-icon name="o-document-text" class="w-8 h-8 text-primary/70" />
+                                </div>
+                                <div class="mt-6">
+                                    <x-textarea label="Special Notes" icon="o-document-text" wire:model="notes"
+                                        rows="3"
+                                        placeholder="Add any special notes, requirements, or requests..."
+                                        hint="Optional" />
+                                </div>
+                            </x-card>
                         @endif
-
-                        {{-- Payment Section --}}
-                        <x-card class="bg-base-200">
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">
-                                        Step 5
-                                    </p>
-                                    <h3 class="text-xl font-semibold text-base-content mt-1">Payment Details</h3>
-                                    <p class="text-sm text-base-content/60 mt-1">Payment information for this booking
-                                    </p>
-                                </div>
-                                <x-icon name="o-credit-card" class="w-8 h-8 text-primary/70" />
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                                <x-input wire:model.live="amount" label="Amount" type="number" step="0.01"
-                                    min="0" icon="o-currency-dollar"
-                                    hint="Total booking amount (auto-calculated)" />
-                                <x-select label="Payment Method *" :options="$paymentMethods" option-value="id"
-                                    option-label="name" wire:model="payment_method" icon="o-credit-card" />
-                                <x-select label="Payment Status *" :options="$paymentStatuses" option-value="id"
-                                    option-label="name" wire:model="payment_status" icon="o-check-circle" />
-                            </div>
-                        </x-card>
-
-                        {{-- Notes Section --}}
-                        <x-card class="bg-base-200">
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <p class="text-xs uppercase tracking-wide text-primary font-semibold">
-                                        {{ $selectedBoat && $selectedBoat->service_type === 'ferry' ? 'Step 7' : 'Step 6' }}
-                                    </p>
-                                    <h3 class="text-xl font-semibold text-base-content mt-1">Additional Notes</h3>
-                                    <p class="text-sm text-base-content/60 mt-1">Special requests or information</p>
-                                </div>
-                                <x-icon name="o-document-text" class="w-8 h-8 text-primary/70" />
-                            </div>
-                            <div class="mt-6">
-                                <x-textarea label="Special Notes" icon="o-document-text" wire:model="notes"
-                                    rows="3" placeholder="Add any special notes, requirements, or requests..."
-                                    hint="Optional" />
-                            </div>
-                        </x-card>
                     </div>
 
                     {{-- Summary Column --}}

@@ -3,6 +3,7 @@
 use Mary\Traits\{Toast, WithMediaSync};
 use Livewire\Volt\Component;
 use Livewire\WithFileUploads;
+use Livewire\Attributes\Locked;
 use App\Models\{Amenity, Boat, BoatServiceType};
 use Illuminate\Support\{Str, Collection};
 use Illuminate\View\View;
@@ -63,7 +64,7 @@ new class extends Component {
 
     // Image library properties
     public array $files = [];
-    public Collection $library;
+    public $library; // No type hint to let Livewire handle serialization
 
     public $config = ['aspectRatio' => 1];
     public $config2 = ['aspectRatio' => 16 / 9];
@@ -76,21 +77,20 @@ new class extends Component {
         ];
     }
 
-    // Livewire lifecycle hook - convert library to Collection after hydration
+    // Ensure library is always a Collection
     public function hydrate(): void
     {
-        if (is_array($this->library)) {
-            // Flatten nested arrays if they exist
-            $flatLibrary = [];
-            foreach ($this->library as $item) {
-                if (is_array($item) && count($item) === 1 && isset($item[0])) {
-                    // This is a nested array from Livewire serialization
-                    $flatLibrary[] = $item[0];
-                } else {
-                    $flatLibrary[] = $item;
-                }
-            }
-            $this->library = collect($flatLibrary);
+        // Always convert to Collection after Livewire hydration
+        if (!($this->library instanceof Collection)) {
+            $this->library = new Collection(is_array($this->library) ? $this->library : []);
+        }
+    }
+
+    public function dehydrate(): void
+    {
+        // Keep as Collection even during dehydration to prevent conversion issues
+        if (!($this->library instanceof Collection)) {
+            $this->library = new Collection(is_array($this->library) ? $this->library : []);
         }
     }
 
@@ -152,9 +152,9 @@ new class extends Component {
 
     public function save(): void
     {
-        // Ensure library is a collection before validation
-        if (is_array($this->library)) {
-            $this->library = collect($this->library);
+        // Ensure library is a Collection
+        if (!($this->library instanceof Collection)) {
+            $this->library = new Collection(is_array($this->library) ? $this->library : []);
         }
 
         $validated = $this->validate([
@@ -203,6 +203,11 @@ new class extends Component {
             'is_featured' => $this->is_featured,
             'sort_order' => $this->sort_order,
         ]);
+
+        // Ensure library is a Collection before syncing media
+        if (!($this->library instanceof Collection)) {
+            $this->library = new Collection(is_array($this->library) ? $this->library : []);
+        }
 
         // Sync media files and update library metadata
         $this->syncMedia(model: $this->boat, library: 'library', files: 'files', storage_subpath: '/boats/library', model_field: 'images', visibility: 'public', disk: 'public');

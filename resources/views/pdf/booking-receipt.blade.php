@@ -258,7 +258,7 @@
         <div class="info-grid">
             <div class="info-row">
                 <div class="info-label">Booking ID:</div>
-                <div class="info-value">#{{ $booking->id }}</div>
+                <div class="info-value">#{{ $booking->booking_id }}</div>
             </div>
             <div class="info-row">
                 <div class="info-label">Receipt Date:</div>

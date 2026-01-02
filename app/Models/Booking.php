@@ -13,6 +13,7 @@ class Booking extends Model
 {
     use LogsActivity;
     protected $fillable = [
+        'booking_id',
         'bookingable_type',
         'bookingable_id',
         'user_id',
@@ -55,6 +56,33 @@ class Booking extends Model
         'cancellation_requested_at' => 'datetime',
         'cancelled_at' => 'datetime',
     ];
+
+    /**
+     * Boot method to auto-generate booking_id.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($booking) {
+            if (empty($booking->booking_id)) {
+                $booking->booking_id = self::generateUniqueBookingId();
+            }
+        });
+    }
+
+    /**
+     * Generate a unique 5-character alphanumeric booking ID.
+     */
+    private static function generateUniqueBookingId(): string
+    {
+        do {
+            // Generate a random 5-character alphanumeric string
+            $bookingId = strtoupper(substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 5));
+        } while (self::where('booking_id', $bookingId)->exists());
+
+        return $bookingId;
+    }
 
     /**
      * Get the activity log options.

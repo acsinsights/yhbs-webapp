@@ -142,7 +142,7 @@ new class extends Component {
         // Add refund to customer's wallet if amount is specified
         if ($this->refund_amount && $this->refund_amount > 0) {
             $walletService = app(WalletService::class);
-            $walletService->addCredit($this->booking->user, $this->refund_amount, $this->booking, "Refund for cancelled booking #{$this->booking->id}", 'booking_cancellation');
+            $walletService->addCredit($this->booking->user, $this->refund_amount, $this->booking, "Refund for cancelled booking #{$this->booking->booking_id}", 'booking_cancellation');
         }
 
         $this->showCancelModal = false;
@@ -245,7 +245,7 @@ new class extends Component {
             'user_id' => $this->booking->user_id,
             'type' => 'booking_rescheduled',
             'title' => 'Booking Rescheduled',
-            'message' => "Your booking #{$this->booking->id} has been rescheduled from {$oldCheckIn} - {$oldCheckOut} to {$newCheckIn->format('M d, Y')} - {$newCheckOut->format('M d, Y')}.",
+            'message' => "Your booking #{$this->booking->booking_id} has been rescheduled from {$oldCheckIn} - {$oldCheckOut} to {$newCheckIn->format('M d, Y')} - {$newCheckOut->format('M d, Y')}.",
             'data' => [
                 'booking_id' => $this->booking->id,
                 'old_check_in' => $oldCheckIn,
@@ -371,7 +371,7 @@ new class extends Component {
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <div class="text-sm text-base-content/50 mb-1">Booking ID</div>
-                            <div class="font-semibold">#{{ $booking->id }}</div>
+                            <div class="font-semibold">#{{ $booking->booking_id }}</div>
                         </div>
                         <div>
                             <div class="text-sm text-base-content/50 mb-1">Booking Date</div>
@@ -385,7 +385,7 @@ new class extends Component {
                                 <div class="text-sm text-base-content/50 mb-1">Check In</div>
                                 <div class="font-semibold">
                                     {{ $booking->check_in->format('M d, Y') }}
-                                </div> 
+                                </div>
                             </div>
                             <div>
                                 <div class="text-sm text-base-content/50 mb-1">Check Out</div>

@@ -101,7 +101,7 @@
 
             <div class="detail-row">
                 <span class="label">Booking ID:</span>
-                <span class="value">#{{ $booking->id }}</span>
+                <span class="value">#{{ $booking->booking_id }}</span>
             </div>
 
             <div class="detail-row">

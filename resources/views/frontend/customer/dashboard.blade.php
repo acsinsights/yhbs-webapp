@@ -142,7 +142,7 @@
                                                 {{ $booking['check_out'] }}
                                             </p>
                                             <p class="text-muted mb-0">
-                                                <i class="bi bi-hash me-2"></i>Booking ID: {{ $booking['id'] }}
+                                                <i class="bi bi-hash me-2"></i>Booking ID: {{ $booking['booking_id'] }}
                                             </p>
                                         </div>
                                         <div class="col-md-2 text-center">

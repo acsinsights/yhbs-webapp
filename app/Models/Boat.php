@@ -29,6 +29,7 @@ class Boat extends Model
         'price_15min',
         'price_30min',
         'price_full_boat',
+        'buffer_time',
         'location',
         'features',
         'meta_description',

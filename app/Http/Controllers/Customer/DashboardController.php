@@ -56,6 +56,7 @@ class DashboardController extends Controller
 
                 return [
                     'id' => $booking->id,
+                    'booking_id' => $booking->booking_id,
                     'check_in' => $booking->check_in ? $booking->check_in->format('M d, Y') : 'N/A',
                     'check_out' => $booking->check_out ? $booking->check_out->format('M d, Y') : 'N/A',
                     'status' => $booking->status,

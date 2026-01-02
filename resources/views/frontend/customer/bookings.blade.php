@@ -141,7 +141,7 @@
                                                 </div>
                                                 <p class="booking-id mb-0">
                                                     <i class="bi bi-hash me-1"></i>Booking ID:
-                                                    <strong>{{ $booking->id }}</strong>
+                                                    <strong>{{ $booking->booking_id }}</strong>
                                                 </p>
                                             </div>
                                         </div>
@@ -171,7 +171,7 @@
                                 <div class="empty-state">
                                     <i class="bi bi-inbox"></i>
                                     <h4>No Bookings Found</h4>
-                                    <p class="text-muted">You haven't made any bookings yet</p> 
+                                    <p class="text-muted">You haven't made any bookings yet</p>
                                 </div>
                             </div>
                         @endforelse
@@ -290,7 +290,7 @@
                                                 </div>
                                                 <p class="booking-id mb-0">
                                                     <i class="bi bi-hash me-1"></i>Booking ID:
-                                                    <strong>{{ $booking->id }}</strong>
+                                                    <strong>{{ $booking->booking_id }}</strong>
                                                 </p>
                                             </div>
                                         </div>
@@ -419,7 +419,7 @@
                                                 </div>
                                                 <p class="booking-id mb-0">
                                                     <i class="bi bi-hash me-1"></i>Booking ID:
-                                                    <strong>{{ $booking->id }}</strong>
+                                                    <strong>{{ $booking->booking_id }}</strong>
                                                 </p>
                                             </div>
                                         </div>
@@ -545,7 +545,7 @@
                                                 </div>
                                                 <p class="booking-id mb-0">
                                                     <i class="bi bi-hash me-1"></i>Booking ID:
-                                                    <strong>{{ $booking->id }}</strong>
+                                                    <strong>{{ $booking->booking_id }}</strong>
                                                 </p>
                                             </div>
                                         </div>

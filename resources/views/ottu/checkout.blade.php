@@ -99,7 +99,7 @@
 
             <div class="summary-item">
                 <span class="text-gray-600">Booking ID:</span>
-                <span class="font-medium">#{{ $booking->id }}</span>
+                <span class="font-medium">#{{ $booking->booking_id }}</span>
             </div>
 
             <div class="summary-item">

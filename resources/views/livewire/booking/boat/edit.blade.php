@@ -66,7 +66,7 @@ new class extends Component {
     public function with(): array
     {
         return [
-            'breadcrumbs' => [['label' => 'Dashboard', 'url' => route('admin.index')], ['label' => 'Boat Bookings', 'link' => route('admin.bookings.boat.index')], ['label' => 'Booking #' . $this->booking->id, 'link' => route('admin.bookings.boat.show', $this->booking->id)], ['label' => 'Edit']],
+            'breadcrumbs' => [['label' => 'Dashboard', 'url' => route('admin.index')], ['label' => 'Boat Bookings', 'link' => route('admin.bookings.boat.index')], ['label' => 'Booking #' . $this->booking->booking_id, 'link' => route('admin.bookings.boat.show', $this->booking->id)], ['label' => 'Edit']],
             'paymentMethods' => [['id' => 'cash', 'name' => 'Cash'], ['id' => 'card', 'name' => 'Credit/Debit Card'], ['id' => 'online', 'name' => 'Online Payment'], ['id' => 'other', 'name' => 'Other']],
             'paymentStatuses' => [['id' => 'pending', 'name' => 'Pending'], ['id' => 'paid', 'name' => 'Paid']],
             'bookingStatuses' => [['id' => 'pending', 'name' => 'Pending'], ['id' => 'booked', 'name' => 'Booked'], ['id' => 'cancelled', 'name' => 'Cancelled']],
@@ -75,7 +75,7 @@ new class extends Component {
 }; ?>
 
 <div>
-    <x-header title="Edit Boat Booking #{{ $booking->id }}" separator>
+    <x-header title="Edit Boat Booking #{{ $booking->booking_id }}" separator>
         <x-slot:middle>
             <x-breadcrumbs :items="$breadcrumbs" class="text-sm text-gray-500" />
         </x-slot:middle>
@@ -155,9 +155,9 @@ new class extends Component {
                                 </div>
                             </x-slot:title>
                             <div class="grid md:grid-cols-2 gap-4">
-                                <x-input label="Check-in Date *" icon="o-calendar" type="date"
+                                <x-input label="Departure Date *" icon="o-calendar" type="date"
                                     wire:model="check_in" />
-                                <x-input label="Check-out Date *" icon="o-calendar" type="date"
+                                <x-input label="Return Date *" icon="o-calendar" type="date"
                                     wire:model="check_out" />
                             </div>
                         </x-card>
