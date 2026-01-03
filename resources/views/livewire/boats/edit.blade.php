@@ -64,7 +64,7 @@ new class extends Component {
 
     // Image library properties
     public array $files = [];
-    public $library; // No type hint to let Livewire handle serialization
+    public Collection $library;
 
     public $config = ['aspectRatio' => 1];
     public $config2 = ['aspectRatio' => 16 / 9];
@@ -75,23 +75,6 @@ new class extends Component {
             'files.*' => 'image|max:5000',
             'library' => 'nullable',
         ];
-    }
-
-    // Ensure library is always a Collection
-    public function hydrate(): void
-    {
-        // Always convert to Collection after Livewire hydration
-        if (!($this->library instanceof Collection)) {
-            $this->library = new Collection(is_array($this->library) ? $this->library : []);
-        }
-    }
-
-    public function dehydrate(): void
-    {
-        // Keep as Collection even during dehydration to prevent conversion issues
-        if (!($this->library instanceof Collection)) {
-            $this->library = new Collection(is_array($this->library) ? $this->library : []);
-        }
     }
 
     public function mount(Boat $boat): void
@@ -125,16 +108,7 @@ new class extends Component {
         $this->existing_image = $boat->image;
         $this->image = null;
         $this->amenity_ids = $boat->amenities->pluck('id')->toArray();
-
-        // Handle images array for gallery
-        $this->library = is_array($boat->images)
-            ? collect($boat->images)->map(function ($img) {
-                if (is_string($img)) {
-                    return ['path' => $img, 'url' => asset('storage/' . $img)];
-                }
-                return $img;
-            })
-            : new Collection();
+        $this->library = $boat->library ?? new Collection();
     }
 
     public function updatedName(): void
@@ -152,11 +126,6 @@ new class extends Component {
 
     public function save(): void
     {
-        // Ensure library is a Collection
-        if (!($this->library instanceof Collection)) {
-            $this->library = new Collection(is_array($this->library) ? $this->library : []);
-        }
-
         $validated = $this->validate([
             'name' => 'required|string|max:255',
             'slug' => 'required|string|unique:boats,slug,' . $this->boat->id,
@@ -204,13 +173,8 @@ new class extends Component {
             'sort_order' => $this->sort_order,
         ]);
 
-        // Ensure library is a Collection before syncing media
-        if (!($this->library instanceof Collection)) {
-            $this->library = new Collection(is_array($this->library) ? $this->library : []);
-        }
-
         // Sync media files and update library metadata
-        $this->syncMedia(model: $this->boat, library: 'library', files: 'files', storage_subpath: '/boats/library', model_field: 'images', visibility: 'public', disk: 'public');
+        $this->syncMedia(model: $this->boat, library: 'library', files: 'files', storage_subpath: '/boats/library', model_field: 'library', visibility: 'public', disk: 'public');
 
         $this->boat->amenities()->sync($this->amenity_ids);
 
@@ -404,7 +368,7 @@ new class extends Component {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-4 md:mt-6">
                 <x-file wire:model="image" label="Main Boat Image" placeholder="Upload boat image" crop-after-change
                     :crop-config="$config2" hint="Max: 5MB">
-                    <img src="{{ $existing_image ? asset('storage/' . $existing_image) : 'https://placehold.co/600x400' }}"
+                    <img src="{{ $this->existing_image ? asset('storage/' . $this->existing_image) : 'https://placehold.co/600x400' }}"
                         alt="Boat Image" class="rounded-md object-cover w-full h-35 md:h-40" />
                 </x-file>
 
