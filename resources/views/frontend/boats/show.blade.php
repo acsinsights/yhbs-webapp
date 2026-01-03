@@ -156,12 +156,6 @@
                                     <strong><i class="bi bi-people me-2"></i>Capacity:</strong>
                                     {{ $boat->min_passengers ?? 1 }} - {{ $boat->max_passengers ?? 10 }} Passengers
                                 </div>
-                                @if ($boat->buffer_time)
-                                    <div class="col-md-6 mb-3">
-                                        <strong><i class="bi bi-clock me-2"></i>Buffer Time:</strong>
-                                        {{ $boat->buffer_time }} minutes
-                                    </div>
-                                @endif
                                 <div class="col-md-6 mb-3">
                                     <strong><i class="bi bi-check-circle me-2"></i>Status:</strong>
                                     <span class="badge {{ $boat->is_active ? 'bg-success' : 'bg-danger' }}">
@@ -169,121 +163,6 @@
                                     </span>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Pricing Details -->
-                        <div class="mb-4">
-                            <h4>Pricing Details</h4>
-
-                            @if ($boat->service_type == 'hourly')
-                                <div class="row">
-                                    @if ($boat->price_1hour)
-                                        <div class="col-md-6 mb-3">
-                                            <div class="pricing-card">
-                                                <h6 class="mb-2">1 Hour</h6>
-                                                <h4 class="text-primary mb-0">{{ currency_format($boat->price_1hour) }}
-                                                </h4>
-                                            </div>
-                                        </div>
-                                    @endif
-                                    @if ($boat->price_2hours)
-                                        <div class="col-md-6 mb-3">
-                                            <div class="pricing-card">
-                                                <h6 class="mb-2">2 Hours</h6>
-                                                <h4 class="text-primary mb-0">{{ currency_format($boat->price_2hours) }}
-                                                </h4>
-                                            </div>
-                                        </div>
-                                    @endif
-                                    @if ($boat->price_3hours)
-                                        <div class="col-md-6 mb-3">
-                                            <div class="pricing-card">
-                                                <h6 class="mb-2">3 Hours</h6>
-                                                <h4 class="text-primary mb-0">{{ currency_format($boat->price_3hours) }}
-                                                </h4>
-                                            </div>
-                                        </div>
-                                    @endif
-                                    @if ($boat->additional_hour_price)
-                                        <div class="col-md-6 mb-3">
-                                            <div class="pricing-card">
-                                                <h6 class="mb-2">Additional Hour</h6>
-                                                <h4 class="text-primary mb-0">
-                                                    {{ currency_format($boat->additional_hour_price) }}</h4>
-                                            </div>
-                                        </div>
-                                    @endif
-                                </div>
-                            @elseif ($boat->service_type == 'ferry_service')
-                                <div class="row">
-                                    @if ($boat->ferry_private_weekday)
-                                        <div class="col-md-6 mb-3">
-                                            <div class="pricing-card">
-                                                <h6 class="mb-2">Private - Weekday</h6>
-                                                <h4 class="text-primary mb-0">
-                                                    {{ currency_format($boat->ferry_private_weekday) }}</h4>
-                                            </div>
-                                        </div>
-                                    @endif
-                                    @if ($boat->ferry_private_weekend)
-                                        <div class="col-md-6 mb-3">
-                                            <div class="pricing-card">
-                                                <h6 class="mb-2">Private - Weekend</h6>
-                                                <h4 class="text-primary mb-0">
-                                                    {{ currency_format($boat->ferry_private_weekend) }}</h4>
-                                            </div>
-                                        </div>
-                                    @endif
-                                    @if ($boat->ferry_public_weekday)
-                                        <div class="col-md-6 mb-3">
-                                            <div class="pricing-card">
-                                                <h6 class="mb-2">Public - Weekday</h6>
-                                                <h4 class="text-primary mb-0">
-                                                    {{ currency_format($boat->ferry_public_weekday) }}</h4>
-                                            </div>
-                                        </div>
-                                    @endif
-                                    @if ($boat->ferry_public_weekend)
-                                        <div class="col-md-6 mb-3">
-                                            <div class="pricing-card">
-                                                <h6 class="mb-2">Public - Weekend</h6>
-                                                <h4 class="text-primary mb-0">
-                                                    {{ currency_format($boat->ferry_public_weekend) }}</h4>
-                                            </div>
-                                        </div>
-                                    @endif
-                                </div>
-                            @elseif ($boat->service_type == 'experience')
-                                <div class="row">
-                                    @if ($boat->price_15min)
-                                        <div class="col-md-6 mb-3">
-                                            <div class="pricing-card">
-                                                <h6 class="mb-2">15 Minutes</h6>
-                                                <h4 class="text-primary mb-0">{{ currency_format($boat->price_15min) }}
-                                                </h4>
-                                            </div>
-                                        </div>
-                                    @endif
-                                    @if ($boat->price_30min)
-                                        <div class="col-md-6 mb-3">
-                                            <div class="pricing-card">
-                                                <h6 class="mb-2">30 Minutes</h6>
-                                                <h4 class="text-primary mb-0">{{ currency_format($boat->price_30min) }}
-                                                </h4>
-                                            </div>
-                                        </div>
-                                    @endif
-                                    @if ($boat->price_full_boat)
-                                        <div class="col-md-6 mb-3">
-                                            <div class="pricing-card">
-                                                <h6 class="mb-2">Full Boat Experience</h6>
-                                                <h4 class="text-primary mb-0">{{ currency_format($boat->price_full_boat) }}
-                                                </h4>
-                                            </div>
-                                        </div>
-                                    @endif
-                                </div>
-                            @endif
                         </div>
 
                         <!-- Booking Policy -->
