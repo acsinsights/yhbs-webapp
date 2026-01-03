@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsToMany, MorphMany};
 use Illuminate\Support\Str;
@@ -14,7 +15,7 @@ class Boat extends Model
         'service_type',
         'description',
         'image',
-        'images',
+        'library',
         'min_passengers',
         'max_passengers',
         'price_per_hour',
@@ -41,10 +42,11 @@ class Boat extends Model
         'allows_same_day_booking',
         'requires_advance_booking',
         'is_monthly_schedule',
+        'library',
     ];
 
     protected $casts = [
-        'images' => 'array',
+        'library' => AsCollection::class,
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
         'price_per_hour' => 'decimal:2',

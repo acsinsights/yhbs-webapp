@@ -17,7 +17,7 @@ return new class extends Migration {
             $table->enum('service_type', ['yacht', 'taxi', 'ferry', 'limousine'])->default('yacht');
             $table->text('description')->nullable();
             $table->text('image')->nullable();
-            $table->json('images')->nullable();
+            $table->json('library')->nullable();
 
             // Capacity
             $table->integer('min_passengers')->default(1);
