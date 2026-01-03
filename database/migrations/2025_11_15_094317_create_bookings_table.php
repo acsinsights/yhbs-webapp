@@ -35,6 +35,28 @@ return new class extends Migration {
             $table->string('payment_method')->default('other')->comment('cash, card, other, online');
             $table->text('notes')->nullable();
 
+            // Cancellation fields
+            $table->timestamp('cancellation_requested_at')->nullable();
+            $table->enum('cancellation_status', ['pending', 'approved', 'rejected'])->nullable();
+            $table->text('cancellation_reason')->nullable();
+            $table->timestamp('cancelled_at')->nullable();
+            $table->decimal('refund_amount', 10, 2)->nullable();
+            $table->enum('refund_status', ['pending', 'processing', 'completed', 'failed'])->nullable();
+            $table->unsignedBigInteger('cancelled_by')->nullable();
+            $table->foreign('cancelled_by')->references('id')->on('users')->onDelete('set null');
+
+            // Reschedule fields
+            $table->timestamp('reschedule_requested_at')->nullable();
+            $table->enum('reschedule_status', ['pending', 'approved', 'rejected'])->nullable();
+            $table->text('reschedule_reason')->nullable();
+            $table->datetime('new_check_in')->nullable();
+            $table->datetime('new_check_out')->nullable();
+            $table->decimal('reschedule_fee', 10, 2)->nullable();
+            $table->decimal('extra_fee', 10, 2)->nullable();
+            $table->text('extra_fee_remark')->nullable();
+            $table->unsignedBigInteger('rescheduled_by')->nullable();
+            $table->foreign('rescheduled_by')->references('id')->on('users')->onDelete('set null');
+
             $table->timestamps();
         });
     }
