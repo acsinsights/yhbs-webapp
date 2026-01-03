@@ -435,6 +435,7 @@
                                             App\Enums\BookingStatusEnum::CHECKED_IN,
                                         ]))
                                     <livewire:customer.booking-cancellation-request :bookingId="$booking->id" />
+
                                     <livewire:customer.booking-reschedule-request :bookingId="$booking->id" />
                                 @endif
 

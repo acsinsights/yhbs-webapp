@@ -2962,4 +2962,227 @@
         }
     };
 
-})(jQuery);
+    // Booking Reschedule DateRangePicker Initialization (Inline Form)
+    function initRescheduleDatePicker() {
+        const $inputs = $('input[id^="rescheduleDate-"]');
+
+        if (!$inputs.length) {
+            return;
+        }
+
+        console.log('Initializing reschedule daterangepicker for ' + $inputs.length + ' booking(s)');
+
+        $inputs.each(function () {
+            const $input = $(this);
+            const inputId = $input.attr('id');
+            const bookingId = inputId.replace('rescheduleDate-', '');
+            const $btn = $('#calendarBtn-' + bookingId);
+
+            // Destroy existing instance if any
+            if ($input.data('daterangepicker')) {
+                try {
+                    $input.data('daterangepicker').remove();
+                } catch (e) {
+                    console.log('No existing daterangepicker to remove');
+                }
+            }
+
+            const today = moment();
+            const tomorrow = moment().add(1, 'days');
+            const defaultEnd = moment().add(3, 'days');
+
+            try {
+                $input.daterangepicker({
+                    opens: 'right',
+                    startDate: tomorrow,
+                    endDate: defaultEnd,
+                    minDate: today,
+                    autoUpdateInput: false,
+                    drops: 'down',
+                    autoApply: false,
+                    showDropdowns: true,
+                    locale: {
+                        format: 'DD MMM YYYY',
+                        separator: ' - ',
+                        applyLabel: 'Apply',
+                        cancelLabel: 'Clear',
+                    }
+                });
+
+                console.log('✅ Daterangepicker initialized for booking #' + bookingId);
+
+                // Button click handler
+                if ($btn.length) {
+                    $btn.off('click').on('click', function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('📅 Calendar button clicked');
+                        const picker = $input.data('daterangepicker');
+                        if (picker) {
+                            picker.show();
+                        }
+                    });
+                }
+
+                // Input click handler
+                $input.off('click').on('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('📅 Input clicked');
+                    const picker = $(this).data('daterangepicker');
+                    if (picker) {
+                        picker.show();
+                    }
+                });
+
+                $input.on('show.daterangepicker', function (ev, picker) {
+                    console.log('✅ Calendar showing');
+                });
+
+                $input.on('apply.daterangepicker', function (ev, picker) {
+                    console.log('✅ Date range applied');
+                    const checkIn = picker.startDate.format('YYYY-MM-DD');
+                    const checkOut = picker.endDate.format('YYYY-MM-DD');
+                    const display = picker.startDate.format('DD MMM YYYY') + ' - ' + picker.endDate.format('DD MMM YYYY');
+
+                    $(this).val(display);
+                    $('#rescheduleCheckIn-' + bookingId).val(checkIn).trigger('change');
+                    $('#rescheduleCheckOut-' + bookingId).val(checkOut).trigger('change');
+
+                    // Update Livewire component if available
+                    if (window.Livewire) {
+                        const component = $(this).closest('[wire\\:id]');
+                        if (component.length) {
+                            const componentId = component.attr('wire:id');
+                            if (componentId) {
+                                Livewire.find(componentId).set('newCheckIn', checkIn);
+                                Livewire.find(componentId).set('newCheckOut', checkOut);
+                            }
+                        }
+                    }
+
+                    console.log('Dates set:', checkIn, 'to', checkOut);
+                });
+
+                $input.on('cancel.daterangepicker', function (ev, picker) {
+                    console.log('Date selection cancelled');
+                    $(this).val('');
+                    $('#rescheduleCheckIn-' + bookingId).val('').trigger('change');
+                    $('#rescheduleCheckOut-' + bookingId).val('').trigger('change');
+                });
+
+            } catch (error) {
+                console.error('❌ Error initializing daterangepicker:', error);
+            }
+        });
+    }
+    const tomorrow = moment().add(1, 'days');
+    const defaultEnd = moment().add(3, 'days');
+
+    try {
+        $input.daterangepicker({
+            opens: 'left',
+            startDate: tomorrow,
+            endDate: defaultEnd,
+            minDate: today,
+            autoUpdateInput: false,
+            drops: 'down',
+            autoApply: false,
+            showDropdowns: true,
+            parentEl: '.offcanvas-body',
+            locale: {
+                format: 'DD MMM YYYY',
+                separator: ' - ',
+                applyLabel: 'Apply',
+                cancelLabel: 'Clear',
+            }
+        });
+
+        console.log('✅ Daterangepicker initialized for booking #' + bookingId);
+
+        // Button click handler
+        if ($btn.length) {
+            $btn.off('click').on('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('📅 Calendar button clicked');
+                const picker = $input.data('daterangepicker');
+                if (picker) {
+                    picker.show();
+                }
+            });
+        }
+
+        // Input click handler
+        $input.off('click').on('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('📅 Input clicked');
+            const picker = $(this).data('daterangepicker');
+            if (picker) {
+                picker.show();
+            }
+        });
+
+        $input.on('show.daterangepicker', function (ev, picker) {
+            console.log('✅ Calendar showing');
+        });
+
+        $input.on('apply.daterangepicker', function (ev, picker) {
+            console.log('✅ Date range applied');
+            const checkIn = picker.startDate.format('YYYY-MM-DD');
+            const checkOut = picker.endDate.format('YYYY-MM-DD');
+            const display = picker.startDate.format('DD MMM YYYY') + ' - ' + picker.endDate.format('DD MMM YYYY');
+
+            $(this).val(display);
+            $('#rescheduleCheckIn-' + bookingId).val(checkIn).trigger('change');
+            $('#rescheduleCheckOut-' + bookingId).val(checkOut).trigger('change');
+
+            // Update Livewire component if available
+            if (window.Livewire) {
+                const component = $(this).closest('[wire\\:id]');
+                if (component.length) {
+                    const componentId = component.attr('wire:id');
+                    if (componentId) {
+                        Livewire.find(componentId).set('newCheckIn', checkIn);
+                        Livewire.find(componentId).set('newCheckOut', checkOut);
+                    }
+                }
+            }
+
+            console.log('Dates set:', checkIn, 'to', checkOut);
+        });
+
+        $input.on('cancel.daterangepicker', function (ev, picker) {
+            console.log('Date selection cancelled');
+            $(this).val('');
+            $('#rescheduleCheckIn-' + bookingId).val('').trigger('change');
+            $('#rescheduleCheckOut-' + bookingId).val('').trigger('change');
+        });
+
+    } catch (error) {
+        console.error('❌ Error initializing daterangepicker:', error);
+    }
+});
+    }
+
+// Initialize on document ready
+$(document).ready(function () {
+    initRescheduleDatePicker();
+});
+
+// Re-initialize when Livewire updates
+if (typeof Livewire !== 'undefined') {
+    document.addEventListener('livewire:navigated', function () {
+        setTimeout(initRescheduleDatePicker, 500);
+    });
+
+    Livewire.hook('morph.updated', ({ component, cleanup }) => {
+        setTimeout(initRescheduleDatePicker, 300);
+    });
+}
+
+// Expose function globally for manual initialization
+window.initRescheduleDatePicker = initRescheduleDatePicker;
+
+}) (jQuery);

@@ -249,7 +249,6 @@ new class extends Component {
             'type' => 'booking_rescheduled',
             'title' => 'Booking Rescheduled',
             'message' => "Your booking #{$this->booking->booking_id} has been rescheduled from {$oldCheckIn} - {$oldCheckOut} to {$newCheckIn->format('M d, Y')} - {$newCheckOut->format('M d, Y')}.",
-            ,
             'data' => [
                 'booking_id' => $this->booking->id,
                 'old_check_in' => $oldCheckIn,

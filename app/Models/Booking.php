@@ -49,6 +49,7 @@ class Booking extends Model
         'reschedule_reason',
         'new_check_in',
         'new_check_out',
+        'requested_time_slot',
         'reschedule_fee',
         'rescheduled_by',
         'extra_fee',

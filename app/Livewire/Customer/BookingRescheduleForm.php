@@ -1,0 +1,141 @@
+<?php
+
+namespace App\Livewire\Customer;
+
+use App\Models\Boat;
+use App\Models\Booking;
+use App\Models\House;
+use App\Models\Room;
+use Livewire\Component;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\BookingRescheduleRequestMail;
+
+class BookingRescheduleForm extends Component
+{
+    public $bookingId;
+    public $booking;
+    public $newCheckIn;
+    public $newCheckOut;
+    public $rescheduleReason;
+    public $rescheduleFee = 0;
+    public $isBoatBooking = false;
+    public $selectedTimeSlot;
+    public $availableTimeSlots = [];
+
+    protected $rules = [
+        'newCheckIn' => 'required|date|after:today',
+        'newCheckOut' => 'required|date|after:newCheckIn',
+        'rescheduleReason' => 'required|string|min:10|max:500',
+    ];
+
+    protected $messages = [
+        'newCheckIn.required' => 'Please select check-in date.',
+        'newCheckIn.after' => 'Check-in date must be in the future.',
+        'newCheckOut.required' => 'Please select check-out date.',
+        'newCheckOut.after' => 'Check-out date must be after check-in date.',
+        'rescheduleReason.required' => 'Please provide a reason for rescheduling.',
+        'rescheduleReason.min' => 'Reason must be at least 10 characters.',
+        'selectedTimeSlot.required' => 'Please select a time slot for boat booking.',
+    ];
+
+    public function mount($bookingId)
+    {
+        $this->bookingId = $bookingId;
+        $this->booking = Booking::with('bookingable')->findOrFail($bookingId);
+        $this->calculateRescheduleFee();
+        $this->checkIfBoatBooking();
+    }
+
+    public function updated($propertyName)
+    {
+        if ($propertyName === 'newCheckIn' && $this->isBoatBooking && $this->newCheckIn) {
+            $this->generateTimeSlots();
+        }
+    }
+
+    private function checkIfBoatBooking()
+    {
+        $this->isBoatBooking = $this->booking->bookingable_type === Boat::class;
+
+        if ($this->isBoatBooking) {
+            $this->rules['selectedTimeSlot'] = 'required|string';
+        }
+    }
+
+    private function generateTimeSlots()
+    {
+        // Generate time slots for boat bookings (e.g., 09:00 AM to 06:00 PM)
+        $this->availableTimeSlots = [
+            '09:00 AM - 11:00 AM',
+            '11:00 AM - 01:00 PM',
+            '01:00 PM - 03:00 PM',
+            '03:00 PM - 05:00 PM',
+            '05:00 PM - 07:00 PM',
+        ];
+    }
+
+    private function calculateRescheduleFee()
+    {
+        if ($this->booking->bookingable_type === House::class) {
+            $this->rescheduleFee = 50; // 50 KWD for house
+        } elseif ($this->booking->bookingable_type === Room::class) {
+            $this->rescheduleFee = 20; // 20 KWD for room
+        } elseif ($this->booking->bookingable_type === Boat::class) {
+            $adults = $this->booking->adults ?? 1;
+            $this->rescheduleFee = $adults * 2; // 2 KWD per person for boat
+        }
+    }
+
+    public function submitRescheduleRequest()
+    {
+        $this->validate();
+
+        try {
+            DB::beginTransaction();
+
+            // Update booking with reschedule request
+            $this->booking->update([
+                'new_check_in' => $this->newCheckIn,
+                'new_check_out' => $this->newCheckOut,
+                'reschedule_reason' => $this->rescheduleReason,
+                'reschedule_status' => 'pending',
+                'reschedule_fee' => $this->rescheduleFee,
+                'reschedule_requested_at' => now(),
+            ]);
+
+            // If boat booking, store time slot info
+            if ($this->isBoatBooking && $this->selectedTimeSlot) {
+                $this->booking->update([
+                    'requested_time_slot' => $this->selectedTimeSlot,
+                ]);
+            }
+
+            // Send email notification to admin
+            try {
+                Mail::to(config('mail.from.address'))
+                    ->send(new BookingRescheduleRequestMail($this->booking));
+            } catch (\Exception $e) {
+                Log::error('Failed to send reschedule request email: ' . $e->getMessage());
+            }
+
+            DB::commit();
+
+            session()->flash('success', 'Reschedule request submitted successfully! We will review it shortly.');
+
+            // Redirect to booking details page
+            return redirect()->route('customer.booking-details', $this->booking->id);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Reschedule request failed: ' . $e->getMessage());
+            session()->flash('error', 'Failed to submit reschedule request. Please try again.');
+        }
+    }
+
+    public function render()
+    {
+        return view('livewire.customer.booking-reschedule-form');
+    }
+}

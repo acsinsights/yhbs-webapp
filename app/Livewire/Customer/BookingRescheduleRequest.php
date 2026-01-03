@@ -4,6 +4,9 @@ namespace App\Livewire\Customer;
 
 use Livewire\Component;
 use App\Models\Booking;
+use App\Models\Boat;
+use App\Models\House;
+use App\Models\Room;
 use App\Enums\BookingStatusEnum;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -16,13 +19,15 @@ class BookingRescheduleRequest extends Component
     public $rescheduleReason = '';
     public $newCheckIn = '';
     public $newCheckOut = '';
+    public $selectedTimeSlot = '';
     public $rescheduleFee = 0;
     public $showModal = false;
+    public $isBoatBooking = false;
+    public $availableTimeSlots = [];
 
     protected $rules = [
         'rescheduleReason' => 'required|string|min:10|max:500',
         'newCheckIn' => 'required|date|after:today',
-        'newCheckOut' => 'required|date|after:newCheckIn',
     ];
 
     protected $messages = [
@@ -33,6 +38,7 @@ class BookingRescheduleRequest extends Component
         'newCheckIn.after' => 'New check-in date must be in the future.',
         'newCheckOut.required' => 'Please select a new check-out date.',
         'newCheckOut.after' => 'New check-out date must be after check-in date.',
+        'selectedTimeSlot.required' => 'Please select a time slot.',
     ];
 
     public function mount($bookingId)
@@ -44,13 +50,62 @@ class BookingRescheduleRequest extends Component
             abort(403, 'Unauthorized access to booking.');
         }
 
+        // Check if this is a boat booking
+        $this->checkIfBoatBooking();
+
         // Calculate reschedule fee
-        $this->rescheduleFee = $this->booking->calculateRescheduleFee();
+        $this->calculateRescheduleFee();
+    }
+
+    public function checkIfBoatBooking()
+    {
+        $this->isBoatBooking = $this->booking->bookingable_type === 'App\\Models\\Boat' ||
+            $this->booking->bookingable instanceof Boat;
+    }
+
+    public function calculateRescheduleFee()
+    {
+        $bookingableType = $this->booking->bookingable_type;
+
+        if ($bookingableType === 'App\\Models\\House' || $this->booking->bookingable instanceof House) {
+            $this->rescheduleFee = 50; // 50 KWD for houses
+        } elseif ($bookingableType === 'App\\Models\\Room' || $this->booking->bookingable instanceof Room) {
+            $this->rescheduleFee = 20; // 20 KWD for rooms
+        } elseif ($bookingableType === 'App\\Models\\Boat' || $this->booking->bookingable instanceof Boat) {
+            // 2 KWD per person for boats
+            $numberOfGuests = $this->booking->number_of_guests ?? 1;
+            $this->rescheduleFee = 2 * $numberOfGuests;
+        } else {
+            $this->rescheduleFee = 30; // Default fee
+        }
+    }
+
+    public function generateTimeSlots()
+    {
+        $this->availableTimeSlots = [
+            '09:00 AM - 11:00 AM',
+            '11:00 AM - 01:00 PM',
+            '01:00 PM - 03:00 PM',
+            '03:00 PM - 05:00 PM',
+            '05:00 PM - 07:00 PM',
+        ];
+    }
+
+    public function updatedNewCheckIn($value)
+    {
+        if ($this->isBoatBooking && $value) {
+            $this->generateTimeSlots();
+        }
     }
 
     public function openModal()
     {
         $this->showModal = true;
+
+        // Generate time slots if boat booking
+        if ($this->isBoatBooking) {
+            $this->generateTimeSlots();
+        }
     }
 
     public function closeModal()
@@ -59,12 +114,23 @@ class BookingRescheduleRequest extends Component
         $this->rescheduleReason = '';
         $this->newCheckIn = '';
         $this->newCheckOut = '';
+        $this->selectedTimeSlot = '';
+        $this->availableTimeSlots = [];
         $this->resetValidation();
     }
 
     public function submitRescheduleRequest()
     {
-        $this->validate();
+        // Dynamic validation based on booking type
+        $rules = $this->rules;
+
+        if (!$this->isBoatBooking) {
+            $rules['newCheckOut'] = 'required|date|after:newCheckIn';
+        } else {
+            $rules['selectedTimeSlot'] = 'required|string';
+        }
+
+        $this->validate($rules);
 
         // Check if booking can be rescheduled
         if (!$this->booking->canBeRescheduled()) {
@@ -83,15 +149,27 @@ class BookingRescheduleRequest extends Component
             return;
         }
 
-        // Update booking with reschedule request
-        $this->booking->update([
+        // Prepare update data
+        $updateData = [
             'reschedule_requested_at' => now(),
             'reschedule_status' => 'pending',
             'reschedule_reason' => $this->rescheduleReason,
             'new_check_in' => Carbon::parse($this->newCheckIn),
-            'new_check_out' => Carbon::parse($this->newCheckOut),
             'reschedule_fee' => $this->rescheduleFee,
-        ]);
+        ];
+
+        // Add checkout date for non-boat bookings
+        if (!$this->isBoatBooking && $this->newCheckOut) {
+            $updateData['new_check_out'] = Carbon::parse($this->newCheckOut);
+        }
+
+        // Add time slot for boat bookings
+        if ($this->isBoatBooking && $this->selectedTimeSlot) {
+            $updateData['requested_time_slot'] = $this->selectedTimeSlot;
+        }
+
+        // Update booking with reschedule request
+        $this->booking->update($updateData);
 
         // Send email notification to admin
         try {
@@ -115,3 +193,4 @@ class BookingRescheduleRequest extends Component
         return view('livewire.customer.booking-reschedule-request');
     }
 }
+
