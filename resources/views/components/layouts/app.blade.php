@@ -102,6 +102,18 @@
                             </x-slot:actions>
                         @endif
                     </x-menu-item>
+
+                    @php
+                        $pendingReschedules = \App\Models\Booking::where('reschedule_status', 'pending')->count();
+                    @endphp
+                    <x-menu-item title="Reschedule Requests" icon="o-calendar"
+                        link="{{ route('admin.reschedule-requests') }}">
+                        @if ($pendingReschedules > 0)
+                            <x-slot:actions>
+                                <x-badge value="{{ $pendingReschedules }}" class="badge-warning" />
+                            </x-slot:actions>
+                        @endif
+                    </x-menu-item>
                 @endrole
 
                 @role('admin|superadmin')

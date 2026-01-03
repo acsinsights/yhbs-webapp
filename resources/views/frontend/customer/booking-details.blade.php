@@ -370,6 +370,25 @@
                                         <span>-{{ currency_format($walletUsed) }}</span>
                                     </div>
                                 @endif
+
+                                @if ($booking->reschedule_fee > 0)
+                                    <div class="payment-row text-warning">
+                                        <span><i class="bi bi-calendar-check me-1"></i>Reschedule Fee</span>
+                                        <span>{{ currency_format($booking->reschedule_fee) }}</span>
+                                    </div>
+                                @endif
+
+                                @if ($booking->extra_fee > 0)
+                                    <div class="payment-row text-warning">
+                                        <span>
+                                            <i class="bi bi-plus-circle me-1"></i>Extra Fee
+                                            @if ($booking->extra_fee_remark)
+                                                <br><small class="text-muted">({{ $booking->extra_fee_remark }})</small>
+                                            @endif
+                                        </span>
+                                        <span>{{ currency_format($booking->extra_fee) }}</span>
+                                    </div>
+                                @endif
                             </div>
 
                             <div class="divider"></div>
@@ -416,6 +435,7 @@
                                             App\Enums\BookingStatusEnum::CHECKED_IN,
                                         ]))
                                     <livewire:customer.booking-cancellation-request :bookingId="$booking->id" />
+                                    <livewire:customer.booking-reschedule-request :bookingId="$booking->id" />
                                 @endif
 
                                 <a href="{{ route('customer.bookings') }}" class="btn btn-outline-secondary">

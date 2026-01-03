@@ -44,6 +44,15 @@ class Booking extends Model
         'refund_amount',
         'refund_status',
         'cancelled_by',
+        'reschedule_requested_at',
+        'reschedule_status',
+        'reschedule_reason',
+        'new_check_in',
+        'new_check_out',
+        'reschedule_fee',
+        'rescheduled_by',
+        'extra_fee',
+        'extra_fee_remark',
     ];
 
     protected $casts = [
@@ -55,6 +64,9 @@ class Booking extends Model
         'payment_method' => PaymentMethodEnum::class,
         'cancellation_requested_at' => 'datetime',
         'cancelled_at' => 'datetime',
+        'reschedule_requested_at' => 'datetime',
+        'new_check_in' => 'datetime',
+        'new_check_out' => 'datetime',
     ];
 
     /**
@@ -128,11 +140,27 @@ class Booking extends Model
     }
 
     /**
+     * Get the user who rescheduled this booking.
+     */
+    public function rescheduledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rescheduled_by');
+    }
+
+    /**
      * Check if cancellation has been requested.
      */
     public function hasCancellationRequest(): bool
     {
         return $this->cancellation_requested_at !== null && $this->cancellation_status === 'pending';
+    }
+
+    /**
+     * Check if reschedule has been requested.
+     */
+    public function hasRescheduleRequest(): bool
+    {
+        return $this->reschedule_requested_at !== null && $this->reschedule_status === 'pending';
     }
 
     /**
@@ -203,6 +231,39 @@ class Booking extends Model
             && $this->status !== BookingStatusEnum::CANCELLED
             && $this->cancelled_at === null
             && $this->cancellation_requested_at === null;
+    }
+
+    /**
+     * Check if the booking can be rescheduled.
+     */
+    public function canBeRescheduled(): bool
+    {
+        return $this->status !== BookingStatusEnum::CHECKED_IN
+            && $this->status !== BookingStatusEnum::CHECKED_OUT
+            && $this->status !== BookingStatusEnum::CANCELLED
+            && $this->cancelled_at === null
+            && $this->cancellation_requested_at === null
+            && $this->reschedule_requested_at === null;
+    }
+
+    /**
+     * Calculate reschedule fee based on booking type.
+     */
+    public function calculateRescheduleFee(): float
+    {
+        $bookingableType = class_basename($this->bookingable_type);
+
+        if ($bookingableType === 'House') {
+            return 50.00; // 50 KWD for houses
+        } elseif ($bookingableType === 'Room') {
+            return 20.00; // 20 KWD for hotel rooms
+        } elseif ($bookingableType === 'Boat') {
+            // 2 KWD per person for boats
+            $totalPersons = ($this->adults ?? 0) + ($this->children ?? 0);
+            return $totalPersons * 2.00;
+        }
+
+        return 0.00;
     }
 
     /**

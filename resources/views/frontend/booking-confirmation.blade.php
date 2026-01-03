@@ -805,18 +805,21 @@
                     <!-- Actions -->
                     <div class="confirmation-actions">
                         <div class="row justify-content-center col-12 d-flex">
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <a href="{{ route('customer.bookings') }}" class="btn btn-outline-primary w-100">
                                     <i class="bi bi-list-ul me-2"></i>View All Bookings
                                 </a>
                             </div>
-                            <div class="col-md-4 mb-3">
-                                @livewire('customer.booking-cancellation-request', ['bookingId' => $booking->id])
-                            </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <a href="{{ url('/') }}" class="btn btn-primary w-100">
                                     <i class="bi bi-house me-2"></i>Back to Home
                                 </a>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                @livewire('customer.booking-cancellation-request', ['bookingId' => $booking->id])
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                @livewire('customer.booking-reschedule-request', ['bookingId' => $booking->id])
                             </div>
                         </div>
                     </div>
