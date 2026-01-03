@@ -89,7 +89,7 @@
                                     <div>
                                         <p class="wallet-label-banner">Your Wallet Balance</p>
                                         <h2 class="wallet-amount-banner">
-                                            {{ currency_format(number_format(auth()->user()->wallet_balance ?? 0, 2)) }}
+                                            {{ currency_format(auth()->user()->wallet_balance ?? 0) }}
                                         </h2>
                                         @if ((auth()->user()->wallet_balance ?? 0) > 0)
                                             <div class="wallet-status active">

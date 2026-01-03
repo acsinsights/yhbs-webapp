@@ -52,6 +52,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'role' => RolesEnum::class,
+            'wallet_balance' => 'decimal:2',
         ];
     }
 

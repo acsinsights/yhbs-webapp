@@ -95,7 +95,7 @@
 
         <div class="refund-box">
             <p style="margin: 0 0 10px 0; color: #155724;">Refund Amount</p>
-            <div class="refund-amount">{{ currency_format(number_format($booking->refund_amount, 2)) }}</div>
+            <div class="refund-amount">{{ currency_format($booking->refund_amount) }}</div>
             <p style="margin: 10px 0 0 0; font-size: 14px; color: #155724;">Has been credited to your wallet</p>
         </div>
 
@@ -124,7 +124,7 @@
 
             <div class="detail-row">
                 <span class="label">Original Amount:</span>
-                <span class="value">{{ currency_format(number_format($booking->total_amount, 2)) }}</span>
+                <span class="value">{{ currency_format($booking->total_amount) }}</span>
             </div>
 
             <div class="detail-row">

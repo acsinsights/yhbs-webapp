@@ -341,7 +341,7 @@
                                     <hr>
                                     <p class="mb-0">
                                         <strong>Refund Amount:</strong>
-                                        {{ currency_format(number_format($booking->refund_amount, 2)) }}
+                                        {{ currency_format($booking->refund_amount) }}
                                         <br>
                                         <strong>Refund Status:</strong> <span
                                             class="badge bg-info">{{ ucfirst($booking->refund_status ?? 'Pending') }}</span>
@@ -553,7 +553,7 @@
                                                         <strong>Discount Applied</strong>
                                                     @endif
                                                     <p class="mb-0 mt-1">You saved
-                                                        {{ currency_format(number_format($booking->discount_amount, 2)) }}
+                                                        {{ currency_format($booking->discount_amount) }}
                                                     </p>
                                                 </div>
                                             </div>
@@ -567,7 +567,7 @@
                                                 <div class="flex-grow-1">
                                                     <strong>Wallet Amount Used</strong>
                                                     <p class="mb-0 mt-1">
-                                                        {{ currency_format(number_format($booking->wallet_amount_used, 2)) }}
+                                                        {{ currency_format($booking->wallet_amount_used) }}
                                                         deducted from your wallet</p>
                                                 </div>
                                             </div>
@@ -779,7 +779,7 @@
                                     @endphp
                                     <p class="text-success mb-0">
                                         <i class="bi bi-check-circle-fill me-2"></i>
-                                        <strong>You saved {{ currency_format(number_format($totalSavings, 2)) }} on this
+                                        <strong>You saved {{ currency_format($totalSavings) }} on this
                                             booking!</strong>
                                     </p>
                                 </div>

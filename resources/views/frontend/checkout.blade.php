@@ -502,7 +502,7 @@
                                                     <div class="wallet-info">
                                                         <h6 class="mb-0 text-white">Wallet Balance</h6>
                                                         <p class="wallet-amount mb-0">
-                                                            {{ currency_format(number_format($walletBalance, 2)) }}</p>
+                                                            {{ currency_format($walletBalance) }}</p>
                                                     </div>
                                                 </div>
                                                 <div class="wallet-toggle-section">

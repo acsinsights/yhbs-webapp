@@ -43,7 +43,7 @@
                                 <li><strong>Check-in:</strong> {{ $booking->check_in->format('d M Y') }}</li>
                                 <li><strong>Check-out:</strong> {{ $booking->check_out->format('d M Y') }}</li>
                                 <li><strong>Total Amount:</strong>
-                                    {{ currency_format(number_format($booking->total_amount, 2)) }}</li>
+                                    {{ currency_format($booking->total_amount) }}</li>
                             </ul>
                         </div>
 
