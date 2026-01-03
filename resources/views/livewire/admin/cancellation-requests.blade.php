@@ -212,8 +212,7 @@ new class extends Component {
                 @endscope
 
                 @scope('cell_amount', $booking)
-                    <strong
-                        class="text-primary">{{ currency_format($booking->total ?? ($booking->price ?? 0)) }}</strong>
+                    <strong class="text-primary">{{ currency_format($booking->total ?? ($booking->price ?? 0)) }}</strong>
                 @endscope
 
                 @scope('cell_requested', $booking)
