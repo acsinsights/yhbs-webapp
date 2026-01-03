@@ -154,7 +154,7 @@ new class extends Component {
                 'title' => 'Booking Reschedule Approved',
                 'message' => 'Your reschedule request for booking #' . $this->selectedBooking->booking_id . ' has been approved.' . ($this->extraFee > 0 ? ' Extra fee: ' . currency_format($this->extraFee) . ($this->extraFeeRemark ? ' (' . $this->extraFeeRemark . ')' : '') : ''),
                 'type' => 'success',
-                'link' => route('customer.bookings.show', $this->selectedBooking->id),
+                'link' => route('customer.booking.details', $this->selectedBooking->id),
             ]);
         });
 
