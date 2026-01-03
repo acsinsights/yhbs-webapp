@@ -117,25 +117,59 @@
                                                     </p>
                                                 @endif
                                                 <div class="booking-info">
-                                                    <div class="info-item">
-                                                        <i class="bi bi-calendar-check"></i>
-                                                        <div>
-                                                            <small>Check-in</small>
-                                                            <p>{{ $booking->check_in?->format('M d, Y') ?? 'N/A' }}</p>
+                                                    @php
+                                                        $isBoat =
+                                                            $booking->bookingable_type === \App\Models\Boat::class;
+                                                    @endphp
+
+                                                    @if ($isBoat)
+                                                        {{-- For Boat bookings, show date and time slot --}}
+                                                        <div class="info-item">
+                                                            <i class="bi bi-calendar-check"></i>
+                                                            <div>
+                                                                <small>Date</small>
+                                                                <p>{{ $booking->check_in?->format('M d, Y') ?? 'N/A' }}</p>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    <div class="info-item">
-                                                        <i class="bi bi-calendar-x"></i>
-                                                        <div>
-                                                            <small>Check-out</small>
-                                                            <p>{{ $booking->check_out?->format('M d, Y') ?? 'N/A' }}</p>
+                                                        <div class="info-item">
+                                                            <i class="bi bi-clock"></i>
+                                                            <div>
+                                                                <small>Time Slot</small>
+                                                                <p>
+                                                                    @if ($booking->check_in && $booking->check_out)
+                                                                        {{ $booking->check_in->format('h:i A') }} -
+                                                                        {{ $booking->check_out->format('h:i A') }}
+                                                                    @else
+                                                                        N/A
+                                                                    @endif
+                                                                </p>
+                                                            </div>
                                                         </div>
-                                                    </div>
+                                                    @else
+                                                        {{-- For House/Room bookings, show check-in and check-out --}}
+                                                        <div class="info-item">
+                                                            <i class="bi bi-calendar-check"></i>
+                                                            <div>
+                                                                <small>Check-in</small>
+                                                                <p>{{ $booking->check_in?->format('M d, Y') ?? 'N/A' }}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <i class="bi bi-calendar-x"></i>
+                                                            <div>
+                                                                <small>Check-out</small>
+                                                                <p>{{ $booking->check_out?->format('M d, Y') ?? 'N/A' }}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    @endif
+
                                                     <div class="info-item">
                                                         <i class="bi bi-people"></i>
                                                         <div>
-                                                            <small>Guests</small>
-                                                            <p>{{ $booking->adults ?? '0' }} Adults</p>
+                                                            <small>{{ $isBoat ? 'Passengers' : 'Guests' }}</small>
+                                                            <p>{{ $booking->adults ?? '0' }}
+                                                                {{ $isBoat ? 'Passenger(s)' : 'Adults' }}</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -266,25 +300,59 @@
                                                     </p>
                                                 @endif
                                                 <div class="booking-info">
-                                                    <div class="info-item">
-                                                        <i class="bi bi-calendar-check"></i>
-                                                        <div>
-                                                            <small>Check-in</small>
-                                                            <p>{{ $booking->check_in?->format('M d, Y') ?? 'N/A' }}</p>
+                                                    @php
+                                                        $isBoat =
+                                                            $booking->bookingable_type === \App\Models\Boat::class;
+                                                    @endphp
+
+                                                    @if ($isBoat)
+                                                        {{-- For Boat bookings, show date and time slot --}}
+                                                        <div class="info-item">
+                                                            <i class="bi bi-calendar-check"></i>
+                                                            <div>
+                                                                <small>Date</small>
+                                                                <p>{{ $booking->check_in?->format('M d, Y') ?? 'N/A' }}</p>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    <div class="info-item">
-                                                        <i class="bi bi-calendar-x"></i>
-                                                        <div>
-                                                            <small>Check-out</small>
-                                                            <p>{{ $booking->check_out?->format('M d, Y') ?? 'N/A' }}</p>
+                                                        <div class="info-item">
+                                                            <i class="bi bi-clock"></i>
+                                                            <div>
+                                                                <small>Time Slot</small>
+                                                                <p>
+                                                                    @if ($booking->check_in && $booking->check_out)
+                                                                        {{ $booking->check_in->format('h:i A') }} -
+                                                                        {{ $booking->check_out->format('h:i A') }}
+                                                                    @else
+                                                                        N/A
+                                                                    @endif
+                                                                </p>
+                                                            </div>
                                                         </div>
-                                                    </div>
+                                                    @else
+                                                        {{-- For House/Room bookings, show check-in and check-out --}}
+                                                        <div class="info-item">
+                                                            <i class="bi bi-calendar-check"></i>
+                                                            <div>
+                                                                <small>Check-in</small>
+                                                                <p>{{ $booking->check_in?->format('M d, Y') ?? 'N/A' }}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <i class="bi bi-calendar-x"></i>
+                                                            <div>
+                                                                <small>Check-out</small>
+                                                                <p>{{ $booking->check_out?->format('M d, Y') ?? 'N/A' }}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    @endif
+
                                                     <div class="info-item">
                                                         <i class="bi bi-people"></i>
                                                         <div>
-                                                            <small>Guests</small>
-                                                            <p>{{ $booking->adults ?? '0' }} Adults</p>
+                                                            <small>{{ $isBoat ? 'Passengers' : 'Guests' }}</small>
+                                                            <p>{{ $booking->adults ?? '0' }}
+                                                                {{ $isBoat ? 'Passenger(s)' : 'Adults' }}</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -395,25 +463,59 @@
                                                     </p>
                                                 @endif
                                                 <div class="booking-info">
-                                                    <div class="info-item">
-                                                        <i class="bi bi-calendar-check"></i>
-                                                        <div>
-                                                            <small>Check-in</small>
-                                                            <p>{{ $booking->check_in?->format('M d, Y') ?? 'N/A' }}</p>
+                                                    @php
+                                                        $isBoat =
+                                                            $booking->bookingable_type === \App\Models\Boat::class;
+                                                    @endphp
+
+                                                    @if ($isBoat)
+                                                        {{-- For Boat bookings, show date and time slot --}}
+                                                        <div class="info-item">
+                                                            <i class="bi bi-calendar-check"></i>
+                                                            <div>
+                                                                <small>Date</small>
+                                                                <p>{{ $booking->check_in?->format('M d, Y') ?? 'N/A' }}</p>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    <div class="info-item">
-                                                        <i class="bi bi-calendar-x"></i>
-                                                        <div>
-                                                            <small>Check-out</small>
-                                                            <p>{{ $booking->check_out?->format('M d, Y') ?? 'N/A' }}</p>
+                                                        <div class="info-item">
+                                                            <i class="bi bi-clock"></i>
+                                                            <div>
+                                                                <small>Time Slot</small>
+                                                                <p>
+                                                                    @if ($booking->check_in && $booking->check_out)
+                                                                        {{ $booking->check_in->format('h:i A') }} -
+                                                                        {{ $booking->check_out->format('h:i A') }}
+                                                                    @else
+                                                                        N/A
+                                                                    @endif
+                                                                </p>
+                                                            </div>
                                                         </div>
-                                                    </div>
+                                                    @else
+                                                        {{-- For House/Room bookings, show check-in and check-out --}}
+                                                        <div class="info-item">
+                                                            <i class="bi bi-calendar-check"></i>
+                                                            <div>
+                                                                <small>Check-in</small>
+                                                                <p>{{ $booking->check_in?->format('M d, Y') ?? 'N/A' }}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <i class="bi bi-calendar-x"></i>
+                                                            <div>
+                                                                <small>Check-out</small>
+                                                                <p>{{ $booking->check_out?->format('M d, Y') ?? 'N/A' }}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    @endif
+
                                                     <div class="info-item">
                                                         <i class="bi bi-people"></i>
                                                         <div>
-                                                            <small>Guests</small>
-                                                            <p>{{ $booking->adults ?? '0' }} Adults</p>
+                                                            <small>{{ $isBoat ? 'Passengers' : 'Guests' }}</small>
+                                                            <p>{{ $booking->adults ?? '0' }}
+                                                                {{ $isBoat ? 'Passenger(s)' : 'Adults' }}</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -521,25 +623,59 @@
                                                     </p>
                                                 @endif
                                                 <div class="booking-info">
-                                                    <div class="info-item">
-                                                        <i class="bi bi-calendar-check"></i>
-                                                        <div>
-                                                            <small>Check-in</small>
-                                                            <p>{{ $booking->check_in?->format('M d, Y') ?? 'N/A' }}</p>
+                                                    @php
+                                                        $isBoat =
+                                                            $booking->bookingable_type === \App\Models\Boat::class;
+                                                    @endphp
+
+                                                    @if ($isBoat)
+                                                        {{-- For Boat bookings, show date and time slot --}}
+                                                        <div class="info-item">
+                                                            <i class="bi bi-calendar-check"></i>
+                                                            <div>
+                                                                <small>Date</small>
+                                                                <p>{{ $booking->check_in?->format('M d, Y') ?? 'N/A' }}</p>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    <div class="info-item">
-                                                        <i class="bi bi-calendar-x"></i>
-                                                        <div>
-                                                            <small>Check-out</small>
-                                                            <p>{{ $booking->check_out?->format('M d, Y') ?? 'N/A' }}</p>
+                                                        <div class="info-item">
+                                                            <i class="bi bi-clock"></i>
+                                                            <div>
+                                                                <small>Time Slot</small>
+                                                                <p>
+                                                                    @if ($booking->check_in && $booking->check_out)
+                                                                        {{ $booking->check_in->format('h:i A') }} -
+                                                                        {{ $booking->check_out->format('h:i A') }}
+                                                                    @else
+                                                                        N/A
+                                                                    @endif
+                                                                </p>
+                                                            </div>
                                                         </div>
-                                                    </div>
+                                                    @else
+                                                        {{-- For House/Room bookings, show check-in and check-out --}}
+                                                        <div class="info-item">
+                                                            <i class="bi bi-calendar-check"></i>
+                                                            <div>
+                                                                <small>Check-in</small>
+                                                                <p>{{ $booking->check_in?->format('M d, Y') ?? 'N/A' }}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <i class="bi bi-calendar-x"></i>
+                                                            <div>
+                                                                <small>Check-out</small>
+                                                                <p>{{ $booking->check_out?->format('M d, Y') ?? 'N/A' }}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    @endif
+
                                                     <div class="info-item">
                                                         <i class="bi bi-people"></i>
                                                         <div>
-                                                            <small>Guests</small>
-                                                            <p>{{ $booking->adults ?? '0' }} Adults</p>
+                                                            <small>{{ $isBoat ? 'Passengers' : 'Guests' }}</small>
+                                                            <p>{{ $booking->adults ?? '0' }}
+                                                                {{ $isBoat ? 'Passenger(s)' : 'Adults' }}</p>
                                                         </div>
                                                     </div>
                                                 </div>

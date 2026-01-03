@@ -348,28 +348,26 @@ new class extends Component {
                         </div>
                     @endif
 
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <div class="text-sm text-base-content/50 mb-1">Adults</div>
-                            <x-badge :value="$booking->adults ?? 0" class="badge-soft badge-primary" />
-                        </div>
-
-                        <div>
-                            <div class="text-sm text-base-content/50 mb-1">Children</div>
-                            <x-badge :value="$booking->children ?? 0" class="badge-soft badge-secondary" />
-                        </div>
+                    <div>
+                        <div class="text-sm text-base-content/50 mb-1">Passengers</div>
+                        <x-badge :value="$booking->adults ?? 0" class="badge-soft badge-primary" />
                     </div>
 
                     @if ($booking->guest_details)
-                        <div>
-                            <div class="text-sm text-base-content/50 mb-2">Passenger Names</div>
-                            <div class="grid gap-2 md:grid-cols-2">
-                                @php
-                                    $guestDetails = is_string($booking->guest_details)
-                                        ? json_decode($booking->guest_details, true)
-                                        : $booking->guest_details;
-                                @endphp
-                                @if (isset($guestDetails['adults']) && is_array($guestDetails['adults']))
+                        @php
+                            $guestDetails = is_string($booking->guest_details)
+                                ? json_decode($booking->guest_details, true)
+                                : $booking->guest_details;
+                            $hasPassengerNames =
+                                isset($guestDetails['adults']) &&
+                                is_array($guestDetails['adults']) &&
+                                count(array_filter($guestDetails['adults'])) > 0;
+                        @endphp
+
+                        @if ($hasPassengerNames)
+                            <div>
+                                <div class="text-sm text-base-content/50 mb-2">Passenger Names</div>
+                                <div class="grid gap-2 md:grid-cols-2">
                                     @foreach ($guestDetails['adults'] as $index => $name)
                                         @if ($name)
                                             <div class="flex items-center gap-2 p-2 bg-base-200 rounded-lg">
@@ -380,21 +378,9 @@ new class extends Component {
                                             </div>
                                         @endif
                                     @endforeach
-                                @endif
-                                @if (isset($guestDetails['children']) && is_array($guestDetails['children']))
-                                    @foreach ($guestDetails['children'] as $index => $name)
-                                        @if ($name)
-                                            <div class="flex items-center gap-2 p-2 bg-base-200 rounded-lg">
-                                                <x-icon name="o-user" class="w-4 h-4 text-secondary" />
-                                                <span class="text-sm font-medium">{{ $name }}</span>
-                                                <x-badge value="Child {{ $index + 1 }}"
-                                                    class="badge-xs badge-secondary" />
-                                            </div>
-                                        @endif
-                                    @endforeach
-                                @endif
+                                </div>
                             </div>
-                        </div>
+                        @endif
                     @endif
 
                     @if ($booking->notes)

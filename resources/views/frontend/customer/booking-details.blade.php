@@ -108,6 +108,17 @@
                                     $boatDetails = $booking->guest_details['boat_details'] ?? null;
                                 @endphp
 
+                                <!-- Booking ID -->
+                                <div class="detail-item">
+                                    <div class="detail-icon">
+                                        <i class="bi bi-hash"></i>
+                                    </div>
+                                    <div>
+                                        <small>Booking ID</small>
+                                        <p><strong>{{ $booking->booking_id }}</strong></p>
+                                    </div>
+                                </div>
+
                                 <div class="detail-item">
                                     <div class="detail-icon">
                                         <i class="bi bi-calendar-check"></i>
@@ -148,60 +159,67 @@
                                         </div>
                                     </div>
                                 @else
-                                    <!-- Boat-specific fields -->
-                                    @if ($boatDetails && isset($boatDetails['start_time']))
-                                        <div class="detail-item">
-                                            <div class="detail-icon">
-                                                <i class="bi bi-clock"></i>
-                                            </div>
-                                            <div>
-                                                <small>Start Time</small>
-                                                <p>{{ $boatDetails['start_time'] }}</p>
-                                            </div>
+                                    <!-- Boat-specific fields - Time Slot instead of Start Time -->
+                                    <div class="detail-item">
+                                        <div class="detail-icon">
+                                            <i class="bi bi-clock"></i>
                                         </div>
-                                    @endif
+                                        <div>
+                                            <small>Time Slot</small>
+                                            <p>
+                                                @if ($booking->check_in && $booking->check_out)
+                                                    {{ $booking->check_in->format('h:i A') }} -
+                                                    {{ $booking->check_out->format('h:i A') }}
+                                                @elseif($boatDetails && isset($boatDetails['start_time']))
+                                                    {{ $boatDetails['start_time'] }}
+                                                @else
+                                                    N/A
+                                                @endif
+                                            </p>
+                                        </div>
+                                    </div>
+                                @endif
 
-                                    @if ($boatDetails && isset($boatDetails['duration']))
-                                        <div class="detail-item">
-                                            <div class="detail-icon">
-                                                <i class="bi bi-hourglass-split"></i>
-                                            </div>
-                                            <div>
-                                                <small>Duration</small>
-                                                <p>{{ $boatDetails['duration'] }} Hour(s)</p>
-                                            </div>
+                                @if ($boatDetails && isset($boatDetails['duration']))
+                                    <div class="detail-item">
+                                        <div class="detail-icon">
+                                            <i class="bi bi-hourglass-split"></i>
                                         </div>
-                                    @endif
+                                        <div>
+                                            <small>Duration</small>
+                                            <p>{{ $boatDetails['duration'] }} Hour(s)</p>
+                                        </div>
+                                    </div>
+                                @endif
 
-                                    @if ($boatDetails && isset($boatDetails['ferry_type']))
-                                        <div class="detail-item">
-                                            <div class="detail-icon">
-                                                <i class="bi bi-ticket"></i>
-                                            </div>
-                                            <div>
-                                                <small>Ferry Type</small>
-                                                <p>{{ ucfirst(str_replace('_', ' ', $boatDetails['ferry_type'])) }}</p>
-                                            </div>
+                                @if ($boatDetails && isset($boatDetails['ferry_type']))
+                                    <div class="detail-item">
+                                        <div class="detail-icon">
+                                            <i class="bi bi-ticket"></i>
                                         </div>
-                                    @endif
+                                        <div>
+                                            <small>Ferry Type</small>
+                                            <p>{{ ucfirst(str_replace('_', ' ', $boatDetails['ferry_type'])) }}</p>
+                                        </div>
+                                    </div>
+                                @endif
 
-                                    @if ($boatDetails && isset($boatDetails['experience_duration']))
-                                        <div class="detail-item">
-                                            <div class="detail-icon">
-                                                <i class="bi bi-star"></i>
-                                            </div>
-                                            <div>
-                                                <small>Experience</small>
-                                                <p>
-                                                    @if ($boatDetails['experience_duration'] === 'full')
-                                                        Full Experience
-                                                    @else
-                                                        {{ $boatDetails['experience_duration'] }} Minutes
-                                                    @endif
-                                                </p>
-                                            </div>
+                                @if ($boatDetails && isset($boatDetails['experience_duration']))
+                                    <div class="detail-item">
+                                        <div class="detail-icon">
+                                            <i class="bi bi-star"></i>
                                         </div>
-                                    @endif
+                                        <div>
+                                            <small>Experience</small>
+                                            <p>
+                                                @if ($boatDetails['experience_duration'] === 'full')
+                                                    Full Experience
+                                                @else
+                                                    {{ $boatDetails['experience_duration'] }} Minutes
+                                                @endif
+                                            </p>
+                                        </div>
+                                    </div>
                                 @endif
 
                                 <div class="detail-item">

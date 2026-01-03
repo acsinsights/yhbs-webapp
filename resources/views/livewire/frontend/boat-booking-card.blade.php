@@ -129,9 +129,16 @@ new class extends Component {
             $endHour = 18; // 6 PM
             $currentHour = $startHour;
 
+            // Get buffer time in hours
+            $bufferMinutes = $this->boat->buffer_time ?? 0;
+            $bufferHours = $bufferMinutes / 60;
+
             while ($currentHour + $durationHours <= $endHour) {
                 $startTime = Carbon::parse($this->bookingDate)->setTime(floor($currentHour), ($currentHour - floor($currentHour)) * 60);
                 $endTime = $startTime->copy()->addMinutes($durationHours * 60);
+
+                // Add buffer time for checking conflicts
+                $endTimeWithBuffer = $endTime->copy()->addMinutes($bufferMinutes);
 
                 // Check if slot is in the past
                 $isPast = false;
@@ -139,8 +146,15 @@ new class extends Component {
                     $isPast = $startTime->lessThanOrEqualTo(now());
                 }
 
-                // Check if this slot is already booked
-                $isBooked = Booking::where('bookingable_type', Boat::class)->where('bookingable_id', $this->boat->id)->where('status', '!=', 'cancelled')->whereDate('check_in', $this->bookingDate)->where('check_in', '<', $endTime)->where('check_out', '>', $startTime)->exists();
+                // Check if this slot is already booked (including buffer time)
+                $isBooked = Booking::where('bookingable_type', Boat::class)
+                    ->where('bookingable_id', $this->boat->id)
+                    ->where('status', '!=', 'cancelled')
+                    ->whereDate('check_in', $this->bookingDate)
+                    ->where(function ($query) use ($startTime, $endTimeWithBuffer) {
+                        $query->where('check_in', '<', $endTimeWithBuffer)->where('check_out', '>', $startTime);
+                    })
+                    ->exists();
 
                 $isAvailable = !$isBooked && !$isPast;
 
@@ -150,7 +164,8 @@ new class extends Component {
                     'is_available' => $isAvailable,
                 ];
 
-                $currentHour += $durationHours;
+                // Move to next slot (step by duration + buffer time)
+                $currentHour += $durationHours + $bufferHours;
             }
 
             $this->availableTimeSlots = $timeSlots;

@@ -666,38 +666,6 @@
                                         </div>
                                     </div>
                                 @endif
-
-                                <!-- Passenger Names for Boats -->
-                                @if ($booking->property_type === 'Boat' && isset($booking->adult_names) && count($booking->adult_names) > 0)
-                                    <div class="col-12 mt-3">
-                                        <div class="info-item">
-                                            <i class="bi bi-people me-2"></i>
-                                            <div class="w-100">
-                                                <small class="text-muted">Passenger Names</small>
-                                                <div class="guest-list mt-2">
-                                                    @foreach ($booking->adult_names as $index => $name)
-                                                        <div class="guest-item">
-                                                            <i class="bi bi-person-check me-2"></i>
-                                                            <span>{{ $name }}</span>
-                                                            <span class="badge bg-info ms-2">Passenger
-                                                                {{ $index + 1 }}</span>
-                                                        </div>
-                                                    @endforeach
-                                                    @if (isset($booking->children_names))
-                                                        @foreach ($booking->children_names as $index => $name)
-                                                            <div class="guest-item">
-                                                                <i class="bi bi-person-check me-2"></i>
-                                                                <span>{{ $name }}</span>
-                                                                <span class="badge bg-secondary ms-2">Child
-                                                                    {{ $index + 1 }}</span>
-                                                            </div>
-                                                        @endforeach
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
                             </div>
                         </div>
                     </div>
