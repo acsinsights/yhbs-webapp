@@ -248,14 +248,28 @@
                                     $subtotal = $booking->price ?? $pricePerNight * $nights;
                                 @endphp
 
-                                <div class="payment-row">
-                                    <span>Price per night</span>
-                                    <span>{{ currency_format($pricePerNight) }}</span>
-                                </div>
-                                <div class="payment-row">
-                                    <span>× {{ $nights }} {{ $nights > 1 ? 'nights' : 'night' }}</span>
-                                    <span>{{ currency_format($subtotal) }}</span>
-                                </div>
+                                @if (!$isBoat)
+                                    {{-- Show price per night only for non-boat bookings --}}
+                                    <div class="payment-row">
+                                        <span>Price per night</span>
+                                        <span>{{ currency_format($pricePerNight) }}</span>
+                                    </div>
+                                    <div class="payment-row">
+                                        <span>× {{ $nights }} {{ $nights > 1 ? 'nights' : 'night' }}</span>
+                                        <span>{{ currency_format($subtotal) }}</span>
+                                    </div>
+                                @else
+                                    {{-- For boat bookings, show booking amount directly --}}
+                                    <div class="payment-row">
+                                        <span>Booking Amount
+                                            @if (isset($boatDetails['duration']))
+                                                ({{ $boatDetails['duration'] }}
+                                                hour{{ $boatDetails['duration'] > 1 ? 's' : '' }})
+                                            @endif
+                                        </span>
+                                        <span>{{ currency_format($subtotal) }}</span>
+                                    </div>
+                                @endif
 
                                 @if ($serviceFee > 0)
                                     <div class="payment-row">

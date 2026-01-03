@@ -424,8 +424,41 @@
                                                         <i class="bi bi-clock"></i>
                                                     </div>
                                                     <div>
-                                                        <small class="text-muted">Start Time</small>
-                                                        <p class="mb-0">{{ $booking->start_time }}</p>
+                                                        <small class="text-muted">Time Slot</small>
+                                                        <p class="mb-0">
+                                                            @php
+                                                                // Calculate end time based on duration
+                                                                $startTime = $booking->start_time;
+                                                                $duration = 0;
+
+                                                                if (isset($booking->duration)) {
+                                                                    $duration = (float) $booking->duration;
+                                                                } elseif (isset($booking->experience_duration)) {
+                                                                    $duration =
+                                                                        $booking->experience_duration === 'full'
+                                                                            ? 1
+                                                                            : (float) $booking->experience_duration /
+                                                                                60;
+                                                                } else {
+                                                                    $duration = 1; // Default 1 hour for ferry
+                                                                }
+
+                                                                try {
+                                                                    $start = \Carbon\Carbon::createFromFormat(
+                                                                        'H:i',
+                                                                        $startTime,
+                                                                    );
+                                                                    $end = $start->copy()->addHours($duration);
+                                                                    $timeSlot =
+                                                                        $start->format('h:i A') .
+                                                                        ' - ' .
+                                                                        $end->format('h:i A');
+                                                                } catch (\Exception $e) {
+                                                                    $timeSlot = $startTime;
+                                                                }
+                                                            @endphp
+                                                            {{ $timeSlot }}
+                                                        </p>
                                                     </div>
                                                 </div>
                                             @endif
@@ -633,6 +666,38 @@
                                         </div>
                                     </div>
                                 @endif
+
+                                <!-- Passenger Names for Boats -->
+                                @if ($booking->property_type === 'Boat' && isset($booking->adult_names) && count($booking->adult_names) > 0)
+                                    <div class="col-12 mt-3">
+                                        <div class="info-item">
+                                            <i class="bi bi-people me-2"></i>
+                                            <div class="w-100">
+                                                <small class="text-muted">Passenger Names</small>
+                                                <div class="guest-list mt-2">
+                                                    @foreach ($booking->adult_names as $index => $name)
+                                                        <div class="guest-item">
+                                                            <i class="bi bi-person-check me-2"></i>
+                                                            <span>{{ $name }}</span>
+                                                            <span class="badge bg-info ms-2">Passenger
+                                                                {{ $index + 1 }}</span>
+                                                        </div>
+                                                    @endforeach
+                                                    @if (isset($booking->children_names))
+                                                        @foreach ($booking->children_names as $index => $name)
+                                                            <div class="guest-item">
+                                                                <i class="bi bi-person-check me-2"></i>
+                                                                <span>{{ $name }}</span>
+                                                                <span class="badge bg-secondary ms-2">Child
+                                                                    {{ $index + 1 }}</span>
+                                                            </div>
+                                                        @endforeach
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -657,14 +722,37 @@
                                     $subtotal = $booking->price ?? $pricePerNight * $nights;
                                 @endphp
 
-                                <div class="payment-row">
-                                    <span>Price per night</span>
-                                    <span>{{ currency_format($pricePerNight) }}</span>
-                                </div>
-                                <div class="payment-row">
-                                    <span>× {{ $nights }} {{ $nights > 1 ? 'nights' : 'night' }}</span>
-                                    <span>{{ currency_format($subtotal) }}</span>
-                                </div>
+                                @if ($booking->property_type === 'Boat')
+                                    <!-- For boats, show subtotal directly without breaking it down -->
+                                    <div class="payment-row">
+                                        <span>
+                                            @if (isset($booking->service_type))
+                                                @if ($booking->service_type === 'hourly')
+                                                    Booking Amount ({{ $booking->duration ?? $nights }} hour(s))
+                                                @elseif ($booking->service_type === 'ferry_service')
+                                                    Ferry Trip Amount
+                                                @elseif ($booking->service_type === 'experience')
+                                                    Experience Amount
+                                                @else
+                                                    Booking Amount
+                                                @endif
+                                            @else
+                                                Booking Amount
+                                            @endif
+                                        </span>
+                                        <span>{{ currency_format($subtotal) }}</span>
+                                    </div>
+                                @else
+                                    <!-- For houses/rooms, show price per night breakdown -->
+                                    <div class="payment-row">
+                                        <span>Price per night</span>
+                                        <span>{{ currency_format($pricePerNight) }}</span>
+                                    </div>
+                                    <div class="payment-row">
+                                        <span>× {{ $nights }} {{ $nights > 1 ? 'nights' : 'night' }}</span>
+                                        <span>{{ currency_format($subtotal) }}</span>
+                                    </div>
+                                @endif
 
                                 @if ($serviceFee > 0)
                                     <div class="payment-row">

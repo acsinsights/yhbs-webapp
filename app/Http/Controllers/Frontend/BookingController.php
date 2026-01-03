@@ -326,12 +326,52 @@ class BookingController extends Controller
 
         // For boats, price_per_night represents the unit price (per hour, per trip, etc.)
         if ($type === 'boat') {
-            if ($property->service_type == 'hourly') {
-                $pricePerNight = floatval($property->price_per_hour ?? 0);
-            } elseif ($property->service_type == 'ferry_service') {
-                $pricePerNight = floatval($property->ferry_private_weekday ?? 0);
-            } elseif ($property->service_type == 'experience') {
-                $pricePerNight = floatval($property->price_15min ?? 0);
+            // Calculate the actual unit price based on the specific booking
+            if (in_array($property->service_type, ['yacht', 'taxi'])) {
+                $durationHours = (int) $duration;
+                if ($durationHours == 1) {
+                    $pricePerNight = floatval($property->price_1hour ?? 0);
+                } elseif ($durationHours == 2) {
+                    $pricePerNight = floatval($property->price_2hours ?? 0);
+                } elseif ($durationHours == 3) {
+                    $pricePerNight = floatval($property->price_3hours ?? 0);
+                } else {
+                    // For additional hours, show the base 3-hour price
+                    $pricePerNight = floatval($property->price_3hours ?? 0);
+                }
+            } elseif ($property->service_type == 'ferry') {
+                // Use the actual ferry price based on ferry type
+                switch ($ferryType) {
+                    case 'private_weekday':
+                        $pricePerNight = floatval($property->ferry_private_weekday ?? 0);
+                        break;
+                    case 'private_weekend':
+                        $pricePerNight = floatval($property->ferry_private_weekend ?? 0);
+                        break;
+                    case 'public_weekday':
+                        $pricePerNight = floatval($property->ferry_public_weekday ?? 0);
+                        break;
+                    case 'public_weekend':
+                        $pricePerNight = floatval($property->ferry_public_weekend ?? 0);
+                        break;
+                    default:
+                        $pricePerNight = floatval($property->ferry_private_weekday ?? 0);
+                }
+            } elseif ($property->service_type == 'limousine') {
+                // Use the actual experience price based on duration
+                switch ($experienceDuration) {
+                    case '15':
+                        $pricePerNight = floatval($property->price_15min ?? 0);
+                        break;
+                    case '30':
+                        $pricePerNight = floatval($property->price_30min ?? 0);
+                        break;
+                    case 'full':
+                        $pricePerNight = floatval($property->price_full_boat ?? 0);
+                        break;
+                    default:
+                        $pricePerNight = floatval($property->price_15min ?? 0);
+                }
             }
         }
 

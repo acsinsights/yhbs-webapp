@@ -31,6 +31,7 @@ return new class extends Migration {
             $table->enum('applicable_to', ['all', 'specific'])->default('all');
             $table->json('applicable_rooms')->nullable();
             $table->json('applicable_houses')->nullable();
+            $table->json('applicable_boats')->nullable();
 
             $table->timestamps();
         });

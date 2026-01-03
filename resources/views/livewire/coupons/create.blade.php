@@ -25,7 +25,7 @@ new class extends Component {
     public string $applicable_to = 'all';
     public array $applicable_rooms = [];
     public array $applicable_houses = [];
-    public array $applicable_yachts = [];
+    public array $applicable_boats = [];
 
     public function createCoupon(): void
     {
@@ -77,7 +77,7 @@ new class extends Component {
                 'applicable_to' => $this->applicable_to,
                 'applicable_rooms' => $this->applicable_to === 'specific' ? $this->applicable_rooms : null,
                 'applicable_houses' => $this->applicable_to === 'specific' ? $this->applicable_houses : null,
-                'applicable_yachts' => $this->applicable_to === 'specific' ? $this->applicable_yachts : null,
+                'applicable_boats' => $this->applicable_to === 'specific' ? $this->applicable_boats : null,
             ]);
 
             $this->success('Coupon created successfully!', redirectTo: route('admin.coupons.index'));
@@ -98,13 +98,13 @@ new class extends Component {
     {
         $rooms = \App\Models\Room::select('id', 'name')->get()->map(fn($r) => ['id' => $r->id, 'name' => $r->name])->toArray();
         $houses = \App\Models\House::select('id', 'name')->get()->map(fn($h) => ['id' => $h->id, 'name' => $h->name])->toArray();
-        $yachts = \App\Models\Yacht::select('id', 'name')->get()->map(fn($y) => ['id' => $y->id, 'name' => $y->name])->toArray();
+        $boats = \App\Models\Boat::select('id', 'name')->get()->map(fn($b) => ['id' => $b->id, 'name' => $b->name])->toArray();
 
         return [
             'discountTypes' => $this->discountTypes(),
             'rooms' => $rooms,
             'houses' => $houses,
-            'yachts' => $yachts,
+            'boats' => $boats,
         ];
     }
 }; ?>
@@ -240,7 +240,7 @@ new class extends Component {
                         <div>
                             <div class="font-semibold text-gray-900 dark:text-white">Apply to All Properties</div>
                             <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">This coupon will work on all
-                                rooms, houses, and yachts</div>
+                                rooms, houses, and boats</div>
                         </div>
                     </label>
 
@@ -266,9 +266,9 @@ new class extends Component {
                             search-function="name" searchable multiple
                             hint="Select houses where this coupon can be used" />
 
-                        <x-choices-offline label="Applicable Yachts" wire:model="applicable_yachts" :options="$yachts"
+                        <x-choices-offline label="Applicable Boats" wire:model="applicable_boats" :options="$boats"
                             search-function="name" searchable multiple
-                            hint="Select yachts where this coupon can be used" />
+                            hint="Select boats where this coupon can be used" />
                     </div>
                 @endif
 

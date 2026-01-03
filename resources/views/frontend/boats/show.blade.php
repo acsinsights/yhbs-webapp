@@ -340,43 +340,40 @@
                                         }
                                     @endphp
 
-                                    <!-- Date Selection - FIRST -->
-                                    <div class="mb-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-calendar-event text-primary"></i> Select Date
-                                        </label>
-                                        <input type="date" name="check_in" id="booking_date" class="form-control"
-                                            required min="{{ date('Y-m-d') }}"
-                                            @if (!$boat->allows_same_day_booking) min="{{ date('Y-m-d', strtotime('+1 day')) }}" @endif
-                                            placeholder="Select date">
-                                    </div>
-
-                                    @if (count($availableServices) > 1)
-                                        <!-- Multiple service types available -->
-                                        <div class="mb-3">
+                                    {{-- STEP 1: Trip Type (Ferry & Limousine only) --}}
+                                    @if ($boat->service_type == 'ferry')
+                                        <div class="mb-3" id="ferry_trip_type">
                                             <label class="form-label fw-semibold">
-                                                <i class="bi bi-grid text-primary"></i> Select Trip Type
+                                                <i class="bi bi-ticket text-primary"></i> Select Trip Type
                                             </label>
-                                            <select name="trip_type" id="trip_type" class="form-select" required>
-                                                <option value="">Choose service type...</option>
-                                                @foreach ($availableServices as $service)
-                                                    <option value="{{ $service['value'] }}"
-                                                        {{ $boat->service_type == $service['value'] ? 'selected' : '' }}>
-                                                        {{ $service['label'] }}
-                                                    </option>
-                                                @endforeach
+                                            <select name="trip_type" id="ferry_trip_select" class="form-select" required>
+                                                <option value="">Choose trip type...</option>
+                                                <option value="private">Private Trip</option>
+                                                <option value="public">Public Trip</option>
                                             </select>
                                         </div>
                                     @endif
 
-                                    <!-- Duration/Option Selection (shown based on service type) -->
+                                    @if ($boat->service_type == 'limousine')
+                                        <div class="mb-3" id="limousine_trip_type">
+                                            <label class="form-label fw-semibold">
+                                                <i class="bi bi-ticket text-primary"></i> Select Trip Type
+                                            </label>
+                                            <select name="trip_type" id="limousine_trip_select" class="form-select" required>
+                                                <option value="">Choose trip type...</option>
+                                                <option value="private">Private Trip</option>
+                                                <option value="public">Public Trip</option>
+                                            </select>
+                                        </div>
+                                    @endif
+
+                                    {{-- STEP 2: Duration Selection (all service types) --}}
                                     @if (in_array($boat->service_type, ['yacht', 'taxi']))
-                                        <div class="mb-3 service-option" id="hourly_options"
-                                            style="{{ in_array($boat->service_type, ['yacht', 'taxi']) ? '' : 'display:none;' }}">
+                                        <div class="mb-3" id="hourly_options">
                                             <label class="form-label fw-semibold">
                                                 <i class="bi bi-hourglass-split text-primary"></i> Select Duration
                                             </label>
-                                            <select name="duration" class="form-select">
+                                            <select name="duration" id="duration_select" class="form-select" required>
                                                 <option value="">Choose duration...</option>
                                                 @if ($boat->price_1hour)
                                                     <option value="1">1 Hour - {{ currency_format($boat->price_1hour) }}
@@ -395,40 +392,26 @@
                                     @endif
 
                                     @if ($boat->service_type == 'ferry')
-                                        <div class="mb-3 service-option" id="ferry_options"
-                                            style="{{ $boat->service_type == 'ferry' ? '' : 'display:none;' }}">
+                                        <div class="mb-3" id="ferry_duration">
                                             <label class="form-label fw-semibold">
-                                                <i class="bi bi-ticket text-primary"></i> Select Ferry Type
+                                                <i class="bi bi-hourglass-split text-primary"></i> Select Duration
                                             </label>
-                                            <select name="ferry_type" class="form-select">
-                                                <option value="">Choose ferry type...</option>
-                                                @if ($boat->ferry_private_weekday)
-                                                    <option value="private_weekday" data-day-type="weekday">Private - Weekday
-                                                        ({{ currency_format($boat->ferry_private_weekday) }})</option>
-                                                @endif
-                                                @if ($boat->ferry_private_weekend)
-                                                    <option value="private_weekend" data-day-type="weekend">Private - Weekend
-                                                        ({{ currency_format($boat->ferry_private_weekend) }})</option>
-                                                @endif
-                                                @if ($boat->ferry_public_weekday)
-                                                    <option value="public_weekday" data-day-type="weekday">Public - Weekday
-                                                        ({{ currency_format($boat->ferry_public_weekday) }})</option>
-                                                @endif
-                                                @if ($boat->ferry_public_weekend)
-                                                    <option value="public_weekend" data-day-type="weekend">Public - Weekend
-                                                        ({{ currency_format($boat->ferry_public_weekend) }})</option>
-                                                @endif
+                                            <select name="duration" id="ferry_duration_select" class="form-select" required>
+                                                <option value="">Choose duration...</option>
+                                                <option value="1">1 Hour</option>
+                                                <option value="2">2 Hours</option>
+                                                <option value="3">3 Hours</option>
                                             </select>
                                         </div>
                                     @endif
 
                                     @if ($boat->service_type == 'limousine')
-                                        <div class="mb-3 service-option" id="experience_options"
-                                            style="{{ $boat->service_type == 'limousine' ? '' : 'display:none;' }}">
+                                        <div class="mb-3" id="experience_options">
                                             <label class="form-label fw-semibold">
-                                                <i class="bi bi-star text-primary"></i> Select Experience
+                                                <i class="bi bi-star text-primary"></i> Select Experience Duration
                                             </label>
-                                            <select name="experience_duration" class="form-select">
+                                            <select name="experience_duration" id="experience_select" class="form-select"
+                                                required>
                                                 <option value="">Choose experience...</option>
                                                 @if ($boat->price_15min)
                                                     <option value="15">15 Minutes -
@@ -446,9 +429,20 @@
                                         </div>
                                     @endif
 
-                                    <!-- Time Slot Selection (only for yacht/taxi service) -->
+                                    {{-- STEP 3: Date Selection (NOW AFTER Trip Type and Duration) --}}
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">
+                                            <i class="bi bi-calendar-event text-primary"></i> Select Date
+                                        </label>
+                                        <input type="date" name="check_in" id="booking_date" class="form-control"
+                                            required min="{{ date('Y-m-d') }}"
+                                            @if (!$boat->allows_same_day_booking) min="{{ date('Y-m-d', strtotime('+1 day')) }}" @endif
+                                            placeholder="Select date">
+                                    </div>
+
+                                    {{-- STEP 4: Time Slot Selection (appears directly under date) --}}
                                     <div class="mb-3 time-slot-container" id="time_slot_section"
-                                        style="{{ in_array($boat->service_type, ['yacht', 'taxi']) ? '' : 'display:none;' }}">
+                                        style="{{ in_array($boat->service_type, ['yacht', 'taxi', 'ferry', 'limousine']) ? '' : 'display:none;' }}">
                                         <label class="form-label fw-semibold">
                                             <i class="bi bi-clock text-primary"></i> Select Time Slot
                                         </label>
@@ -466,7 +460,7 @@
                                             <small><i class="bi bi-exclamation-triangle me-1"></i> No time slots available for
                                                 selected date and duration.</small>
                                         </div>
-                                        <input type="hidden" name="start_time" id="selected_time_slot" required>
+                                        <input type="hidden" name="start_time" id="selected_time_slot">
                                     </div>
 
                                     <!-- Passengers -->
@@ -584,6 +578,19 @@
             flatpickr("#booking_date", {
                 minDate: "{{ $boat->allows_same_day_booking ? 'today' : '+1 day' }}",
                 dateFormat: "Y-m-d",
+                disable: [
+                    function(date) {
+                        // Disable all past dates
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        @if (!$boat->allows_same_day_booking)
+                            // If same day booking not allowed, disable today as well
+                            return date < today.setDate(today.getDate() + 1);
+                        @else
+                            return date < today;
+                        @endif
+                    }
+                ],
                 onChange: function(selectedDates, dateStr, instance) {
                     filterFerryOptions(); // Filter ferry options based on weekday/weekend
                     loadTimeSlots();
@@ -654,15 +661,14 @@
                     const timeSlotSection = document.getElementById('time_slot_section');
                     const selectedTimeSlotInput = document.getElementById('selected_time_slot');
 
-                    if (selectedType === 'yacht' || selectedType === 'taxi') {
+                    if (selectedType === 'yacht' || selectedType === 'taxi' || selectedType === 'ferry' ||
+                        selectedType === 'limousine') {
                         if (timeSlotSection) {
                             timeSlotSection.style.display = 'block';
-                            selectedTimeSlotInput.setAttribute('required', 'required');
                         }
                     } else {
                         if (timeSlotSection) {
                             timeSlotSection.style.display = 'none';
-                            selectedTimeSlotInput.removeAttribute('required');
                             selectedTimeSlotInput.value = '';
                         }
                     }
@@ -675,11 +681,15 @@
                             hourlyOptions.querySelector('select').setAttribute('required', 'required');
                         }
                     } else if (selectedType === 'ferry') {
-                        const ferryOptions = document.getElementById('ferry_options');
-                        if (ferryOptions) {
-                            ferryOptions.style.display = 'block';
-                            ferryOptions.querySelector('select').setAttribute('required', 'required');
-                            filterFerryOptions(); // Apply filter when ferry service is selected
+                        const ferryTripType = document.getElementById('ferry_trip_type');
+                        const ferryDuration = document.getElementById('ferry_duration');
+                        if (ferryTripType) {
+                            ferryTripType.style.display = 'block';
+                            ferryTripType.querySelector('select').setAttribute('required', 'required');
+                        }
+                        if (ferryDuration) {
+                            ferryDuration.style.display = 'block';
+                            ferryDuration.querySelector('select').setAttribute('required', 'required');
                         }
                     } else if (selectedType === 'limousine') {
                         const experienceOptions = document.getElementById('experience_options');
@@ -697,8 +707,8 @@
                 });
             }
 
-            // Handle duration change
-            const durationSelect = document.querySelector('#hourly_options select');
+            // Handle duration change for yacht/taxi
+            const durationSelect = document.querySelector('#duration_select');
             if (durationSelect) {
                 durationSelect.addEventListener('change', function() {
                     selectedDuration = this.value;
@@ -706,18 +716,62 @@
                 });
             }
 
+            // Handle ferry duration change
+            const ferryDurationSelect = document.querySelector('#ferry_duration_select');
+            if (ferryDurationSelect) {
+                ferryDurationSelect.addEventListener('change', function() {
+                    selectedDuration = this.value;
+                    loadTimeSlots();
+                });
+            }
+
+            // Handle limousine experience duration change
+            const experienceSelect = document.querySelector('#experience_select');
+            if (experienceSelect) {
+                experienceSelect.addEventListener('change', function() {
+                    selectedDuration = this.value;
+                    loadTimeSlots();
+                });
+            }
+
             // Function to load time slots
             function loadTimeSlots() {
-                // Only load for yacht/taxi service
-                if (currentServiceType !== 'yacht' && currentServiceType !== 'taxi') {
+                // Load for yacht/taxi/ferry/limousine service
+                if (currentServiceType !== 'yacht' && currentServiceType !== 'taxi' && currentServiceType !==
+                    'ferry' && currentServiceType !== 'limousine') {
                     return;
                 }
 
                 const date = document.getElementById('booking_date').value;
-                const duration = selectedDuration || (durationSelect ? durationSelect.value : null);
+                let duration = selectedDuration;
+
+                // Get duration from appropriate select
+                if (currentServiceType === 'ferry') {
+                    duration = ferryDurationSelect ? ferryDurationSelect.value : null;
+                } else if (currentServiceType === 'limousine') {
+                    const experienceSelectElem = document.querySelector('#experience_select');
+                    duration = experienceSelectElem ? experienceSelectElem.value : null;
+                } else {
+                    duration = durationSelect ? durationSelect.value : null;
+                }
 
                 if (!date || !duration) {
                     return;
+                }
+
+                // Convert duration to hours for API request
+                let durationInHours = duration;
+                if (currentServiceType === 'limousine') {
+                    // Convert limousine experience durations to hours
+                    if (duration === '15') {
+                        durationInHours = 0.25; // 15 minutes
+                    } else if (duration === '30') {
+                        durationInHours = 0.5; // 30 minutes
+                    } else if (duration === 'full') {
+                        durationInHours = 1; // 1 hour for full experience
+                    }
+                } else {
+                    durationInHours = parseFloat(duration);
                 }
 
                 // Show loading
@@ -736,7 +790,7 @@
                         body: JSON.stringify({
                             boat_id: boatId,
                             date: date,
-                            duration: parseFloat(duration)
+                            duration: durationInHours
                         })
                     })
                     .then(response => response.json())
@@ -820,19 +874,15 @@
             // Set initial required state based on default service type
             const currentServiceTypeInitial = '{{ $boat->service_type }}';
             if (currentServiceTypeInitial === 'yacht' || currentServiceTypeInitial === 'taxi') {
-                const durationSelectInit = document.querySelector('#hourly_options select');
-                const startTimeInput = document.getElementById('selected_time_slot');
+                const durationSelectInit = document.querySelector('#duration_select');
                 if (durationSelectInit) durationSelectInit.setAttribute('required', 'required');
-                if (startTimeInput) startTimeInput.setAttribute('required', 'required');
             } else if (currentServiceTypeInitial === 'ferry') {
-                const ferrySelect = document.querySelector('#ferry_options select');
-                if (ferrySelect) {
-                    ferrySelect.setAttribute('required', 'required');
-                    // Initial filter for ferry options
-                    setTimeout(() => filterFerryOptions(), 100);
-                }
+                const ferryTripSelect = document.querySelector('#ferry_trip_select');
+                const ferryDurationSelectInit = document.querySelector('#ferry_duration_select');
+                if (ferryTripSelect) ferryTripSelect.setAttribute('required', 'required');
+                if (ferryDurationSelectInit) ferryDurationSelectInit.setAttribute('required', 'required');
             } else if (currentServiceTypeInitial === 'limousine') {
-                const experienceSelect = document.querySelector('#experience_options select');
+                const experienceSelect = document.querySelector('#experience_select');
                 if (experienceSelect) experienceSelect.setAttribute('required', 'required');
             }
         });

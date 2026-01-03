@@ -166,15 +166,54 @@
 
                                         @if ($booking->type === 'boat')
                                             <!-- Boat-specific details -->
-                                            @if ($booking->service_type === 'hourly' && isset($booking->start_time))
+                                            @if (isset($booking->start_time))
                                                 <div class="detail-row">
                                                     <div class="detail-label">
-                                                        <i class="bi bi-clock me-2"></i>Start Time
+                                                        <i class="bi bi-clock me-2"></i>Time Slot
                                                     </div>
                                                     <div class="detail-value">
-                                                        {{ $booking->start_time }}
+                                                        @php
+                                                            // Calculate end time based on duration
+                                                            $startTime = $booking->start_time;
+                                                            $duration = 0;
+
+                                                            if (
+                                                                $booking->service_type === 'hourly' &&
+                                                                isset($booking->duration)
+                                                            ) {
+                                                                $duration = (float) $booking->duration;
+                                                            } elseif (
+                                                                $booking->service_type === 'experience' &&
+                                                                isset($booking->experience_duration)
+                                                            ) {
+                                                                $duration =
+                                                                    $booking->experience_duration === 'full'
+                                                                        ? 1
+                                                                        : (float) $booking->experience_duration / 60;
+                                                            } else {
+                                                                $duration = 1; // Default 1 hour for ferry
+                                                            }
+
+                                                            try {
+                                                                $start = \Carbon\Carbon::createFromFormat(
+                                                                    'H:i',
+                                                                    $startTime,
+                                                                );
+                                                                $end = $start->copy()->addHours($duration);
+                                                                $timeSlot =
+                                                                    $start->format('h:i A') .
+                                                                    ' - ' .
+                                                                    $end->format('h:i A');
+                                                            } catch (\Exception $e) {
+                                                                $timeSlot = $startTime;
+                                                            }
+                                                        @endphp
+                                                        {{ $timeSlot }}
                                                     </div>
                                                 </div>
+                                            @endif
+
+                                            @if ($booking->service_type === 'hourly' && isset($booking->duration))
                                                 <div class="detail-row">
                                                     <div class="detail-label">
                                                         <i class="bi bi-hourglass-split me-2"></i>Duration
@@ -309,72 +348,83 @@
                                     </div>
 
                                     <div class="price-breakdown">
-                                        <div class="price-row">
-                                            <span>
-                                                @if ($booking->type === 'boat')
+                                        @if ($booking->type === 'boat')
+                                            <!-- For boats, show subtotal directly without breaking it down -->
+                                            <div class="price-row">
+                                                <span>
                                                     @if ($booking->service_type === 'hourly')
-                                                        Price per hour
+                                                        Booking Amount ({{ $booking->duration ?? 1 }} hour(s))
                                                     @elseif ($booking->service_type === 'ferry_service')
-                                                        Ferry price
+                                                        Ferry Trip Amount
                                                     @elseif ($booking->service_type === 'experience')
-                                                        Experience price
+                                                        Experience Amount
                                                     @else
-                                                        Unit price
+                                                        Booking Amount
                                                     @endif
-                                                @else
-                                                    Price per night
-                                                @endif
-                                            </span>
-                                            <span
-                                                id="pricePerNight">{{ currency_format($booking->price_per_night ?? 0) }}</span>
-                                        </div>
-                                        <div class="price-row">
-                                            <span>× <span id="nightsCount">{{ $booking->nights ?? '1' }}</span>
-                                                nights</span>
-                                            @php
-                                                // Debug logging for houses
-                                                if (($booking->type ?? '') === 'house') {
-                                                    \Log::info('Checkout View - House Booking Data', [
-                                                        'type' => $booking->type ?? 'unknown',
-                                                        'property_id' => $booking->property_id ?? 'missing',
-                                                        'price_per_night' => $booking->price_per_night ?? 'missing',
-                                                        'price_per_night_type' => gettype(
-                                                            $booking->price_per_night ?? null,
-                                                        ),
-                                                        'nights' => $booking->nights ?? 'missing',
-                                                        'nights_type' => gettype($booking->nights ?? null),
-                                                        'subtotal' => $booking->subtotal ?? 'missing',
-                                                        'subtotal_type' => gettype($booking->subtotal ?? null),
-                                                        'booking_object' => json_encode($booking),
+                                                </span>
+                                                @php
+                                                    $displaySubtotalCalc = floatval($booking->subtotal ?? 0);
+                                                @endphp
+                                                <span id="subtotal">{{ currency_format($displaySubtotalCalc) }}</span>
+                                            </div>
+                                        @else
+                                            <!-- For houses/rooms, show price per night breakdown -->
+                                            <div class="price-row">
+                                                <span>Price per night</span>
+                                                <span
+                                                    id="pricePerNight">{{ currency_format($booking->price_per_night ?? 0) }}</span>
+                                            </div>
+                                            <div class="price-row">
+                                                <span>× <span id="nightsCount">{{ $booking->nights ?? '1' }}</span>
+                                                    nights</span>
+                                                @php
+                                                    // Debug logging for houses
+                                                    if (($booking->type ?? '') === 'house') {
+                                                        \Log::info('Checkout View - House Booking Data', [
+                                                            'type' => $booking->type ?? 'unknown',
+                                                            'property_id' => $booking->property_id ?? 'missing',
+                                                            'price_per_night' => $booking->price_per_night ?? 'missing',
+                                                            'price_per_night_type' => gettype(
+                                                                $booking->price_per_night ?? null,
+                                                            ),
+                                                            'nights' => $booking->nights ?? 'missing',
+                                                            'nights_type' => gettype($booking->nights ?? null),
+                                                            'subtotal' => $booking->subtotal ?? 'missing',
+                                                            'subtotal_type' => gettype($booking->subtotal ?? null),
+                                                            'booking_object' => json_encode($booking),
+                                                        ]);
+                                                    }
+
+                                                    // Always prefer backend subtotal if available, otherwise calculate
+                                                    $backend = floatval($booking->subtotal ?? 0);
+                                                    $calculated =
+                                                        floatval($booking->price_per_night ?? 0) *
+                                                        floatval($booking->nights ?? 1);
+
+                                                    \Log::info('Subtotal Calculation', [
+                                                        'backend' => $backend,
+                                                        'calculated' => $calculated,
+                                                        'backend_gt_0' => $backend > 0,
+                                                        'result' => $backend > 0 ? 'using backend' : 'using calculated',
                                                     ]);
-                                                }
 
-                                                // Always prefer backend subtotal if available, otherwise calculate
-                                                $backend = floatval($booking->subtotal ?? 0);
-                                                $calculated =
-                                                    floatval($booking->price_per_night ?? 0) *
-                                                    floatval($booking->nights ?? 1);
+                                                    // Use backend if it exists and is not 0, otherwise use calculated
+                                                    $displaySubtotalCalc = $backend > 0 ? $backend : $calculated;
 
-                                                \Log::info('Subtotal Calculation', [
-                                                    'backend' => $backend,
-                                                    'calculated' => $calculated,
-                                                    'backend_gt_0' => $backend > 0,
-                                                    'result' => $backend > 0 ? 'using backend' : 'using calculated',
-                                                ]);
-
-                                                // Use backend if it exists and is not 0, otherwise use calculated
-                                                $displaySubtotalCalc = $backend > 0 ? $backend : $calculated;
-
-                                                \Log::info('Display Value', [
-                                                    'displaySubtotalCalc' => $displaySubtotalCalc,
-                                                    'number_format_result' => number_format($displaySubtotalCalc, 2),
-                                                    'currency_format_result' => currency_format(
-                                                        number_format($displaySubtotalCalc, 2),
-                                                    ),
-                                                ]);
-                                            @endphp
-                                            <span id="subtotal">{{ currency_format($displaySubtotalCalc) }}</span>
-                                        </div>
+                                                    \Log::info('Display Value', [
+                                                        'displaySubtotalCalc' => $displaySubtotalCalc,
+                                                        'number_format_result' => number_format(
+                                                            $displaySubtotalCalc,
+                                                            2,
+                                                        ),
+                                                        'currency_format_result' => currency_format(
+                                                            number_format($displaySubtotalCalc, 2),
+                                                        ),
+                                                    ]);
+                                                @endphp
+                                                <span id="subtotal">{{ currency_format($displaySubtotalCalc) }}</span>
+                                            </div>
+                                        @endif
                                         @if (($booking->service_fee ?? 0) > 0)
                                             <div class="price-row">
                                                 <span>Service fee</span>

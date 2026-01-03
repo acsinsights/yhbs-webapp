@@ -362,7 +362,7 @@ new class extends Component {
 
                     @if ($booking->guest_details)
                         <div>
-                            <div class="text-sm text-base-content/50 mb-2">Guest Names</div>
+                            <div class="text-sm text-base-content/50 mb-2">Passenger Names</div>
                             <div class="grid gap-2 md:grid-cols-2">
                                 @php
                                     $guestDetails = is_string($booking->guest_details)
@@ -372,10 +372,11 @@ new class extends Component {
                                 @if (isset($guestDetails['adults']) && is_array($guestDetails['adults']))
                                     @foreach ($guestDetails['adults'] as $index => $name)
                                         @if ($name)
-                                            <div class="text-sm">
-                                                <x-icon name="o-user" class="w-4 h-4 inline" /> Adult
-                                                {{ $index + 1 }}:
-                                                {{ $name }}
+                                            <div class="flex items-center gap-2 p-2 bg-base-200 rounded-lg">
+                                                <x-icon name="o-user" class="w-4 h-4 text-primary" />
+                                                <span class="text-sm font-medium">{{ $name }}</span>
+                                                <x-badge value="Passenger {{ $index + 1 }}"
+                                                    class="badge-xs badge-primary" />
                                             </div>
                                         @endif
                                     @endforeach
@@ -383,10 +384,11 @@ new class extends Component {
                                 @if (isset($guestDetails['children']) && is_array($guestDetails['children']))
                                     @foreach ($guestDetails['children'] as $index => $name)
                                         @if ($name)
-                                            <div class="text-sm">
-                                                <x-icon name="o-user" class="w-4 h-4 inline" /> Child
-                                                {{ $index + 1 }}:
-                                                {{ $name }}
+                                            <div class="flex items-center gap-2 p-2 bg-base-200 rounded-lg">
+                                                <x-icon name="o-user" class="w-4 h-4 text-secondary" />
+                                                <span class="text-sm font-medium">{{ $name }}</span>
+                                                <x-badge value="Child {{ $index + 1 }}"
+                                                    class="badge-xs badge-secondary" />
                                             </div>
                                         @endif
                                     @endforeach
@@ -480,7 +482,7 @@ new class extends Component {
                 <x-slot:title>
                     <div class="flex items-center gap-2">
                         <x-icon name="o-currency-dollar" class="w-5 h-5" />
-                        <span>Payment</span>
+                        <span>Payment Summary</span>
                     </div>
                 </x-slot:title>
                 <x-slot:menu>
@@ -491,10 +493,68 @@ new class extends Component {
                 </x-slot:menu>
 
                 <div class="space-y-4">
-                    <div>
-                        <div class="text-sm text-base-content/50 mb-1">Amount</div>
-                        <div class="font-semibold text-2xl">KD {{ number_format($booking->price ?? 0, 2) }}</div>
+                    <!-- Booking Amount -->
+                    <div class="p-3 bg-base-200 rounded-lg">
+                        <div class="text-sm text-base-content/50 mb-1">
+                            @php
+                                $durationHours =
+                                    $booking->check_out && $booking->check_in
+                                        ? $booking->check_in->diffInHours($booking->check_out)
+                                        : 1;
+                            @endphp
+                            Booking Amount
+                            @if ($durationHours > 0)
+                                ({{ $durationHours }} hour{{ $durationHours > 1 ? 's' : '' }})
+                            @endif
+                        </div>
+                        <div class="font-semibold text-2xl text-primary">KD
+                            {{ number_format($booking->price ?? 0, 2) }}</div>
                     </div>
+
+                    <div class="divider my-2"></div>
+
+                    <!-- Passenger Names -->
+                    @if ($booking->guest_details)
+                        <div>
+                            <div class="text-sm text-base-content/50 mb-2">Passenger Names</div>
+                            <div class="space-y-2">
+                                @php
+                                    $guestDetails = is_string($booking->guest_details)
+                                        ? json_decode($booking->guest_details, true)
+                                        : $booking->guest_details;
+                                @endphp
+                                @if (isset($guestDetails['adults']) && is_array($guestDetails['adults']))
+                                    @foreach ($guestDetails['adults'] as $index => $name)
+                                        @if ($name)
+                                            <div
+                                                class="flex items-center gap-2 p-2 bg-base-100 border border-base-300 rounded-lg">
+                                                <x-icon name="o-user" class="w-4 h-4 text-primary" />
+                                                <span class="text-sm flex-1">{{ $name }}</span>
+                                                <x-badge value="Passenger {{ $index + 1 }}"
+                                                    class="badge-xs badge-primary" />
+                                            </div>
+                                        @endif
+                                    @endforeach
+                                @endif
+                                @if (isset($guestDetails['children']) && is_array($guestDetails['children']))
+                                    @foreach ($guestDetails['children'] as $index => $name)
+                                        @if ($name)
+                                            <div
+                                                class="flex items-center gap-2 p-2 bg-base-100 border border-base-300 rounded-lg">
+                                                <x-icon name="o-user" class="w-4 h-4 text-secondary" />
+                                                <span class="text-sm flex-1">{{ $name }}</span>
+                                                <x-badge value="Child {{ $index + 1 }}"
+                                                    class="badge-xs badge-secondary" />
+                                            </div>
+                                        @endif
+                                    @endforeach
+                                @endif
+                            </div>
+                        </div>
+                        <div class="divider my-2"></div>
+                    @endif
+
+                    <!-- Payment Details -->
                     <div>
                         <div class="text-sm text-base-content/50 mb-1">Payment Method</div>
                         <x-badge :value="$booking->payment_method->label()" class="{{ $booking->payment_method->badgeColor() }}" />
