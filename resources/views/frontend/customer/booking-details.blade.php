@@ -307,6 +307,10 @@
                                     $walletUsed = $booking->wallet_amount_used ?? 0;
 
                                     // Use actual stored price (accounts for tiered pricing)
+                                    $baseAmount =
+                                        isset($booking->total_amount) && $booking->total_amount > 0
+                                            ? $booking->total_amount
+                                            : $booking->price ?? 0;
                                     $subtotal = $booking->price ?? $pricePerNight * $nights;
                                 @endphp
 
@@ -347,16 +351,39 @@
                                     </div>
                                 @endif
 
-                                {{-- Only show divider if discount or wallet is used --}}
+                                @if (isset($booking->reschedule_fee) && $booking->reschedule_fee > 0)
+                                    <div class="payment-row text-warning">
+                                        <span><i class="bi bi-calendar-check me-1"></i>Reschedule Fee</span>
+                                        <span>{{ currency_format($booking->reschedule_fee) }}</span>
+                                    </div>
+                                @endif
+
+                                @if (isset($booking->extra_fee) && $booking->extra_fee > 0)
+                                    <div class="payment-row text-warning">
+                                        <span>
+                                            <i class="bi bi-plus-circle me-1"></i>Extra Fee
+                                            @if (isset($booking->extra_fee_remark) && $booking->extra_fee_remark)
+                                                <br><small class="text-muted">({{ $booking->extra_fee_remark }})</small>
+                                            @endif
+                                        </span>
+                                        <span>{{ currency_format($booking->extra_fee) }}</span>
+                                    </div>
+                                @endif
+
+                                {{-- Show subtotal before deductions if there are any discounts or wallet usage --}}
                                 @if ($discount > 0 || $walletUsed > 0)
                                     <div class="divider"></div>
+                                    <div class="payment-row" style="font-weight: 600;">
+                                        <span>Subtotal</span>
+                                        <span>{{ currency_format($baseAmount + ($booking->reschedule_fee ?? 0) + ($booking->extra_fee ?? 0)) }}</span>
+                                    </div>
                                 @endif
 
                                 @if ($discount > 0)
                                     <div class="payment-row text-success">
                                         <span>
                                             <i class="bi bi-tag-fill me-1"></i>Discount
-                                            @if ($booking->coupon_code)
+                                            @if (isset($booking->coupon_code) && $booking->coupon_code)
                                                 <small>({{ $booking->coupon_code }})</small>
                                             @endif
                                         </span>
@@ -370,32 +397,13 @@
                                         <span>-{{ currency_format($walletUsed) }}</span>
                                     </div>
                                 @endif
-
-                                @if ($booking->reschedule_fee > 0)
-                                    <div class="payment-row text-warning">
-                                        <span><i class="bi bi-calendar-check me-1"></i>Reschedule Fee</span>
-                                        <span>{{ currency_format($booking->reschedule_fee) }}</span>
-                                    </div>
-                                @endif
-
-                                @if ($booking->extra_fee > 0)
-                                    <div class="payment-row text-warning">
-                                        <span>
-                                            <i class="bi bi-plus-circle me-1"></i>Extra Fee
-                                            @if ($booking->extra_fee_remark)
-                                                <br><small class="text-muted">({{ $booking->extra_fee_remark }})</small>
-                                            @endif
-                                        </span>
-                                        <span>{{ currency_format($booking->extra_fee) }}</span>
-                                    </div>
-                                @endif
                             </div>
 
                             <div class="divider"></div>
 
                             <div class="total-amount">
                                 <span>Total Paid</span>
-                                <span>{{ currency_format($booking->total ?? ($booking->price ?? 0)) }}</span>
+                                <span>{{ currency_format($baseAmount + ($booking->reschedule_fee ?? 0) + ($booking->extra_fee ?? 0) - ($booking->discount_amount ?? 0) - ($booking->wallet_amount_used ?? 0)) }}</span>
                             </div>
 
                             <div class="payment-status mt-3">

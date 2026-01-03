@@ -557,10 +557,62 @@ new class extends Component {
                 </x-slot:menu>
 
                 <div class="space-y-4">
-                    <div>
-                        <div class="text-sm text-base-content/50 mb-1">Amount</div>
-                        <div class="font-semibold text-2xl">{{ currency_format($booking->price ?? 0) }}</div>
+                    {{-- Payment Breakdown --}}
+                    <div class="p-4 bg-base-200 rounded-lg space-y-2">
+                        <h3 class="text-sm font-semibold text-base-content/70 mb-3">Payment Breakdown</h3>
+
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-base-content/60">Base Amount</span>
+                            <span
+                                class="font-medium">{{ currency_format(($booking->total_amount > 0 ? $booking->total_amount : $booking->price) ?? 0) }}</span>
+                        </div>
+
+                        @if ($booking->reschedule_fee && $booking->reschedule_fee > 0)
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-base-content/60">Reschedule Fee</span>
+                                <span
+                                    class="font-medium text-warning">{{ currency_format($booking->reschedule_fee) }}</span>
+                            </div>
+                        @endif
+
+                        @if ($booking->extra_fee && $booking->extra_fee > 0)
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-base-content/60">Extra Fee</span>
+                                <span class="font-medium text-info">{{ currency_format($booking->extra_fee) }}</span>
+                            </div>
+                            @if ($booking->extra_fee_remark)
+                                <div class="text-xs text-base-content/50 italic ml-2">
+                                    <x-icon name="o-information-circle" class="w-3 h-3 inline" />
+                                    {{ $booking->extra_fee_remark }}
+                                </div>
+                            @endif
+                        @endif
+
+                        @if ($booking->discount_amount && $booking->discount_amount > 0)
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-base-content/60">Discount</span>
+                                <span
+                                    class="font-medium text-success">-{{ currency_format($booking->discount_amount) }}</span>
+                            </div>
+                        @endif
+
+                        @if ($booking->wallet_amount_used && $booking->wallet_amount_used > 0)
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-base-content/60">Wallet Used</span>
+                                <span
+                                    class="font-medium text-secondary">-{{ currency_format($booking->wallet_amount_used) }}</span>
+                            </div>
+                        @endif
+
+                        <div class="divider my-2"></div>
+
+                        <div class="flex justify-between items-center">
+                            <span class="text-base font-semibold">Total Amount</span>
+                            <span
+                                class="text-2xl font-bold">{{ currency_format((($booking->total_amount > 0 ? $booking->total_amount : $booking->price) ?? 0) + ($booking->reschedule_fee ?? 0) + ($booking->extra_fee ?? 0) - ($booking->discount_amount ?? 0) - ($booking->wallet_amount_used ?? 0)) }}</span>
+                        </div>
                     </div>
+
                     <div>
                         <div class="text-sm text-base-content/50 mb-1">Payment Method</div>
                         <x-badge :value="$booking->payment_method->label()" class="{{ $booking->payment_method->badgeColor() }}" />
@@ -672,59 +724,5 @@ new class extends Component {
     </x-drawer>
 
     {{-- Activity History Drawer --}}
-    <x-drawer wire:model="showHistoryDrawer" title="Booking History" class="w-11/12 lg:w-2/5" right>
-        <div class="space-y-4">
-            @if (count($activities) > 0)
-                <div class="space-y-3">
-                    @foreach ($activities as $activity)
-                        <x-card shadow>
-                            <div class="space-y-2">
-                                <div class="flex items-start justify-between">
-                                    <div class="flex-1">
-                                        @php
-                                            // Parse description to extract reason
-                                            $mainDescription = $activity->description;
-                                            $reason = null;
-                                            if (strpos($activity->description, '. Reason: ') !== false) {
-                                                [$mainDescription, $reason] = explode(
-                                                    '. Reason: ',
-                                                    $activity->description,
-                                                    2,
-                                                );
-                                            }
-                                        @endphp
-                                        <p class="text-sm font-medium text-base-content">
-                                            {{ $mainDescription }}
-                                        </p>
-                                        @if ($reason)
-                                            <p class="text-xs text-base-content/70 mt-2 italic">
-                                                <strong>Reason:</strong> {{ $reason }}
-                                            </p>
-                                        @endif
-                                    </div>
-                                </div>
-                                <div class="flex items-center justify-between text-xs text-base-content/50">
-                                    <div class="flex items-center gap-2">
-                                        <x-icon name="o-user" class="w-3 h-3" />
-                                        <span>{{ $activity->causer?->name ?? 'System' }}</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <x-icon name="o-clock" class="w-3 h-3" />
-                                        <span>{{ $activity->created_at->diffForHumans() }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </x-card>
-                    @endforeach
-                </div>
-            @else
-                <x-alert title="No History" description="No activity history available for this booking yet."
-                    icon="o-information-circle" class="alert-info" />
-            @endif
-        </div>
-
-        <x-slot:actions>
-            <x-button label="Close" @click="$wire.showHistoryDrawer = false" />
-        </x-slot:actions>
-    </x-drawer>
+    @include('livewire.booking.partials.activity-history-drawer')
 </div>
