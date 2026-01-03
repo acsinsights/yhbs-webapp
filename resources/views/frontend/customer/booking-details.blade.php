@@ -216,6 +216,50 @@
                                 </div>
                             </div>
 
+                            <!-- Passenger Names for Boats -->
+                            @if ($isBoat && $booking->guest_details)
+                                @php
+                                    $guestDetails = is_array($booking->guest_details)
+                                        ? $booking->guest_details
+                                        : json_decode($booking->guest_details, true);
+                                    $adultNames = $guestDetails['adult_names'] ?? [];
+                                    $childrenNames = $guestDetails['children_names'] ?? [];
+                                @endphp
+
+                                @if (!empty($adultNames) || !empty($childrenNames))
+                                    <div class="mt-4">
+                                        <h6 class="mb-3"><i class="bi bi-person-badge me-2"></i>Passenger Names</h6>
+                                        <div class="row g-2">
+                                            @foreach ($adultNames as $index => $name)
+                                                @if ($name)
+                                                    <div class="col-md-6">
+                                                        <div class="d-flex align-items-center gap-2 p-2 bg-light rounded">
+                                                            <i class="bi bi-person-circle text-primary"></i>
+                                                            <span class="flex-grow-1">{{ $name }}</span>
+                                                            <span class="badge bg-primary">Passenger
+                                                                {{ $index + 1 }}</span>
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                            @endforeach
+
+                                            @foreach ($childrenNames as $index => $name)
+                                                @if ($name)
+                                                    <div class="col-md-6">
+                                                        <div class="d-flex align-items-center gap-2 p-2 bg-light rounded">
+                                                            <i class="bi bi-person-circle text-secondary"></i>
+                                                            <span class="flex-grow-1">{{ $name }}</span>
+                                                            <span class="badge bg-secondary">Child
+                                                                {{ $index + 1 }}</span>
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+                            @endif
+
                             <!-- Additional Information -->
                             @if ($booking->notes)
                                 <div class="mt-4">

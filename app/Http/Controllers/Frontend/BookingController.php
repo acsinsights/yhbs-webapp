@@ -588,6 +588,33 @@ class BookingController extends Controller
         $serviceFee = 0;
         $tax = 0;
 
+        // Prepare check_in and check_out datetime
+        $checkInDateTime = Carbon::parse($validated['check_in'])->format('Y-m-d');
+        $checkOutDateTime = Carbon::parse($validated['check_out'])->format('Y-m-d');
+
+        // For boats, add the time component
+        if ($validated['type'] === 'boat' && !empty($validated['start_time'])) {
+            // Add start time to check_in for boats
+            $checkInDateTime = Carbon::parse($validated['check_in'] . ' ' . $validated['start_time'])->format('Y-m-d H:i:s');
+
+            // Calculate end time based on duration
+            $durationHours = 1; // default
+            if (!empty($validated['duration'])) {
+                $durationHours = (float) $validated['duration'];
+            } elseif (!empty($validated['experience_duration'])) {
+                // Convert experience duration to hours
+                if ($validated['experience_duration'] === '15') {
+                    $durationHours = 0.25;
+                } elseif ($validated['experience_duration'] === '30') {
+                    $durationHours = 0.5;
+                } elseif ($validated['experience_duration'] === 'full') {
+                    $durationHours = 1;
+                }
+            }
+
+            $checkOutDateTime = Carbon::parse($checkInDateTime)->addHours($durationHours)->format('Y-m-d H:i:s');
+        }
+
         // Create the booking
         $booking = Booking::create([
             'bookingable_type' => $bookingableType,
@@ -596,8 +623,8 @@ class BookingController extends Controller
             'adults' => $validated['adults'],
             'children' => $validated['children'] ?? 0,
             'guest_details' => $guestDetails,
-            'check_in' => Carbon::parse($validated['check_in'])->format('Y-m-d'),
-            'check_out' => Carbon::parse($validated['check_out'])->format('Y-m-d'),
+            'check_in' => $checkInDateTime,
+            'check_out' => $checkOutDateTime,
             'price' => $validated['total'],
             'price_per_night' => $pricePerNight,
             'nights' => $nights,

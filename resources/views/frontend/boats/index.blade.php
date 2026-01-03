@@ -1,5 +1,5 @@
 @extends('frontend.layouts.app')
-@section('title', 'Boats & Yachts')
+@section('title', 'Boats & Marine Services')
 @section('content')
 
     <!-- Breadcrumb section Start-->
@@ -7,10 +7,10 @@
         style="background-image:linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url({{ asset('frontend/img/Boats/yacht-sailing.jpg') }});">
         <div class="container">
             <div class="banner-content">
-                <h1>Boats & Yachts</h1>
+                <h1>Boats & Marine Services</h1>
                 <ul class="breadcrumb-list">
                     <li><a href="{{ route('home') }}">Home</a></li>
-                    <li>Boats</li>
+                    <li>Boats & Marine Services</li>
                 </ul>
             </div>
         </div>
