@@ -25,14 +25,14 @@ class BookingRescheduleForm extends Component
     public $availableTimeSlots = [];
 
     protected $rules = [
-        'newCheckIn' => 'required|date|after:today',
+        'newCheckIn' => 'required|date',
         'newCheckOut' => 'required|date|after:newCheckIn',
         'rescheduleReason' => 'required|string|min:10|max:500',
     ];
 
     protected $messages = [
         'newCheckIn.required' => 'Please select check-in date.',
-        'newCheckIn.after' => 'Check-in date must be in the future.',
+        'newCheckIn.after_or_equal' => 'New check-in date must be on or after your current check-out date.',
         'newCheckOut.required' => 'Please select check-out date.',
         'newCheckOut.after' => 'Check-out date must be after check-in date.',
         'rescheduleReason.required' => 'Please provide a reason for rescheduling.',

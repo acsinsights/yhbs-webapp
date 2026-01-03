@@ -14,6 +14,8 @@ new class extends Component {
     public bool $showPaymentModal = false;
     public string $payment_status = '';
     public string $payment_method = '';
+    public ?float $extra_fee = null;
+    public ?string $extra_fee_remark = null;
     public bool $showCancelModal = false;
     public string $cancellation_reason = '';
     public ?float $refund_amount = null;
@@ -29,6 +31,8 @@ new class extends Component {
         $this->booking = $booking->load(['bookingable', 'user']);
         $this->payment_status = $booking->payment_status->value;
         $this->payment_method = $booking->payment_method->value;
+        $this->extra_fee = $booking->extra_fee;
+        $this->extra_fee_remark = $booking->extra_fee_remark;
         $this->loadBookedDates();
 
         // Explicitly set modal states to false
@@ -109,12 +113,28 @@ new class extends Component {
         $this->validate([
             'payment_status' => 'required|in:pending,paid,failed',
             'payment_method' => 'required|in:cash,card,online,other',
+            'extra_fee' => 'nullable|numeric|min:0',
+            'extra_fee_remark' => 'nullable|string|max:500',
         ]);
 
         $this->booking->update([
             'payment_status' => $this->payment_status,
             'payment_method' => $this->payment_method,
+            'extra_fee' => $this->extra_fee,
+            'extra_fee_remark' => $this->extra_fee_remark,
         ]);
+
+        // Log activity
+        activity()
+            ->performedOn($this->booking)
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'payment_status' => $this->payment_status,
+                'payment_method' => $this->payment_method,
+                'extra_fee' => $this->extra_fee,
+                'extra_fee_remark' => $this->extra_fee_remark,
+            ])
+            ->log('Payment details updated');
 
         $this->showPaymentModal = false;
         $this->success('Payment details updated successfully.');
@@ -122,9 +142,9 @@ new class extends Component {
 
     public function cancelBooking(): void
     {
-        // Prevent cancellation if already checked in
-        if ($this->booking->isCheckedIn()) {
-            $this->error('Cannot cancel a booking that is already checked in.');
+        // Prevent cancellation if already checked in or checked out
+        if ($this->booking->isCheckedIn() || $this->booking->isCheckedOut()) {
+            $this->error('Cannot cancel a booking that is already checked in or checked out.');
             $this->showCancelModal = false;
             return;
         }
@@ -134,19 +154,47 @@ new class extends Component {
             'refund_amount' => 'nullable|numeric|min:0|max:' . $this->booking->price,
         ]);
 
+        // Update booking with cancellation details
         $this->booking->update([
             'status' => 'cancelled',
-            'notes' => ($this->booking->notes ? $this->booking->notes . "\n\n" : '') . 'Cancellation Reason: ' . $this->cancellation_reason,
+            'cancelled_at' => now(),
+            'cancelled_by' => auth()->id(),
+            'cancellation_reason' => $this->cancellation_reason,
+            'refund_amount' => $this->refund_amount ?? 0,
+            'refund_status' => $this->refund_amount > 0 ? 'completed' : null,
+            'notes' => ($this->booking->notes ? $this->booking->notes . "\n\n" : '') . 'Admin Cancellation: ' . $this->cancellation_reason,
         ]);
 
         // Add refund to customer's wallet if amount is specified
         if ($this->refund_amount && $this->refund_amount > 0) {
-            $walletService = app(WalletService::class);
-            $walletService->addCredit($this->booking->user, $this->refund_amount, $this->booking, "Refund for cancelled booking #{$this->booking->booking_id}", 'booking_cancellation');
+            try {
+                $walletService = app(\App\Services\WalletService::class);
+                $walletService->addCredit($this->booking->user, (float) $this->refund_amount, $this->booking, "Refund for cancelled booking #{$this->booking->booking_id}", 'admin_cancellation');
+
+                // Refresh user to get updated wallet balance
+                $this->booking->user->refresh();
+
+                $refundMessage = ' Refund of ' . currency_format($this->refund_amount) . " credited to {$this->booking->user->name}'s wallet. New Balance: " . currency_format($this->booking->user->wallet_balance) . '.';
+            } catch (\Exception $e) {
+                \Log::error('Wallet refund failed: ' . $e->getMessage());
+                $refundMessage = ' WARNING: Refund processing failed. Please add manually.';
+            }
+        } else {
+            $refundMessage = '';
         }
 
+        // Log activity
+        activity()
+            ->performedOn($this->booking)
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'cancellation_reason' => $this->cancellation_reason,
+                'refund_amount' => $this->refund_amount,
+            ])
+            ->log('Booking cancelled by admin');
+
         $this->showCancelModal = false;
-        $this->success('Booking cancelled successfully.' . ($this->refund_amount ? " Refund of {$this->refund_amount} added to customer's wallet." : ''), redirectTo: route('admin.bookings.room.index'));
+        $this->success('Booking cancelled successfully.' . $refundMessage, redirectTo: route('admin.bookings.room.index'));
     }
 
     public function rescheduleBooking(): void
@@ -345,6 +393,11 @@ new class extends Component {
                     <x-menu-item title="Reschedule" icon="o-calendar"
                         wire:click.stop="$set('showRescheduleModal', true)" />
                     <x-menu-separator />
+                @endif
+                @if (
+                    !$booking->isCheckedIn() &&
+                        !$booking->isCheckedOut() &&
+                        $booking->status !== \App\Enums\BookingStatusEnum::CANCELLED)
                     <x-menu-item title="Cancel Booking" icon="o-x-circle"
                         wire:click.stop="$set('showCancelModal', true)" class="text-error" />
                 @endif
@@ -536,6 +589,12 @@ new class extends Component {
                 ['id' => 'online', 'name' => 'Online'],
                 ['id' => 'other', 'name' => 'Other'],
             ]" icon="o-banknotes" />
+
+            <x-input label="Extra Fee (Optional)" wire:model="extra_fee" type="number" step="0.01"
+                min="0" icon="o-currency-dollar" hint="Additional charges if any" />
+
+            <x-textarea label="Extra Fee Remark (Optional)" wire:model="extra_fee_remark"
+                placeholder="Reason for extra fee..." rows="3" hint="Explain why extra fee is charged" />
         </div>
 
         <x-slot:actions>

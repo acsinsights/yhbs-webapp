@@ -27,7 +27,7 @@ class BookingRescheduleRequest extends Component
 
     protected $rules = [
         'rescheduleReason' => 'required|string|min:10|max:500',
-        'newCheckIn' => 'required|date|after:today',
+        'newCheckIn' => 'required|date',
     ];
 
     protected $messages = [
@@ -35,7 +35,7 @@ class BookingRescheduleRequest extends Component
         'rescheduleReason.min' => 'Reason must be at least 10 characters.',
         'rescheduleReason.max' => 'Reason must not exceed 500 characters.',
         'newCheckIn.required' => 'Please select a new check-in date.',
-        'newCheckIn.after' => 'New check-in date must be in the future.',
+        'newCheckIn.after_or_equal' => 'New check-in date must be on or after your current check-out date.',
         'newCheckOut.required' => 'Please select a new check-out date.',
         'newCheckOut.after' => 'New check-out date must be after check-in date.',
         'selectedTimeSlot.required' => 'Please select a time slot.',
@@ -124,11 +124,10 @@ class BookingRescheduleRequest extends Component
         // Dynamic validation based on booking type
         $rules = $this->rules;
 
-        if (!$this->isBoatBooking) {
-            $rules['newCheckOut'] = 'required|date|after:newCheckIn';
-        } else {
-            $rules['selectedTimeSlot'] = 'required|string';
-        }
+        // New check-in must be on or after current checkout date
+        $checkoutDate = $this->booking->check_out->format('Y-m-d');
+        $rules['newCheckIn'] = "required|date|after_or_equal:{$checkoutDate}";
+
 
         $this->validate($rules);
 

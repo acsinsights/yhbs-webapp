@@ -239,6 +239,11 @@ class Booking extends Model
      */
     public function canBeRescheduled(): bool
     {
+        // Cannot reschedule if check-in date has passed
+        if ($this->check_in && $this->check_in->isPast()) {
+            return false;
+        }
+
         return $this->status !== BookingStatusEnum::CHECKED_IN
             && $this->status !== BookingStatusEnum::CHECKED_OUT
             && $this->status !== BookingStatusEnum::CANCELLED

@@ -46,9 +46,10 @@
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-calendar-check"></i></span>
                         <input type="date" id="newCheckIn-{{ $booking->id }}" wire:model.live="newCheckIn"
-                            class="form-control" min="{{ date('Y-m-d', strtotime('+1 day')) }}">
+                            class="form-control" min="{{ $booking->check_out->format('Y-m-d') }}">
                     </div>
-                    <small class="text-muted">Select the date for your boat trip</small>
+                    <small class="text-muted">Select the date for your boat trip (from
+                        {{ $booking->check_out->format('d M Y') }} onwards)</small>
                     @error('newCheckIn')
                         <div class="text-danger small mt-1">{{ $message }}</div>
                     @enderror
@@ -64,10 +65,11 @@
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-calendar-check"></i></span>
                                 <input type="date" id="newCheckIn-{{ $booking->id }}" wire:model.live="newCheckIn"
-                                    class="form-control" min="{{ date('Y-m-d', strtotime('+1 day')) }}"
+                                    class="form-control" min="{{ $booking->check_out->format('Y-m-d') }}"
                                     placeholder="Check-in">
                             </div>
-                            <small class="text-muted">Check-in Date</small>
+                            <small class="text-muted">Check-in Date (from {{ $booking->check_out->format('d M Y') }}
+                                onwards)</small>
                             @error('newCheckIn')
                                 <div class="text-danger small mt-1">{{ $message }}</div>
                             @enderror
