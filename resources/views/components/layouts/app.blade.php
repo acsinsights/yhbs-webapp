@@ -134,6 +134,11 @@
 
                     <x-menu-item title="Amenities" icon="o-star" link="{{ route('admin.amenity.index') }}" />
 
+                    {{-- Customers Section --}}
+                    <x-menu-separator title="Users" />
+
+                    <x-menu-item title="All Customers" icon="o-users" link="{{ route('admin.customers.index') }}" />
+
                     {{-- Content Section --}}
                     <x-menu-separator title="Content" />
 

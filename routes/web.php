@@ -80,6 +80,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Volt::route('/{id}/show', 'admin.contacts.show')->name('contacts.show');
         });
 
+        // Customers routes
+        Route::group(['prefix' => 'customers'], function () {
+            Volt::route('/', 'admin.customers.index')->name('customers.index');
+            Volt::route('/{id}/show', 'admin.customers.show')->name('customers.show');
+        });
+
         // Blogs routes
         Route::group(['prefix' => 'blogs'], function () {
             Volt::route('/', 'blogs.index')->name('blogs.index');

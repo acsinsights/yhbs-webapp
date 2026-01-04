@@ -89,6 +89,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get user bookings
+     */
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class, 'user_id');
+    }
+
+    /**
      * Get wallet balance
      */
     public function getWalletBalance(): float
