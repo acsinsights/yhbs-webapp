@@ -293,58 +293,13 @@
 
                                     <!-- Coupon Section -->
                                     <div class="coupon-section mb-3">
-                                        @if (session('applied_coupon'))
-                                            <div class="applied-coupon-badge d-flex align-items-center justify-content-between"
-                                                style="padding: 10px; background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px;">
-                                                <div style="flex: 1;">
-                                                    <strong
-                                                        style="color: #0369a1;">{{ session('applied_coupon.code') }}</strong>
-                                                    <span style="color: #059669;">applied</span>
-                                                    @php
-                                                        $badgeCoupon = session('applied_coupon');
-                                                        $badgeType = $badgeCoupon['discount_type'] ?? 'fixed';
-                                                        $badgeValue = $badgeCoupon['discount_value'] ?? 0;
-                                                        $badgeTypeText = '';
-                                                        if ($badgeType === 'percentage') {
-                                                            $badgeTypeText = $badgeValue . '% off';
-                                                        } else {
-                                                            $badgeTypeText =
-                                                                currency_format(round($badgeValue)) . ' off';
-                                                        }
-                                                    @endphp
-                                                    <div class="text-sm" style="color: #059669;">
-                                                        <i class="bi bi-tag-fill"></i> Discount: {{ $badgeTypeText }}
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <button type="button" class="btn btn-sm btn-outline-danger"
-                                                        onclick="document.getElementById('removeCouponForm').submit()"
-                                                        style="min-width: 80px;">
-                                                        <i class="bi bi-x-circle"></i> Remove
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        @else
-                                            <div class="coupon-input-wrapper">
-                                                <input type="text" id="couponCodeInput"
-                                                    class="form-control @error('coupon_code') is-invalid @enderror"
-                                                    placeholder="Enter coupon code" style="text-transform: uppercase;"
-                                                    value="{{ old('coupon_code') }}">
-                                                <button type="button" class="btn btn-primary"
-                                                    onclick="applyCouponCode()">Apply</button>
-                                            </div>
-                                            @error('coupon_code')
-                                                <div class="alert alert-danger mt-2">{{ $message }}</div>
-                                            @enderror
-                                        @endif
-
-                                        @if (session('coupon_error'))
-                                            <div class="alert alert-danger mt-2">{{ session('coupon_error') }}</div>
-                                        @endif
-
-                                        @if (session('coupon_success'))
-                                            <div class="alert alert-success mt-2">{{ session('coupon_success') }}</div>
-                                        @endif
+                                        @livewire('frontend.coupon-input', [
+                                            'bookingAmount' => $booking->subtotal + ($booking->service_fee ?? 0) + ($booking->tax ?? 0),
+                                            'pricePerNight' => $booking->price_per_night ?? 0,
+                                            'nights' => $booking->nights ?? 1,
+                                            'propertyType' => $booking->type ?? '',
+                                            'propertyId' => $booking->property_id ?? null,
+                                        ])
                                     </div>
 
                                     <div class="price-breakdown">
@@ -728,22 +683,6 @@
         </div>
     </div>
 
-    <!-- Hidden Coupon Forms (Outside main form) -->
-    <form id="applyCouponForm" action="{{ route('booking.apply-coupon') }}" method="POST" style="display: none;">
-        @csrf
-        <input type="hidden" name="coupon_code" id="hiddenCouponCode">
-        <input type="hidden" name="booking_amount"
-            value="{{ $booking->subtotal + ($booking->service_fee ?? 0) + ($booking->tax ?? 0) }}">
-        <input type="hidden" name="price_per_night" value="{{ $booking->price_per_night ?? 0 }}">
-        <input type="hidden" name="nights" value="{{ $booking->nights ?? 1 }}">
-        <input type="hidden" name="property_type" value="{{ $booking->type ?? '' }}">
-        <input type="hidden" name="property_id" value="{{ $booking->property_id ?? '' }}">
-    </form>
-
-    <form id="removeCouponForm" action="{{ route('booking.remove-coupon') }}" method="POST" style="display: none;">
-        @csrf
-    </form>
-
 @endsection
 
 @section('scripts')
@@ -751,34 +690,19 @@
         // Set currency symbol for JS functions
         document.body.setAttribute('data-currency-symbol', '{{ currency_symbol() }}');
 
-        // Apply coupon code function
-        function applyCouponCode() {
-            const couponInput = document.getElementById('couponCodeInput');
-            const couponCode = couponInput.value.trim().toUpperCase();
+        // Listen for coupon events and reload page
+        document.addEventListener('livewire:init', () => {
+            Livewire.on('coupon-applied', () => {
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            });
 
-            if (!couponCode) {
-                alert('Please enter a coupon code');
-                return;
-            }
-
-            // Set the hidden field value
-            document.getElementById('hiddenCouponCode').value = couponCode;
-
-            // Submit the form
-            document.getElementById('applyCouponForm').submit();
-        }
-
-        // Allow Enter key to apply coupon
-        document.addEventListener('DOMContentLoaded', function() {
-            const couponInput = document.getElementById('couponCodeInput');
-            if (couponInput) {
-                couponInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        applyCouponCode();
-                    }
-                });
-            }
+            Livewire.on('coupon-removed', () => {
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            });
         });
     </script>
 @endsection

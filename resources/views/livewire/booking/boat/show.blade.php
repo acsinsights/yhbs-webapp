@@ -403,28 +403,62 @@ new class extends Component {
                         <x-badge :value="$booking->adults ?? 0" class="badge-soft badge-primary" />
                     </div>
 
+                    @php
+                        // Extract trip type from notes if exists
+                        $tripType = null;
+                        if ($booking->notes && str_contains($booking->notes, 'Booking Type:')) {
+                            preg_match('/Booking Type:\s*(\w+)/', $booking->notes, $matches);
+                            $tripType = $matches[1] ?? null;
+                        }
+                    @endphp
+
+                    @if ($tripType)
+                        <div>
+                            <div class="text-sm text-base-content/50 mb-1">Trip Type</div>
+                            <x-badge :value="ucfirst($tripType)" class="badge-info" />
+                        </div>
+                    @endif
+
                     @if ($booking->guest_details)
                         @php
                             $guestDetails = is_string($booking->guest_details)
                                 ? json_decode($booking->guest_details, true)
                                 : $booking->guest_details;
-                            $hasPassengerNames =
-                                isset($guestDetails['adults']) &&
-                                is_array($guestDetails['adults']) &&
-                                count(array_filter($guestDetails['adults'])) > 0;
                         @endphp
 
-                        @if ($hasPassengerNames)
+                        @if (isset($guestDetails['adults']) &&
+                                is_array($guestDetails['adults']) &&
+                                count(array_filter($guestDetails['adults'])) > 0)
                             <div>
                                 <div class="text-sm text-base-content/50 mb-2">Passenger Names</div>
-                                <div class="grid gap-2 md:grid-cols-2">
+                                <div class="space-y-2">
                                     @foreach ($guestDetails['adults'] as $index => $name)
                                         @if ($name)
                                             <div class="flex items-center gap-2 p-2 bg-base-200 rounded-lg">
                                                 <x-icon name="o-user" class="w-4 h-4 text-primary" />
-                                                <span class="text-sm font-medium">{{ $name }}</span>
+                                                <span class="text-sm font-medium flex-1">{{ $name }}</span>
                                                 <x-badge value="Passenger {{ $index + 1 }}"
                                                     class="badge-xs badge-primary" />
+                                            </div>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        @if (isset($guestDetails['children']) &&
+                                is_array($guestDetails['children']) &&
+                                count(array_filter($guestDetails['children'])) > 0)
+                            <div>
+                                <div class="text-sm text-base-content/50 mb-2">Children Names</div>
+                                <div class="space-y-2">
+                                    @foreach ($guestDetails['children'] as $index => $name)
+                                        @if ($name)
+                                            <div class="flex items-center gap-2 p-2 bg-base-200 rounded-lg">
+                                                <x-icon name="o-user" class="w-4 h-4 text-secondary" />
+                                                <span class="text-sm font-medium flex-1">{{ $name }}</span>
+                                                <x-badge value="Child {{ $index + 1 }}"
+                                                    class="badge-xs badge-secondary" />
                                             </div>
                                         @endif
                                     @endforeach
@@ -605,47 +639,6 @@ new class extends Component {
                         <x-badge :value="$booking->payment_status->label()" class="{{ $booking->payment_status->badgeColor() }}" />
                     </div>
 
-                    <div class="divider my-2"></div>
-
-                    <!-- Passenger Names -->
-                    @if ($booking->guest_details)
-                        <div>
-                            <div class="text-sm text-base-content/50 mb-2">Passenger Names</div>
-                            <div class="space-y-2">
-                                @php
-                                    $guestDetails = is_string($booking->guest_details)
-                                        ? json_decode($booking->guest_details, true)
-                                        : $booking->guest_details;
-                                @endphp
-                                @if (isset($guestDetails['adults']) && is_array($guestDetails['adults']))
-                                    @foreach ($guestDetails['adults'] as $index => $name)
-                                        @if ($name)
-                                            <div
-                                                class="flex items-center gap-2 p-2 bg-base-100 border border-base-300 rounded-lg">
-                                                <x-icon name="o-user" class="w-4 h-4 text-primary" />
-                                                <span class="text-sm flex-1">{{ $name }}</span>
-                                                <x-badge value="Passenger {{ $index + 1 }}"
-                                                    class="badge-xs badge-primary" />
-                                            </div>
-                                        @endif
-                                    @endforeach
-                                @endif
-                                @if (isset($guestDetails['children']) && is_array($guestDetails['children']))
-                                    @foreach ($guestDetails['children'] as $index => $name)
-                                        @if ($name)
-                                            <div
-                                                class="flex items-center gap-2 p-2 bg-base-100 border border-base-300 rounded-lg">
-                                                <x-icon name="o-user" class="w-4 h-4 text-secondary" />
-                                                <span class="text-sm flex-1">{{ $name }}</span>
-                                                <x-badge value="Child {{ $index + 1 }}"
-                                                    class="badge-xs badge-secondary" />
-                                            </div>
-                                        @endif
-                                    @endforeach
-                                @endif
-                            </div>
-                        </div>
-                    @endif
                 </div>
             </x-card>
         </div>
