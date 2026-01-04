@@ -750,5 +750,35 @@
     <script>
         // Set currency symbol for JS functions
         document.body.setAttribute('data-currency-symbol', '{{ currency_symbol() }}');
+
+        // Apply coupon code function
+        function applyCouponCode() {
+            const couponInput = document.getElementById('couponCodeInput');
+            const couponCode = couponInput.value.trim().toUpperCase();
+            
+            if (!couponCode) {
+                alert('Please enter a coupon code');
+                return;
+            }
+            
+            // Set the hidden field value
+            document.getElementById('hiddenCouponCode').value = couponCode;
+            
+            // Submit the form
+            document.getElementById('applyCouponForm').submit();
+        }
+
+        // Allow Enter key to apply coupon
+        document.addEventListener('DOMContentLoaded', function() {
+            const couponInput = document.getElementById('couponCodeInput');
+            if (couponInput) {
+                couponInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        applyCouponCode();
+                    }
+                });
+            }
+        });
     </script>
 @endsection
