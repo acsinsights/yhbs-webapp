@@ -755,15 +755,15 @@
         function applyCouponCode() {
             const couponInput = document.getElementById('couponCodeInput');
             const couponCode = couponInput.value.trim().toUpperCase();
-            
+
             if (!couponCode) {
                 alert('Please enter a coupon code');
                 return;
             }
-            
+
             // Set the hidden field value
             document.getElementById('hiddenCouponCode').value = couponCode;
-            
+
             // Submit the form
             document.getElementById('applyCouponForm').submit();
         }
