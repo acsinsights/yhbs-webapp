@@ -33,6 +33,7 @@ return new class extends Migration {
             $table->string('payment_reference')->nullable();
             $table->timestamp('paid_at')->nullable();
             $table->string('payment_method')->default('other')->comment('cash, card, other, online');
+            $table->string('trip_type')->nullable();
             $table->text('notes')->nullable();
 
             // Cancellation fields

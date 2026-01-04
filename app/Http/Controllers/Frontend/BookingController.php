@@ -125,6 +125,7 @@ class BookingController extends Controller
         $duration = $request->get('duration');
         $ferryType = $request->get('ferry_type');
         $experienceDuration = $request->get('experience_duration');
+        $tripType = $request->get('trip_type');
 
         // For boats, we only need check_in date (single day booking)
         if ($type === 'boat') {
@@ -413,6 +414,7 @@ class BookingController extends Controller
             'duration' => $duration,
             'ferry_type' => $ferryType,
             'experience_duration' => $experienceDuration,
+            'trip_type' => $tripType ?? null,
         ];
 
         return view('frontend.checkout', compact('booking'));
@@ -445,6 +447,7 @@ class BookingController extends Controller
             'duration' => 'nullable|integer',
             'ferry_type' => 'nullable|string',
             'experience_duration' => 'nullable|string',
+            'trip_type' => 'nullable|string|in:private,public',
         ]);
 
         // Determine bookingable type and get the property
@@ -636,6 +639,7 @@ class BookingController extends Controller
             'status' => 'booked',
             'payment_status' => $walletAmountUsed >= (float) $validated['total'] ? 'paid' : 'pending',
             'payment_method' => $validated['payment_method'],
+            'trip_type' => $validated['trip_type'] ?? null,
             'notes' => $validated['special_requests'] ?? null,
         ]);
 

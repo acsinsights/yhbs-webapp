@@ -17,7 +17,7 @@
     </div>
     <div class="grid grid-cols-1 gap-4 mt-6">
         <x-input wire:model.live.debounce.350ms="adults" label="Number of Passengers" type="number" min="1"
-            icon="o-user-group" :max="$maxAdults" />
+            icon="o-user-group" :max="$maxAdults" hint="Maximum: {{ $maxAdults }} passengers" />
     </div>
 
     {{-- Passenger Names --}}

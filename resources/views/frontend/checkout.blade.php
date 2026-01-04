@@ -610,6 +610,9 @@
                                     <input type="hidden" name="experience_duration"
                                         value="{{ $booking->experience_duration }}">
                                 @endif
+                                @if (isset($booking->trip_type))
+                                    <input type="hidden" name="trip_type" value="{{ $booking->trip_type }}">
+                                @endif
                             @endif
 
                             @php

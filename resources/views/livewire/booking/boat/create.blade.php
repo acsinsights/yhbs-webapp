@@ -102,6 +102,26 @@ new class extends Component {
         }
     }
 
+    public function getMaxAdultsAllowedProperty()
+    {
+        if (!$this->selectedBoat) {
+            return 10;
+        }
+
+        // For public trips with selected time slot, limit by remaining seats
+        if ($this->trip_type === 'public' && $this->selected_time_slot && $this->check_in) {
+            $slots = $this->availableTimeSlots;
+            $selectedSlot = $slots->firstWhere('value', $this->selected_time_slot);
+
+            if ($selectedSlot && isset($selectedSlot['remaining_seats']) && $selectedSlot['remaining_seats'] > 0) {
+                return min($selectedSlot['remaining_seats'], $this->selectedBoat->max_passengers ?? 20);
+            }
+        }
+
+        // Default to boat's max passengers
+        return $this->selectedBoat->max_passengers ?? 10;
+    }
+
     public function updatedChildren(): void
     {
         // Initialize children names array
@@ -178,9 +198,39 @@ new class extends Component {
                 $isPast = $startTime->lessThanOrEqualTo($now);
             }
 
-            // Check if this slot is already booked (no buffer time)
-            // Standard interval overlap: booking overlaps if booking.start < slot.end AND booking.end > slot.start
-            $isBooked = Booking::where('bookingable_type', Boat::class)->where('bookingable_id', $this->selectedBoat->id)->where('status', '!=', 'cancelled')->whereDate('check_in', $this->check_in)->where('check_in', '<', $endTime)->where('check_out', '>', $startTime)->exists();
+            // Check if this slot is already booked based on trip type
+            // For private trips - slot becomes completely unavailable
+            // For public trips - slot is available until min_passengers is reached
+            $isBooked = false;
+            $remainingSeats = null;
+
+            if ($this->trip_type === 'private') {
+                // Check if any booking exists (private or public) in this slot
+                $isBooked = Booking::where('bookingable_type', Boat::class)->where('bookingable_id', $this->selectedBoat->id)->where('status', '!=', 'cancelled')->whereDate('check_in', $this->check_in)->where('check_in', '<', $endTime)->where('check_out', '>', $startTime)->exists();
+            } elseif ($this->trip_type === 'public') {
+                // Check if there's a private booking in this slot
+                $hasPrivateBooking = Booking::where('bookingable_type', Boat::class)->where('bookingable_id', $this->selectedBoat->id)->where('status', '!=', 'cancelled')->where('trip_type', 'private')->whereDate('check_in', $this->check_in)->where('check_in', '<', $endTime)->where('check_out', '>', $startTime)->exists();
+
+                if ($hasPrivateBooking) {
+                    $isBooked = true;
+                } else {
+                    // Check if public bookings have reached max_passengers
+                    $currentPublicPassengers = Booking::where('bookingable_type', Boat::class)->where('bookingable_id', $this->selectedBoat->id)->where('status', '!=', 'cancelled')->where('trip_type', 'public')->whereDate('check_in', $this->check_in)->where('check_in', '<', $endTime)->where('check_out', '>', $startTime)->sum('adults');
+
+                    // If max_passengers reached, slot is full
+                    $maxPassengers = $this->selectedBoat->max_passengers ?? 20;
+                    $isBooked = $currentPublicPassengers >= $maxPassengers;
+
+                    // Calculate remaining seats for public trips
+                    if (!$isBooked) {
+                        $remainingSeats = $maxPassengers - $currentPublicPassengers;
+                    }
+                }
+            } else {
+                // No trip type selected or not applicable (yacht/taxi)
+                // Standard interval overlap check
+                $isBooked = Booking::where('bookingable_type', Boat::class)->where('bookingable_id', $this->selectedBoat->id)->where('status', '!=', 'cancelled')->whereDate('check_in', $this->check_in)->where('check_in', '<', $endTime)->where('check_out', '>', $startTime)->exists();
+            }
 
             // Mark as unavailable if booked OR if the time has passed
             $isAvailable = !$isBooked && !$isPast;
@@ -193,6 +243,7 @@ new class extends Component {
                 'is_available' => $isAvailable,
                 'value' => $startTime->format('H:i'),
                 'duration' => $durationHours,
+                'remaining_seats' => $remainingSeats,
             ]);
 
             // Move to next slot (step by duration only, no buffer time)
@@ -381,6 +432,7 @@ new class extends Component {
             'total_amount' => $validated['amount'],
             'payment_method' => $validated['payment_method'],
             'payment_status' => $validated['payment_status'],
+            'trip_type' => $this->trip_type,
             'status' => BookingStatusEnum::BOOKED->value,
             'notes' => trim($this->notes) ?: $systemNotes,
         ]);
@@ -611,8 +663,14 @@ new class extends Component {
 
                                                                 <div>
                                                                     @if ($slot['is_available'])
-                                                                        <x-badge value="Available"
-                                                                            class="badge-success badge-sm" />
+                                                                        @if ($trip_type === 'public' && isset($slot['remaining_seats']))
+                                                                            <x-badge
+                                                                                value="{{ $slot['remaining_seats'] }} seats left"
+                                                                                class="badge-success badge-sm" />
+                                                                        @else
+                                                                            <x-badge value="Available"
+                                                                                class="badge-success badge-sm" />
+                                                                        @endif
                                                                     @else
                                                                         <x-badge value="Not Available"
                                                                             class="badge-error badge-sm" />
@@ -725,8 +783,14 @@ new class extends Component {
 
                                                                 <div>
                                                                     @if ($slot['is_available'])
-                                                                        <x-badge value="Available"
-                                                                            class="badge-success badge-sm" />
+                                                                        @if ($trip_type === 'public' && isset($slot['remaining_seats']))
+                                                                            <x-badge
+                                                                                value="{{ $slot['remaining_seats'] }} seats left"
+                                                                                class="badge-success badge-sm" />
+                                                                        @else
+                                                                            <x-badge value="Available"
+                                                                                class="badge-success badge-sm" />
+                                                                        @endif
                                                                     @else
                                                                         <x-badge value="Not Available"
                                                                             class="badge-error badge-sm" />
@@ -865,8 +929,14 @@ new class extends Component {
 
                                                                 <div>
                                                                     @if ($slot['is_available'])
-                                                                        <x-badge value="Available"
-                                                                            class="badge-success badge-sm" />
+                                                                        @if ($trip_type === 'public' && isset($slot['remaining_seats']))
+                                                                            <x-badge
+                                                                                value="{{ $slot['remaining_seats'] }} seats left"
+                                                                                class="badge-success badge-sm" />
+                                                                        @else
+                                                                            <x-badge value="Available"
+                                                                                class="badge-success badge-sm" />
+                                                                        @endif
                                                                     @else
                                                                         <x-badge value="Not Available"
                                                                             class="badge-error badge-sm" />
@@ -996,8 +1066,14 @@ new class extends Component {
 
                                                                 <div>
                                                                     @if ($slot['is_available'])
-                                                                        <x-badge value="Available"
-                                                                            class="badge-success badge-sm" />
+                                                                        @if ($trip_type === 'public' && isset($slot['remaining_seats']))
+                                                                            <x-badge
+                                                                                value="{{ $slot['remaining_seats'] }} seats left"
+                                                                                class="badge-success badge-sm" />
+                                                                        @else
+                                                                            <x-badge value="Available"
+                                                                                class="badge-success badge-sm" />
+                                                                        @endif
                                                                     @else
                                                                         <x-badge value="Not Available"
                                                                             class="badge-error badge-sm" />
@@ -1027,7 +1103,8 @@ new class extends Component {
                         {{-- Universal Guests Section (for all boat types) --}}
                         @if ($selectedBoat)
                             @php
-                                $maxAdults = $selectedBoat->max_passengers ?? 10;
+                                // Use computed property for max adults to consider remaining seats
+                                $maxAdults = $this->maxAdultsAllowed;
                                 $maxChildren = $selectedBoat->max_passengers ?? 10;
                                 // Calculate dynamic step numbers based on boat type
                                 if ($selectedBoat->service_type === 'limousine') {

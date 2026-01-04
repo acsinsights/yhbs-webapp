@@ -62,6 +62,21 @@ new class extends Component {
         }
     }
 
+    public function getMaxPassengersAllowedProperty()
+    {
+        // For public trips with selected time slot, limit by remaining seats
+        if ($this->tripType === 'public' && $this->startTime && $this->bookingDate && !empty($this->availableTimeSlots)) {
+            $selectedSlot = collect($this->availableTimeSlots)->firstWhere('value', $this->startTime);
+
+            if ($selectedSlot && isset($selectedSlot['remaining_seats']) && $selectedSlot['remaining_seats'] > 0) {
+                return min($selectedSlot['remaining_seats'], $this->boat->max_passengers ?? 20);
+            }
+        }
+
+        // Default to boat's max passengers
+        return $this->boat->max_passengers ?? 20;
+    }
+
     public function updatedBookingDate(): void
     {
         if ($this->bookingDate && $this->shouldLoadTimeSlots()) {
@@ -146,22 +161,87 @@ new class extends Component {
                     $isPast = $startTime->lessThanOrEqualTo(now());
                 }
 
-                // Check if this slot is already booked (including buffer time)
-                $isBooked = Booking::where('bookingable_type', Boat::class)
-                    ->where('bookingable_id', $this->boat->id)
-                    ->where('status', '!=', 'cancelled')
-                    ->whereDate('check_in', $this->bookingDate)
-                    ->where(function ($query) use ($startTime, $endTimeWithBuffer) {
-                        $query->where('check_in', '<', $endTimeWithBuffer)->where('check_out', '>', $startTime);
-                    })
-                    ->exists();
+                // Check if this slot is already booked
+                // For private trips - slot becomes completely unavailable
+                // For public trips - slot is available until min_passengers is reached
+                $isBooked = false;
+
+                if ($this->tripType === 'private') {
+                    // Check if any booking exists (private or public) in this slot
+                    $isBooked = Booking::where('bookingable_type', Boat::class)
+                        ->where('bookingable_id', $this->boat->id)
+                        ->where('status', '!=', 'cancelled')
+                        ->whereDate('check_in', $this->bookingDate)
+                        ->where(function ($query) use ($startTime, $endTimeWithBuffer) {
+                            $query->where('check_in', '<', $endTimeWithBuffer)->where('check_out', '>', $startTime);
+                        })
+                        ->exists();
+                } elseif ($this->tripType === 'public') {
+                    // Check if there's a private booking in this slot
+                    $hasPrivateBooking = Booking::where('bookingable_type', Boat::class)
+                        ->where('bookingable_id', $this->boat->id)
+                        ->where('status', '!=', 'cancelled')
+                        ->where('trip_type', 'private')
+                        ->whereDate('check_in', $this->bookingDate)
+                        ->where(function ($query) use ($startTime, $endTimeWithBuffer) {
+                            $query->where('check_in', '<', $endTimeWithBuffer)->where('check_out', '>', $startTime);
+                        })
+                        ->exists();
+
+                    if ($hasPrivateBooking) {
+                        $isBooked = true;
+                    } else {
+                        // Check if public bookings have reached max_passengers
+                        $currentPublicPassengers = Booking::where('bookingable_type', Boat::class)
+                            ->where('bookingable_id', $this->boat->id)
+                            ->where('status', '!=', 'cancelled')
+                            ->where('trip_type', 'public')
+                            ->whereDate('check_in', $this->bookingDate)
+                            ->where(function ($query) use ($startTime, $endTimeWithBuffer) {
+                                $query->where('check_in', '<', $endTimeWithBuffer)->where('check_out', '>', $startTime);
+                            })
+                            ->sum('adults');
+
+                        // If max_passengers reached, slot is full
+                        $maxPassengers = $this->boat->max_passengers ?? 20;
+                        $isBooked = $currentPublicPassengers >= $maxPassengers;
+                    }
+                } else {
+                    // No trip type selected (shouldn't happen for ferry/limousine)
+                    $isBooked = Booking::where('bookingable_type', Boat::class)
+                        ->where('bookingable_id', $this->boat->id)
+                        ->where('status', '!=', 'cancelled')
+                        ->whereDate('check_in', $this->bookingDate)
+                        ->where(function ($query) use ($startTime, $endTimeWithBuffer) {
+                            $query->where('check_in', '<', $endTimeWithBuffer)->where('check_out', '>', $startTime);
+                        })
+                        ->exists();
+                }
 
                 $isAvailable = !$isBooked && !$isPast;
+
+                // For public trips, calculate remaining seats
+                $remainingSeats = null;
+                if ($this->tripType === 'public' && !$isBooked) {
+                    $currentPublicPassengers = Booking::where('bookingable_type', Boat::class)
+                        ->where('bookingable_id', $this->boat->id)
+                        ->where('status', '!=', 'cancelled')
+                        ->where('trip_type', 'public')
+                        ->whereDate('check_in', $this->bookingDate)
+                        ->where(function ($query) use ($startTime, $endTimeWithBuffer) {
+                            $query->where('check_in', '<', $endTimeWithBuffer)->where('check_out', '>', $startTime);
+                        })
+                        ->sum('adults');
+
+                    $maxPassengers = $this->boat->max_passengers ?? 20;
+                    $remainingSeats = $maxPassengers - $currentPublicPassengers;
+                }
 
                 $timeSlots[] = [
                     'value' => $startTime->format('H:i'),
                     'display' => $startTime->format('h:i A') . ' - ' . $endTime->format('h:i A'),
                     'is_available' => $isAvailable,
+                    'remaining_seats' => $remainingSeats,
                 ];
 
                 // Move to next slot (step by duration + buffer time)
@@ -244,7 +324,7 @@ new class extends Component {
         // Validate
         $this->validate([
             'bookingDate' => 'required|date|after_or_equal:' . $this->minDate(),
-            'passengers' => 'required|integer|min:' . ($this->boat->min_passengers ?? 1) . '|max:' . ($this->boat->max_passengers ?? 20),
+            'passengers' => 'required|integer|min:1|max:' . ($this->boat->max_passengers ?? 20),
             'passengerNames' => 'required|array|min:' . $this->passengers,
             'passengerNames.*' => 'required|string|max:255',
         ]);
@@ -446,11 +526,19 @@ new class extends Component {
                                                 {{ !$slot['is_available'] ? 'disabled' : '' }}>
                                             <span class="ms-2">{{ $slot['display'] }}</span>
                                         </div>
-                                        @if ($slot['is_available'])
-                                            <span class="badge bg-success">Available</span>
-                                        @else
-                                            <span class="badge bg-secondary">Booked</span>
-                                        @endif
+                                        <div>
+                                            @if ($slot['is_available'])
+                                                <span class="badge bg-success">Available</span>
+                                                @if ($slot['remaining_seats'] !== null && $tripType === 'public')
+                                                    <span class="badge bg-info ms-1">
+                                                        <i class="bi bi-people"></i> {{ $slot['remaining_seats'] }} seats
+                                                        left
+                                                    </span>
+                                                @endif
+                                            @else
+                                                <span class="badge bg-secondary">Booked</span>
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
                             @endforeach
@@ -472,10 +560,9 @@ new class extends Component {
                 <label class="form-label fw-semibold">
                     <i class="bi bi-people text-primary"></i> Number of Passengers
                 </label>
-                <input type="number" wire:model.live="passengers" class="form-control"
-                    min="{{ $boat->min_passengers ?? 1 }}" max="{{ $boat->max_passengers ?? 20 }}" required>
-                <small class="text-muted">Min: {{ $boat->min_passengers ?? 1 }}, Max:
-                    {{ $boat->max_passengers ?? 20 }}</small>
+                <input type="number" wire:model.live="passengers" class="form-control" min="1"
+                    max="{{ $this->maxPassengersAllowed }}" required>
+                <small class="text-muted">Max: {{ $this->maxPassengersAllowed }}</small>
                 @error('passengers')
                     <small class="text-danger">{{ $message }}</small>
                 @enderror

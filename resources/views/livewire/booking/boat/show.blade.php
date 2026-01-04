@@ -403,19 +403,10 @@ new class extends Component {
                         <x-badge :value="$booking->adults ?? 0" class="badge-soft badge-primary" />
                     </div>
 
-                    @php
-                        // Extract trip type from notes if exists
-                        $tripType = null;
-                        if ($booking->notes && str_contains($booking->notes, 'Booking Type:')) {
-                            preg_match('/Booking Type:\s*(\w+)/', $booking->notes, $matches);
-                            $tripType = $matches[1] ?? null;
-                        }
-                    @endphp
-
-                    @if ($tripType)
+                    @if ($booking->trip_type)
                         <div>
                             <div class="text-sm text-base-content/50 mb-1">Trip Type</div>
-                            <x-badge :value="ucfirst($tripType)" class="badge-info" />
+                            <x-badge :value="ucfirst($booking->trip_type)" class="badge-info" />
                         </div>
                     @endif
 

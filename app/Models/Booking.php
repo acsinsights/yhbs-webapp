@@ -36,6 +36,7 @@ class Booking extends Model
         'status',
         'payment_status',
         'payment_method',
+        'trip_type',
         'notes',
         'cancellation_requested_at',
         'cancellation_status',
