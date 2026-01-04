@@ -2,11 +2,11 @@
 
 use Carbon\Carbon;
 use Livewire\Volt\Component;
-use App\Models\{Room, Yacht, House, Booking};
+use App\Models\{Room, Boat, House, Booking};
 
 new class extends Component {
-    public $bookable; // Can be Room, Yacht, or House
-    public string $type; // 'room', 'yacht', or 'house'
+    public $bookable; // Can be Room, Boat, or House
+    public string $type; // 'room', 'boat', or 'house'
     public $bookedDates = [];
 
     public ?string $check_in = null;
@@ -30,7 +30,7 @@ new class extends Component {
         // Get the appropriate model class
         $modelClass = match ($type) {
             'room' => Room::class,
-            'yacht' => Yacht::class,
+            'boat' => Boat::class,
             'house' => House::class,
             default => throw new \Exception('Invalid bookable type'),
         };
@@ -84,7 +84,7 @@ new class extends Component {
 
     public function getMaxAdultsProperty(): int
     {
-        if ($this->type === 'yacht') {
+        if ($this->type === 'boat') {
             $maxGuests = $this->bookable->max_guests ?? 10;
             return max(1, $maxGuests - $this->children);
         }
@@ -93,7 +93,7 @@ new class extends Component {
 
     public function getMaxChildrenProperty(): int
     {
-        if ($this->type === 'yacht') {
+        if ($this->type === 'boat') {
             $maxGuests = $this->bookable->max_guests ?? 10;
             return max(0, $maxGuests - $this->adults);
         }
@@ -126,7 +126,7 @@ new class extends Component {
         $this->adults = (int) $this->adults;
 
         // For yachts, use max guests logic
-        if ($this->type === 'yacht') {
+        if ($this->type === 'boat') {
             $maxGuests = $this->bookable->max_guests ?? 10;
             $maxAdults = $maxGuests - $this->children;
 
@@ -178,7 +178,7 @@ new class extends Component {
         $this->children = (int) $this->children;
 
         // For yachts, use max guests logic
-        if ($this->type === 'yacht') {
+        if ($this->type === 'boat') {
             $maxGuests = $this->bookable->max_guests ?? 10;
             $maxChildren = $maxGuests - $this->adults;
 
@@ -328,7 +328,7 @@ new class extends Component {
         $this->totalNights = $nights;
 
         // For yachts, use per hour pricing (assuming full day = 24 hours)
-        if ($this->type === 'yacht') {
+        if ($this->type === 'boat') {
             $hours = $nights * 24;
             $this->totalPrice = $hours * ($this->bookable->price_per_hour ?? ($this->bookable->price_per_night ?? 0));
         } else {
@@ -391,7 +391,7 @@ new class extends Component {
             }
 
             // Get max values based on type
-            if ($this->type === 'yacht') {
+            if ($this->type === 'boat') {
                 $maxGuests = $this->bookable->max_guests ?? 10;
                 $maxAdults = $maxGuests;
                 $maxChildren = $maxGuests;
@@ -431,7 +431,7 @@ new class extends Component {
             ]);
 
             // For yachts, validate that adults + children <= max guests
-            if ($this->type === 'yacht') {
+            if ($this->type === 'boat') {
                 $maxGuests = $this->bookable->max_guests ?? 10;
                 if ($this->adults + $this->children > $maxGuests) {
                     $this->errorMessage = "Total guests cannot exceed $maxGuests.";
@@ -476,7 +476,7 @@ new class extends Component {
 <div class="booking-form-wrap mb-4 p-4 border rounded">
     <h4 class="mb-3">Book This {{ ucfirst($type) }}</h4>
     <div class="price-display mb-3 text-center">
-        @if ($type === 'yacht')
+        @if ($type === 'boat')
             <h2 class="text-primary">
                 {{ currency_format($bookable->price_per_hour ?? ($bookable->price_per_night ?? 0)) }}
             </h2>
@@ -611,7 +611,7 @@ new class extends Component {
             @if ($totalNights && $totalPrice && $isAvailable)
                 <div class="alert alert-info mb-3">
                     <div class="d-flex justify-content-between align-items-center">
-                        @if ($type === 'yacht')
+                        @if ($type === 'boat')
                             <span>
                                 <strong>{{ $totalNights }}</strong>
                                 {{ $totalNights === 1 ? 'hour' : 'hours' }}

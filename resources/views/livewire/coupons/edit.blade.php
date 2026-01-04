@@ -27,7 +27,7 @@ new class extends Component {
     public string $applicable_to = 'all';
     public array $applicable_rooms = [];
     public array $applicable_houses = [];
-    public array $applicable_yachts = [];
+    public array $applicable_boats = [];
 
     public function mount(Coupon $coupon): void
     {
@@ -52,7 +52,7 @@ new class extends Component {
         $this->applicable_to = $coupon->applicable_to ?? 'all';
         $this->applicable_rooms = $coupon->applicable_rooms ?? [];
         $this->applicable_houses = $coupon->applicable_houses ?? [];
-        $this->applicable_yachts = $coupon->applicable_yachts ?? [];
+        $this->applicable_boats = $coupon->applicable_boats ?? [];
     }
 
     public function update(): void
@@ -90,7 +90,7 @@ new class extends Component {
             'applicable_to' => $this->applicable_to,
             'applicable_rooms' => $this->applicable_to === 'specific' ? $this->applicable_rooms : null,
             'applicable_houses' => $this->applicable_to === 'specific' ? $this->applicable_houses : null,
-            'applicable_yachts' => $this->applicable_to === 'specific' ? $this->applicable_yachts : null,
+            'applicable_boats' => $this->applicable_to === 'specific' ? $this->applicable_boats : null,
         ]);
 
         $this->success('Coupon updated successfully.', redirectTo: route('admin.coupons.index'));
@@ -105,13 +105,13 @@ new class extends Component {
     {
         $rooms = \App\Models\Room::select('id', 'name')->get()->map(fn($r) => ['id' => $r->id, 'name' => $r->name])->toArray();
         $houses = \App\Models\House::select('id', 'name')->get()->map(fn($h) => ['id' => $h->id, 'name' => $h->name])->toArray();
-        $yachts = \App\Models\Yacht::select('id', 'name')->get()->map(fn($y) => ['id' => $y->id, 'name' => $y->name])->toArray();
+        $boats = \App\Models\Boat::select('id', 'name')->get()->map(fn($b) => ['id' => $b->id, 'name' => $b->name])->toArray();
 
         return [
             'discountTypes' => $this->discountTypes(),
             'rooms' => $rooms,
             'houses' => $houses,
-            'yachts' => $yachts,
+            'boats' => $boats,
         ];
     }
 }; ?>
@@ -290,9 +290,9 @@ new class extends Component {
                             search-function="name" searchable multiple
                             hint="Select houses where this coupon can be used" />
 
-                        <x-choices-offline label="Applicable Yachts" wire:model="applicable_yachts" :options="$yachts"
+                        <x-choices-offline label="Applicable Boats" wire:model="applicable_boats" :options="$boats"
                             search-function="name" searchable multiple
-                            hint="Select yachts where this coupon can be used" />
+                            hint="Select boats where this coupon can be used" />
                     </div>
                 @endif
 

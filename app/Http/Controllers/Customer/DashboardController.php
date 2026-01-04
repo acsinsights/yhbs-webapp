@@ -180,7 +180,7 @@ class DashboardController extends Controller
 
         // Get actual price per night from the property (room/house/yacht)
         if ($booking->bookingable) {
-            if ($booking->bookingable_type === \App\Models\Yacht::class) {
+            if ($booking->bookingable_type === \App\Models\Boat::class) {
                 // For yachts, use price_per_hour or price
                 $booking->price_per_night = $booking->bookingable->price_per_hour ?? $booking->bookingable->price ?? 0;
             } else {
