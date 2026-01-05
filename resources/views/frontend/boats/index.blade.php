@@ -33,19 +33,21 @@
                                 <label class="form-label fw-semibold text-muted small mb-2">
                                     <i class="bi bi-diagram-3 text-primary"></i> Service Type
                                 </label>
-                                <select name="service_type"
+                                <select style="font-size: 15px;padding: 13px 16px;" name="service_type"
                                     class="form-select boats-filter-select form-select-lg rounded-3 shadow-sm border-0 bg-light">
                                     <option value="">All Types</option>
-                                    <option value="hourly" {{ request('service_type') == 'hourly' ? 'selected' : '' }}>
-                                        Hourly Rental
+                                    <option value="yacht" {{ request('service_type') == 'yacht' ? 'selected' : '' }}>
+                                        Yacht
                                     </option>
-                                    <option value="ferry_service"
-                                        {{ request('service_type') == 'ferry_service' ? 'selected' : '' }}>
+                                    <option value="taxi" {{ request('service_type') == 'taxi' ? 'selected' : '' }}>
+                                        Private Taxi
+                                    </option>
+                                    <option value="ferry" {{ request('service_type') == 'ferry' ? 'selected' : '' }}>
                                         Ferry Service
                                     </option>
-                                    <option value="experience"
-                                        {{ request('service_type') == 'experience' ? 'selected' : '' }}>
-                                        Experience
+                                    <option value="limousine"
+                                        {{ request('service_type') == 'limousine' ? 'selected' : '' }}>
+                                        Limousine Service
                                     </option>
                                 </select>
                             </div>
@@ -143,11 +145,6 @@
                                                     style="width: 100%; height: 250px; object-fit: cover;">
                                             </a>
 
-                                            @if ($boat->is_featured)
-                                                <div class="batch batch-primary" style="top: 10px; left: 10px;">
-                                                    <span>Featured</span>
-                                                </div>
-                                            @endif
                                             @if ($boat->is_under_maintenance)
                                                 <div class="batch"
                                                     style="top: 10px; right: 10px; background-color: #f59e0b;">
