@@ -26,7 +26,6 @@ class BookingRescheduleForm extends Component
 
     protected $rules = [
         'newCheckIn' => 'required|date',
-        'newCheckOut' => 'required|date|after:newCheckIn',
         'rescheduleReason' => 'required|string|min:10|max:500',
     ];
 
@@ -61,7 +60,48 @@ class BookingRescheduleForm extends Component
 
         if ($this->isBoatBooking) {
             $this->rules['selectedTimeSlot'] = 'required|string';
+        } else {
+            // For house and room bookings, newCheckOut is required
+            $this->rules['newCheckOut'] = 'required|date|after:newCheckIn';
         }
+    }
+
+    /**
+     * Get all booked dates for this property (excluding current booking)
+     * Returns array of dates that are already booked
+     */
+    public function getBookedDates()
+    {
+        if ($this->isBoatBooking) {
+            // For boats, we don't need to block dates
+            return [];
+        }
+
+        $bookedDates = [];
+        $bookableType = $this->booking->bookingable_type;
+        $bookableId = $this->booking->bookingable_id;
+
+        // Get all bookings for this property (excluding current booking)
+        $bookings = Booking::where('bookingable_type', $bookableType)
+            ->where('bookingable_id', $bookableId)
+            ->where('id', '!=', $this->booking->id)
+            ->whereIn('status', ['pending', 'booked', 'checked_in'])
+            ->get(['check_in', 'check_out']);
+
+        // Generate array of booked dates
+        foreach ($bookings as $booking) {
+            $checkIn = \Carbon\Carbon::parse($booking->check_in);
+            $checkOut = \Carbon\Carbon::parse($booking->check_out);
+
+            // Add all dates in the range (excluding check-out date as per hotel standard)
+            $currentDate = $checkIn->copy();
+            while ($currentDate->lt($checkOut)) {
+                $bookedDates[] = $currentDate->format('Y-m-d');
+                $currentDate->addDay();
+            }
+        }
+
+        return array_unique($bookedDates);
     }
 
     private function generateTimeSlots()
@@ -136,6 +176,8 @@ class BookingRescheduleForm extends Component
 
     public function render()
     {
-        return view('livewire.customer.booking-reschedule-form');
+        return view('livewire.customer.booking-reschedule-form', [
+            'bookedDates' => $this->getBookedDates(),
+        ]);
     }
 }

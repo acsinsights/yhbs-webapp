@@ -40,6 +40,7 @@
     <link rel="stylesheet" href="{{ asset('frontend/css/daterangepicker.css') }}">
     <link href="{{ asset('frontend/css/boxicons.min.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('frontend/css/style.css') }}">
+    @livewireStyles
     @yield('styles')
 </head>
 
@@ -70,6 +71,7 @@
 
     @include('frontend.layouts.footer-scripts')
 
+    @livewireScripts
     @yield('scripts')
 </body>
 

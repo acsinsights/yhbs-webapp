@@ -24,6 +24,7 @@ class BookingRescheduleRequest extends Component
     public $showModal = false;
     public $isBoatBooking = false;
     public $availableTimeSlots = [];
+    public $bookingId;
 
     protected $rules = [
         'rescheduleReason' => 'required|string|min:10|max:500',
@@ -61,6 +62,14 @@ class BookingRescheduleRequest extends Component
     {
         $this->isBoatBooking = $this->booking->bookingable_type === 'App\\Models\\Boat' ||
             $this->booking->bookingable instanceof Boat;
+
+        // Add conditional validation
+        if ($this->isBoatBooking) {
+            $this->rules['selectedTimeSlot'] = 'required|string';
+        } else {
+            // For house and room bookings, newCheckOut is required
+            $this->rules['newCheckOut'] = 'required|date|after:newCheckIn';
+        }
     }
 
     public function calculateRescheduleFee()
@@ -100,12 +109,18 @@ class BookingRescheduleRequest extends Component
 
     public function openModal()
     {
+        \Log::info('OpenModal called for booking: ' . $this->booking->id);
         $this->showModal = true;
 
         // Generate time slots if boat booking
         if ($this->isBoatBooking) {
             $this->generateTimeSlots();
         }
+
+        // Dispatch event to initialize date picker
+        $this->dispatch('modal-opened');
+
+        \Log::info('Modal state after opening: ' . ($this->showModal ? 'true' : 'false'));
     }
 
     public function closeModal()
@@ -187,9 +202,49 @@ class BookingRescheduleRequest extends Component
         return redirect()->route('customer.bookings');
     }
 
+    /**
+     * Get all booked dates for this property (excluding current booking)
+     * Returns array of dates that are already booked
+     */
+    public function getBookedDates()
+    {
+        if ($this->isBoatBooking) {
+            // For boats, we don't need to block dates
+            return [];
+        }
+
+        $bookedDates = [];
+        $bookableType = $this->booking->bookingable_type;
+        $bookableId = $this->booking->bookingable_id;
+
+        // Get all bookings for this property (excluding current booking)
+        $bookings = Booking::where('bookingable_type', $bookableType)
+            ->where('bookingable_id', $bookableId)
+            ->where('id', '!=', $this->booking->id)
+            ->whereIn('status', ['pending', 'booked', 'checked_in'])
+            ->get(['check_in', 'check_out']);
+
+        // Generate array of booked dates
+        foreach ($bookings as $booking) {
+            $checkIn = Carbon::parse($booking->check_in);
+            $checkOut = Carbon::parse($booking->check_out);
+
+            // Add all dates in the range (excluding check-out date as per hotel standard)
+            $currentDate = $checkIn->copy();
+            while ($currentDate->lt($checkOut)) {
+                $bookedDates[] = $currentDate->format('Y-m-d');
+                $currentDate->addDay();
+            }
+        }
+
+        return array_unique($bookedDates);
+    }
+
     public function render()
     {
-        return view('livewire.customer.booking-reschedule-request');
+        return view('livewire.customer.booking-reschedule-request', [
+            'bookedDates' => $this->getBookedDates(),
+        ]);
     }
 }
 
