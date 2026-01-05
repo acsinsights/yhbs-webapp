@@ -515,14 +515,28 @@ new class extends Component {
                 @endif
 
                 {{-- Step 3: Date Selection --}}
-                <div class="mb-3">
+                <div class="mb-3" wire:ignore>
                     <label class="form-label fw-semibold">
                         <i class="bi bi-calendar-event text-primary"></i> Select Date
                     </label>
-                    <input type="date" wire:model.live="bookingDate" class="form-control" required
-                        min="{{ $this->minDate() }}">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-calendar3"></i></span>
+                        <input type="text" id="boatBookingDate-{{ $boat->id }}" class="form-control"
+                            placeholder="Select booking date" autocomplete="off" required>
+                    </div>
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Select your preferred booking date
+                        @if (!$boat->allows_same_day_booking)
+                            (bookings from tomorrow onwards)
+                        @endif
+                    </small>
+
+                    {{-- Hidden input for Livewire --}}
+                    <input type="hidden" wire:model.live="bookingDate" id="boatBookingDateHidden-{{ $boat->id }}">
+
                     @error('bookingDate')
-                        <small class="text-danger">{{ $message }}</small>
+                        <small class="text-danger d-block mt-1">{{ $message }}</small>
                     @enderror
                 </div>
 
@@ -633,3 +647,68 @@ new class extends Component {
         @endguest
     @endif
 </div>
+
+<script>
+    document.addEventListener('livewire:init', function() {
+        initBoatBookingDatePicker();
+    });
+
+    function initBoatBookingDatePicker() {
+        const picker = document.getElementById('boatBookingDate-{{ $boat->id }}');
+        const hiddenInput = document.getElementById('boatBookingDateHidden-{{ $boat->id }}');
+
+        if (!picker) return;
+
+        // Load Flatpickr if not already loaded
+        if (typeof flatpickr === 'undefined') {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css';
+            document.head.appendChild(link);
+
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/flatpickr';
+            script.onload = function() {
+                initFlatpickrInstance();
+            };
+            document.head.appendChild(script);
+        } else {
+            initFlatpickrInstance();
+        }
+
+        function initFlatpickrInstance() {
+            if (picker._flatpickr) {
+                picker._flatpickr.destroy();
+            }
+
+            const minDate = '{{ $this->minDate() }}';
+
+            flatpickr(picker, {
+                mode: 'single',
+                minDate: minDate,
+                dateFormat: 'Y-m-d',
+                altInput: true,
+                altFormat: 'D, M j, Y',
+                onChange: function(selectedDates) {
+                    if (selectedDates.length === 1) {
+                        const selectedDate = selectedDates[0].getFullYear() + '-' +
+                            String(selectedDates[0].getMonth() + 1).padStart(2, '0') + '-' +
+                            String(selectedDates[0].getDate()).padStart(2, '0');
+
+                        // Update hidden input which is bound to Livewire
+                        hiddenInput.value = selectedDate;
+                        hiddenInput.dispatchEvent(new Event('input'));
+
+                        // Trigger Livewire update
+                        @this.set('bookingDate', selectedDate);
+                    }
+                }
+            });
+        }
+    }
+
+    // Re-initialize when needed
+    document.addEventListener('livewire:navigated', function() {
+        setTimeout(initBoatBookingDatePicker, 100);
+    });
+</script>
