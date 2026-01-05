@@ -143,7 +143,7 @@
 
                         <!-- Notification Bell -->
                         @role('customer')
-                            <livewire:customer.notification-bell />
+                            <livewire:frontend.notification-bell />
                         @endrole
 
                         <a href="#" class="primary-btn1 black-bg user-dropdown-toggle" style="position: relative;">

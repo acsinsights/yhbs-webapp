@@ -442,9 +442,9 @@
                                             App\Enums\BookingStatusEnum::BOOKED,
                                             App\Enums\BookingStatusEnum::CHECKED_IN,
                                         ]))
-                                    <livewire:customer.booking-cancellation-request :bookingId="$booking->id" :key="'cancel-' . $booking->id" />
+                                    <livewire:frontend.booking-cancellation-modal :bookingId="$booking->id" :key="'cancel-' . $booking->id" />
 
-                                    <livewire:customer.booking-reschedule-request :bookingId="$booking->id" :key="'reschedule-' . $booking->id" />
+                                    <livewire:frontend.booking-reschedule-modal :bookingId="$booking->id" :key="'reschedule-' . $booking->id" />
                                 @endif
 
                                 <a href="{{ route('customer.bookings') }}" class="btn btn-outline-secondary">

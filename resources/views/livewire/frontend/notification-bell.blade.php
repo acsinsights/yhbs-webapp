@@ -1,3 +1,51 @@
+<?php
+
+use Livewire\Volt\Component;
+use App\Models\UserNotification;
+
+new class extends Component {
+    public array $notifications = [];
+    public int $unreadCount = 0;
+
+    public function mount(): void
+    {
+        $this->loadNotifications();
+    }
+
+    public function loadNotifications(): void
+    {
+        if (auth()->check()) {
+            $this->notifications = UserNotification::where('user_id', auth()->id())
+                ->latest()
+                ->take(10)
+                ->get()
+                ->toArray();
+
+            $this->unreadCount = UserNotification::where('user_id', auth()->id())
+                ->unread()
+                ->count();
+        }
+    }
+
+    public function markAsRead(int $notificationId): void
+    {
+        $notification = UserNotification::find($notificationId);
+        if ($notification && $notification->user_id === auth()->id()) {
+            $notification->markAsRead();
+            $this->loadNotifications();
+        }
+    }
+
+    public function markAllAsRead(): void
+    {
+        UserNotification::where('user_id', auth()->id())
+            ->unread()
+            ->get()
+            ->each->markAsRead();
+        $this->loadNotifications();
+    }
+}; ?>
+
 <div x-data="{ open: false }" class="notification-bell-wrapper">
     <!-- Bell Icon -->
     <div style="position: relative; cursor: pointer;" @click="open = !open">
@@ -45,29 +93,29 @@
         <!-- Notifications List -->
         <div style="padding: 15px;">
             @forelse ($notifications as $notification)
-                <div wire:key="notification-{{ $notification->id }}"
-                    style="padding: 15px; margin-bottom: 10px; background: {{ $notification->is_read ? '#f9f9f9' : '#fff3cd' }}; border-radius: 8px; border-left: 4px solid {{ $notification->is_read ? '#e0e0e0' : '#667eea' }};">
+                <div wire:key="notification-{{ $notification['id'] }}"
+                    style="padding: 15px; margin-bottom: 10px; background: {{ $notification['is_read'] ? '#f9f9f9' : '#fff3cd' }}; border-radius: 8px; border-left: 4px solid {{ $notification['is_read'] ? '#e0e0e0' : '#667eea' }};">
                     <div style="display: flex; justify-content: between; align-items: start;">
                         <div style="flex: 1;">
                             <h4 style="margin: 0 0 8px 0; font-size: 15px; font-weight: 600; color: #1a1a1a;">
-                                {{ $notification->title }}
+                                {{ $notification['title'] }}
                             </h4>
                             <p style="margin: 0 0 8px 0; font-size: 13px; color: #555; line-height: 1.5;">
-                                {{ $notification->message }}
+                                {{ $notification['message'] }}
                             </p>
-                            @if (isset($notification->data['notes']) && $notification->data['notes'])
+                            @if (isset($notification['data']['notes']) && $notification['data']['notes'])
                                 <p
                                     style="margin: 0 0 8px 0; font-size: 12px; color: #666; font-style: italic; padding-left: 10px; border-left: 2px solid #ddd;">
-                                    <strong>Reason:</strong> {{ $notification->data['notes'] }}
+                                    <strong>Reason:</strong> {{ $notification['data']['notes'] }}
                                 </p>
                             @endif
                             <p style="margin: 0; font-size: 11px; color: #999;">
-                                {{ $notification->created_at->diffForHumans() }}
+                                {{ \Carbon\Carbon::parse($notification['created_at'])->diffForHumans() }}
                             </p>
                         </div>
-                        @if (!$notification->is_read)
-                            <button wire:key="mark-read-{{ $notification->id }}"
-                                wire:click="markAsRead({{ $notification->id }})"
+                        @if (!$notification['is_read'])
+                            <button wire:key="mark-read-{{ $notification['id'] }}"
+                                wire:click="markAsRead({{ $notification['id'] }})"
                                 style="background: #667eea; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; white-space: nowrap; margin-left: 10px;">
                                 Mark Read
                             </button>

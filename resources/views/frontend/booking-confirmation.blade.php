@@ -843,10 +843,10 @@
                                 </a>
                             </div>
                             <div class="col-md-6 mb-3">
-                                @livewire('customer.booking-cancellation-request', ['bookingId' => $booking->id])
+                                @livewire('frontend.booking-cancellation-modal', ['bookingId' => $booking->id])
                             </div>
                             <div class="col-md-6 mb-3">
-                                @livewire('customer.booking-reschedule-request', ['bookingId' => $booking->id])
+                                @livewire('frontend.booking-reschedule-modal', ['bookingId' => $booking->id])
                             </div>
                         </div>
                     </div>
