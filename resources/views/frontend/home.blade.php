@@ -8,7 +8,7 @@
                     <div class="swiper-slide">
                         <div class="banner-wrapper">
                             <div class="banner-video-area">
-                                <img src="{{ asset($slider->image) }}" alt="{{ $slider->title }}">
+                                <img src="{{ asset('storage/' . $slider->image) }}" alt="{{ $slider->title }}">
                             </div>
                             <div class="banner-content-wrap">
                                 <div class="container">
@@ -3435,7 +3435,7 @@
                                         <div class="author-area">
                                             <div class="author-img">
                                                 @if ($testimonial->customer_image)
-                                                    <img src="{{ asset($testimonial->customer_image) }}"
+                                                    <img src="{{ asset('storage/' . $testimonial->customer_image) }}"
                                                         alt="{{ $testimonial->customer_name }}">
                                                 @else
                                                     <img src="{{ asset('frontend/img/home1/testimonial-author-img1.png') }}"

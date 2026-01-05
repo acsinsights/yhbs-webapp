@@ -32,7 +32,7 @@
             <div class="mt-4">
                 <x-file wire:model="image" label="Slider Image" accept="image/*"
                     hint="Upload slider image (Max: 2MB, Recommended: 1920x800px)">
-                    <img src="{{ $existingImage ? asset($existingImage) : 'https://placehold.co/1920x800' }}"
+                    <img src="{{ $existingImage ? asset('storage/' . $existingImage) : 'https://placehold.co/1920x800' }}"
                         alt="Slider Image" class="rounded-md object-cover w-full max-w-2xl h-48 md:h-64" />
                 </x-file>
             </div>

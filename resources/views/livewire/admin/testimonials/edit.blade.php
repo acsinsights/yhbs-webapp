@@ -40,7 +40,7 @@
             <div class="mt-4">
                 <x-file wire:model="customer_image" label="Customer Image" accept="image/*"
                     hint="Upload customer photo (Max: 2MB, Recommended: Square image)">
-                    <img src="{{ $existingImage ? asset($existingImage) : 'https://placehold.co/400x400' }}"
+                    <img src="{{ $existingImage ? asset('storage/' . $existingImage) : 'https://placehold.co/400x400' }}"
                         alt="Customer Image" class="rounded-full object-cover w-32 h-32 mx-auto shadow-md" />
                 </x-file>
             </div>
