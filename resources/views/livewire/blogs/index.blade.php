@@ -87,7 +87,7 @@ new class extends Component {
         <x-table :headers="$headers" :rows="$blogs" :sort-by="$sortBy" with-pagination>
             @scope('cell_image', $blog)
                 @if ($blog->image)
-                    <img src="{{ $blog->image }}" alt="{{ $blog->title }}" class="w-16 h-16 object-cover rounded">
+                    <img src="{{ asset($blog->image) }}" alt="{{ $blog->title }}" class="w-16 h-16 object-cover rounded">
                 @else
                     <div class="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
                         <x-icon name="o-photo" class="w-8 h-8 text-gray-400" />
@@ -116,7 +116,8 @@ new class extends Component {
             @endscope>
 
             <x-slot:empty>
-                <x-empty icon="o-document-text" message="No blogs published yet" description="Check back soon for updates!" />
+                <x-empty icon="o-document-text" message="No blogs published yet"
+                    description="Check back soon for updates!" />
             </x-slot>
         </x-table>
     </x-card>

@@ -19,6 +19,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
             'admin.auth' => \App\Http\Middleware\AdminAuthMiddleware::class,
+            'maintenance.check' => \App\Http\Middleware\CheckMaintenanceMode::class,
+        ]);
+
+        // Add maintenance mode check to web middleware group
+        $middleware->web(append: [
+            \App\Http\Middleware\CheckMaintenanceMode::class,
         ]);
 
         // Redirect unauthenticated users to customer login

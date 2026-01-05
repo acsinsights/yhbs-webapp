@@ -65,7 +65,35 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Website Settings routes
         Route::group(['prefix' => 'website-settings'], function () {
-            Volt::route('/', 'website-settings.index')->name('website-settings.index');
+            Route::get('/', \App\Livewire\Admin\WebsiteSettings\Index::class)->name('website-settings.index');
+        });
+
+        // Policy Pages routes
+        Route::group(['prefix' => 'policy-pages'], function () {
+            Route::get('/', \App\Livewire\Admin\PolicyPages\Index::class)->name('policy-pages.index');
+            Route::get('/create', \App\Livewire\Admin\PolicyPages\Edit::class)->name('policy-pages.create');
+            Route::get('/{id}/edit', \App\Livewire\Admin\PolicyPages\Edit::class)->name('policy-pages.edit');
+        });
+
+        // Sliders routes
+        Route::group(['prefix' => 'sliders'], function () {
+            Route::get('/', \App\Livewire\Admin\Sliders\Index::class)->name('sliders.index');
+            Route::get('/create', \App\Livewire\Admin\Sliders\Edit::class)->name('sliders.create');
+            Route::get('/{id}/edit', \App\Livewire\Admin\Sliders\Edit::class)->name('sliders.edit');
+        });
+
+        // Testimonials routes
+        Route::group(['prefix' => 'testimonials'], function () {
+            Route::get('/', \App\Livewire\Admin\Testimonials\Index::class)->name('testimonials.index');
+            Route::get('/create', \App\Livewire\Admin\Testimonials\Edit::class)->name('testimonials.create');
+            Route::get('/{id}/edit', \App\Livewire\Admin\Testimonials\Edit::class)->name('testimonials.edit');
+        });
+
+        // Statistics routes
+        Route::group(['prefix' => 'statistics'], function () {
+            Route::get('/', \App\Livewire\Admin\Statistics\Index::class)->name('statistics.index');
+            Route::get('/create', \App\Livewire\Admin\Statistics\Edit::class)->name('statistics.create');
+            Route::get('/{statistic}/edit', \App\Livewire\Admin\Statistics\Edit::class)->name('statistics.edit');
         });
 
         // Page Meta routes

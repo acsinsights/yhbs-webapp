@@ -145,6 +145,23 @@
                     <x-menu-item title="Blogs" icon="o-document-text" link="{{ route('admin.blogs.index') }}" />
                     <x-menu-item title="Contact Submissions" icon="o-envelope"
                         link="{{ route('admin.contacts.index') }}" />
+                    {{-- CMS Section --}}
+                    <x-menu-separator title="CMS" />
+
+                    <x-menu-item title="Hero Sliders" icon="o-photo" link="{{ route('admin.sliders.index') }}" />
+                    <x-menu-item title="Testimonials" icon="o-chat-bubble-left-right"
+                        link="{{ route('admin.testimonials.index') }}" />
+                    <x-menu-item title="Statistics" icon="o-chart-bar" link="{{ route('admin.statistics.index') }}" />
+
+                    <x-menu-sub title="Policy Pages" icon="o-document-text">
+                        @php
+                            $policyPages = \App\Models\PolicyPage::orderBy('id')->get();
+                        @endphp
+                        @foreach ($policyPages as $page)
+                            <x-menu-item title="{{ $page->title }}" icon="o-document"
+                                link="{{ route('admin.policy-pages.edit', $page->id) }}" />
+                        @endforeach
+                    </x-menu-sub>
                 @endrole
 
                 {{-- Settings Section --}}

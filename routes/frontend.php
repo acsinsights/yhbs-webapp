@@ -12,7 +12,12 @@ use App\Http\Controllers\Frontend\BookingController;
 // Frontend Home Page
 Route::get('/', function () {
     $houses = \App\Models\House::active()->take(3)->get();
-    return view('frontend.home', compact('houses'));
+    $sliders = \App\Models\Slider::active()->ordered()->get();
+    $testimonials = \App\Models\Testimonial::active()->ordered()->take(6)->get();
+    $statistics = \App\Models\Statistic::active()->ordered()->get();
+    $blogs = \App\Models\Blog::published()->latest()->take(3)->get();
+    $featuredBoats = \App\Models\Boat::active()->featured()->take(6)->get();
+    return view('frontend.home', compact('houses', 'sliders', 'testimonials', 'statistics', 'blogs', 'featuredBoats'));
 })->name('home');
 
 // about page
@@ -33,15 +38,11 @@ Route::get('/job-application', function () {
     return view('frontend.job-application');
 })->name('job-application');
 
-// privacy policy page
-Route::get('/privacy-policy', function () {
-    return view('frontend.privacy-policy');
-})->name('privacy-policy');
-
-// terms and condition page
-Route::get('/terms-condition', function () {
-    return view('frontend.terms-condition');
-})->name('terms-condition');
+// Dynamic policy pages route
+Route::get('/policy/{slug}', function ($slug) {
+    $policyPage = \App\Models\PolicyPage::where('slug', $slug)->where('is_active', true)->firstOrFail();
+    return view('frontend.policy-page', compact('policyPage'));
+})->name('policy-pages.show');
 
 // Customer Routes
 Route::prefix('customer')->name('customer.')->group(function () {
@@ -112,3 +113,6 @@ Route::post('/boats/available-time-slots', [BoatController::class, 'getAvailable
 // Blog Routes
 Route::get('/blogs', [App\Http\Controllers\Frontend\BlogController::class, 'index'])->name('blogs.index');
 Route::get('/blog/{slug}', [App\Http\Controllers\Frontend\BlogController::class, 'show'])->name('blogs.show');
+
+// Policy Pages Routes
+Route::get('/policy/{slug}', [App\Http\Controllers\Frontend\PolicyPageController::class, 'show'])->name('policy.show');

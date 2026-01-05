@@ -28,6 +28,10 @@ class DatabaseSeeder extends Seeder
             BookingSeeder::class,
             WebsiteSettingSeeder::class,
             PageMetaSeeder::class,
+            SliderSeeder::class,
+            TestimonialSeeder::class,
+            StatisticSeeder::class,
+            PolicyPageSeeder::class,
         ]);
     }
 }
