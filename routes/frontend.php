@@ -76,6 +76,9 @@ Route::prefix('customer')->name('customer.')->group(function () {
         Route::get('/bookings/{id}', [DashboardController::class, 'bookingDetails'])->name('booking.details');
         Route::post('/bookings/{id}/cancel', [DashboardController::class, 'cancelBooking'])->name('booking.cancel');
         Route::get('/bookings/{id}/download-receipt', [DashboardController::class, 'downloadReceipt'])->name('booking.download-receipt');
+
+        // Wallet Transactions
+        Volt::route('/wallet/transactions', 'frontend.wallet-transactions')->name('wallet.transactions');
     });
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

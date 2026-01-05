@@ -21,6 +21,9 @@ class WalletService
             // Update user wallet balance
             $user->update(['wallet_balance' => $balanceAfter]);
 
+            // Calculate expiry date (90 days from now)
+            $expiresAt = now()->addDays(90);
+
             // Create transaction record
             return WalletTransaction::create([
                 'user_id' => $user->id,
@@ -31,6 +34,8 @@ class WalletService
                 'balance_after' => $balanceAfter,
                 'description' => $description ?? "Refund for booking #{$booking?->id}",
                 'source' => $source,
+                'expires_at' => $expiresAt,
+                'is_expired' => false,
             ]);
         });
     }
@@ -84,5 +89,36 @@ class WalletService
             ->orderBy('created_at', 'desc')
             ->limit($limit)
             ->get();
+    }
+
+    /**
+     * Expire old wallet credits (90 days old)
+     */
+    public function expireOldCredits(): int
+    {
+        $expiredCount = 0;
+
+        // Get all expired credits that haven't been marked as expired yet
+        $expiredCredits = WalletTransaction::where('type', 'credit')
+            ->where('is_expired', false)
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<=', now())
+            ->get();
+
+        foreach ($expiredCredits as $credit) {
+            DB::transaction(function () use ($credit, &$expiredCount) {
+                // Mark as expired
+                $credit->update(['is_expired' => true]);
+
+                // Deduct from user's wallet balance
+                $user = $credit->user;
+                $newBalance = max(0, $user->wallet_balance - $credit->amount);
+                $user->update(['wallet_balance' => $newBalance]);
+
+                $expiredCount++;
+            });
+        }
+
+        return $expiredCount;
     }
 }

@@ -16,12 +16,16 @@ class WalletTransaction extends Model
         'balance_after',
         'description',
         'source',
+        'expires_at',
+        'is_expired',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'balance_before' => 'decimal:2',
         'balance_after' => 'decimal:2',
+        'expires_at' => 'datetime',
+        'is_expired' => 'boolean',
     ];
 
     public function user(): BelongsTo
@@ -32,5 +36,35 @@ class WalletTransaction extends Model
     public function booking(): BelongsTo
     {
         return $this->belongsTo(Booking::class);
+    }
+
+    /**
+     * Check if this wallet credit has expired
+     */
+    public function isExpired(): bool
+    {
+        if ($this->type !== 'credit' || !$this->expires_at) {
+            return false;
+        }
+
+        return now()->isAfter($this->expires_at);
+    }
+
+    /**
+     * Scope to get only non-expired credits
+     */
+    public function scopeNonExpired($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('type', 'debit')
+                ->orWhere(function ($q2) {
+                    $q2->where('type', 'credit')
+                        ->where('is_expired', false)
+                        ->where(function ($q3) {
+                            $q3->whereNull('expires_at')
+                                ->orWhere('expires_at', '>', now());
+                        });
+                });
+        });
     }
 }

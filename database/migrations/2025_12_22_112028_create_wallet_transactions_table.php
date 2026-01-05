@@ -20,6 +20,8 @@ return new class extends Migration {
             $table->decimal('balance_after', 10, 2);
             $table->string('description')->nullable();
             $table->string('source')->default('booking_cancellation')->comment('booking_cancellation, booking_reschedule, booking_payment');
+            $table->timestamp('expires_at')->nullable()->comment('90 days from creation for credit transactions');
+            $table->boolean('is_expired')->default(false)->comment('Whether this credit has expired');
             $table->timestamps();
         });
     }

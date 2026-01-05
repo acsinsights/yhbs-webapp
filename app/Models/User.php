@@ -113,6 +113,34 @@ class User extends Authenticatable
     }
 
     /**
+     * Get active wallet credits (non-expired)
+     */
+    public function getActiveWalletCredits()
+    {
+        return WalletTransaction::where('user_id', $this->id)
+            ->where('type', 'credit')
+            ->where('is_expired', false)
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '>', now())
+            ->orderBy('expires_at', 'asc')
+            ->get();
+    }
+
+    /**
+     * Get nearest wallet expiry date
+     */
+    public function getNearestWalletExpiry()
+    {
+        return WalletTransaction::where('user_id', $this->id)
+            ->where('type', 'credit')
+            ->where('is_expired', false)
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '>', now())
+            ->orderBy('expires_at', 'asc')
+            ->first();
+    }
+
+    /**
      * Get user notifications
      */
     public function userNotifications()
