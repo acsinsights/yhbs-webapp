@@ -270,21 +270,38 @@ new class extends Component {
                         <form wire:submit.prevent="submitRescheduleRequest">
                             @if ($isBoatBooking)
                                 {{-- Boat Booking - Only Date (No Checkout) --}}
-                                <div class="mb-3">
+                                <div class="mb-3" wire:ignore>
                                     <label class="form-label">
                                         <strong>Select New Date <span class="text-danger">*</span></strong>
                                     </label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="bi bi-calendar-check"></i></span>
-                                        <input type="date" wire:model.live="newCheckIn" class="form-control"
-                                            min="{{ $booking->check_out->format('Y-m-d') }}">
+                                        <input type="text" id="rescheduleDate-{{ $booking->id }}"
+                                            class="form-control" placeholder="Select date for your boat trip"
+                                            autocomplete="off">
                                     </div>
-                                    <small class="text-muted">Select the date for your boat trip (from
-                                        {{ $booking->check_out->format('d M Y') }} onwards)</small>
-                                    @error('newCheckIn')
-                                        <div class="text-danger small mt-1">{{ $message }}</div>
-                                    @enderror
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Select the date for your boat trip (from
+                                        {{ $booking->check_out->format('d M Y') }} onwards)
+                                    </small>
+
+                                    {{-- Hidden input for Livewire --}}
+                                    <input type="hidden" wire:model="newCheckIn"
+                                        id="rescheduleCheckIn-{{ $booking->id }}">
                                 </div>
+
+                                @error('newCheckIn')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+
+                                @if ($newCheckIn)
+                                    <div class="alert alert-success mt-2 py-2">
+                                        <i class="bi bi-calendar-check me-2"></i>
+                                        <strong>Selected Date:</strong>
+                                        {{ \Carbon\Carbon::parse($newCheckIn)->format('d M Y') }}
+                                    </div>
+                                @endif
 
                                 @if ($newCheckIn)
                                     <div class="mb-3">
@@ -371,7 +388,8 @@ new class extends Component {
                             </div>
 
                             <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-warning flex-fill" wire:loading.attr="disabled">
+                                <button type="submit" class="btn btn-warning flex-fill"
+                                    wire:loading.attr="disabled">
                                     <span wire:loading.remove wire:target="submitRescheduleRequest">
                                         <i class="bi bi-send me-2"></i>Submit Reschedule Request
                                     </span>
@@ -429,6 +447,7 @@ new class extends Component {
             const picker = document.getElementById('rescheduleDate-{{ $booking->id }}');
             const checkInInput = document.getElementById('rescheduleCheckIn-{{ $booking->id }}');
             const checkOutInput = document.getElementById('rescheduleCheckOut-{{ $booking->id }}');
+            const isBoatBooking = {{ $isBoatBooking ? 'true' : 'false' }};
 
             if (!picker) {
                 console.log('Picker element not found during initialization');
@@ -443,17 +462,30 @@ new class extends Component {
             const minDate = '{{ $booking->check_out->format('Y-m-d') }}';
 
             console.log('Initializing Flatpickr with config:', {
+                mode: isBoatBooking ? 'single' : 'range',
                 minDate,
                 bookedDates
             });
 
             flatpickr(picker, {
-                mode: 'range',
+                mode: isBoatBooking ? 'single' : 'range',
                 minDate: minDate,
                 dateFormat: 'Y-m-d',
                 disable: bookedDates,
                 onChange: function(selectedDates) {
-                    if (selectedDates.length === 2) {
+                    if (isBoatBooking && selectedDates.length === 1) {
+                        // Single date for boat booking
+                        const checkIn = selectedDates[0].getFullYear() + '-' +
+                            String(selectedDates[0].getMonth() + 1).padStart(2, '0') + '-' +
+                            String(selectedDates[0].getDate()).padStart(2, '0');
+
+                        checkInInput.value = checkIn;
+                        checkInInput.dispatchEvent(new Event('input'));
+                        @this.set('newCheckIn', checkIn);
+
+                        console.log('Date selected:', checkIn);
+                    } else if (!isBoatBooking && selectedDates.length === 2) {
+                        // Date range for house/room booking
                         const checkIn = selectedDates[0].getFullYear() + '-' +
                             String(selectedDates[0].getMonth() + 1).padStart(2, '0') + '-' +
                             String(selectedDates[0].getDate()).padStart(2, '0');
