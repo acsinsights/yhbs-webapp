@@ -27,38 +27,36 @@ new class extends Component {
     public function loadStats(): void
     {
         $now = now();
+        $today = now()->startOfDay();
+        $todayEnd = now()->endOfDay();
 
-        // Current bookings for houses
+        // Current active bookings (checked in or currently occupied) for houses
         $currentHouseBookings = Booking::where('bookingable_type', House::class)
             ->whereIn('status', ['pending', 'booked', 'checked_in'])
-            ->where(function ($query) use ($now) {
-                $query->where('check_in', '<=', $now)->where('check_out', '>=', $now);
-            })
+            ->where('check_in', '<=', $now)
+            ->where('check_out', '>=', $today)
             ->count();
 
-        // Current bookings for rooms
+        // Current active bookings for rooms
         $currentRoomBookings = Booking::where('bookingable_type', Room::class)
             ->whereIn('status', ['pending', 'booked', 'checked_in'])
-            ->where(function ($query) use ($now) {
-                $query->where('check_in', '<=', $now)->where('check_out', '>=', $now);
-            })
+            ->where('check_in', '<=', $now)
+            ->where('check_out', '>=', $today)
             ->count();
 
-        // Current bookings for boats
+        // Current active bookings for boats
         $currentBoatBookings = Booking::where('bookingable_type', Boat::class)
             ->whereIn('status', ['pending', 'booked', 'checked_in'])
-            ->where(function ($query) use ($now) {
-                $query->where('check_in', '<=', $now)->where('check_out', '>=', $now);
-            })
+            ->where('check_in', '<=', $now)
+            ->where('check_out', '>=', $today)
             ->count();
 
         // Available rooms (rooms without active bookings for current date)
         $totalRooms = Room::where('is_active', true)->count();
         $bookedRoomIds = Booking::where('bookingable_type', Room::class)
             ->whereIn('status', ['pending', 'booked', 'checked_in'])
-            ->where(function ($query) use ($now) {
-                $query->where('check_in', '<=', $now)->where('check_out', '>=', $now);
-            })
+            ->where('check_in', '<=', $now)
+            ->where('check_out', '>=', $today)
             ->pluck('bookingable_id')
             ->unique();
         $availableRooms = $totalRooms - $bookedRoomIds->count();
@@ -67,9 +65,8 @@ new class extends Component {
         $totalHouses = House::where('is_active', true)->count();
         $bookedHouseIds = Booking::where('bookingable_type', House::class)
             ->whereIn('status', ['pending', 'booked', 'checked_in'])
-            ->where(function ($query) use ($now) {
-                $query->where('check_in', '<=', $now)->where('check_out', '>=', $now);
-            })
+            ->where('check_in', '<=', $now)
+            ->where('check_out', '>=', $today)
             ->pluck('bookingable_id')
             ->unique();
         $availableHouses = $totalHouses - $bookedHouseIds->count();
@@ -78,34 +75,33 @@ new class extends Component {
         $totalBoats = Boat::where('is_active', true)->count();
         $bookedBoatIds = Booking::where('bookingable_type', Boat::class)
             ->whereIn('status', ['pending', 'booked', 'checked_in'])
-            ->where(function ($query) use ($now) {
-                $query->where('check_in', '<=', $now)->where('check_out', '>=', $now);
-            })
+            ->where('check_in', '<=', $now)
+            ->where('check_out', '>=', $today)
             ->pluck('bookingable_id')
             ->unique();
         $availableBoats = $totalBoats - $bookedBoatIds->count();
 
-        // Total revenue (from paid bookings) - use discount_price if it exists and is less than price, otherwise use price
-        $totalRevenue = Booking::where('payment_status', 'paid')->sum(DB::raw('CASE WHEN discount_price IS NOT NULL AND discount_price < price THEN discount_price ELSE price END'));
+        // Total revenue (from paid bookings) - use discount_price if available, otherwise use price
+        $totalRevenue = Booking::where('payment_status', 'paid')->sum(DB::raw('COALESCE(discount_price, price)'));
 
         // House Revenue
-        $houseRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', House::class)->sum(DB::raw('CASE WHEN discount_price IS NOT NULL AND discount_price < price THEN discount_price ELSE price END'));
+        $houseRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', House::class)->sum(DB::raw('COALESCE(discount_price, price)'));
 
         // Room Revenue
-        $roomRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Room::class)->sum(DB::raw('CASE WHEN discount_price IS NOT NULL AND discount_price < price THEN discount_price ELSE price END'));
+        $roomRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Room::class)->sum(DB::raw('COALESCE(discount_price, price)'));
 
         // Boat revenue
-        $boatRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Boat::class)->sum(DB::raw('CASE WHEN discount_price IS NOT NULL AND discount_price < price THEN discount_price ELSE price END'));
+        $boatRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Boat::class)->sum(DB::raw('COALESCE(discount_price, price)'));
 
         // Active customers (users with bookings in last 30 days or with active bookings)
         $customerUserIds = User::role(RolesEnum::CUSTOMER->value)->pluck('id');
 
         $activeCustomerIds = Booking::whereIn('user_id', $customerUserIds)
-            ->where(function ($query) {
+            ->where(function ($query) use ($today) {
                 $query->where('created_at', '>=', now()->subDays(30))->orWhereIn('status', ['pending', 'booked', 'checked_in']);
             })
-            ->pluck('user_id')
-            ->unique();
+            ->distinct('user_id')
+            ->pluck('user_id');
 
         $activeCustomers = $activeCustomerIds->count();
 
@@ -120,18 +116,16 @@ new class extends Component {
         $totalRoomBookings = Booking::where('bookingable_type', Room::class)->count();
         $totalBoatBookings = Booking::where('bookingable_type', Boat::class)->count();
 
-        // Pending payments
-        $pendingPayments = Booking::where('payment_status', 'pending')->count();
-        $pendingPaymentAmount = Booking::where('payment_status', 'pending')->sum(DB::raw('CASE WHEN discount_price IS NOT NULL AND discount_price < price THEN discount_price ELSE price END'));
+        // Pending payments (includes pending and partially paid status)
+        $pendingPayments = Booking::whereIn('payment_status', ['pending', 'partially_paid'])->count();
+        $pendingPaymentAmount = Booking::whereIn('payment_status', ['pending', 'partially_paid'])->sum(DB::raw('COALESCE(discount_price, price)'));
 
         // Today's check-ins and check-outs
-        $todayStart = now()->startOfDay();
-        $todayEnd = now()->endOfDay();
-        $todayCheckIns = Booking::whereBetween('check_in', [$todayStart, $todayEnd])
+        $todayCheckIns = Booking::whereBetween('check_in', [$today, $todayEnd])
             ->whereIn('status', ['pending', 'booked'])
             ->count();
-        $todayCheckOuts = Booking::whereBetween('check_out', [$todayStart, $todayEnd])
-            ->where('status', 'checked_in')
+        $todayCheckOuts = Booking::whereBetween('check_out', [$today, $todayEnd])
+            ->whereIn('status', ['checked_in', 'booked'])
             ->count();
 
         $this->stats = [
@@ -204,17 +198,22 @@ new class extends Component {
         $monthlyRoomRevenue = [];
         $monthlyBoatRevenue = [];
         $monthlyLabels = [];
+
         for ($i = 5; $i >= 0; $i--) {
             $month = now()->subMonths($i);
-            $houseRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', House::class)->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum(DB::raw('CASE WHEN discount_price IS NOT NULL AND discount_price < price THEN discount_price ELSE price END'));
 
-            $roomRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Room::class)->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum(DB::raw('CASE WHEN discount_price IS NOT NULL AND discount_price < price THEN discount_price ELSE price END'));
+            // House Revenue for the month
+            $houseRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', House::class)->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum(DB::raw('COALESCE(discount_price, price)'));
 
-            $boatRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Boat::class)->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum(DB::raw('CASE WHEN discount_price IS NOT NULL AND discount_price < price THEN discount_price ELSE price END'));
+            // Room Revenue for the month
+            $roomRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Room::class)->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum(DB::raw('COALESCE(discount_price, price)'));
 
-            $monthlyHouseRevenue[] = $houseRevenue;
-            $monthlyRoomRevenue[] = $roomRevenue;
-            $monthlyBoatRevenue[] = $boatRevenue;
+            // Boat Revenue for the month
+            $boatRevenue = Booking::where('payment_status', 'paid')->where('bookingable_type', Boat::class)->whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum(DB::raw('COALESCE(discount_price, price)'));
+
+            $monthlyHouseRevenue[] = (float) $houseRevenue;
+            $monthlyRoomRevenue[] = (float) $roomRevenue;
+            $monthlyBoatRevenue[] = (float) $boatRevenue;
             $monthlyLabels[] = $month->format('M Y');
         }
 
