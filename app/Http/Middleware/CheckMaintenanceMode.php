@@ -44,10 +44,11 @@ class CheckMaintenanceMode
      */
     private function isAdminUser(): bool
     {
-        if (!Auth::guard('admin')->check()) {
+        if (!Auth::check()) {
             return false;
         }
 
-        return true;
+        // Check if user has admin role using Spatie Permission package
+        return Auth::user()->hasRole('admin');
     }
 }

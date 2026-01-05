@@ -2709,7 +2709,8 @@
                                                             </svg>
                                                             <div class="tooltip-text">Passengers:
                                                                 <span>{{ $boat->min_passengers }}-{{ $boat->max_passengers }}
-                                                                    guests</span></div>
+                                                                    guests</span>
+                                                            </div>
                                                         </div>
                                                     </li>
                                                     @if ($boat->description)
