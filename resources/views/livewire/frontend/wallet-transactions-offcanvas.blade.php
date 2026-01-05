@@ -12,7 +12,7 @@ new class extends Component {
         $transactions = WalletTransaction::where('user_id', auth()->id())
             ->with('booking')
             ->orderBy('created_at', 'desc')
-            ->paginate(2);
+            ->paginate(10);
 
         return [
             'transactions' => $transactions,
@@ -103,8 +103,78 @@ new class extends Component {
             @endforeach
 
             <!-- Pagination -->
-            <div class="mt-3">
-                {{ $transactions->links() }}
+            <div class="mt-4">
+                <div class="pagination-area">
+                    @if ($transactions->onFirstPage())
+                        <div class="paginations-button disabled">
+                            <span>
+                                <svg width="10" height="10" viewBox="0 0 10 10"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <g>
+                                        <path
+                                            d="M7.86133 9.28516C7.14704 7.49944 3.57561 5.71373 1.43276 4.99944C3.57561 4.28516 6.7899 3.21373 7.86133 0.713728"
+                                            stroke-width="1.5" stroke-linecap="round"></path>
+                                    </g>
+                                </svg>
+                                Prev
+                            </span>
+                        </div>
+                    @else
+                        <div class="paginations-button">
+                            <a href="#" wire:click.prevent="previousPage">
+                                <svg width="10" height="10" viewBox="0 0 10 10"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <g>
+                                        <path
+                                            d="M7.86133 9.28516C7.14704 7.49944 3.57561 5.71373 1.43276 4.99944C3.57561 4.28516 6.7899 3.21373 7.86133 0.713728"
+                                            stroke-width="1.5" stroke-linecap="round"></path>
+                                    </g>
+                                </svg>
+                                Prev
+                            </a>
+                        </div>
+                    @endif
+
+                    <ul class="paginations">
+                        @foreach ($transactions->getUrlRange(1, $transactions->lastPage()) as $page => $url)
+                            <li class="page-item {{ $page == $transactions->currentPage() ? 'active' : '' }}">
+                                <a href="#" wire:click.prevent="gotoPage({{ $page }})">
+                                    {{ str_pad($page, 2, '0', STR_PAD_LEFT) }}
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+
+                    @if ($transactions->hasMorePages())
+                        <div class="paginations-button">
+                            <a href="#" wire:click.prevent="nextPage">
+                                Next
+                                <svg width="10" height="10" viewBox="0 0 10 10"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <g>
+                                        <path
+                                            d="M1.42969 9.28613C2.14397 7.50042 5.7154 5.7147 7.85826 5.00042C5.7154 4.28613 2.50112 3.21471 1.42969 0.714705"
+                                            stroke-width="1.5" stroke-linecap="round"></path>
+                                    </g>
+                                </svg>
+                            </a>
+                        </div>
+                    @else
+                        <div class="paginations-button disabled">
+                            <span>
+                                Next
+                                <svg width="10" height="10" viewBox="0 0 10 10"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <g>
+                                        <path
+                                            d="M1.42969 9.28613C2.14397 7.50042 5.7154 5.7147 7.85826 5.00042C5.7154 4.28613 2.50112 3.21471 1.42969 0.714705"
+                                            stroke-width="1.5" stroke-linecap="round"></path>
+                                    </g>
+                                </svg>
+                            </span>
+                        </div>
+                    @endif
+                </div>
             </div>
         @else
             <div class="text-center py-5">
