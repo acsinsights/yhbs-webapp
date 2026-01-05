@@ -36,6 +36,8 @@ class Boat extends Model
         'meta_description',
         'meta_keywords',
         'is_active',
+        'is_under_maintenance',
+        'maintenance_note',
         'is_featured',
         'sort_order',
         'booking_policy',
@@ -48,6 +50,7 @@ class Boat extends Model
     protected $casts = [
         'library' => AsCollection::class,
         'is_active' => 'boolean',
+        'is_under_maintenance' => 'boolean',
         'is_featured' => 'boolean',
         'price_per_hour' => 'decimal:2',
         'price_1hour' => 'decimal:2',
@@ -99,6 +102,14 @@ class Boat extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    /**
+     * Scope to get bookable boats (active and not under maintenance)
+     */
+    public function scopeBookable($query)
+    {
+        return $query->where('is_active', true)->where('is_under_maintenance', false);
     }
 
     public function scopeSearch($query, $search)

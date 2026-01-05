@@ -55,6 +55,8 @@ new class extends Component {
     public ?string $meta_description = null;
     public ?string $meta_keywords = null;
     public bool $is_active = true;
+    public bool $is_under_maintenance = false;
+    public ?string $maintenance_note = null;
     public bool $is_featured = false;
     public int $sort_order = 0;
 
@@ -103,6 +105,8 @@ new class extends Component {
         $this->meta_description = $boat->meta_description;
         $this->meta_keywords = $boat->meta_keywords;
         $this->is_active = $boat->is_active;
+        $this->is_under_maintenance = $boat->is_under_maintenance ?? false;
+        $this->maintenance_note = $boat->maintenance_note;
         $this->is_featured = $boat->is_featured;
         $this->sort_order = $boat->sort_order;
         $this->existing_image = $boat->image;
@@ -169,6 +173,8 @@ new class extends Component {
             'meta_description' => $this->meta_description,
             'meta_keywords' => $this->meta_keywords,
             'is_active' => $this->is_active,
+            'is_under_maintenance' => $this->is_under_maintenance,
+            'maintenance_note' => $this->maintenance_note,
             'is_featured' => $this->is_featured,
             'sort_order' => $this->sort_order,
         ]);
@@ -273,6 +279,19 @@ new class extends Component {
                     <div class="flex items-center">
                         <x-toggle wire:model="is_featured" label="Featured" hint="Show on homepage" />
                     </div>
+
+                    <div class="flex items-center">
+                        <x-toggle wire:model="is_under_maintenance" label="Under Maintenance"
+                            hint="Toggle when boat needs maintenance" class="text-warning" />
+                    </div>
+
+                    @if ($is_under_maintenance)
+                        <div class="md:col-span-2">
+                            <x-input wire:model="maintenance_note" label="Maintenance Note"
+                                placeholder="e.g., Engine maintenance - Available from Jan 15"
+                                icon="o-wrench-screwdriver" hint="This message will be shown to customers" />
+                        </div>
+                    @endif
                 </div>
                 <x-choices-offline wire:model="amenity_ids" label="Amenities & Features" placeholder="Select amenities"
                     :options="$amenities" icon="o-sparkles" hint="Select one or more amenities available on this boat"

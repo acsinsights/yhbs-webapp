@@ -18,6 +18,8 @@ new class extends Component {
     public string $slug = '';
     public string $house_number = '';
     public bool $is_active = false;
+    public bool $is_under_maintenance = false;
+    public ?string $maintenance_note = null;
     public ?UploadedFile $image = null;
     public ?string $existing_image = null;
     public ?string $description = null;
@@ -52,6 +54,8 @@ new class extends Component {
         $this->slug = $house->slug;
         $this->house_number = $house->house_number ?? '';
         $this->is_active = $house->is_active ?? false;
+        $this->is_under_maintenance = $house->is_under_maintenance ?? false;
+        $this->maintenance_note = $house->maintenance_note;
         $this->existing_image = $house->image;
         $this->image = null; // Keep null for file upload, use existing_image for display
         $this->description = $house->description;
@@ -74,6 +78,8 @@ new class extends Component {
             'slug' => 'required|string|max:255|unique:houses,slug,' . $this->house->id,
             'house_number' => 'nullable|string|max:255|unique:houses,house_number,' . $this->house->id,
             'is_active' => 'boolean',
+            'is_under_maintenance' => 'boolean',
+            'maintenance_note' => 'nullable|string|max:255',
             'image' => 'nullable|image|max:5000',
             'files.*' => 'image|max:5000',
             'description' => 'nullable|string',
@@ -101,6 +107,8 @@ new class extends Component {
             'slug' => Str::slug($this->slug),
             'house_number' => $this->house_number ?: null,
             'is_active' => $this->is_active,
+            'is_under_maintenance' => $this->is_under_maintenance,
+            'maintenance_note' => $this->maintenance_note,
             'image' => $imagePath,
             'description' => $this->description,
             'meta_description' => $this->meta_description,
@@ -169,6 +177,18 @@ new class extends Component {
                     <label class="block text-sm font-medium mb-2">Active Status</label>
                     <x-toggle wire:model="is_active" label="Active" hint="Toggle to activate/deactivate this house" />
                 </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-2">Maintenance Status</label>
+                    <x-toggle wire:model="is_under_maintenance" label="Under Maintenance"
+                        hint="Toggle when house needs maintenance" class="text-warning" />
+                </div>
+
+                @if ($is_under_maintenance)
+                    <x-input wire:model="maintenance_note" label="Maintenance Note"
+                        placeholder="e.g., Plumbing repairs - Available from Jan 15" icon="o-wrench-screwdriver"
+                        hint="This message will be shown to customers" />
+                @endif
 
                 <x-file wire:model="image" label="House Image" placeholder="Upload house image" crop-after-change
                     :crop-config="$config2" hint="Max: 5MB">

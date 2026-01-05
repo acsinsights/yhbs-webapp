@@ -23,6 +23,8 @@ class Room extends Model
         'meta_description',
         'meta_keywords',
         'is_active',
+        'is_under_maintenance',
+        'maintenance_note',
         'adults',
         'children',
     ];
@@ -30,6 +32,7 @@ class Room extends Model
     protected $casts = [
         'library' => AsCollection::class,
         'is_active' => 'boolean',
+        'is_under_maintenance' => 'boolean',
     ];
 
     /**
@@ -51,6 +54,14 @@ class Room extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    /**
+     * Scope to get bookable rooms (active and not under maintenance)
+     */
+    public function scopeBookable($query)
+    {
+        return $query->where('is_active', true)->where('is_under_maintenance', false);
     }
 
     public function scopeSearch($query, $search)

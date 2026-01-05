@@ -27,6 +27,12 @@ new class extends Component {
         $this->bookable = $bookable;
         $this->type = $type;
 
+        // Check if under maintenance
+        if ($bookable->is_under_maintenance) {
+            $this->isAvailable = false;
+            $this->availabilityMessage = $bookable->maintenance_note ?? 'This property is currently under maintenance and unavailable for booking.';
+        }
+
         // Get the appropriate model class
         $modelClass = match ($type) {
             'room' => Room::class,
@@ -475,19 +481,42 @@ new class extends Component {
 
 <div class="booking-form-wrap mb-4 p-4 border rounded">
     <h4 class="mb-3">Book This {{ ucfirst($type) }}</h4>
-    <div class="price-display mb-3 text-center">
-        @if ($type === 'boat')
-            <h2 class="text-primary">
-                {{ currency_format($bookable->price_per_hour ?? ($bookable->price_per_night ?? 0)) }}
-            </h2>
-            <p class="text-muted">per hour</p>
-        @else
-            <h2 class="text-primary">{{ currency_format($bookable->price_per_night) }}</h2>
-            <p class="text-muted">per night</p>
-        @endif
-    </div>
 
-    @if ($bookable->is_active)
+    @if ($bookable->is_under_maintenance)
+        <!-- Maintenance Alert -->
+        <div class="alert alert-warning d-flex align-items-center" role="alert">
+            <i class="bi bi-tools fs-4 me-3"></i>
+            <div>
+                <h5 class="alert-heading mb-1">Under Maintenance</h5>
+                <p class="mb-0">
+                    {{ $bookable->maintenance_note ?? 'This property is currently under maintenance and unavailable for booking.' }}
+                </p>
+            </div>
+        </div>
+    @elseif (!$bookable->is_active)
+        <!-- Not Active Alert -->
+        <div class="alert alert-danger d-flex align-items-center" role="alert">
+            <i class="bi bi-x-circle fs-4 me-3"></i>
+            <div>
+                <h5 class="alert-heading mb-1">Not Available</h5>
+                <p class="mb-0">This property is currently not available for booking.</p>
+            </div>
+        </div>
+    @else
+        <div class="price-display mb-3 text-center">
+            @if ($type === 'boat')
+                <h2 class="text-primary">
+                    {{ currency_format($bookable->price_per_hour ?? ($bookable->price_per_night ?? 0)) }}
+                </h2>
+                <p class="text-muted">per hour</p>
+            @else
+                <h2 class="text-primary">{{ currency_format($bookable->price_per_night) }}</h2>
+                <p class="text-muted">per night</p>
+            @endif
+        </div>
+    @endif
+
+    @if ($bookable->is_active && !$bookable->is_under_maintenance)
         <!-- Error Message -->
         @if ($errorMessage)
             <div class="alert alert-danger alert-dismissible fade show" role="alert">

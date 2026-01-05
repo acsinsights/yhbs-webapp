@@ -173,7 +173,11 @@
                                                         alt="{{ $room->name }}">
                                                 @endif
                                             </a>
-                                            @if ($room->is_active)
+                                            @if ($room->is_under_maintenance)
+                                                <div class="batch" style="background-color: #f59e0b;">
+                                                    <span><i class="bi bi-tools"></i> Maintenance</span>
+                                                </div>
+                                            @elseif ($room->is_active)
                                                 <div class="batch batch-success">
                                                     <span>Available</span>
                                                 </div>

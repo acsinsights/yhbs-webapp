@@ -101,15 +101,24 @@
                                 @endif
                                 <div class="col-md-6 mb-3">
                                     <strong><i class="bi bi-check-circle me-2"></i>Status:</strong>
-                                    <span class="badge {{ $room->is_active ? 'bg-success' : 'bg-danger' }}">
-                                        {{ $room->is_active ? 'Available' : 'Not Available' }}
-                                    </span>
+                                    @if ($room->is_under_maintenance)
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-tools me-1"></i>Under Maintenance
+                                        </span>
+                                        @if ($room->maintenance_note)
+                                            <div class="text-muted small mt-1">{{ $room->maintenance_note }}</div>
+                                        @endif
+                                    @else
+                                        <span class="badge {{ $room->is_active ? 'bg-success' : 'bg-danger' }}">
+                                            {{ $room->is_active ? 'Available' : 'Not Available' }}
+                                        </span>
+                                    @endif
                                 </div>
                             </div>
                         </div>
 
                         @if ($room->description)
-                            <div class="mb-4"> 
+                            <div class="mb-4">
                                 <p>{!! $room->description !!}</p>
                             </div>
                         @endif
@@ -198,7 +207,14 @@
                                 @endif
                                 <li class="mb-2">
                                     <i class="bi bi-check-circle me-2"></i>
-                                    <strong>Status:</strong> {{ $room->is_active ? 'Available' : 'Not Available' }}
+                                    <strong>Status:</strong>
+                                    @if ($room->is_under_maintenance)
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-tools"></i> Maintenance
+                                        </span>
+                                    @else
+                                        {{ $room->is_active ? 'Available' : 'Not Available' }}
+                                    @endif
                                 </li>
                             </ul>
                         </div>

@@ -94,9 +94,18 @@
                                 @endif
                                 <div class="col-md-6 mb-3">
                                     <strong><i class="bi bi-check-circle me-2"></i>Status:</strong>
-                                    <span class="badge {{ $house->is_active ? 'bg-success' : 'bg-danger' }}">
-                                        {{ $house->is_active ? 'Available' : 'Not Available' }}
-                                    </span>
+                                    @if ($house->is_under_maintenance)
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-tools me-1"></i>Under Maintenance
+                                        </span>
+                                        @if ($house->maintenance_note)
+                                            <div class="text-muted small mt-1">{{ $house->maintenance_note }}</div>
+                                        @endif
+                                    @else
+                                        <span class="badge {{ $house->is_active ? 'bg-success' : 'bg-danger' }}">
+                                            {{ $house->is_active ? 'Available' : 'Not Available' }}
+                                        </span>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -174,7 +183,14 @@
                                 </li>
                                 <li class="mb-2">
                                     <i class="bi bi-check-circle me-2"></i>
-                                    <strong>Status:</strong> {{ $house->is_active ? 'Available' : 'Not Available' }}
+                                    <strong>Status:</strong>
+                                    @if ($house->is_under_maintenance)
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-tools"></i> Maintenance
+                                        </span>
+                                    @else
+                                        {{ $house->is_active ? 'Available' : 'Not Available' }}
+                                    @endif
                                 </li>
                             </ul>
                         </div>

@@ -26,6 +26,8 @@ return new class extends Migration {
             $table->string('meta_description')->nullable();
             $table->string('meta_keywords')->nullable();
             $table->boolean('is_active')->default(false);
+            $table->boolean('is_under_maintenance')->default(false);
+            $table->string('maintenance_note')->nullable();
             $table->integer('adults')->nullable();
             $table->integer('children')->nullable();
 

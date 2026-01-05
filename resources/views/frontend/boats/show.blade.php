@@ -158,9 +158,18 @@
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <strong><i class="bi bi-check-circle me-2"></i>Status:</strong>
-                                    <span class="badge {{ $boat->is_active ? 'bg-success' : 'bg-danger' }}">
-                                        {{ $boat->is_active ? 'Available' : 'Not Available' }}
-                                    </span>
+                                    @if ($boat->is_under_maintenance)
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-tools me-1"></i>Under Maintenance
+                                        </span>
+                                        @if ($boat->maintenance_note)
+                                            <div class="text-muted small mt-1">{{ $boat->maintenance_note }}</div>
+                                        @endif
+                                    @else
+                                        <span class="badge {{ $boat->is_active ? 'bg-success' : 'bg-danger' }}">
+                                            {{ $boat->is_active ? 'Available' : 'Not Available' }}
+                                        </span>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -209,9 +218,15 @@
                                 <li class="mb-2">
                                     <i class="bi bi-check-circle me-2"></i>
                                     <strong>Status:</strong>
-                                    <span class="badge {{ $boat->is_active ? 'bg-success' : 'bg-danger' }}">
-                                        {{ $boat->is_active ? 'Available' : 'Not Available' }}
-                                    </span>
+                                    @if ($boat->is_under_maintenance)
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-tools"></i> Maintenance
+                                        </span>
+                                    @else
+                                        <span class="badge {{ $boat->is_active ? 'bg-success' : 'bg-danger' }}">
+                                            {{ $boat->is_active ? 'Available' : 'Not Available' }}
+                                        </span>
+                                    @endif
                                 </li>
                             </ul>
                         </div>

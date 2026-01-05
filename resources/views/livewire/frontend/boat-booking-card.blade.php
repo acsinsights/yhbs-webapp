@@ -29,6 +29,11 @@ new class extends Component {
         $this->serviceType = $boat->service_type;
         $this->passengers = $boat->min_passengers ?? 1;
 
+        // Check if under maintenance
+        if ($boat->is_under_maintenance) {
+            $this->errorMessage = $boat->maintenance_note ?? 'This boat is currently under maintenance and unavailable for booking.';
+        }
+
         // Initialize passenger names array
         $this->updatePassengerNames();
     }
@@ -383,223 +388,248 @@ new class extends Component {
 <div class="booking-form-wrap border rounded p-4 shadow-sm mb-4">
     <h5 class="mb-4">Book This Boat</h5>
 
-    @guest
-        <div class="alert alert-info">
-            <i class="bi bi-info-circle me-2"></i>
-            Please <a href="{{ route('customer.login') }}" class="alert-link">login</a> to book this boat.
+    @if ($boat->is_under_maintenance)
+        <!-- Maintenance Alert -->
+        <div class="alert alert-warning d-flex align-items-center" role="alert">
+            <i class="bi bi-tools fs-4 me-3"></i>
+            <div>
+                <h5 class="alert-heading mb-1">Under Maintenance</h5>
+                <p class="mb-0">
+                    {{ $boat->maintenance_note ?? 'This boat is currently under maintenance and unavailable for booking.' }}
+                </p>
+            </div>
+        </div>
+    @elseif (!$boat->is_active)
+        <!-- Not Active Alert -->
+        <div class="alert alert-danger d-flex align-items-center" role="alert">
+            <i class="bi bi-x-circle fs-4 me-3"></i>
+            <div>
+                <h5 class="alert-heading mb-1">Not Available</h5>
+                <p class="mb-0">This boat is currently not available for booking.</p>
+            </div>
         </div>
     @else
-        <form wire:submit="proceedToBooking">
-            {{-- Step 1: Trip Type (Ferry & Limousine only) --}}
-            @if ($serviceType === 'ferry')
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">
-                        <i class="bi bi-ticket text-primary"></i> Select Trip Type
-                    </label>
-                    <select wire:model.live="tripType" class="form-control" required>
-                        <option value="">Choose trip type...</option>
-                        <option value="private">Private Trip</option>
-                        <option value="public">Public Trip</option>
-                    </select>
-                    @error('tripType')
-                        <small class="text-danger">{{ $message }}</small>
-                    @enderror
-                </div>
-            @endif
-
-            @if ($serviceType === 'limousine')
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">
-                        <i class="bi bi-ticket text-primary"></i> Select Trip Type
-                    </label>
-                    <select wire:model.live="tripType" class="form-control" required>
-                        <option value="">Choose trip type...</option>
-                        <option value="private">Private Trip</option>
-                        <option value="public">Public Trip</option>
-                    </select>
-                    @error('tripType')
-                        <small class="text-danger">{{ $message }}</small>
-                    @enderror
-                </div>
-            @endif
-
-            {{-- Step 2: Duration Selection --}}
-            @if (in_array($serviceType, ['yacht', 'taxi']))
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">
-                        <i class="bi bi-hourglass-split text-primary"></i> Select Duration
-                    </label>
-                    <select wire:model.live="duration" class="form-control" required>
-                        <option value="">Choose duration...</option>
-                        @if ($boat->price_1hour)
-                            <option value="1">1 Hour - {{ currency_format($boat->price_1hour) }}</option>
-                        @endif
-                        @if ($boat->price_2hours)
-                            <option value="2">2 Hours - {{ currency_format($boat->price_2hours) }}</option>
-                        @endif
-                        @if ($boat->price_3hours)
-                            <option value="3">3 Hours - {{ currency_format($boat->price_3hours) }}</option>
-                        @endif
-                    </select>
-                    @error('duration')
-                        <small class="text-danger">{{ $message }}</small>
-                    @enderror
-                </div>
-            @endif
-
-            @if ($serviceType === 'ferry')
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">
-                        <i class="bi bi-hourglass-split text-primary"></i> Select Duration
-                    </label>
-                    <select wire:model.live="duration" class="form-control" required>
-                        <option value="">Choose duration...</option>
-                        <option value="1">1 Hour</option>
-                        <option value="2">2 Hours</option>
-                        <option value="3">3 Hours</option>
-                    </select>
-                    @error('duration')
-                        <small class="text-danger">{{ $message }}</small>
-                    @enderror
-                </div>
-            @endif
-
-            @if ($serviceType === 'limousine')
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">
-                        <i class="bi bi-star text-primary"></i> Select Experience Duration
-                    </label>
-                    <select wire:model.live="experienceDuration" class="form-control" required>
-                        <option value="">Choose experience...</option>
-                        @if ($boat->price_15min)
-                            <option value="15">15 Minutes - {{ currency_format($boat->price_15min) }}</option>
-                        @endif
-                        @if ($boat->price_30min)
-                            <option value="30">30 Minutes - {{ currency_format($boat->price_30min) }}</option>
-                        @endif
-                        @if ($boat->price_full_boat)
-                            <option value="full">Full Experience - {{ currency_format($boat->price_full_boat) }}</option>
-                        @endif
-                    </select>
-                    @error('experienceDuration')
-                        <small class="text-danger">{{ $message }}</small>
-                    @enderror
-                </div>
-            @endif
-
-            {{-- Step 3: Date Selection --}}
-            <div class="mb-3">
-                <label class="form-label fw-semibold">
-                    <i class="bi bi-calendar-event text-primary"></i> Select Date
-                </label>
-                <input type="date" wire:model.live="bookingDate" class="form-control" required
-                    min="{{ $this->minDate() }}">
-                @error('bookingDate')
-                    <small class="text-danger">{{ $message }}</small>
-                @enderror
+        @guest
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                Please <a href="{{ route('customer.login') }}" class="alert-link">login</a> to book this boat.
             </div>
+        @else
+            <form wire:submit="proceedToBooking">
+                {{-- Step 1: Trip Type (Ferry & Limousine only) --}}
+                @if ($serviceType === 'ferry')
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-ticket text-primary"></i> Select Trip Type
+                        </label>
+                        <select wire:model.live="tripType" class="form-control" required>
+                            <option value="">Choose trip type...</option>
+                            <option value="private">Private Trip</option>
+                            <option value="public">Public Trip</option>
+                        </select>
+                        @error('tripType')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
+                @endif
 
-            {{-- Step 4: Time Slot Selection --}}
-            @if (in_array($serviceType, ['yacht', 'taxi', 'ferry', 'limousine']))
+                @if ($serviceType === 'limousine')
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-ticket text-primary"></i> Select Trip Type
+                        </label>
+                        <select wire:model.live="tripType" class="form-control" required>
+                            <option value="">Choose trip type...</option>
+                            <option value="private">Private Trip</option>
+                            <option value="public">Public Trip</option>
+                        </select>
+                        @error('tripType')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
+                @endif
+
+                {{-- Step 2: Duration Selection --}}
+                @if (in_array($serviceType, ['yacht', 'taxi']))
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-hourglass-split text-primary"></i> Select Duration
+                        </label>
+                        <select wire:model.live="duration" class="form-control" required>
+                            <option value="">Choose duration...</option>
+                            @if ($boat->price_1hour)
+                                <option value="1">1 Hour - {{ currency_format($boat->price_1hour) }}</option>
+                            @endif
+                            @if ($boat->price_2hours)
+                                <option value="2">2 Hours - {{ currency_format($boat->price_2hours) }}</option>
+                            @endif
+                            @if ($boat->price_3hours)
+                                <option value="3">3 Hours - {{ currency_format($boat->price_3hours) }}</option>
+                            @endif
+                        </select>
+                        @error('duration')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
+                @endif
+
+                @if ($serviceType === 'ferry')
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-hourglass-split text-primary"></i> Select Duration
+                        </label>
+                        <select wire:model.live="duration" class="form-control" required>
+                            <option value="">Choose duration...</option>
+                            <option value="1">1 Hour</option>
+                            <option value="2">2 Hours</option>
+                            <option value="3">3 Hours</option>
+                        </select>
+                        @error('duration')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
+                @endif
+
+                @if ($serviceType === 'limousine')
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-star text-primary"></i> Select Experience Duration
+                        </label>
+                        <select wire:model.live="experienceDuration" class="form-control" required>
+                            <option value="">Choose experience...</option>
+                            @if ($boat->price_15min)
+                                <option value="15">15 Minutes - {{ currency_format($boat->price_15min) }}</option>
+                            @endif
+                            @if ($boat->price_30min)
+                                <option value="30">30 Minutes - {{ currency_format($boat->price_30min) }}</option>
+                            @endif
+                            @if ($boat->price_full_boat)
+                                <option value="full">Full Experience - {{ currency_format($boat->price_full_boat) }}
+                                </option>
+                            @endif
+                        </select>
+                        @error('experienceDuration')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
+                @endif
+
+                {{-- Step 3: Date Selection --}}
                 <div class="mb-3">
                     <label class="form-label fw-semibold">
-                        <i class="bi bi-clock text-primary"></i> Select Time Slot
+                        <i class="bi bi-calendar-event text-primary"></i> Select Date
                     </label>
+                    <input type="date" wire:model.live="bookingDate" class="form-control" required
+                        min="{{ $this->minDate() }}">
+                    @error('bookingDate')
+                        <small class="text-danger">{{ $message }}</small>
+                    @enderror
+                </div>
 
-                    @if ($loadingTimeSlots)
-                        <div class="text-center py-3">
-                            <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                <span class="visually-hidden">Loading...</span>
+                {{-- Step 4: Time Slot Selection --}}
+                @if (in_array($serviceType, ['yacht', 'taxi', 'ferry', 'limousine']))
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-clock text-primary"></i> Select Time Slot
+                        </label>
+
+                        @if ($loadingTimeSlots)
+                            <div class="text-center py-3">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <small class="d-block mt-2 text-muted">Loading available time slots...</small>
                             </div>
-                            <small class="d-block mt-2 text-muted">Loading available time slots...</small>
-                        </div>
-                    @elseif (count($availableTimeSlots) > 0)
-                        <div class="border rounded" style="max-height: 300px; overflow-y: auto;">
-                            @foreach ($availableTimeSlots as $slot)
-                                <div class="p-2 border-bottom {{ $slot['is_available'] ? 'cursor-pointer' : 'bg-light' }}"
-                                    @if ($slot['is_available']) wire:click="$set('startTime', '{{ $slot['value'] }}')"
+                        @elseif (count($availableTimeSlots) > 0)
+                            <div class="border rounded" style="max-height: 300px; overflow-y: auto;">
+                                @foreach ($availableTimeSlots as $slot)
+                                    <div class="p-2 border-bottom {{ $slot['is_available'] ? 'cursor-pointer' : 'bg-light' }}"
+                                        @if ($slot['is_available']) wire:click="$set('startTime', '{{ $slot['value'] }}')"
                                         style="cursor: pointer;" @endif>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <input type="radio" name="time_slot" value="{{ $slot['value'] }}"
-                                                {{ $startTime === $slot['value'] ? 'checked' : '' }}
-                                                {{ !$slot['is_available'] ? 'disabled' : '' }}>
-                                            <span class="ms-2">{{ $slot['display'] }}</span>
-                                        </div>
-                                        <div>
-                                            @if ($slot['is_available'])
-                                                <span class="badge bg-success">Available</span>
-                                                @if ($slot['remaining_seats'] !== null && $tripType === 'public')
-                                                    <span class="badge bg-info ms-1">
-                                                        <i class="bi bi-people"></i> {{ $slot['remaining_seats'] }} seats
-                                                        left
-                                                    </span>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <input type="radio" name="time_slot" value="{{ $slot['value'] }}"
+                                                    {{ $startTime === $slot['value'] ? 'checked' : '' }}
+                                                    {{ !$slot['is_available'] ? 'disabled' : '' }}>
+                                                <span class="ms-2">{{ $slot['display'] }}</span>
+                                            </div>
+                                            <div>
+                                                @if ($slot['is_available'])
+                                                    <span class="badge bg-success">Available</span>
+                                                    @if ($slot['remaining_seats'] !== null && $tripType === 'public')
+                                                        <span class="badge bg-info ms-1">
+                                                            <i class="bi bi-people"></i> {{ $slot['remaining_seats'] }}
+                                                            seats
+                                                            left
+                                                        </span>
+                                                    @endif
+                                                @else
+                                                    <span class="badge bg-secondary">Booked</span>
                                                 @endif
-                                            @else
-                                                <span class="badge bg-secondary">Booked</span>
-                                            @endif
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @elseif ($bookingDate)
-                        <div class="alert alert-warning py-2">
-                            <small><i class="bi bi-exclamation-triangle me-1"></i> No time slots available for selected date
-                                and duration.</small>
-                        </div>
-                    @endif
-                    @error('startTime')
-                        <small class="text-danger">{{ $message }}</small>
-                    @enderror
-                </div>
-            @endif
-
-            {{-- Step 5: Number of Passengers --}}
-            <div class="mb-3">
-                <label class="form-label fw-semibold">
-                    <i class="bi bi-people text-primary"></i> Number of Passengers
-                </label>
-                <input type="number" wire:model.live="passengers" class="form-control" min="1"
-                    max="{{ $this->maxPassengersAllowed }}" required>
-                <small class="text-muted">Max: {{ $this->maxPassengersAllowed }}</small>
-                @error('passengers')
-                    <small class="text-danger">{{ $message }}</small>
-                @enderror
-            </div>
-
-            {{-- Step 6: Passenger Names --}}
-            <div class="mb-3">
-                <label class="form-label fw-semibold">
-                    <i class="bi bi-person-badge text-primary"></i> Passenger Names
-                </label>
-                @foreach ($passengerNames as $index => $name)
-                    <input type="text" wire:model="passengerNames.{{ $index }}" class="form-control mb-2"
-                        placeholder="Passenger {{ $index + 1 }} Name" required>
-                    @error('passengerNames.' . $index)
-                        <small class="text-danger">{{ $message }}</small>
-                    @enderror
-                @endforeach
-                <small class="text-muted">Enter full name of each passenger</small>
-            </div>
-
-            @if ($errorMessage)
-                <div class="alert alert-danger">{{ $errorMessage }}</div>
-            @endif
-
-            {{-- Total Amount Display --}}
-            @if ($this->totalAmount() !== null)
-                <div class="alert alert-success mb-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <strong><i class="bi bi-cash-stack me-2"></i>Total Amount:</strong>
-                        <h5 class="mb-0">{{ currency_format($this->totalAmount()) }}</h5>
+                                @endforeach
+                            </div>
+                        @elseif ($bookingDate)
+                            <div class="alert alert-warning py-2">
+                                <small><i class="bi bi-exclamation-triangle me-1"></i> No time slots available for selected
+                                    date
+                                    and duration.</small>
+                            </div>
+                        @endif
+                        @error('startTime')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
                     </div>
-                </div>
-            @endif
+                @endif
 
-            <button type="submit" class="btn btn-primary w-100 py-3">
-                <i class="bi bi-calendar-check me-2"></i> Proceed to Booking
-            </button>
-        </form>
-    @endguest
+                {{-- Step 5: Number of Passengers --}}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">
+                        <i class="bi bi-people text-primary"></i> Number of Passengers
+                    </label>
+                    <input type="number" wire:model.live="passengers" class="form-control" min="1"
+                        max="{{ $this->maxPassengersAllowed }}" required>
+                    <small class="text-muted">Max: {{ $this->maxPassengersAllowed }}</small>
+                    @error('passengers')
+                        <small class="text-danger">{{ $message }}</small>
+                    @enderror
+                </div>
+
+                {{-- Step 6: Passenger Names --}}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">
+                        <i class="bi bi-person-badge text-primary"></i> Passenger Names
+                    </label>
+                    @foreach ($passengerNames as $index => $name)
+                        <input type="text" wire:model="passengerNames.{{ $index }}" class="form-control mb-2"
+                            placeholder="Passenger {{ $index + 1 }} Name" required>
+                        @error('passengerNames.' . $index)
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    @endforeach
+                    <small class="text-muted">Enter full name of each passenger</small>
+                </div>
+
+                @if ($errorMessage)
+                    <div class="alert alert-danger">{{ $errorMessage }}</div>
+                @endif
+
+                {{-- Total Amount Display --}}
+                @if ($this->totalAmount() !== null)
+                    <div class="alert alert-success mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong><i class="bi bi-cash-stack me-2"></i>Total Amount:</strong>
+                            <h5 class="mb-0">{{ currency_format($this->totalAmount()) }}</h5>
+                        </div>
+                    </div>
+                @endif
+
+                <button type="submit" class="btn btn-primary w-100 py-3">
+                    <i class="bi bi-calendar-check me-2"></i> Proceed to Booking
+                </button>
+            </form>
+        @endguest
+    @endif
 </div>

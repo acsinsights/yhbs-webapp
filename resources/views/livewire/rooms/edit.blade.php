@@ -29,6 +29,8 @@ new class extends Component {
     public ?string $meta_keywords = null;
     public ?string $meta_description = null;
     public bool $is_active = false;
+    public bool $is_under_maintenance = false;
+    public ?string $maintenance_note = null;
     public ?int $adults = null;
     public ?int $children = null;
 
@@ -70,6 +72,8 @@ new class extends Component {
         $this->meta_keywords = $room->meta_keywords;
         $this->meta_description = $room->meta_description;
         $this->is_active = $room->is_active ?? false;
+        $this->is_under_maintenance = $room->is_under_maintenance ?? false;
+        $this->maintenance_note = $room->maintenance_note;
         $this->adults = $room->adults;
         $this->children = $room->children;
         $this->category_ids = $room->categories->pluck('id')->toArray();
@@ -107,6 +111,8 @@ new class extends Component {
             'meta_keywords' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:150',
             'is_active' => 'nullable|boolean',
+            'is_under_maintenance' => 'nullable|boolean',
+            'maintenance_note' => 'nullable|string|max:255',
             'adults' => 'nullable|integer|min:0',
             'children' => 'nullable|integer|min:0',
             'library' => 'nullable',
@@ -132,6 +138,8 @@ new class extends Component {
             'meta_keywords' => $this->meta_keywords,
             'meta_description' => $this->meta_description,
             'is_active' => $this->is_active,
+            'is_under_maintenance' => $this->is_under_maintenance,
+            'maintenance_note' => $this->maintenance_note,
             'adults' => $this->adults,
             'children' => $this->children,
         ]);
@@ -242,6 +250,19 @@ new class extends Component {
                 <div class="flex items-center">
                     <x-toggle wire:model="is_active" label="Active Status" hint="Enable or disable this room" />
                 </div>
+
+                <div class="flex items-center">
+                    <x-toggle wire:model="is_under_maintenance" label="Under Maintenance"
+                        hint="Toggle when room needs maintenance" class="text-warning" />
+                </div>
+
+                @if ($is_under_maintenance)
+                    <div class="md:col-span-2">
+                        <x-input wire:model="maintenance_note" label="Maintenance Note"
+                            placeholder="e.g., AC repair - Available from Jan 15" icon="o-wrench-screwdriver"
+                            hint="This message will be shown to customers" />
+                    </div>
+                @endif
 
                 <x-input wire:model="adults" type="number" label="Adults" placeholder="e.g., 2" icon="o-user"
                     hint="Maximum number of adults (optional)" min="0" />

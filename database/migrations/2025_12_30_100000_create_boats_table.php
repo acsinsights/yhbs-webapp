@@ -52,6 +52,8 @@ return new class extends Migration {
             $table->integer('buffer_time')->default(0)->comment('Buffer time in minutes');
 
             $table->boolean('is_active')->default(true);
+            $table->boolean('is_under_maintenance')->default(false);
+            $table->string('maintenance_note')->nullable();
             $table->boolean('is_featured')->default(false);
             $table->integer('sort_order')->default(0);
 

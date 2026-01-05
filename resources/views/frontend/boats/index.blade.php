@@ -148,7 +148,12 @@
                                                     <span>Featured</span>
                                                 </div>
                                             @endif
-                                            @if ($boat->is_active)
+                                            @if ($boat->is_under_maintenance)
+                                                <div class="batch"
+                                                    style="top: 10px; right: 10px; background-color: #f59e0b;">
+                                                    <span><i class="bi bi-tools"></i> Maintenance</span>
+                                                </div>
+                                            @elseif ($boat->is_active)
                                                 <div class="batch batch-success" style="top: 10px; right: 10px;">
                                                     <span>Available</span>
                                                 </div>

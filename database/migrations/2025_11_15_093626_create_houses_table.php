@@ -17,6 +17,8 @@ return new class extends Migration {
             $table->string('slug')->unique();
             $table->string('house_number')->unique()->nullable();
             $table->boolean('is_active')->default(false);
+            $table->boolean('is_under_maintenance')->default(false);
+            $table->string('maintenance_note')->nullable();
             $table->string('image')->nullable();
             $table->text('description')->nullable();
             $table->string('meta_description')->nullable();

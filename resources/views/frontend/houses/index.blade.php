@@ -150,7 +150,11 @@
                                                         alt="{{ $house->name }}">
                                                 @endif
                                             </a>
-                                            @if ($house->is_active)
+                                            @if ($house->is_under_maintenance)
+                                                <div class="batch" style="background-color: #f59e0b;">
+                                                    <span><i class="bi bi-tools"></i> Maintenance</span>
+                                                </div>
+                                            @elseif ($house->is_active)
                                                 <div class="batch batch-success">
                                                     <span>Available</span>
                                                 </div>
