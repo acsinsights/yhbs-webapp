@@ -417,14 +417,10 @@ new class extends Component {
 
         function initReschedulePicker() {
             const picker = document.getElementById('rescheduleDate-{{ $booking->id }}');
-            if (!picker) {
-                console.log('Picker element not found');
-                return;
-            }
+            if (!picker) return;
 
             // Load Flatpickr if not already loaded
             if (typeof flatpickr === 'undefined') {
-                console.log('Loading Flatpickr from CDN...');
                 const link = document.createElement('link');
                 link.rel = 'stylesheet';
                 link.href = 'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css';
@@ -433,12 +429,10 @@ new class extends Component {
                 const script = document.createElement('script');
                 script.src = 'https://cdn.jsdelivr.net/npm/flatpickr';
                 script.onload = function() {
-                    console.log('Flatpickr loaded, initializing picker...');
                     initFlatpickrInstance();
                 };
                 document.head.appendChild(script);
             } else {
-                console.log('Flatpickr already loaded, initializing picker...');
                 initFlatpickrInstance();
             }
         }
@@ -449,10 +443,7 @@ new class extends Component {
             const checkOutInput = document.getElementById('rescheduleCheckOut-{{ $booking->id }}');
             const isBoatBooking = {{ $isBoatBooking ? 'true' : 'false' }};
 
-            if (!picker) {
-                console.log('Picker element not found during initialization');
-                return;
-            }
+            if (!picker) return;
 
             if (picker._flatpickr) {
                 picker._flatpickr.destroy();
@@ -461,12 +452,6 @@ new class extends Component {
             const bookedDates = @json($bookedDates);
             const minDate = '{{ $booking->check_out->format('Y-m-d') }}';
 
-            console.log('Initializing Flatpickr with config:', {
-                mode: isBoatBooking ? 'single' : 'range',
-                minDate,
-                bookedDates
-            });
-
             flatpickr(picker, {
                 mode: isBoatBooking ? 'single' : 'range',
                 minDate: minDate,
@@ -474,7 +459,6 @@ new class extends Component {
                 disable: bookedDates,
                 onChange: function(selectedDates) {
                     if (isBoatBooking && selectedDates.length === 1) {
-                        // Single date for boat booking
                         const checkIn = selectedDates[0].getFullYear() + '-' +
                             String(selectedDates[0].getMonth() + 1).padStart(2, '0') + '-' +
                             String(selectedDates[0].getDate()).padStart(2, '0');
@@ -482,10 +466,7 @@ new class extends Component {
                         checkInInput.value = checkIn;
                         checkInInput.dispatchEvent(new Event('input'));
                         @this.set('newCheckIn', checkIn);
-
-                        console.log('Date selected:', checkIn);
                     } else if (!isBoatBooking && selectedDates.length === 2) {
-                        // Date range for house/room booking
                         const checkIn = selectedDates[0].getFullYear() + '-' +
                             String(selectedDates[0].getMonth() + 1).padStart(2, '0') + '-' +
                             String(selectedDates[0].getDate()).padStart(2, '0');
@@ -500,12 +481,7 @@ new class extends Component {
 
                         @this.set('newCheckIn', checkIn);
                         @this.set('newCheckOut', checkOut);
-
-                        console.log('Date range selected:', checkIn, 'to', checkOut);
                     }
-                },
-                onReady: function() {
-                    console.log('Flatpickr ready!');
                 }
             });
         }
