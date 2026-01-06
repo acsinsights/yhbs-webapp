@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Blog;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class BlogSeeder extends Seeder
 {
@@ -13,6 +14,17 @@ class BlogSeeder extends Seeder
      */
     public function run(): void
     {
+        // Copy blog image from public/default/blogs folder to storage/app/public/blogs
+        $imageName = 'blog.jpg';
+        $sourcePath = public_path('default/blogs/' . $imageName);
+
+        if (file_exists($sourcePath)) {
+            Storage::disk('public')->put(
+                'blogs/' . $imageName,
+                file_get_contents($sourcePath)
+            );
+        }
+
         $blogs = [
             [
                 'title' => 'Discovering the Hidden Gems of Failaka Island',
@@ -33,7 +45,7 @@ class BlogSeeder extends Seeder
 <p>The best time to visit is during the cooler months from October to April. Regular ferry services operate from Kuwait City, making it an easy day trip. Whether you\'re a history buff, nature lover, or simply seeking a peaceful escape, Failaka Island promises an unforgettable experience.</p>
 
 <p>Stay in our comfortable island houses and rooms to fully immerse yourself in this unique destination. Book your trip today and discover why Failaka Island is Kuwait\'s best-kept secret!</p>',
-                'image' => 'blogs/failaka-island-discovery.jpg',
+                'image' => 'blog.jpg',
                 'date' => now()->subDays(15),
                 'is_published' => true,
             ],
@@ -74,7 +86,7 @@ class BlogSeeder extends Seeder
 <p>Enjoy freshly prepared meals featuring local seafood and international cuisine. Many charters offer BBQ facilities for an authentic outdoor dining experience.</p>
 
 <p>Ready to embark on your yacht adventure? Browse our selection of luxury boats and book your charter today for an experience you\'ll treasure forever!</p>',
-                'image' => 'blogs/yacht-charter-guide.jpg',
+                'image' => 'blog.jpg',
                 'date' => now()->subDays(7),
                 'is_published' => true,
             ],
@@ -173,13 +185,14 @@ class BlogSeeder extends Seeder
 <p>With IKARUS Marine, planning your perfect island getaway has never been easier. Browse our selection of traditional houses, modern rooms, and luxury yacht charters. Our team is here to help you create memories that will last a lifetime.</p>
 
 <p>Book now and take advantage of our early bird specials. Your dream island vacation awaits!</p>',
-                'image' => 'blogs/island-getaway-planning.jpg',
+                'image' => 'blog.jpg',
                 'date' => now()->subDays(3),
                 'is_published' => true,
             ],
         ];
 
         foreach ($blogs as $blog) {
+            $blog['image'] = 'blogs/' . $imageName;
             Blog::create($blog);
         }
     }

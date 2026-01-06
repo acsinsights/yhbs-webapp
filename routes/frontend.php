@@ -4,47 +4,29 @@ use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 use App\Http\Controllers\Customer\AuthController;
 use App\Http\Controllers\Customer\DashboardController;
+use App\Http\Controllers\Frontend\PageController;
 use App\Http\Controllers\Frontend\RoomController;
 use App\Http\Controllers\Frontend\HouseController;
 use App\Http\Controllers\Frontend\BoatController;
 use App\Http\Controllers\Frontend\BookingController;
 
 // Frontend Home Page
-Route::get('/', function () {
-    $houses = \App\Models\House::active()->take(3)->get();
-    $rooms = \App\Models\Room::active()->take(3)->get();
-    $boats = \App\Models\Boat::active()->take(3)->get();
-    $sliders = \App\Models\Slider::active()->ordered()->get();
-    $testimonials = \App\Models\Testimonial::active()->ordered()->take(6)->get();
-    $statistics = \App\Models\Statistic::active()->ordered()->get();
-    $blogs = \App\Models\Blog::published()->latest()->take(3)->get();
-    $featuredBoats = \App\Models\Boat::active()->featured()->take(6)->get();
-    return view('frontend.home', compact('houses', 'rooms', 'boats', 'sliders', 'testimonials', 'statistics', 'blogs', 'featuredBoats'));
-})->name('home');
+Route::get('/', [PageController::class, 'home'])->name('home');
 
-// about page
-Route::get('/about', function () {
-    return view('frontend.about');
-})->name('about');
+// About page
+Route::get('/about', [PageController::class, 'about'])->name('about');
 
-// contact page
-Route::get('/contact', function () {
-    return view('frontend.contact');
-})->name('contact');
+// Contact page
+Route::get('/contact', [PageController::class, 'contact'])->name('contact');
 
-// contact form submission
+// Contact form submission
 Route::post('/contact', [App\Http\Controllers\Frontend\ContactController::class, 'store'])->name('contact.store');
 
-// job application page
-Route::get('/job-application', function () {
-    return view('frontend.job-application');
-})->name('job-application');
+// Job application page
+Route::get('/job-application', [PageController::class, 'jobApplication'])->name('job-application');
 
 // Dynamic policy pages route
-Route::get('/policy/{slug}', function ($slug) {
-    $policyPage = \App\Models\PolicyPage::where('slug', $slug)->where('is_active', true)->firstOrFail();
-    return view('frontend.policy-page', compact('policyPage'));
-})->name('policy-pages.show');
+Route::get('/policy/{slug}', [PageController::class, 'policyPage'])->name('policy-pages.show');
 
 // Customer Routes
 Route::prefix('customer')->name('customer.')->group(function () {

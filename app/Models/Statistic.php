@@ -18,6 +18,11 @@ class Statistic extends Model
         'is_active' => 'boolean',
     ];
 
+    public function getIconUrlAttribute()
+    {
+        return $this->icon ? asset('storage/' . $this->icon) : null;
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);

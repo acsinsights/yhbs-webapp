@@ -75,6 +75,9 @@ class Edit extends Component
             }
 
             $data['image'] = $this->image->store('sliders', 'public');
+        } elseif (!$this->isCreating && $this->existingImage) {
+            // Preserve existing image when updating without new upload
+            $data['image'] = $this->existingImage;
         }
 
         if ($this->isCreating) {

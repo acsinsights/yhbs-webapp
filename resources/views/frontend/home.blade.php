@@ -3676,7 +3676,7 @@
                         <div class="single-counter">
                             <div class="icon {{ ['yellow', 'orange', '', 'green'][$loop->index % 4] }}">
                                 @if ($statistic->icon)
-                                    <img src="{{ asset($statistic->icon) }}" alt="{{ $statistic->title }}"
+                                    <img src="{{ $statistic->icon_url }}" alt="{{ $statistic->title }}"
                                         style="width: 45px; height: 45px;">
                                 @endif
                             </div>
