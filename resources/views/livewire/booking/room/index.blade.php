@@ -40,10 +40,12 @@ new class extends Component {
             ->with(['bookingable', 'user'])
             ->when($this->search, function ($query) {
                 return $query->where(function ($q) {
-                    // Search in user
-                    $q->whereHas('user', function ($userQuery) {
-                        $userQuery->where('name', 'like', "%{$this->search}%")->orWhere('email', 'like', "%{$this->search}%");
-                    })
+                    // Search by booking ID
+                    $q->where('booking_id', 'like', "%{$this->search}%")
+                        // Search in user
+                        ->orWhereHas('user', function ($userQuery) {
+                            $userQuery->where('name', 'like', "%{$this->search}%")->orWhere('email', 'like', "%{$this->search}%");
+                        })
                         // Search in room number
                         ->orWhereHasMorph('bookingable', [Room::class], function ($roomQuery) {
                             $roomQuery->where('room_number', 'like', "%{$this->search}%");
@@ -53,7 +55,9 @@ new class extends Component {
                             $roomQuery->whereHas('house', function ($houseQuery) {
                                 $houseQuery->where('name', 'like', "%{$this->search}%");
                             });
-                        });
+                        })
+                        // Search in guest details (guest names)
+                        ->orWhereRaw("JSON_SEARCH(guest_details, 'one', ?) IS NOT NULL", ["%{$this->search}%"]);
                 });
             })
             ->orderBy(...array_values($this->sortBy))

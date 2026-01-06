@@ -496,6 +496,21 @@ new class extends Component {
                             @if (is_array($booking->guest_details))
                                 <div class="space-y-3">
                                     @foreach ($booking->guest_details as $key => $value)
+                                        @php
+                                            // Skip empty children_names and special_requests
+                                            $skipEmpty = in_array($key, ['children_names', 'special_requests']);
+                                            if ($skipEmpty) {
+                                                if (
+                                                    is_array($value) &&
+                                                    (empty($value) || count(array_filter($value)) === 0)
+                                                ) {
+                                                    continue;
+                                                }
+                                                if (is_string($value) && empty(trim($value))) {
+                                                    continue;
+                                                }
+                                            }
+                                        @endphp
                                         @if (is_array($value))
                                             <div class="bg-base-200/50 p-3 rounded-lg">
                                                 <div class="font-semibold text-xs uppercase text-primary mb-2">
@@ -516,12 +531,16 @@ new class extends Component {
                                                             @endforeach
                                                         </div>
                                                     @elseif (in_array($key, ['adult_names', 'children_names']))
-                                                        <div class="flex flex-wrap gap-2">
-                                                            @foreach ($value as $index => $name)
-                                                                <x-badge value="{{ $name }}"
-                                                                    class="badge-soft {{ $key === 'adult_names' ? 'badge-primary' : 'badge-secondary' }}" />
-                                                            @endforeach
-                                                        </div>
+                                                        @if (!empty($value) && count(array_filter($value)) > 0)
+                                                            <div class="flex flex-wrap gap-2">
+                                                                @foreach ($value as $index => $name)
+                                                                    @if (!empty($name))
+                                                                        <x-badge value="{{ $name }}"
+                                                                            class="badge-soft {{ $key === 'adult_names' ? 'badge-primary' : 'badge-secondary' }}" />
+                                                                    @endif
+                                                                @endforeach
+                                                            </div>
+                                                        @endif
                                                     @else
                                                         @foreach ($value as $subKey => $subValue)
                                                             @if (!is_array($subValue))
@@ -756,8 +775,22 @@ new class extends Component {
 
                         <div class="flex justify-between items-center">
                             <span class="text-base font-semibold">Total Amount</span>
-                            <span
-                                class="text-2xl font-bold">{{ currency_format($booking->total_amount ?? ($booking->price ?? 0) + ($booking->service_fee ?? 0) + ($booking->tax ?? 0) + ($booking->reschedule_fee ?? 0) + ($booking->extra_fee ?? 0) - ($booking->discount_amount ?? 0) - ($booking->wallet_amount_used ?? 0)) }}</span>
+                            @php
+                                // Calculate correct total
+                                $baseAmount =
+                                    $booking->price_per_night && $booking->nights
+                                        ? $booking->price_per_night * $booking->nights
+                                        : $booking->price ?? 0;
+                                $calculatedTotal =
+                                    $baseAmount +
+                                    ($booking->service_fee ?? 0) +
+                                    ($booking->tax ?? 0) +
+                                    ($booking->reschedule_fee ?? 0) +
+                                    ($booking->extra_fee ?? 0) -
+                                    ($booking->discount_amount ?? 0) -
+                                    ($booking->wallet_amount_used ?? 0);
+                            @endphp
+                            <span class="text-2xl font-bold">{{ currency_format($calculatedTotal) }}</span>
                         </div>
                     </div>
 

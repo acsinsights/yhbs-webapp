@@ -28,7 +28,7 @@ new class extends Component {
 
     public function mount(Booking $booking): void
     {
-        $this->booking = $booking->load(['bookingable', 'user']);
+        $this->booking = $booking->load(['bookingable', 'user', 'coupon']);
         $this->payment_status = $booking->payment_status->value;
         $this->payment_method = $booking->payment_method->value;
         $this->extra_fee = $booking->extra_fee;
@@ -466,6 +466,97 @@ new class extends Component {
                         <div>
                             <div class="text-sm text-base-content/50 mb-1">Notes</div>
                             <div class="text-sm">{{ strip_tags($booking->notes) }}</div>
+                        </div>
+                    @endif
+
+                    {{-- Guest Details --}}
+                    @if ($booking->guest_details)
+                        <div class="mt-4 border-t pt-4">
+                            <div class="text-sm font-semibold text-base-content/80 mb-3">
+                                <x-icon name="o-users" class="w-4 h-4 inline mr-1" />
+                                Guest Information
+                            </div>
+                            @if (is_array($booking->guest_details))
+                                <div class="space-y-3">
+                                    @foreach ($booking->guest_details as $key => $value)
+                                        @php
+                                            // Skip empty children_names and special_requests
+                                            $skipEmpty = in_array($key, ['children_names', 'special_requests']);
+                                            if ($skipEmpty) {
+                                                if (
+                                                    is_array($value) &&
+                                                    (empty($value) || count(array_filter($value)) === 0)
+                                                ) {
+                                                    continue;
+                                                }
+                                                if (is_string($value) && empty(trim($value))) {
+                                                    continue;
+                                                }
+                                            }
+                                        @endphp
+                                        @if (is_array($value))
+                                            <div class="bg-base-200/50 p-3 rounded-lg">
+                                                <div class="font-semibold text-xs uppercase text-primary mb-2">
+                                                    {{ str_replace('_', ' ', ucfirst($key)) }}
+                                                </div>
+                                                <div class="space-y-1">
+                                                    @if ($key === 'customer')
+                                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                            @foreach ($value as $subKey => $subValue)
+                                                                @if (!is_array($subValue))
+                                                                    <div class="text-xs">
+                                                                        <span
+                                                                            class="text-base-content/60">{{ ucwords(str_replace('_', ' ', $subKey)) }}:</span>
+                                                                        <span
+                                                                            class="font-medium">{{ $subValue }}</span>
+                                                                    </div>
+                                                                @endif
+                                                            @endforeach
+                                                        </div>
+                                                    @elseif (in_array($key, ['adult_names', 'children_names']))
+                                                        @if (!empty($value) && count(array_filter($value)) > 0)
+                                                            <div class="flex flex-wrap gap-2">
+                                                                @foreach ($value as $index => $name)
+                                                                    @if (!empty($name))
+                                                                        <x-badge value="{{ $name }}"
+                                                                            class="badge-soft {{ $key === 'adult_names' ? 'badge-primary' : 'badge-secondary' }}" />
+                                                                    @endif
+                                                                @endforeach
+                                                            </div>
+                                                        @endif
+                                                    @else
+                                                        @foreach ($value as $subKey => $subValue)
+                                                            @if (!is_array($subValue))
+                                                                <div class="text-xs">
+                                                                    <span
+                                                                        class="text-base-content/60">{{ ucfirst($subKey) }}:</span>
+                                                                    <span
+                                                                        class="font-medium">{{ $subValue }}</span>
+                                                                </div>
+                                                            @else
+                                                                <div class="text-xs">
+                                                                    <span
+                                                                        class="text-base-content/60">{{ ucfirst($subKey) }}:</span>
+                                                                    <span
+                                                                        class="font-medium">{{ implode(', ', $subValue) }}</span>
+                                                                </div>
+                                                            @endif
+                                                        @endforeach
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        @else
+                                            <div class="bg-base-200/50 p-3 rounded-lg">
+                                                <div class="text-xs">
+                                                    <span
+                                                        class="text-base-content/60 font-medium">{{ ucwords(str_replace('_', ' ', $key)) }}:</span>
+                                                    <div class="mt-1 text-sm">{{ $value }}</div>
+                                                </div>
+                                            </div>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
                     @endif
                 </div>

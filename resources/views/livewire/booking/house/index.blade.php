@@ -39,7 +39,22 @@ new class extends Component {
         $view->bookings = Booking::query()
             ->where('bookingable_type', House::class)
             ->with(['bookingable', 'user'])
-            ->search($this->search, ['name', 'house_number'])
+            ->when($this->search, function ($query) {
+                return $query->where(function ($q) {
+                    // Search by booking ID
+                    $q->where('booking_id', 'like', "%{$this->search}%")
+                        // Search in user name and email
+                        ->orWhereHas('user', function ($userQuery) {
+                            $userQuery->where('name', 'like', "%{$this->search}%")->orWhere('email', 'like', "%{$this->search}%");
+                        })
+                        // Search in house name
+                        ->orWhereHasMorph('bookingable', [House::class], function ($houseQuery) {
+                            $houseQuery->where('name', 'like', "%{$this->search}%")->orWhere('house_number', 'like', "%{$this->search}%");
+                        })
+                        // Search in guest details (guest names)
+                        ->orWhereRaw("JSON_SEARCH(guest_details, 'one', ?) IS NOT NULL", ["%{$this->search}%"]);
+                });
+            })
             ->orderBy(...array_values($this->sortBy))
             ->paginate($this->perPage);
 
@@ -93,7 +108,7 @@ new class extends Component {
             @scope('cell_check_in', $booking)
                 @if ($booking->check_in)
                     <div class="flex flex-col">
-                        <span>{{ $booking->check_in->format('M d, Y') }}</span> 
+                        <span>{{ $booking->check_in->format('M d, Y') }}</span>
                     </div>
                 @else
                     <span class="text-base-content/50">—</span>

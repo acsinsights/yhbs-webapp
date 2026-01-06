@@ -34,13 +34,18 @@ new class extends Component {
         // Search
         if ($this->search) {
             $query->where(function ($q) {
-                $q->whereHas('user', function ($userQuery) {
-                    $userQuery->where('name', 'like', "%{$this->search}%")->orWhere('email', 'like', "%{$this->search}%");
-                })
+                // Search by booking ID
+                $q->where('booking_id', 'like', "%{$this->search}%")
+                    // Search in user name and email
+                    ->orWhereHas('user', function ($userQuery) {
+                        $userQuery->where('name', 'like', "%{$this->search}%")->orWhere('email', 'like', "%{$this->search}%");
+                    })
+                    // Search in boat name
                     ->orWhereHasMorph('bookingable', [Boat::class], function ($boatQuery) {
                         $boatQuery->where('name', 'like', "%{$this->search}%");
                     })
-                    ->orWhere('id', 'like', "%{$this->search}%");
+                    // Search in guest details (guest names)
+                    ->orWhereRaw("JSON_SEARCH(guest_details, 'one', ?) IS NOT NULL", ["%{$this->search}%"]);
             });
         }
 

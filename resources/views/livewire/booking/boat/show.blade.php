@@ -30,7 +30,7 @@ new class extends Component {
 
     public function mount(Booking $booking): void
     {
-        $this->booking = $booking->load(['bookingable', 'user']);
+        $this->booking = $booking->load(['bookingable', 'user', 'coupon']);
 
         if ($booking->bookingable_type !== Boat::class) {
             $this->error('Invalid booking type.', redirectTo: route('admin.bookings.boat.index'));
