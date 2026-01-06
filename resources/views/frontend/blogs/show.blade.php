@@ -4,21 +4,6 @@
 @section('meta_description', Str::limit($blog->description ?? strip_tags($blog->content), 160))
 
 @section('content')
-    <!-- Breadcrumb section Start-->
-    <div class="breadcrumb-section"
-        style="background-image:linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url({{ $blog->image ? asset($blog->image) : asset('frontend/img/innerpages/breadcrumb-bg2.jpg') }});">
-        <div class="container">
-            <div class="banner-content">
-                <h1>{{ $blog->title }}</h1>
-                <ul class="breadcrumb-list">
-                    <li><a href="{{ route('home') }}">Home</a></li>
-                    <li>{{ Str::limit($blog->title, 50) }}</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-    <!-- Breadcrumb section End-->
-
     <!-- Inspiration Details Page Start-->
     <div class="inspiration-details-page pt-100 mb-100">
         <div class="container">
@@ -27,7 +12,8 @@
                     <div class="inspiration-details">
                         @if ($blog->image)
                             <div class="inspiration-image mb-50">
-                                <img src="{{ asset($blog->image) }}" alt="{{ $blog->title }}">
+                                <img src="{{ $blog->image ? (str_starts_with($blog->image, '/storage/') ? asset($blog->image) : asset('storage/' . $blog->image)) : asset('frontend/img/home2/blog-img1.jpg') }}"
+                                    alt="{{ $blog->title }}">
                             </div>
                         @endif
 
@@ -130,7 +116,7 @@
                                 <div class="recent-post-widget mb-30">
                                     <div class="recent-post-img">
                                         <a href="{{ route('blogs.show', $recentBlog->slug) }}">
-                                            <img src="{{ $recentBlog->image ? asset($recentBlog->image) : asset('frontend/img/innerpages/blog-img1.jpg') }}"
+                                            <img src="{{ $recentBlog->image ? (str_starts_with($recentBlog->image, '/storage/') ? asset($recentBlog->image) : asset('storage/' . $recentBlog->image)) : asset('frontend/img/innerpages/blog-img1.jpg') }}"
                                                 alt="{{ $recentBlog->title }}">
                                         </a>
                                     </div>
@@ -161,63 +147,6 @@
         </div>
     </div>
     <!-- Inspiration Details Page End-->
-
-    <!-- Related Inspiration Section Start-->
-    @if ($relatedBlogs->count() > 0)
-        <div class="related-inspiration-section pt-100 mb-100">
-            <div class="container">
-                <div class="row justify-content-center mb-50 wow animate fadeInDown" data-wow-delay="200ms"
-                    data-wow-duration="1500ms">
-                    <div class="col-xl-6 col-lg-8">
-                        <div class="section-title text-center">
-                            <h2>You May Also Like</h2>
-                            <p>More articles you might be interested in reading.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="row gy-md-5 gy-4">
-                    @foreach ($relatedBlogs as $relatedBlog)
-                        <div class="col-lg-4 col-md-6">
-                            <div class="blog-card2 two">
-                                <div class="blog-img-wrap">
-                                    <a href="{{ route('blogs.show', $relatedBlog->slug) }}" class="blog-img">
-                                        <img src="{{ $relatedBlog->image ? asset($relatedBlog->image) : asset('frontend/img/innerpages/blog-img1.jpg') }}"
-                                            alt="{{ $relatedBlog->title }}">
-                                    </a>
-                                    @if ($relatedBlog->location)
-                                        <a href="{{ route('blogs.show', $relatedBlog->slug) }}" class="location">
-                                            <svg width="14" height="14" viewbox="0 0 14 14"
-                                                xmlns="http://www.w3.org/2000/svg">
-                                                <path
-                                                    d="M6.83615 0C3.77766 0 1.28891 2.48879 1.28891 5.54892C1.28891 7.93837 4.6241 11.8351 6.05811 13.3994C6.25669 13.6175 6.54154 13.7411 6.83615 13.7411C7.13076 13.7411 7.41561 13.6175 7.6142 13.3994C9.04821 11.8351 12.3834 7.93833 12.3834 5.54892C12.3834 2.48879 9.89464 0 6.83615 0ZM7.31469 13.1243C7.18936 13.2594 7.02008 13.3342 6.83615 13.3342C6.65222 13.3342 6.48295 13.2594 6.35761 13.1243C4.95614 11.5959 1.69584 7.79515 1.69584 5.54896C1.69584 2.7134 4.00067 0.406933 6.83615 0.406933C9.67164 0.406933 11.9765 2.7134 11.9765 5.54896C11.9765 7.79515 8.71617 11.5959 7.31469 13.1243Z">
-                                                </path>
-                                                <path
-                                                    d="M6.83618 8.54529C8.4624 8.54529 9.7807 7.22698 9.7807 5.60077C9.7807 3.97456 8.4624 2.65625 6.83618 2.65625C5.20997 2.65625 3.89166 3.97456 3.89166 5.60077C3.89166 7.22698 5.20997 8.54529 6.83618 8.54529Z">
-                                                </path>
-                                            </svg>
-                                            {{ $relatedBlog->location }}
-                                        </a>
-                                    @endif
-                                </div>
-                                <div class="blog-content">
-                                    @if ($relatedBlog->date)
-                                        <a href="{{ route('blogs.show', $relatedBlog->slug) }}"
-                                            class="blog-date">{{ $relatedBlog->date->format('d F, Y') }}</a>
-                                    @endif
-                                    <h4><a
-                                            href="{{ route('blogs.show', $relatedBlog->slug) }}">{{ $relatedBlog->title }}</a>
-                                    </h4>
-                                    <p>{{ Str::limit($relatedBlog->description ?? strip_tags($relatedBlog->content), 100) }}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        </div>
-    @endif
-    <!-- Related Inspiration Section End-->
 
     <script>
         function copyToClipboard(url) {

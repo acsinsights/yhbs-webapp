@@ -23,16 +23,9 @@
                 <div class="col-span-2">
                     <x-file label="Icon Image" wire:model="new_icon" accept="image/*"
                         hint="Upload a new icon image (max 2MB)">
-                        <img src="{{ asset('frontend/img/icon/image.svg') }}" class="h-16" />
+                        <img src="{{ $icon ? asset('storage/' . $icon) : 'https://placehold.co/100x100' }}"
+                            alt="Statistic Icon" class="h-24 w-24 object-contain rounded p-2 border" />
                     </x-file>
-
-                    @if ($statistic->icon)
-                        <div class="mt-2">
-                            <p class="text-sm text-gray-500 mb-2">Current Icon:</p>
-                            <img src="{{ asset($statistic->icon) }}" alt="Current Icon"
-                                class="h-16 w-16 object-contain border rounded p-2">
-                        </div>
-                    @endif
 
                     @if ($new_icon)
                         <div class="mt-2">

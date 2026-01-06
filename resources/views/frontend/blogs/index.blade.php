@@ -61,13 +61,8 @@
                             <div class="blog-card2 two">
                                 <div class="blog-img-wrap">
                                     <a href="{{ route('blogs.show', $blog->slug) }}" class="blog-img">
-                                        @if ($blog->image)
-                                            <img src="{{ asset($blog->image) }}" alt="{{ $blog->title }}"
-                                                onerror="this.onerror=null; this.src='{{ asset('frontend/img/innerpages/blog-img1.jpg') }}';">
-                                        @else
-                                            <img src="{{ asset('frontend/img/innerpages/blog-img1.jpg') }}"
-                                                alt="{{ $blog->title }}">
-                                        @endif
+                                        <img src="{{ $blog->image ? (str_starts_with($blog->image, '/storage/') ? asset($blog->image) : asset('storage/' . $blog->image)) : asset('frontend/img/home2/blog-img1.jpg') }}"
+                                            alt="{{ $blog->title }}">
                                     </a>
                                     @if ($blog->location)
                                         <a href="{{ route('blogs.show', $blog->slug) }}" class="location">
