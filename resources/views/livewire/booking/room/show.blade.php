@@ -25,6 +25,7 @@ new class extends Component {
     public array $bookedDates = [];
     public bool $showHistoryDrawer = false;
     public $activities = [];
+    public int $originalNights = 0;
 
     public function mount(Booking $booking): void
     {
@@ -33,6 +34,7 @@ new class extends Component {
         $this->payment_method = $booking->payment_method->value;
         $this->extra_fee = $booking->extra_fee;
         $this->extra_fee_remark = $booking->extra_fee_remark;
+        $this->originalNights = $booking->check_in->diffInDays($booking->check_out);
         $this->loadBookedDates();
 
         // Explicitly set modal states to false
@@ -223,6 +225,13 @@ new class extends Component {
 
         if ($newCheckOut->isBefore($newCheckIn)) {
             $this->error('Check-out date must be after check-in date.');
+            return;
+        }
+
+        // Validate that the number of nights remains the same
+        $newNights = $newCheckIn->diffInDays($newCheckOut);
+        if ($newNights !== $this->originalNights) {
+            $this->error("Booking must maintain the same duration. Original: {$this->originalNights} nights, Selected: {$newNights} nights.");
             return;
         }
 
@@ -773,8 +782,12 @@ new class extends Component {
     <x-drawer wire:model="showRescheduleModal" title="Reschedule Booking" class="w-11/12 lg:w-1/3" right>
         <div class="space-y-4">
             <x-alert title="Current Booking Dates"
-                description="Check-in: {{ $booking->check_in->format('M d, Y') }} | Check-out: {{ $booking->check_out->format('M d, Y') }}"
+                description="Check-in: {{ $booking->check_in->format('M d, Y') }} | Check-out: {{ $booking->check_out->format('M d, Y') }} | Duration: {{ $originalNights }} {{ Str::plural('night', $originalNights) }}"
                 icon="o-information-circle" class="alert-info" />
+            
+            <x-alert title="Important" 
+                description="The booking duration must remain {{ $originalNights }} {{ Str::plural('night', $originalNights) }}. When you select a new check-in date, the check-out date will automatically be set to maintain the same duration."
+                icon="o-exclamation-triangle" class="alert-warning" />
 
             <div wire:key="reschedule-datepicker-{{ $booking->id }}">
                 <x-datepicker label="Select New Date Range (Check-in to Check-out)" wire:model.live="new_date_range"
@@ -789,8 +802,7 @@ new class extends Component {
                         'allowInput' => false,
                         'clickOpens' => true,
                     ]" />
-                <p class="text-xs text-base-content/60 mt-1">📅 Select check-in and check-out dates. Red dates are
-                    already booked.</p>
+                <p class="text-xs text-base-content/60 mt-1">📅 Select {{ $originalNights }}-night date range. The booking duration must remain the same. Red dates are already booked.</p>
             </div>
 
             <x-textarea label="Reason for Rescheduling (Optional)" wire:model="reschedule_notes"
