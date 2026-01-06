@@ -29,7 +29,7 @@ new class extends Component {
 
     public function mount(Booking $booking): void
     {
-        $this->booking = $booking->load(['bookingable', 'user']);
+        $this->booking = $booking->load(['bookingable', 'user', 'coupon']);
         $this->payment_status = $booking->payment_status->value;
         $this->payment_method = $booking->payment_method->value;
         $this->extra_fee = $booking->extra_fee;
@@ -465,10 +465,96 @@ new class extends Component {
                         </div>
                     @endif
 
+                    @if ($booking->arrival_time)
+                        <div>
+                            <div class="text-sm text-base-content/50 mb-1">Arrival Time</div>
+                            <div class="font-semibold">{{ $booking->arrival_time }}</div>
+                        </div>
+                    @endif
+
+                    @if ($booking->trip_type)
+                        <div>
+                            <div class="text-sm text-base-content/50 mb-1">Trip Type</div>
+                            <div class="font-semibold">{{ ucfirst($booking->trip_type) }}</div>
+                        </div>
+                    @endif
+
                     @if ($booking->notes)
                         <div>
                             <div class="text-sm text-base-content/50 mb-1">Notes</div>
                             <div class="text-sm">{{ strip_tags($booking->notes) }}</div>
+                        </div>
+                    @endif
+
+                    {{-- Guest Details --}}
+                    @if ($booking->guest_details)
+                        <div class="mt-4 border-t pt-4">
+                            <div class="text-sm font-semibold text-base-content/80 mb-3">
+                                <x-icon name="o-users" class="w-4 h-4 inline mr-1" />
+                                Guest Information
+                            </div>
+                            @if (is_array($booking->guest_details))
+                                <div class="space-y-3">
+                                    @foreach ($booking->guest_details as $key => $value)
+                                        @if (is_array($value))
+                                            <div class="bg-base-200/50 p-3 rounded-lg">
+                                                <div class="font-semibold text-xs uppercase text-primary mb-2">
+                                                    {{ str_replace('_', ' ', ucfirst($key)) }}
+                                                </div>
+                                                <div class="space-y-1">
+                                                    @if ($key === 'customer')
+                                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                            @foreach ($value as $subKey => $subValue)
+                                                                @if (!is_array($subValue))
+                                                                    <div class="text-xs">
+                                                                        <span
+                                                                            class="text-base-content/60">{{ ucwords(str_replace('_', ' ', $subKey)) }}:</span>
+                                                                        <span
+                                                                            class="font-medium">{{ $subValue }}</span>
+                                                                    </div>
+                                                                @endif
+                                                            @endforeach
+                                                        </div>
+                                                    @elseif (in_array($key, ['adult_names', 'children_names']))
+                                                        <div class="flex flex-wrap gap-2">
+                                                            @foreach ($value as $index => $name)
+                                                                <x-badge value="{{ $name }}"
+                                                                    class="badge-soft {{ $key === 'adult_names' ? 'badge-primary' : 'badge-secondary' }}" />
+                                                            @endforeach
+                                                        </div>
+                                                    @else
+                                                        @foreach ($value as $subKey => $subValue)
+                                                            @if (!is_array($subValue))
+                                                                <div class="text-xs">
+                                                                    <span
+                                                                        class="text-base-content/60">{{ ucfirst($subKey) }}:</span>
+                                                                    <span
+                                                                        class="font-medium">{{ $subValue }}</span>
+                                                                </div>
+                                                            @else
+                                                                <div class="text-xs">
+                                                                    <span
+                                                                        class="text-base-content/60">{{ ucfirst($subKey) }}:</span>
+                                                                    <span
+                                                                        class="font-medium">{{ implode(', ', $subValue) }}</span>
+                                                                </div>
+                                                            @endif
+                                                        @endforeach
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        @else
+                                            <div class="bg-base-200/50 p-3 rounded-lg">
+                                                <div class="text-xs">
+                                                    <span
+                                                        class="text-base-content/60 font-medium">{{ ucwords(str_replace('_', ' ', $key)) }}:</span>
+                                                    <div class="mt-1 text-sm">{{ $value }}</div>
+                                                </div>
+                                            </div>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
                     @endif
                 </div>
@@ -489,12 +575,32 @@ new class extends Component {
                             <div class="text-sm text-base-content/50 mb-1">House Name</div>
                             <div class="font-semibold text-lg">{{ $booking->bookingable->name }}</div>
                         </div>
-                        @if ($booking->bookingable->sku)
+                        @if ($booking->bookingable->house_number)
                             <div>
-                                <div class="text-sm text-base-content/50 mb-1">SKU</div>
-                                <div class="font-semibold">{{ $booking->bookingable->sku }}</div>
+                                <div class="text-sm text-base-content/50 mb-1">House Number</div>
+                                <div class="font-semibold">{{ $booking->bookingable->house_number }}</div>
                             </div>
                         @endif
+                        @if ($booking->bookingable->number_of_rooms)
+                            <div>
+                                <div class="text-sm text-base-content/50 mb-1">Number of Rooms</div>
+                                <div class="font-semibold">{{ $booking->bookingable->number_of_rooms }}</div>
+                            </div>
+                        @endif
+                        <div class="grid grid-cols-2 gap-4">
+                            @if ($booking->bookingable->adults)
+                                <div>
+                                    <div class="text-sm text-base-content/50 mb-1">Max Adults</div>
+                                    <x-badge :value="$booking->bookingable->adults" class="badge-soft badge-primary" />
+                                </div>
+                            @endif
+                            @if ($booking->bookingable->children)
+                                <div>
+                                    <div class="text-sm text-base-content/50 mb-1">Max Children</div>
+                                    <x-badge :value="$booking->bookingable->children" class="badge-soft badge-secondary" />
+                                </div>
+                            @endif
+                        </div>
                         @if ($booking->bookingable->description)
                             <div>
                                 <div class="text-sm text-base-content/50 mb-1">Description</div>
@@ -528,6 +634,12 @@ new class extends Component {
                             <div class="text-sm text-base-content/50 mb-1">Email</div>
                             <div class="text-sm">{{ $booking->user->email }}</div>
                         </div>
+                        @if ($booking->user->phone)
+                            <div>
+                                <div class="text-sm text-base-content/50 mb-1">Phone</div>
+                                <div class="text-sm">{{ $booking->user->phone }}</div>
+                            </div>
+                        @endif
                     @endif
 
                     <div class="grid grid-cols-2 gap-4">
@@ -564,11 +676,40 @@ new class extends Component {
                     <div class="p-4 bg-base-200 rounded-lg space-y-2">
                         <h3 class="text-sm font-semibold text-base-content/70 mb-3">Payment Breakdown</h3>
 
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-base-content/60">Base Amount</span>
-                            <span
-                                class="font-medium">{{ currency_format(($booking->total_amount > 0 ? $booking->total_amount : $booking->price) ?? 0) }}</span>
-                        </div>
+                        @if ($booking->price_per_night && $booking->nights)
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-base-content/60">Price per Night</span>
+                                <span class="font-medium">{{ currency_format($booking->price_per_night) }}</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-base-content/60">Number of Nights</span>
+                                <span class="font-medium">{{ $booking->nights }}</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-base-content/60">Subtotal</span>
+                                <span
+                                    class="font-medium">{{ currency_format($booking->price_per_night * $booking->nights) }}</span>
+                            </div>
+                        @else
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-base-content/60">Base Amount</span>
+                                <span class="font-medium">{{ currency_format($booking->price ?? 0) }}</span>
+                            </div>
+                        @endif
+
+                        @if ($booking->service_fee && $booking->service_fee > 0)
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-base-content/60">Service Fee</span>
+                                <span class="font-medium">{{ currency_format($booking->service_fee) }}</span>
+                            </div>
+                        @endif
+
+                        @if ($booking->tax && $booking->tax > 0)
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-base-content/60">Tax</span>
+                                <span class="font-medium">{{ currency_format($booking->tax) }}</span>
+                            </div>
+                        @endif
 
                         @if ($booking->reschedule_fee && $booking->reschedule_fee > 0)
                             <div class="flex justify-between items-center text-sm">
@@ -593,7 +734,11 @@ new class extends Component {
 
                         @if ($booking->discount_amount && $booking->discount_amount > 0)
                             <div class="flex justify-between items-center text-sm">
-                                <span class="text-base-content/60">Discount</span>
+                                <span class="text-base-content/60">Discount
+                                    @if ($booking->coupon)
+                                        ({{ $booking->coupon->code }})
+                                    @endif
+                                </span>
                                 <span
                                     class="font-medium text-success">-{{ currency_format($booking->discount_amount) }}</span>
                             </div>
@@ -612,7 +757,7 @@ new class extends Component {
                         <div class="flex justify-between items-center">
                             <span class="text-base font-semibold">Total Amount</span>
                             <span
-                                class="text-2xl font-bold">{{ currency_format((($booking->total_amount > 0 ? $booking->total_amount : $booking->price) ?? 0) + ($booking->reschedule_fee ?? 0) + ($booking->extra_fee ?? 0) - ($booking->discount_amount ?? 0) - ($booking->wallet_amount_used ?? 0)) }}</span>
+                                class="text-2xl font-bold">{{ currency_format($booking->total_amount ?? ($booking->price ?? 0) + ($booking->service_fee ?? 0) + ($booking->tax ?? 0) + ($booking->reschedule_fee ?? 0) + ($booking->extra_fee ?? 0) - ($booking->discount_amount ?? 0) - ($booking->wallet_amount_used ?? 0)) }}</span>
                         </div>
                     </div>
 
@@ -624,6 +769,21 @@ new class extends Component {
                         <div class="text-sm text-base-content/50 mb-1">Payment Status</div>
                         <x-badge :value="$booking->payment_status->label()" class="{{ $booking->payment_status->badgeColor() }}" />
                     </div>
+
+                    @if ($booking->coupon)
+                        <div class="mt-4 p-3 bg-success/10 rounded-lg border border-success/20">
+                            <div class="flex items-center gap-2 mb-2">
+                                <x-icon name="o-ticket" class="w-4 h-4 text-success" />
+                                <span class="text-sm font-semibold text-success">Coupon Applied</span>
+                            </div>
+                            <div class="space-y-1 text-xs">
+                                <div><strong>Code:</strong> {{ $booking->coupon->code }}</div>
+                                @if ($booking->coupon->description)
+                                    <div><strong>Description:</strong> {{ $booking->coupon->description }}</div>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </x-card>
         </div>
