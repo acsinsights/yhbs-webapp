@@ -19,7 +19,7 @@
                             <a href="{{ route('home') }}">Home</a>
                         </li>
                         <li class="{{ request()->is('about*') ? 'active' : '' }}">
-                            <a href="{{ url('/about') }}">About Us</a>
+                            <a href="{{ route('about') }}">About Us</a>
                         </li>
                         <li
                             class="menu-item-has-children {{ request()->is('rooms*') || request()->is('houses*') || request()->is('boats*') ? 'active' : '' }}">

@@ -40,6 +40,81 @@
     <link rel="stylesheet" href="{{ asset('frontend/css/daterangepicker.css') }}">
     <link href="{{ asset('frontend/css/boxicons.min.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('frontend/css/style.css') }}">
+
+    <!-- Google Translate Widget Script -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                    pageLanguage: 'en',
+                    autoDisplay: 'true',
+                    includedLanguages: 'en,hi,ar,es,fr,de,ja,zh-CN,ru,pt,it,ko,tr,nl,pl,sv,id,th,vi',
+                    layout: google.translate.TranslateElement.InlineLayout.HORIZONTAL
+                },
+                'google_translate_element'
+            );
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit">
+    </script>
+
+    <!-- Google Translate Custom Styles (CodePen Style) -->
+    <style>
+        /* Remove top spacing and hide unwanted elements */
+        body {
+            top: 0 !important;
+        }
+
+        body>.skiptranslate,
+        .goog-logo-link,
+        .gskiptranslate,
+        .goog-te-gadget span,
+        .goog-te-banner-frame,
+        #goog-gt-tt,
+        .goog-te-balloon-frame,
+        div#goog-gt-tt {
+            display: none !important;
+        }
+
+        .goog-te-gadget {
+            color: transparent !important;
+            font-size: 0px;
+        }
+
+        .goog-text-highlight {
+            background: transparent !important;
+            box-shadow: transparent !important;
+        }
+
+        /* Custom dropdown styling for footer */
+        #google_translate_element select {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-weight: 600;
+            border-radius: 5px;
+            padding: 8px 12px;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        #google_translate_element select:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        #google_translate_element select option {
+            background: #1a1a1a;
+            color: #fff;
+            padding: 8px;
+        }
+
+        /* Ensure clean container */
+        #google_translate_element {
+            display: inline-block;
+        }
+    </style>
+
     @livewireStyles
     @yield('styles')
 </head>
