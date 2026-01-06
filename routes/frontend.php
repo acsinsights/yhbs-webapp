@@ -12,12 +12,14 @@ use App\Http\Controllers\Frontend\BookingController;
 // Frontend Home Page
 Route::get('/', function () {
     $houses = \App\Models\House::active()->take(3)->get();
+    $rooms = \App\Models\Room::active()->take(3)->get();
+    $boats = \App\Models\Boat::active()->take(3)->get();
     $sliders = \App\Models\Slider::active()->ordered()->get();
     $testimonials = \App\Models\Testimonial::active()->ordered()->take(6)->get();
     $statistics = \App\Models\Statistic::active()->ordered()->get();
     $blogs = \App\Models\Blog::published()->latest()->take(3)->get();
     $featuredBoats = \App\Models\Boat::active()->featured()->take(6)->get();
-    return view('frontend.home', compact('houses', 'sliders', 'testimonials', 'statistics', 'blogs', 'featuredBoats'));
+    return view('frontend.home', compact('houses', 'rooms', 'boats', 'sliders', 'testimonials', 'statistics', 'blogs', 'featuredBoats'));
 })->name('home');
 
 // about page

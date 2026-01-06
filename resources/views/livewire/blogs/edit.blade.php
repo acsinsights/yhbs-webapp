@@ -71,7 +71,7 @@ new class extends Component {
         $imagePath = $this->existing_image;
         if ($this->image) {
             $url = $this->image->store('blogs', 'public');
-            $imagePath = "/storage/$url";
+            $imagePath = $url; // Store relative path without /storage/ prefix
         }
 
         $this->blog->update([

@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
             TestimonialSeeder::class,
             StatisticSeeder::class,
             PolicyPageSeeder::class,
+            BlogSeeder::class,
         ]);
     }
 }
