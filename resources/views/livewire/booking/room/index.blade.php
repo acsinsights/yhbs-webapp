@@ -46,15 +46,9 @@ new class extends Component {
                         ->orWhereHas('user', function ($userQuery) {
                             $userQuery->where('name', 'like', "%{$this->search}%")->orWhere('email', 'like', "%{$this->search}%");
                         })
-                        // Search in room number
+                        // Search in room number and name
                         ->orWhereHasMorph('bookingable', [Room::class], function ($roomQuery) {
-                            $roomQuery->where('room_number', 'like', "%{$this->search}%");
-                        })
-                        // Search in house name (through room's house relationship)
-                        ->orWhereHasMorph('bookingable', [Room::class], function ($roomQuery) {
-                            $roomQuery->whereHas('house', function ($houseQuery) {
-                                $houseQuery->where('name', 'like', "%{$this->search}%");
-                            });
+                            $roomQuery->where('room_number', 'like', "%{$this->search}%")->orWhere('name', 'like', "%{$this->search}%");
                         })
                         // Search in guest details (guest names)
                         ->orWhereRaw("JSON_SEARCH(guest_details, 'one', ?) IS NOT NULL", ["%{$this->search}%"]);
