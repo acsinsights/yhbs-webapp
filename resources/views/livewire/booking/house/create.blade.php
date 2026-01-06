@@ -332,6 +332,7 @@ new class extends Component {
                 'check_out' => 'required|date|after:check_in',
                 'adults' => 'required|integer|min:1',
                 'children' => 'required|integer|min:0',
+                'adultNames.0' => 'required|string|max:255',
                 'amount' => 'required|numeric|min:0|max:999999999.99',
                 'payment_method' => 'required|in:cash,card',
                 'payment_status' => 'required|in:paid,pending',
@@ -339,6 +340,7 @@ new class extends Component {
             [
                 'amount.max' => 'Amount cannot exceed ' . currency_format(999999999.99) . '.',
                 'amount.min' => 'Amount must be greater than or equal to 0.',
+                'adultNames.0.required' => 'At least first guest name is required.',
             ],
         );
 

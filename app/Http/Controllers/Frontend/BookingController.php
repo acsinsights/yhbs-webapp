@@ -175,22 +175,16 @@ class BookingController extends Controller
 
                 $nights = $durationHours; // Store duration in nights field for display
             } elseif ($property->service_type == 'ferry') {
-                // Ferry service pricing
-                switch ($ferryType) {
-                    case 'private_weekday':
-                        $subtotal = $property->ferry_private_weekday ?? 0;
-                        break;
-                    case 'private_weekend':
-                        $subtotal = $property->ferry_private_weekend ?? 0;
-                        break;
-                    case 'public_weekday':
-                        $subtotal = $property->ferry_public_weekday ?? 0;
-                        break;
-                    case 'public_weekend':
-                        $subtotal = $property->ferry_public_weekend ?? 0;
-                        break;
-                    default:
-                        $subtotal = $property->ferry_private_weekday ?? 0;
+                // Ferry service pricing - based on trip_type
+                $isWeekend = Carbon::parse($checkIn)->isWeekend();
+
+                if ($tripType === 'private') {
+                    $pricePerHour = $isWeekend ? ($property->ferry_private_weekend ?? 0) : ($property->ferry_private_weekday ?? 0);
+                    $subtotal = $pricePerHour * ($duration ?? 1);
+                } else {
+                    // Public trip - multiply by passengers
+                    $pricePerPersonPerHour = $isWeekend ? ($property->ferry_public_weekend ?? 0) : ($property->ferry_public_weekday ?? 0);
+                    $subtotal = $pricePerPersonPerHour * ($duration ?? 1) * $adults;
                 }
             } elseif ($property->service_type == 'limousine') {
                 // Experience pricing (limousine)
@@ -206,6 +200,11 @@ class BookingController extends Controller
                         break;
                     default:
                         $subtotal = $property->price_15min ?? 0;
+                }
+
+                // For public trips, multiply by passengers
+                if ($tripType === 'public') {
+                    $subtotal = $subtotal * $adults;
                 }
             }
 
@@ -341,22 +340,14 @@ class BookingController extends Controller
                     $pricePerNight = floatval($property->price_3hours ?? 0);
                 }
             } elseif ($property->service_type == 'ferry') {
-                // Use the actual ferry price based on ferry type
-                switch ($ferryType) {
-                    case 'private_weekday':
-                        $pricePerNight = floatval($property->ferry_private_weekday ?? 0);
-                        break;
-                    case 'private_weekend':
-                        $pricePerNight = floatval($property->ferry_private_weekend ?? 0);
-                        break;
-                    case 'public_weekday':
-                        $pricePerNight = floatval($property->ferry_public_weekday ?? 0);
-                        break;
-                    case 'public_weekend':
-                        $pricePerNight = floatval($property->ferry_public_weekend ?? 0);
-                        break;
-                    default:
-                        $pricePerNight = floatval($property->ferry_private_weekday ?? 0);
+                // Use the actual ferry price based on trip type
+                $isWeekend = Carbon::parse($checkIn)->isWeekend();
+
+                if ($tripType === 'private') {
+                    $pricePerNight = $isWeekend ? floatval($property->ferry_private_weekend ?? 0) : floatval($property->ferry_private_weekday ?? 0);
+                } else {
+                    // For public trips, show per person price
+                    $pricePerNight = $isWeekend ? floatval($property->ferry_public_weekend ?? 0) : floatval($property->ferry_public_weekday ?? 0);
                 }
             } elseif ($property->service_type == 'limousine') {
                 // Use the actual experience price based on duration

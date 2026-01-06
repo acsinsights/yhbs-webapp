@@ -27,10 +27,12 @@
                 <x-icon name="o-user" class="w-4 h-4" />
                 Guest Names
             </h4>
+            <p class="text-xs text-base-content/60 mb-3">Only first guest name is required, rest are optional</p>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @for ($i = 0; $i < $adults; $i++)
                     <div wire:key="adult-{{ $i }}">
-                        <x-input wire:model="adultNames.{{ $i }}" label="Guest {{ $i + 1 }} Name"
+                        <x-input wire:model="adultNames.{{ $i }}"
+                            label="Guest {{ $i + 1 }} Name{{ $i === 0 ? ' *' : '' }}"
                             placeholder="Enter full name" icon="o-user" />
                     </div>
                 @endfor

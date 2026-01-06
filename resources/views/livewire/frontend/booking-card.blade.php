@@ -416,8 +416,11 @@ new class extends Component {
 
             // Add validation for adult names only if adults > 0
             if ($this->adults > 0) {
-                for ($i = 0; $i < $this->adults; $i++) {
-                    $rules["adultNames.{$i}"] = 'required|string|min:1|max:255';
+                // Only first adult name is required
+                $rules['adultNames.0'] = 'required|string|min:1|max:255';
+                // Rest are optional
+                for ($i = 1; $i < $this->adults; $i++) {
+                    $rules["adultNames.{$i}"] = 'nullable|string|max:255';
                 }
             }
 
@@ -432,25 +435,8 @@ new class extends Component {
             $validated = $this->validate($rules, [
                 'check_in.required' => 'Check-in date is required.',
                 'check_out.required' => 'Check-out date is required.',
-                'adultNames.*.required' => 'Please provide name for all adults.',
-                'adultNames.*.min' => 'Adult name is required.',
+                'adultNames.0.required' => 'At least first guest name is required.',
             ]);
-
-            // For yachts, validate that adults + children <= max guests
-            if ($this->type === 'boat') {
-                $maxGuests = $this->bookable->max_guests ?? 10;
-                if ($this->adults + $this->children > $maxGuests) {
-                    $this->errorMessage = "Total guests cannot exceed $maxGuests.";
-                    return;
-                }
-            }
-
-            // Ensure adult names are filled
-            $filledAdultNames = array_filter($this->adultNames, fn($name) => !empty(trim($name)));
-            if (count($filledAdultNames) < $this->adults) {
-                $this->errorMessage = 'Please provide names for all adults.';
-                return;
-            }
 
             // Filter out empty names
             $adultNames = array_values(array_filter($this->adultNames, fn($name) => !empty(trim($name))));
@@ -692,13 +678,14 @@ new class extends Component {
                     @if ($adults > 0)
                         <div class="mb-2">
                             <small class="text-muted fw-bold d-block mb-2">
-                                <i class="bi bi-people me-1"></i>Adults (Required)
+                                <i class="bi bi-people me-1"></i>Adults (First name required, rest optional)
                             </small>
                             @for ($i = 0; $i < $adults; $i++)
                                 <div class="mb-2">
                                     <input type="text" wire:model="adultNames.{{ $i }}"
                                         class="form-control form-control-sm"
-                                        placeholder="Adult {{ $i + 1 }} Name" required>
+                                        placeholder="Adult {{ $i + 1 }} Name{{ $i === 0 ? ' *' : '' }}"
+                                        {{ $i === 0 ? 'required' : '' }}>
                                     @error("adultNames.{$i}")
                                         <span class="text-danger small">{{ $message }}</span>
                                     @enderror

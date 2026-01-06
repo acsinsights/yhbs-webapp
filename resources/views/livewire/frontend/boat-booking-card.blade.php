@@ -321,18 +321,30 @@ new class extends Component {
             }
         }
 
+        // Apply passenger multiplier for public trips on ferry
+        if ($this->serviceType === 'ferry' && $this->tripType === 'public' && $basePrice > 0) {
+            $basePrice = $basePrice * $this->passengers;
+        }
+
         return $basePrice > 0 ? $basePrice : null;
     }
 
     public function proceedToBooking(): void
     {
-        // Validate
-        $this->validate([
+        // Validate - only first passenger name is required
+        $rules = [
             'bookingDate' => 'required|date|after_or_equal:' . $this->minDate(),
             'passengers' => 'required|integer|min:1|max:' . ($this->boat->max_passengers ?? 20),
             'passengerNames' => 'required|array|min:' . $this->passengers,
-            'passengerNames.*' => 'required|string|max:255',
-        ]);
+            'passengerNames.0' => 'required|string|max:255', // First passenger name required
+        ];
+
+        // Rest of the passenger names are nullable
+        for ($i = 1; $i < $this->passengers; $i++) {
+            $rules["passengerNames.{$i}"] = 'nullable|string|max:255';
+        }
+
+        $this->validate($rules);
 
         // Service-specific validation
         if (in_array($this->serviceType, ['yacht', 'taxi', 'ferry', 'limousine'])) {
@@ -618,12 +630,12 @@ new class extends Component {
                     </label>
                     @foreach ($passengerNames as $index => $name)
                         <input type="text" wire:model="passengerNames.{{ $index }}" class="form-control mb-2"
-                            placeholder="Passenger {{ $index + 1 }} Name" required>
+                            placeholder="Passenger {{ $index + 1 }} Name" {{ $index === 0 ? 'required' : '' }}>
                         @error('passengerNames.' . $index)
                             <small class="text-danger">{{ $message }}</small>
                         @enderror
                     @endforeach
-                    <small class="text-muted">Enter full name of each passenger</small>
+                    <small class="text-muted">Only first passenger name is required</small>
                 </div>
 
                 @if ($errorMessage)

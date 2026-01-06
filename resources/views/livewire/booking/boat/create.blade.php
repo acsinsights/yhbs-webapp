@@ -298,7 +298,7 @@ new class extends Component {
             };
 
             // Private trip - per hour
-            if ($this->booking_type === 'private') {
+            if ($this->trip_type === 'private') {
                 $pricePerHour = $isWeekend ? $boat->ferry_private_weekend ?? 0 : $boat->ferry_private_weekday ?? 0;
                 return $pricePerHour * $hours;
             }
@@ -306,6 +306,17 @@ new class extends Component {
             // Public trip - per person per hour
             $pricePerPersonPerHour = $isWeekend ? $boat->ferry_public_weekend ?? 0 : $boat->ferry_public_weekday ?? 0;
             return $pricePerPersonPerHour * $hours * $this->adults;
+        }
+
+        // For limousine public trips - multiply by passengers
+        if ($boat->service_type === 'limousine' && $this->trip_type === 'public') {
+            $basePrice = match ($this->duration_slot) {
+                '15min' => $boat->price_15min ?? 0,
+                '30min' => $boat->price_30min ?? 0,
+                '1hour_full' => $boat->price_full_boat ?? 0,
+                default => 0,
+            };
+            return $basePrice * $this->adults;
         }
 
         // For yacht and taxi - fixed hourly pricing
@@ -320,12 +331,19 @@ new class extends Component {
 
     private function calculateLimousinePrice(Boat $boat): float
     {
-        return match ($this->duration_slot) {
+        $basePrice = match ($this->duration_slot) {
             '15min' => $boat->price_15min ?? 0,
             '30min' => $boat->price_30min ?? 0,
             '1hour_full' => $boat->price_full_boat ?? 0,
             default => 0,
         };
+
+        // For public trips, multiply by passengers
+        if ($this->trip_type === 'public') {
+            return $basePrice * $this->adults;
+        }
+
+        return $basePrice;
     }
 
     public function save(): void
@@ -378,6 +396,7 @@ new class extends Component {
             'check_in_time' => 'required',
             'adults' => 'required|integer|min:1',
             'children' => 'required|integer|min:0',
+            'adultNames.0' => 'required|string|max:255',
             'amount' => 'required|numeric|min:0',
             'payment_method' => 'required|in:cash,card,online,other',
             'payment_status' => 'required|in:pending,paid,failed',
