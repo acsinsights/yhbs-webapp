@@ -9,7 +9,7 @@ use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Hash;
 use App\Models\{Booking, Room, User, House};
 use App\Enums\{BookingStatusEnum, RolesEnum};
-use App\Notifications\WelcomeCustomerNotification;
+use App\Notifications\{WelcomeCustomerNotification, NewBookingNotification};
 
 new class extends Component {
     use Toast, WithPagination;
@@ -379,6 +379,12 @@ new class extends Component {
             'status' => BookingStatusEnum::BOOKED->value,
             'notes' => $this->notes,
         ]);
+
+        // Notify all admins about new booking
+        $admins = User::role(['admin', 'superadmin'])->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new NewBookingNotification($booking));
+        }
 
         $this->success('House booking created successfully.', redirectTo: route('admin.bookings.house.index'));
     }

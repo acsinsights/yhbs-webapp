@@ -183,6 +183,76 @@
                 </div>
                 <div class="navbar-center"></div>
                 <div class="gap-1.5 navbar-end">
+                    @auth
+                        {{-- Notifications Bell --}}
+                        @php
+                            $unreadCount = auth()->user()->unreadNotifications->count();
+                        @endphp
+                        <div class="dropdown dropdown-bottom dropdown-end">
+                            <label tabindex="0" class="btn btn-ghost btn-circle relative">
+                                <x-icon name="o-bell" class="w-6 h-6" />
+                                @if ($unreadCount > 0)
+                                    <span
+                                        class="badge badge-error badge-sm absolute -top-1 -right-1">{{ $unreadCount > 9 ? '9+' : $unreadCount }}</span>
+                                @endif
+                            </label>
+                            <div tabindex="0"
+                                class="dropdown-content card card-compact z-[1] w-96 p-2 shadow bg-base-100 rounded-box mt-3">
+                                <div class="card-body">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h3 class="card-title text-sm">Notifications</h3>
+                                        @if ($unreadCount > 0)
+                                            <a href="{{ route('admin.notifications.mark-all-read') }}"
+                                                class="text-xs link link-primary">
+                                                Mark all as read
+                                            </a>
+                                        @endif
+                                    </div>
+                                    <div class="divider my-0"></div>
+                                    <div class="max-h-96 overflow-y-auto space-y-2">
+                                        @forelse(auth()->user()->notifications->take(10) as $notification)
+                                            <a href="{{ $notification->data['url'] ?? '#' }}"
+                                                class="block p-3 rounded-lg hover:bg-base-200 transition {{ is_null($notification->read_at) ? 'bg-primary/5' : '' }}"
+                                                onclick="event.preventDefault(); markAsRead('{{ $notification->id }}', '{{ $notification->data['url'] ?? '#' }}')">
+                                                <div class="flex gap-3">
+                                                    <div class="flex-shrink-0">
+                                                        <x-icon name="{{ $notification->data['icon'] ?? 'o-bell' }}"
+                                                            class="w-5 h-5 text-primary" />
+                                                    </div>
+                                                    <div class="flex-1 min-w-0">
+                                                        <p
+                                                            class="text-sm font-medium {{ is_null($notification->read_at) ? 'text-base-content' : 'text-base-content/70' }}">
+                                                            {{ $notification->data['message'] ?? 'New notification' }}
+                                                        </p>
+                                                        <p class="text-xs text-base-content/50 mt-1">
+                                                            {{ $notification->created_at->diffForHumans() }}
+                                                        </p>
+                                                    </div>
+                                                    @if (is_null($notification->read_at))
+                                                        <div class="flex-shrink-0">
+                                                            <span class="w-2 h-2 rounded-full bg-primary block"></span>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </a>
+                                        @empty
+                                            <div class="text-center py-8 text-base-content/50">
+                                                <x-icon name="o-bell-slash" class="w-12 h-12 mx-auto mb-2 opacity-30" />
+                                                <p class="text-sm">No notifications yet</p>
+                                            </div>
+                                        @endforelse
+                                    </div>
+                                    @if (auth()->user()->notifications->count() > 10)
+                                        <div class="divider my-2"></div>
+                                        <a href="{{ route('admin.notifications') }}" class="btn btn-sm btn-ghost w-full">
+                                            View all notifications
+                                        </a>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @endauth
+
                     <div class="tooltip  tooltip-bottom" data-tip="Toggle Theme">
                         <x-theme-toggle class=" btn-sm w-12 h-12 btn-ghost" lightTheme="light" darkTheme="dark" />
                     </div>
@@ -257,6 +327,24 @@
 
     {{-- Flatpickr JS --}}
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    {{-- Notification mark as read script --}}
+    <script>
+        function markAsRead(notificationId, url) {
+            fetch(`/admin/notifications/mark-read/${notificationId}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                    }
+                }).then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = url;
+                    }
+                });
+        }
+    </script>
 
     @yield('scripts')
 </body>

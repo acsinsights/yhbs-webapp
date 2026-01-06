@@ -166,6 +166,22 @@ Route::prefix('admin')->name('admin.')->group(function () {
             request()->session()->regenerateToken();
             return redirect()->route('admin.login');
         })->name('logout');
+
+        // Notification routes
+        Route::get('/notifications/mark-read/{id}', function ($id) {
+            $notification = auth()->user()->notifications()->find($id);
+            if ($notification) {
+                $notification->markAsRead();
+            }
+            return response()->json(['success' => true]);
+        })->name('notifications.mark-read');
+
+        Route::get('/notifications/mark-all-read', function () {
+            auth()->user()->unreadNotifications->markAsRead();
+            return redirect()->back()->with('success', 'All notifications marked as read');
+        })->name('notifications.mark-all-read');
+
+        Volt::route('/notifications', 'admin.notifications')->name('notifications');
     });
 });
 

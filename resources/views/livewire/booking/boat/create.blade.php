@@ -4,7 +4,7 @@ use Mary\Traits\Toast;
 use Livewire\Volt\Component;
 use App\Models\{Booking, Boat, User, BoatServiceType};
 use App\Enums\{RolesEnum, BookingStatusEnum};
-use App\Notifications\WelcomeCustomerNotification;
+use App\Notifications\{WelcomeCustomerNotification, NewBookingNotification};
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
@@ -462,6 +462,12 @@ new class extends Component {
             ->causedBy(auth()->user())
             ->withProperties(['system_info' => $systemNotes])
             ->log('Booking created');
+
+        // Notify all admins about new booking
+        $admins = User::role(['admin', 'superadmin'])->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new NewBookingNotification($booking));
+        }
 
         $this->success('Boat booking created successfully.', redirectTo: route('admin.bookings.boat.show', $booking->id));
     }

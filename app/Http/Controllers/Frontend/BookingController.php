@@ -7,8 +7,10 @@ use App\Models\Coupon;
 use App\Models\Room;
 use App\Models\House;
 use App\Models\Boat;
+use App\Models\User;
 use App\Services\CouponService;
 use App\Services\WalletService;
+use App\Notifications\NewBookingNotification;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -651,6 +653,12 @@ class BookingController extends Controller
 
             // Clear coupon from session after successful booking
             session()->forget('applied_coupon');
+        }
+
+        // Send notification to all admin and superadmin users
+        $admins = User::role(['admin', 'superadmin'])->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new NewBookingNotification($booking));
         }
 
         return redirect()->route('booking.confirmation', ['id' => $booking->id])
