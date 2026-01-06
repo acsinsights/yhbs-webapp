@@ -26,6 +26,8 @@ new class extends Component {
     public array $bookedDates = [];
     public bool $showHistoryDrawer = false;
     public $activities = [];
+    public float $rescheduleFee = 0;
+    public string $paymentMethod = 'wallet'; // 'wallet' or 'manual'
 
     public function mount(Booking $booking): void
     {
@@ -47,6 +49,8 @@ new class extends Component {
         if ($property === 'showRescheduleModal' && $this->showRescheduleModal) {
             $this->new_date_range = null;
             $this->reschedule_notes = null;
+            $this->rescheduleFee = $this->booking->calculateRescheduleFee();
+            $this->paymentMethod = 'wallet';
             $this->loadBookedDates();
             $this->dispatch('reinit-datepicker');
         }
@@ -205,6 +209,8 @@ new class extends Component {
         $this->validate([
             'new_date_range' => 'required|string',
             'reschedule_notes' => 'nullable|string|min:3',
+            'rescheduleFee' => 'required|numeric|min:0',
+            'paymentMethod' => 'required|in:wallet,manual',
         ]);
 
         // Parse date range (format: "2025-01-15 to 2025-01-20")
@@ -264,51 +270,102 @@ new class extends Component {
             return;
         }
 
+        $user = $this->booking->user;
+        $walletBalance = $user->wallet_balance ?? 0;
+
+        // Validate wallet balance if wallet payment is selected
+        if ($this->paymentMethod === 'wallet' && $this->rescheduleFee > 0) {
+            if ($walletBalance < $this->rescheduleFee) {
+                $this->error('Customer does not have sufficient wallet balance (' . currency_format($walletBalance) . '). Please select "Collect Manually" or reduce the fee.');
+                return;
+            }
+        }
+
         // Update booking with new dates
         $oldCheckIn = $this->booking->check_in->format('M d, Y');
         $oldCheckOut = $this->booking->check_out->format('M d, Y');
 
-        $this->booking->update([
-            'check_in' => $newCheckIn,
-            'check_out' => $newCheckOut,
-        ]);
+        // Use database transaction
+        \DB::transaction(function () use ($user, $newCheckIn, $newCheckOut, $oldCheckIn, $oldCheckOut) {
+            // Deduct reschedule fee from wallet if wallet payment selected
+            if ($this->paymentMethod === 'wallet' && $this->rescheduleFee > 0) {
+                $userLocked = \App\Models\User::lockForUpdate()->find($user->id);
+                $balanceBefore = $userLocked->wallet_balance ?? 0;
 
-        // Log activity
-        $description = "Rescheduled from {$oldCheckIn} - {$oldCheckOut} to {$newCheckIn->format('M d, Y')} - {$newCheckOut->format('M d, Y')}";
-        if ($this->reschedule_notes) {
-            $description .= ". Reason: {$this->reschedule_notes}";
+                $userLocked->wallet_balance = $balanceBefore - $this->rescheduleFee;
+                $userLocked->save();
+
+                $balanceAfter = $userLocked->wallet_balance;
+
+                \App\Models\WalletTransaction::create([
+                    'user_id' => $user->id,
+                    'amount' => $this->rescheduleFee,
+                    'type' => 'debit',
+                    'balance_before' => $balanceBefore,
+                    'balance_after' => $balanceAfter,
+                    'description' => 'Reschedule fee for booking #' . $this->booking->booking_id,
+                    'booking_id' => $this->booking->id,
+                ]);
+            }
+
+            $this->booking->update([
+                'check_in' => $newCheckIn,
+                'check_out' => $newCheckOut,
+                'reschedule_fee' => $this->rescheduleFee,
+                'rescheduled_by' => auth()->id(),
+            ]);
+
+            // Log activity
+            $description = "Rescheduled from {$oldCheckIn} - {$oldCheckOut} to {$newCheckIn->format('M d, Y')} - {$newCheckOut->format('M d, Y')}";
+            if ($this->reschedule_notes) {
+                $description .= ". Reason: {$this->reschedule_notes}";
+            }
+            if ($this->rescheduleFee > 0) {
+                $description .= ". Reschedule fee: " . currency_format($this->rescheduleFee) . " (" . ($this->paymentMethod === 'wallet' ? 'Deducted from wallet' : 'To be collected manually') . ")";
+            }
+
+            activity()
+                ->performedOn($this->booking)
+                ->causedBy(auth()->user())
+                ->withProperties([
+                    'old_check_in' => $oldCheckIn,
+                    'old_check_out' => $oldCheckOut,
+                    'new_check_in' => $newCheckIn->format('M d, Y'),
+                    'new_check_out' => $newCheckOut->format('M d, Y'),
+                    'reschedule_fee' => $this->rescheduleFee,
+                    'payment_method' => $this->paymentMethod,
+                    'notes' => $this->reschedule_notes,
+                ])
+                ->log($description);
+
+            // Create notification for customer
+            \App\Models\UserNotification::create([
+                'user_id' => $this->booking->user_id,
+                'type' => 'booking_rescheduled',
+                'title' => 'Booking Rescheduled',
+                'message' => "Your booking #{$this->booking->booking_id} has been rescheduled from {$oldCheckIn} - {$oldCheckOut} to {$newCheckIn->format('M d, Y')} - {$newCheckOut->format('M d, Y')}." . ($this->rescheduleFee > 0 ? " Reschedule fee: " . currency_format($this->rescheduleFee) : ''),
+                'data' => [
+                    'booking_id' => $this->booking->id,
+                    'old_check_in' => $oldCheckIn,
+                    'old_check_out' => $oldCheckOut,
+                    'new_check_in' => $newCheckIn->format('M d, Y'),
+                    'new_check_out' => $newCheckOut->format('M d, Y'),
+                    'reschedule_fee' => $this->rescheduleFee,
+                    'payment_method' => $this->paymentMethod,
+                    'notes' => $this->reschedule_notes,
+                ],
+            ]);
+        });
+
+        $successMessage = 'Booking rescheduled successfully.';
+        if ($this->paymentMethod === 'wallet' && $this->rescheduleFee > 0) {
+            $successMessage .= ' Fee has been deducted from customer wallet.';
+        } elseif ($this->paymentMethod === 'manual' && $this->rescheduleFee > 0) {
+            $successMessage .= ' Fee will be collected manually from customer.';
         }
 
-        activity()
-            ->performedOn($this->booking)
-            ->causedBy(auth()->user())
-            ->withProperties([
-                'old_check_in' => $oldCheckIn,
-                'old_check_out' => $oldCheckOut,
-                'new_check_in' => $newCheckIn->format('M d, Y'),
-                'new_check_out' => $newCheckOut->format('M d, Y'),
-                'notes' => $this->reschedule_notes,
-            ])
-            ->log($description);
-
-        // Create notification for customer
-        \App\Models\UserNotification::create([
-            'user_id' => $this->booking->user_id,
-            'type' => 'booking_rescheduled',
-            'title' => 'Booking Rescheduled',
-            'message' => "Your booking #{$this->booking->booking_id} has been rescheduled from {$oldCheckIn} - {$oldCheckOut} to {$newCheckIn->format('M d, Y')} - {$newCheckOut->format('M d, Y')}.",
-            'data' => [
-                'booking_id' => $this->booking->id,
-                'old_check_in' => $oldCheckIn,
-                'old_check_out' => $oldCheckOut,
-                'new_check_in' => $newCheckIn->format('M d, Y'),
-                'new_check_out' => $newCheckOut->format('M d, Y'),
-                'notes' => $this->reschedule_notes,
-            ],
-        ]);
-
         $this->showRescheduleModal = false;
-        $this->success('Booking rescheduled successfully.');
+        $this->success($successMessage);
         $this->booking->refresh();
         $this->loadBookedDates();
     }
@@ -901,6 +958,31 @@ new class extends Component {
             <x-textarea label="Reason for Rescheduling (Optional)" wire:model="reschedule_notes"
                 placeholder="Enter reason for rescheduling..." rows="3"
                 hint="Provide context for the date change" />
+
+            <div class="divider">Reschedule Fee</div>
+
+            <x-input label="Reschedule Fee" wire:model="rescheduleFee" type="number" step="0.01" min="0"
+                icon="o-currency-dollar" 
+                hint="Fee will be charged to customer for rescheduling" />
+
+            <x-alert title="Customer Wallet Balance" 
+                description="Current balance: {{ currency_format($booking->user->wallet_balance ?? 0) }}"
+                icon="o-wallet" class="alert-info" />
+
+            <x-radio label="Payment Method" :options="[
+                ['id' => 'wallet', 'name' => 'Deduct from Wallet'],
+                ['id' => 'manual', 'name' => 'Collect Manually'],
+            ]" wire:model="paymentMethod" />
+
+            @if ($paymentMethod === 'wallet' && $rescheduleFee > 0)
+                <x-alert title="Wallet Deduction" 
+                    description="The reschedule fee will be automatically deducted from customer's wallet balance."
+                    icon="o-information-circle" class="alert-warning" />
+            @elseif ($paymentMethod === 'manual' && $rescheduleFee > 0)
+                <x-alert title="Manual Collection" 
+                    description="You will need to collect the reschedule fee manually from the customer."
+                    icon="o-information-circle" class="alert-info" />
+            @endif
 
             @if (count($bookedDates) > 0)
                 <x-alert title="Booked Dates Info"
