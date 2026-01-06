@@ -62,7 +62,7 @@ new class extends Component {
         $view->bookings = $query->orderBy(...array_values($this->sortBy))->paginate($this->perPage);
         $view->boats = Boat::active()->orderBy('name')->get();
 
-        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'user.name', 'label' => 'Customer', 'sortable' => false, 'class' => 'whitespace-nowrap'], ['key' => 'boat_name', 'label' => 'Boat', 'sortable' => false, 'class' => 'w-64'], ['key' => 'check_in', 'label' => 'Time Slot', 'sortable' => true, 'class' => 'whitespace-nowrap'], ['key' => 'price', 'label' => 'Amount', 'sortable' => true, 'class' => 'whitespace-nowrap'], ['key' => 'payment_status', 'label' => 'Payment Status', 'class' => 'whitespace-nowrap'], ['key' => 'payment_method', 'label' => 'Payment Method', 'class' => 'whitespace-nowrap'], ['key' => 'status', 'label' => 'Status', 'class' => 'whitespace-nowrap']];
+        $view->headers = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'user.name', 'label' => 'Customer', 'sortable' => false, 'class' => 'whitespace-nowrap'], ['key' => 'guest_name', 'label' => 'Guest Name', 'sortable' => false, 'class' => 'whitespace-nowrap'], ['key' => 'boat_name', 'label' => 'Boat', 'sortable' => false, 'class' => 'w-64'], ['key' => 'check_in', 'label' => 'Time Slot', 'sortable' => true, 'class' => 'whitespace-nowrap'], ['key' => 'price', 'label' => 'Amount', 'sortable' => true, 'class' => 'whitespace-nowrap'], ['key' => 'payment_status', 'label' => 'Payment Status', 'class' => 'whitespace-nowrap'], ['key' => 'payment_method', 'label' => 'Payment Method', 'class' => 'whitespace-nowrap'], ['key' => 'status', 'label' => 'Status', 'class' => 'whitespace-nowrap']];
     }
 }; ?>
 
@@ -97,6 +97,27 @@ new class extends Component {
             :per-page-values="[10, 25, 50, 100]">
             @scope('cell_user.name', $booking)
                 <div class="font-semibold">{{ $booking->user->name ?? 'N/A' }}</div>
+            @endscope
+
+            @scope('cell_guest_name', $booking)
+                @php
+                    $guestName = 'N/A';
+                    if ($booking->guest_details && is_array($booking->guest_details)) {
+                        // Try to get first adult/passenger name
+                        if (isset($booking->guest_details['adults']) && is_array($booking->guest_details['adults'])) {
+                            $guestName = $booking->guest_details['adults'][0] ?? 'N/A';
+                        }
+                        // Fallback to adult_names
+                        if (
+                            $guestName === 'N/A' &&
+                            isset($booking->guest_details['adult_names']) &&
+                            is_array($booking->guest_details['adult_names'])
+                        ) {
+                            $guestName = $booking->guest_details['adult_names'][0] ?? 'N/A';
+                        }
+                    }
+                @endphp
+                <div class="text-sm">{{ $guestName }}</div>
             @endscope
 
             @scope('cell_boat_name', $booking)
