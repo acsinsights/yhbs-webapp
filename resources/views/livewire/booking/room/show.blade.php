@@ -784,8 +784,8 @@ new class extends Component {
             <x-alert title="Current Booking Dates"
                 description="Check-in: {{ $booking->check_in->format('M d, Y') }} | Check-out: {{ $booking->check_out->format('M d, Y') }} | Duration: {{ $originalNights }} {{ Str::plural('night', $originalNights) }}"
                 icon="o-information-circle" class="alert-info" />
-            
-            <x-alert title="Important" 
+
+            <x-alert title="Important"
                 description="The booking duration must remain {{ $originalNights }} {{ Str::plural('night', $originalNights) }}. When you select a new check-in date, the check-out date will automatically be set to maintain the same duration."
                 icon="o-exclamation-triangle" class="alert-warning" />
 
@@ -802,7 +802,8 @@ new class extends Component {
                         'allowInput' => false,
                         'clickOpens' => true,
                     ]" />
-                <p class="text-xs text-base-content/60 mt-1">📅 Select {{ $originalNights }}-night date range. The booking duration must remain the same. Red dates are already booked.</p>
+                <p class="text-xs text-base-content/60 mt-1">📅 Select {{ $originalNights }}-night date range. The
+                    booking duration must remain the same. Red dates are already booked.</p>
             </div>
 
             <x-textarea label="Reason for Rescheduling (Optional)" wire:model="reschedule_notes"

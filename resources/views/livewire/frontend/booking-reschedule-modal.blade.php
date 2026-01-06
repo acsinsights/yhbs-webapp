@@ -17,6 +17,7 @@ new class extends Component {
     public bool $isBoatBooking = false;
     public array $availableTimeSlots = [];
     public array $bookedDates = [];
+    public int $originalNights = 0;
 
     public function mount(int $bookingId): void
     {
@@ -27,6 +28,7 @@ new class extends Component {
         }
 
         $this->isBoatBooking = $this->booking->bookingable instanceof Boat;
+        $this->originalNights = $this->booking->check_in->diffInDays($this->booking->check_out);
         $this->calculateRescheduleFee();
         $this->loadBookedDates();
     }
@@ -78,6 +80,25 @@ new class extends Component {
         if ($this->isBoatBooking && $value) {
             $this->generateTimeSlots();
         }
+        // Clear previous validation errors when dates change
+        $this->resetErrorBag('newCheckOut');
+    }
+
+    public function updatedNewCheckOut($value): void
+    {
+        // Clear previous validation errors when dates change
+        $this->resetErrorBag('newCheckOut');
+
+        // Validate nights on the fly for non-boat bookings
+        if (!$this->isBoatBooking && $this->newCheckIn && $this->newCheckOut) {
+            $newCheckInDate = Carbon::parse($this->newCheckIn);
+            $newCheckOutDate = Carbon::parse($this->newCheckOut);
+            $newNights = (int) $newCheckInDate->diffInDays($newCheckOutDate);
+
+            if ($newNights !== $this->originalNights) {
+                $this->addError('newCheckOut', "Booking duration must remain the same. Original: {$this->originalNights} nights, Selected: {$newNights} nights.");
+            }
+        }
     }
 
     public function openModal(): void
@@ -114,6 +135,18 @@ new class extends Component {
         }
 
         $this->validate($rules);
+
+        // Validate that the number of nights remains the same for non-boat bookings
+        if (!$this->isBoatBooking && $this->newCheckIn && $this->newCheckOut) {
+            $newCheckInDate = Carbon::parse($this->newCheckIn);
+            $newCheckOutDate = Carbon::parse($this->newCheckOut);
+            $newNights = (int) $newCheckInDate->diffInDays($newCheckOutDate);
+
+            if ($newNights !== $this->originalNights) {
+                $this->addError('newCheckOut', "Booking duration must remain the same. Original: {$this->originalNights} nights, Selected: {$newNights} nights.");
+                return;
+            }
+        }
 
         if (!$this->booking->canBeRescheduled()) {
             session()->flash('error', 'This booking cannot be rescheduled.');
@@ -243,6 +276,10 @@ new class extends Component {
                                 <ul class="list-unstyled">
                                     <li><strong>Reference:</strong> #{{ $booking->id }}</li>
                                     <li><strong>Property:</strong> {{ $booking->bookingable->name ?? 'N/A' }}</li>
+                                    @if (!$isBoatBooking)
+                                        <li><strong>Duration:</strong> {{ $originalNights }}
+                                            {{ Str::plural('night', $originalNights) }}</li>
+                                    @endif
                                     <li><strong>Current Check-in:</strong> {{ $booking->check_in->format('d M Y') }}
                                     </li>
                                     <li><strong>Current Check-out:</strong> {{ $booking->check_out->format('d M Y') }}
@@ -342,7 +379,9 @@ new class extends Component {
                                     </div>
                                     <small class="text-muted">
                                         <i class="bi bi-info-circle me-1"></i>
-                                        Select new dates (from {{ $booking->check_out->format('d M Y') }} onwards)
+                                        Select {{ $originalNights }}-night date range (from
+                                        {{ $booking->check_out->format('d M Y') }} onwards). Duration must remain the
+                                        same.
                                         <span class="text-danger">• Dates marked in red are already booked</span>
                                     </small>
 

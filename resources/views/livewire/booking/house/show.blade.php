@@ -330,7 +330,7 @@ new class extends Component {
                 $description .= ". Reason: {$this->reschedule_notes}";
             }
             if ($this->rescheduleFee > 0) {
-                $description .= ". Reschedule fee: " . currency_format($this->rescheduleFee) . " (" . ($this->paymentMethod === 'wallet' ? 'Deducted from wallet' : 'To be collected manually') . ")";
+                $description .= '. Reschedule fee: ' . currency_format($this->rescheduleFee) . ' (' . ($this->paymentMethod === 'wallet' ? 'Deducted from wallet' : 'To be collected manually') . ')';
             }
 
             activity()
@@ -352,7 +352,7 @@ new class extends Component {
                 'user_id' => $this->booking->user_id,
                 'type' => 'booking_rescheduled',
                 'title' => 'Booking Rescheduled',
-                'message' => "Your booking #{$this->booking->booking_id} has been rescheduled from {$oldCheckIn} - {$oldCheckOut} to {$newCheckIn->format('M d, Y')} - {$newCheckOut->format('M d, Y')}." . ($this->rescheduleFee > 0 ? " Reschedule fee: " . currency_format($this->rescheduleFee) : ''),
+                'message' => "Your booking #{$this->booking->booking_id} has been rescheduled from {$oldCheckIn} - {$oldCheckOut} to {$newCheckIn->format('M d, Y')} - {$newCheckOut->format('M d, Y')}." . ($this->rescheduleFee > 0 ? ' Reschedule fee: ' . currency_format($this->rescheduleFee) : ''),
                 'data' => [
                     'booking_id' => $this->booking->id,
                     'old_check_in' => $oldCheckIn,
@@ -946,8 +946,8 @@ new class extends Component {
             <x-alert title="Current Booking Dates"
                 description="Check-in: {{ $booking->check_in->format('M d, Y') }} | Check-out: {{ $booking->check_out->format('M d, Y') }} | Duration: {{ $originalNights }} {{ Str::plural('night', $originalNights) }}"
                 icon="o-information-circle" class="alert-info" />
-            
-            <x-alert title="Important" 
+
+            <x-alert title="Important"
                 description="The booking duration must remain {{ $originalNights }} {{ Str::plural('night', $originalNights) }}. When you select a new check-in date, the check-out date will automatically be set to maintain the same duration."
                 icon="o-exclamation-triangle" class="alert-warning" />
 
@@ -964,7 +964,8 @@ new class extends Component {
                         'allowInput' => false,
                         'clickOpens' => true,
                     ]" />
-                <p class="text-xs text-base-content/60 mt-1">📅 Select {{ $originalNights }}-night date range. The booking duration must remain the same. Red dates are already booked.</p>
+                <p class="text-xs text-base-content/60 mt-1">📅 Select {{ $originalNights }}-night date range. The
+                    booking duration must remain the same. Red dates are already booked.</p>
             </div>
 
             <x-textarea label="Reason for Rescheduling (Optional)" wire:model="reschedule_notes"
@@ -974,10 +975,9 @@ new class extends Component {
             <div class="divider">Reschedule Fee</div>
 
             <x-input label="Reschedule Fee" wire:model="rescheduleFee" type="number" step="0.01" min="0"
-                icon="o-currency-dollar" 
-                hint="Fee will be charged to customer for rescheduling" />
+                icon="o-currency-dollar" hint="Fee will be charged to customer for rescheduling" />
 
-            <x-alert title="Customer Wallet Balance" 
+            <x-alert title="Customer Wallet Balance"
                 description="Current balance: {{ currency_format($booking->user->wallet_balance ?? 0) }}"
                 icon="o-wallet" class="alert-info" />
 
@@ -987,11 +987,11 @@ new class extends Component {
             ]" wire:model="paymentMethod" />
 
             @if ($paymentMethod === 'wallet' && $rescheduleFee > 0)
-                <x-alert title="Wallet Deduction" 
+                <x-alert title="Wallet Deduction"
                     description="The reschedule fee will be automatically deducted from customer's wallet balance."
                     icon="o-information-circle" class="alert-warning" />
             @elseif ($paymentMethod === 'manual' && $rescheduleFee > 0)
-                <x-alert title="Manual Collection" 
+                <x-alert title="Manual Collection"
                     description="You will need to collect the reschedule fee manually from the customer."
                     icon="o-information-circle" class="alert-info" />
             @endif

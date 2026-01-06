@@ -23,6 +23,7 @@ class BookingRescheduleForm extends Component
     public $isBoatBooking = false;
     public $selectedTimeSlot;
     public $availableTimeSlots = [];
+    public $originalNights = 0;
 
     protected $rules = [
         'newCheckIn' => 'required|date',
@@ -43,6 +44,7 @@ class BookingRescheduleForm extends Component
     {
         $this->bookingId = $bookingId;
         $this->booking = Booking::with('bookingable')->findOrFail($bookingId);
+        $this->originalNights = $this->booking->check_in->diffInDays($this->booking->check_out);
         $this->calculateRescheduleFee();
         $this->checkIfBoatBooking();
     }
@@ -131,6 +133,18 @@ class BookingRescheduleForm extends Component
     public function submitRescheduleRequest()
     {
         $this->validate();
+
+        // Validate that the number of nights remains the same for non-boat bookings
+        if (!$this->isBoatBooking && $this->newCheckIn && $this->newCheckOut) {
+            $newCheckInDate = \Carbon\Carbon::parse($this->newCheckIn);
+            $newCheckOutDate = \Carbon\Carbon::parse($this->newCheckOut);
+            $newNights = (int) $newCheckInDate->diffInDays($newCheckOutDate);
+
+            if ($newNights !== $this->originalNights) {
+                $this->addError('newCheckOut', "Booking duration must remain the same. Original: {$this->originalNights} nights, Selected: {$newNights} nights.");
+                return;
+            }
+        }
 
         try {
             DB::beginTransaction();

@@ -238,8 +238,19 @@ new class extends Component {
                 @endscope
 
                 @scope('cell_customer', $booking)
+                    @php
+                        $bookingType = match (true) {
+                            $booking->bookingable instanceof \App\Models\House => 'house',
+                            $booking->bookingable instanceof \App\Models\Room => 'room',
+                            $booking->bookingable instanceof \App\Models\Boat => 'boat',
+                            default => 'house',
+                        };
+                        $detailsRoute = route('admin.bookings.' . $bookingType . '.show', $booking->id);
+                    @endphp
                     <div>
-                        <div class="font-semibold">{{ $booking->user->name ?? 'N/A' }}</div>
+                        <a href="{{ $detailsRoute }}" class="font-semibold text-primary hover:underline">
+                            {{ $booking->user->name ?? 'N/A' }}
+                        </a>
                         <div class="text-xs text-gray-500">{{ $booking->user->email ?? 'N/A' }}</div>
                         <div class="text-xs text-info mt-1">
                             <x-icon name="o-wallet" class="w-3 h-3 inline" />
