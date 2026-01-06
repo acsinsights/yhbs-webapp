@@ -19,9 +19,9 @@ class PageController extends Controller
      */
     public function home()
     {
-        $houses = House::active()->take(3)->get();
-        $rooms = Room::active()->take(3)->get();
-        $boats = Boat::active()->take(3)->get();
+        $houses = House::active()->take(5)->get();
+        $rooms = Room::active()->take(5)->get();
+        $boats = Boat::active()->take(5)->get();
         $sliders = Slider::active()->ordered()->get();
         $testimonials = Testimonial::active()->ordered()->take(6)->get();
         $statistics = Statistic::active()->ordered()->get();
