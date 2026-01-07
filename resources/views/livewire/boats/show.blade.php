@@ -34,9 +34,9 @@ new class extends Component {
 
     public function rendering(View $view): void
     {
-        $view->bookings = $this->boat->bookings()->with('user')->orderByDesc('created_at')->get();
+        $view->bookings = $this->boat->bookings()->with('user')->orderByDesc('check_in')->get();
 
-        $view->bookingHeaders = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'customer', 'label' => 'Customer', 'class' => 'whitespace-nowrap'], ['key' => 'schedule', 'label' => 'Schedule', 'class' => 'whitespace-nowrap'], ['key' => 'passengers', 'label' => 'Passengers', 'class' => 'whitespace-nowrap'], ['key' => 'amount', 'label' => 'Amount', 'class' => 'whitespace-nowrap'], ['key' => 'status', 'label' => 'Status', 'class' => 'whitespace-nowrap'], ['key' => 'payment', 'label' => 'Payment', 'class' => 'whitespace-nowrap']];
+        $view->bookingHeaders = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'customer', 'label' => 'Customer', 'class' => 'whitespace-nowrap'], ['key' => 'check_in', 'label' => 'Check In', 'class' => 'whitespace-nowrap'], ['key' => 'check_out', 'label' => 'Check Out', 'class' => 'whitespace-nowrap'], ['key' => 'amount', 'label' => 'Amount', 'class' => 'whitespace-nowrap'], ['key' => 'payment_status', 'label' => 'Payment Status', 'class' => 'whitespace-nowrap'], ['key' => 'payment_method', 'label' => 'Payment Method', 'class' => 'whitespace-nowrap'], ['key' => 'status', 'label' => 'Status', 'class' => 'whitespace-nowrap']];
     }
 }; ?>
 
@@ -349,32 +349,32 @@ new class extends Component {
                 </div>
             @endscope
 
-            @scope('cell_schedule', $booking)
+            @scope('cell_check_in', $booking)
                 <div class="text-sm">
-                    <p>{{ $booking->check_in ? Carbon::parse($booking->check_in)->format('M d, Y h:i A') : '—' }}</p>
-                    @if ($booking->duration)
-                        <p class="text-xs text-base-content/50">{{ $booking->duration }}</p>
-                    @endif
+                    {{ $booking->check_in ? Carbon::parse($booking->check_in)->format('M d, Y h:i A') : '—' }}
                 </div>
             @endscope
 
-            @scope('cell_passengers', $booking)
-                <x-badge :value="($booking->adults ?? 0) . ' passengers'" class="badge-soft badge-info badge-sm" />
+            @scope('cell_check_out', $booking)
+                <div class="text-sm">
+                    {{ $booking->check_out ? Carbon::parse($booking->check_out)->format('M d, Y h:i A') : '—' }}
+                </div>
             @endscope
 
             @scope('cell_amount', $booking)
                 <div class="font-semibold">{{ currency_format($booking->price ?? 0) }}</div>
             @endscope
 
-            @scope('cell_status', $booking)
-                <x-badge :value="$booking->status->label()" class="{{ $booking->status->badgeColor() }}" />
+            @scope('cell_payment_status', $booking)
+                <x-badge :value="$booking->payment_status->label()" class="{{ $booking->payment_status->badgeColor() }}" />
             @endscope
 
-            @scope('cell_payment', $booking)
-                <div class="flex items-center gap-1">
-                    <x-badge :value="$booking->payment_status->label()" class="{{ $booking->payment_status->badgeColor() }} badge-sm" />
-                    <x-badge :value="$booking->payment_method->label()" class="{{ $booking->payment_method->badgeColor() }} badge-sm" />
-                </div>
+            @scope('cell_payment_method', $booking)
+                <x-badge :value="$booking->payment_method->label()" class="{{ $booking->payment_method->badgeColor() }}" />
+            @endscope
+
+            @scope('cell_status', $booking)
+                <x-badge :value="$booking->status->label()" class="{{ $booking->status->badgeColor() }}" />
             @endscope
 
             @scope('actions', $booking)

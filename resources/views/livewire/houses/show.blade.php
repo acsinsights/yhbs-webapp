@@ -1,7 +1,9 @@
 <?php
 
+use Carbon\Carbon;
 use Mary\Traits\Toast;
 use App\Models\House;
+use Illuminate\View\View;
 use Livewire\Attributes\Title;
 use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Storage;
@@ -25,6 +27,13 @@ new class extends Component {
 
         $this->house->delete();
         $this->success('House deleted successfully!', redirectTo: route('admin.houses.index'));
+    }
+
+    public function rendering(View $view): void
+    {
+        $view->bookings = $this->house->bookings()->with('user')->orderByDesc('check_in')->get();
+
+        $view->bookingHeaders = [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'customer', 'label' => 'Customer', 'class' => 'whitespace-nowrap'], ['key' => 'check_in', 'label' => 'Check In', 'class' => 'whitespace-nowrap'], ['key' => 'check_out', 'label' => 'Check Out', 'class' => 'whitespace-nowrap'], ['key' => 'amount', 'label' => 'Amount', 'class' => 'whitespace-nowrap'], ['key' => 'payment_status', 'label' => 'Payment Status', 'class' => 'whitespace-nowrap'], ['key' => 'payment_method', 'label' => 'Payment Method', 'class' => 'whitespace-nowrap'], ['key' => 'status', 'label' => 'Status', 'class' => 'whitespace-nowrap']];
     }
 }; ?>
 
@@ -212,5 +221,58 @@ new class extends Component {
                 </x-slot:content>
             </x-collapse>
         </div>
+    </x-card>
+
+    {{-- Booking History --}}
+    <x-card shadow>
+        <x-slot:title class="flex items-center gap-2">
+            <x-icon name="o-calendar-days" class="w-5 h-5" />
+            <span>Booking History</span>
+        </x-slot:title>
+        <x-table :headers="$bookingHeaders" :rows="$bookings">
+            @scope('cell_customer', $booking)
+                <div>
+                    <p class="font-semibold">{{ $booking->user->name ?? 'N/A' }}</p>
+                    <p class="text-xs text-base-content/50">{{ $booking->user->email ?? '—' }}</p>
+                </div>
+            @endscope
+
+            @scope('cell_check_in', $booking)
+                <div class="text-sm">
+                    {{ $booking->check_in ? Carbon::parse($booking->check_in)->format('M d, Y h:i A') : '—' }}
+                </div>
+            @endscope
+
+            @scope('cell_check_out', $booking)
+                <div class="text-sm">
+                    {{ $booking->check_out ? Carbon::parse($booking->check_out)->format('M d, Y h:i A') : '—' }}
+                </div>
+            @endscope
+
+            @scope('cell_amount', $booking)
+                <div class="font-semibold">{{ currency_format($booking->price ?? 0) }}</div>
+            @endscope
+
+            @scope('cell_payment_status', $booking)
+                <x-badge :value="$booking->payment_status->label()" class="{{ $booking->payment_status->badgeColor() }}" />
+            @endscope
+
+            @scope('cell_payment_method', $booking)
+                <x-badge :value="$booking->payment_method->label()" class="{{ $booking->payment_method->badgeColor() }}" />
+            @endscope
+
+            @scope('cell_status', $booking)
+                <x-badge :value="$booking->status->label()" class="{{ $booking->status->badgeColor() }}" />
+            @endscope
+
+            @scope('actions', $booking)
+                <x-button icon="o-eye" link="{{ route('admin.bookings.house.show', $booking->id) }}"
+                    class="btn-ghost btn-sm" tooltip="View Booking" />
+            @endscope
+
+            <x-slot:empty>
+                <x-empty icon="o-calendar" message="No bookings yet for this house" />
+            </x-slot:empty>
+        </x-table>
     </x-card>
 </div>

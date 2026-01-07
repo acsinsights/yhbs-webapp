@@ -7,6 +7,7 @@ use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 use Livewire\Volt\Component;
 use App\Models\House;
+use Illuminate\Support\Facades\Storage;
 
 new class extends Component {
     use Toast, WithPagination;
@@ -56,6 +57,19 @@ new class extends Component {
         $house = House::findOrFail($id);
         $house->update(['is_active' => !$house->is_active]);
         $this->success('Status updated successfully.');
+    }
+
+    public function delete($id): void
+    {
+        $house = House::findOrFail($id);
+
+        // Delete image if exists
+        if ($house->image) {
+            Storage::disk('public')->delete(str_replace('/storage/', '', $house->image));
+        }
+
+        $house->delete();
+        $this->success('House deleted successfully.');
     }
 
     public function rendering(View $view)
@@ -138,6 +152,9 @@ new class extends Component {
                         tooltip="Show" />
                     <x-button icon="o-pencil" link="{{ route('admin.houses.edit', $house->id) }}" class="btn-ghost btn-sm"
                         tooltip="Edit" />
+                    <x-button icon="o-trash" wire:click="delete({{ $house->id }})"
+                        wire:confirm="Are you sure you want to delete this house?" class="btn-ghost btn-sm text-error"
+                        tooltip="Delete" spinner />
                 </div>
             @endscope
 
