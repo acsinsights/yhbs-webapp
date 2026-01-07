@@ -83,20 +83,6 @@ new class extends Component {
 
         $view->serviceTypes = \App\Models\BoatServiceType::where('is_active', true)->get()->map(fn($type) => ['id' => $type->slug, 'name' => $type->name])->toArray();
     }
-
-    public function delete(int $id): void
-    {
-        $boat = Boat::findOrFail($id);
-
-        // Check if boat has any bookings
-        if ($boat->bookings()->count() > 0) {
-            $this->error('Cannot delete boat with existing bookings.');
-            return;
-        }
-
-        $boat->delete();
-        $this->success('Boat deleted successfully.');
-    }
 }; ?>
 
 <div>
@@ -159,9 +145,6 @@ new class extends Component {
                         tooltip="Show" />
                     <x-button icon="o-pencil" link="{{ route('admin.boats.edit', $boat->id) }}" class="btn-ghost btn-sm"
                         tooltip="Edit" />
-                    <x-button icon="o-trash" wire:click="delete({{ $boat->id }})"
-                        wire:confirm="Are you sure you want to delete this boat?" spinner
-                        class="btn-ghost btn-sm text-error" tooltip="Delete" />
                 </div>
             @endscope
 

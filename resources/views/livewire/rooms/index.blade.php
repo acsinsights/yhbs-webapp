@@ -21,15 +21,6 @@ new class extends Component {
     public string $name = '';
     public string $room_number = '';
 
-    // Delete action
-    public function delete($id): void
-    {
-        $room = Room::findOrFail($id);
-        $room->delete();
-
-        $this->success('Room deleted successfully.');
-    }
-
     public function createRoom(): void
     {
         $this->validate([
@@ -147,9 +138,6 @@ new class extends Component {
                         tooltip="Show" />
                     <x-button icon="o-pencil" link="{{ route('admin.rooms.edit', $room->id) }}" class="btn-ghost btn-sm"
                         tooltip="Edit" />
-                    <x-button icon="o-trash" wire:click="delete({{ $room->id }})"
-                        wire:confirm="Are you sure you want to delete this room?" spinner
-                        class="btn-ghost btn-sm text-error" tooltip="Delete" />
                 </div>
             @endscope
 
