@@ -225,3 +225,8 @@ $libraryImage = $imageArray['url'] ?? ($imageArray['path'] ?? null);
         </div>
     </div>
 @endsection
+
+@section('scripts')
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+@endsection

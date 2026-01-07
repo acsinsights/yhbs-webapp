@@ -2,6 +2,10 @@
 @section('title', $room->name)
 @section('meta_description', $room->meta_description ?? $room->name)
 @section('meta_keywords', $room->meta_keywords ?? $room->name)
+@section('styles')
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+@endsection
 
 @section('content')
     <!-- Breadcrumb section Start-->

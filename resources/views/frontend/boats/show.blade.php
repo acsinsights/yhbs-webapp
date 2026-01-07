@@ -2,6 +2,10 @@
 @section('title', $boat->name)
 @section('meta_description', $boat->meta_description ?? $boat->name)
 @section('meta_keywords', $boat->meta_keywords ?? $boat->name)
+@section('styles')
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+@endsection
 
 @section('content')
     <!-- Breadcrumb section Start-->
@@ -219,4 +223,9 @@ $libraryImage = $imageArray['url'] ?? ($imageArray['path'] ?? null);
             </div>
         </div>
     </div>
+@endsection
+
+@section('scripts')
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 @endsection
