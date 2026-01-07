@@ -31,12 +31,38 @@
                     <!-- House Image -->
                     <div class="package-img-area mb-4">
                         @if ($house->image)
-                            <img src="{{ asset($house->image) }}" alt="{{ $house->name }}" class="img-fluid rounded">
+                            <img src="{{ asset($house->image) }}" alt="{{ $house->name }}" class="img-fluid rounded"
+                                style="width: 100%; height: 450px; object-fit: cover;">
                         @else
                             <img src="{{ asset('frontend/img/home2/houses/5.jpg') }}" alt="{{ $house->name }}"
-                                class="img-fluid rounded">
+                                class="img-fluid rounded" style="width: 100%; height: 450px; object-fit: cover;">
                         @endif
                     </div>
+
+                    <!-- Additional Images -->
+                    @if ($house->library && $house->library->count() > 0)
+                        <div class="row g-3 mb-4">
+                            @foreach ($house->library as $imageData)
+                                @php
+                                    // Skip if imageData is not an array or object
+                                    if (!is_array($imageData) && !is_object($imageData)) {
+                                        continue;
+                                    }
+                                    // Convert to array if it's an object
+$imageArray = is_object($imageData) ? (array) $imageData : $imageData;
+// Get the URL or path
+$libraryImage = $imageArray['url'] ?? ($imageArray['path'] ?? null);
+                                    if (!$libraryImage) {
+                                        continue;
+                                    }
+                                @endphp
+                                <div class="col-md-4">
+                                    <img src="{{ $libraryImage }}" alt="{{ $house->name }}" class="img-fluid rounded"
+                                        style="width: 100%; height: 200px; object-fit: cover;">
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
 
                     <!-- House Information -->
                     <div class="package-details-content">

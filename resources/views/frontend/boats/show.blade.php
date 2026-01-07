@@ -2,34 +2,6 @@
 @section('title', $boat->name)
 @section('meta_description', $boat->meta_description ?? $boat->name)
 @section('meta_keywords', $boat->meta_keywords ?? $boat->name)
-@section('styles')
-    <!-- Flatpickr CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <style>
-        .pricing-card {
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 15px;
-            transition: all 0.3s;
-        }
-
-        .pricing-card:hover {
-            border-color: #007bff;
-            box-shadow: 0 4px 8px rgba(0, 123, 255, 0.1);
-        }
-
-        .pricing-card.active {
-            border-color: #007bff;
-            background-color: #f8f9ff;
-        }
-
-        .service-badge {
-            font-size: 0.9rem;
-            padding: 8px 16px;
-        }
-    </style>
-@endsection
 
 @section('content')
     <!-- Breadcrumb section Start-->
@@ -83,16 +55,24 @@
                     </div>
 
                     <!-- Additional Images -->
-                    @if ($boat->images && is_array($boat->images) && count($boat->images) > 0)
+                    @if ($boat->library && $boat->library->count() > 0)
                         <div class="row g-3 mb-4">
-                            @foreach ($boat->images as $image)
+                            @foreach ($boat->library as $imageData)
+                                @php
+                                    // Skip if imageData is not an array or object
+                                    if (!is_array($imageData) && !is_object($imageData)) {
+                                        continue;
+                                    }
+                                    // Convert to array if it's an object
+$imageArray = is_object($imageData) ? (array) $imageData : $imageData;
+// Get the URL or path
+$libraryImage = $imageArray['url'] ?? ($imageArray['path'] ?? null);
+                                    if (!$libraryImage) {
+                                        continue;
+                                    }
+                                @endphp
                                 <div class="col-md-4">
-                                    @php
-                                        $additionalImage = str_starts_with($image, 'http')
-                                            ? $image
-                                            : asset('storage/' . $image);
-                                    @endphp
-                                    <img src="{{ $additionalImage }}" alt="{{ $boat->name }}" class="img-fluid rounded"
+                                    <img src="{{ $libraryImage }}" alt="{{ $boat->name }}" class="img-fluid rounded"
                                         style="width: 100%; height: 200px; object-fit: cover;">
                                 </div>
                             @endforeach

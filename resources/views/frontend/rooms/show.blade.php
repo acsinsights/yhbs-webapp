@@ -32,16 +32,42 @@
                     <div class="package-img-area mb-4">
                         @if ($room->image)
                             @if (str_starts_with($room->image, '/default'))
-                                <img src="{{ asset($room->image) }}" alt="{{ $room->name }}" class="img-fluid rounded">
+                                <img src="{{ asset($room->image) }}" alt="{{ $room->name }}" class="img-fluid rounded"
+                                    style="width: 100%; height: 450px; object-fit: cover;">
                             @else
                                 <img src="{{ asset('storage/' . $room->image) }}" alt="{{ $room->name }}"
-                                    class="img-fluid rounded">
+                                    class="img-fluid rounded" style="width: 100%; height: 450px; object-fit: cover;">
                             @endif
                         @else
                             <img src="{{ asset('frontend/img/home2/houses/5.jpg') }}" alt="{{ $room->name }}"
-                                class="img-fluid rounded">
+                                class="img-fluid rounded" style="width: 100%; height: 450px; object-fit: cover;">
                         @endif
                     </div>
+
+                    <!-- Additional Images -->
+                    @if ($room->library && $room->library->count() > 0)
+                        <div class="row g-3 mb-4">
+                            @foreach ($room->library as $imageData)
+                                @php
+                                    // Skip if imageData is not an array or object
+                                    if (!is_array($imageData) && !is_object($imageData)) {
+                                        continue;
+                                    }
+                                    // Convert to array if it's an object
+$imageArray = is_object($imageData) ? (array) $imageData : $imageData;
+// Get the URL or path
+$libraryImage = $imageArray['url'] ?? ($imageArray['path'] ?? null);
+                                    if (!$libraryImage) {
+                                        continue;
+                                    }
+                                @endphp
+                                <div class="col-md-4">
+                                    <img src="{{ $libraryImage }}" alt="{{ $room->name }}" class="img-fluid rounded"
+                                        style="width: 100%; height: 200px; object-fit: cover;">
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
 
                     <!-- Room Information -->
                     <div class="package-details-content">
