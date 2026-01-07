@@ -1,6 +1,8 @@
 @extends('frontend.layouts.app')
 @section('title', 'Booking Confirmed - YHBS')
 @section('styles')
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         .confirmation-section {
             background: #f8f9fa;
@@ -875,5 +877,7 @@
 @endsection
 
 @section('scripts')
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.11/dist/dotlottie-wc.js" type="module"></script>
 @endsection

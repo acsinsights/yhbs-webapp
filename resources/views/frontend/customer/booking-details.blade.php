@@ -1,5 +1,10 @@
 @extends('frontend.layouts.app')
 @section('title', 'Booking Details - YHBS')
+@section('styles')
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+@endsection
+
 @section('content')
     <!-- Breadcrumb section Start-->
     <div class="breadcrumb-section"
@@ -454,4 +459,9 @@
             </div>
         </div>
     </div>
+@endsection
+
+@section('scripts')
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 @endsection

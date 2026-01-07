@@ -17,6 +17,7 @@ new class extends Component {
     public bool $showReasonModal = false;
     public bool $showDetailsModal = false;
     public ?Booking $selectedBooking = null;
+    public ?int $lastViewedBookingId = null;
     public float $rescheduleFee = 0;
     public string $rejectionReason = '';
     public string $selectedReason = '';
@@ -39,6 +40,7 @@ new class extends Component {
     public function openDetailsModal($bookingId): void
     {
         $this->selectedBooking = Booking::with(['user', 'bookingable'])->findOrFail($bookingId);
+        $this->lastViewedBookingId = $bookingId;
         $this->showDetailsModal = true;
     }
 
@@ -71,6 +73,75 @@ new class extends Component {
     {
         $this->selectedBooking = Booking::with(['user', 'bookingable'])->findOrFail($bookingId);
         $this->showRejectModal = true;
+    }
+
+    public function getBookingDuration($booking): string
+    {
+        if (!$booking->check_in || !$booking->check_out) {
+            return 'N/A';
+        }
+
+        // Calculate duration in hours
+        $duration = $booking->check_in->diffInHours($booking->check_out);
+
+        if ($duration === 0) {
+            $minutes = $booking->check_in->diffInMinutes($booking->check_out);
+            if ($minutes === 15) {
+                return '15 Minutes';
+            } elseif ($minutes === 30) {
+                return '30 Minutes';
+            } elseif ($minutes < 60) {
+                return $minutes . ' Minutes';
+            }
+            $duration = 1;
+        }
+
+        return $duration === 1 ? '1 Hour' : $duration . ' Hours';
+    }
+
+    public function getRequestedDuration($booking): string
+    {
+        $timeSlot = $booking->requested_time_slot ?? '';
+        if (empty($timeSlot)) {
+            return 'N/A';
+        }
+
+        // Parse time slot to get duration
+        if (preg_match('/(\d+):(\d+)\s*(AM|PM)\s*-\s*(\d+):(\d+)\s*(AM|PM)/', $timeSlot, $matches)) {
+            $startHour = (int) $matches[1];
+            $startPeriod = $matches[3];
+            $endHour = (int) $matches[4];
+            $endPeriod = $matches[6];
+
+            if ($startPeriod === 'PM' && $startHour !== 12) {
+                $startHour += 12;
+            } elseif ($startPeriod === 'AM' && $startHour === 12) {
+                $startHour = 0;
+            }
+
+            if ($endPeriod === 'PM' && $endHour !== 12) {
+                $endHour += 12;
+            } elseif ($endPeriod === 'AM' && $endHour === 12) {
+                $endHour = 0;
+            }
+
+            $duration = $endHour - $startHour;
+
+            if ($duration === 0) {
+                $startMin = (int) $matches[2];
+                $endMin = (int) $matches[5];
+                $minutes = $endMin - $startMin;
+                if ($minutes === 15) {
+                    return '15 Minutes';
+                } elseif ($minutes === 30) {
+                    return '30 Minutes';
+                }
+            }
+
+            return $duration === 1 ? '1 Hour' : $duration . ' Hours';
+        }
+
+        return 'N/A';
     }
 
     public function closeRejectModal(): void
@@ -223,19 +294,13 @@ new class extends Component {
     @if ($rescheduleRequests->count() > 0)
         <x-card>
             <x-table :headers="[
-                ['key' => 'id', 'label' => 'ID'],
                 ['key' => 'customer', 'label' => 'Customer'],
                 ['key' => 'property', 'label' => 'Property'],
-                ['key' => 'current_dates', 'label' => 'Current Dates'],
-                ['key' => 'new_dates', 'label' => 'New Dates'],
                 ['key' => 'fee', 'label' => 'Fee'],
                 ['key' => 'requested', 'label' => 'Requested On'],
-                ['key' => 'reason', 'label' => 'Reason'],
+                ['key' => 'view', 'label' => ''],
                 ['key' => 'actions', 'label' => 'Actions'],
             ]" :rows="$rescheduleRequests" with-pagination>
-                @scope('cell_id', $booking)
-                    <strong>#{{ $booking->id }}</strong>
-                @endscope
 
                 @scope('cell_customer', $booking)
                     @php
@@ -266,32 +331,6 @@ new class extends Component {
                     </div>
                 @endscope
 
-                @scope('cell_current_dates', $booking)
-                    <div>
-                        <div class="text-sm">
-                            <x-icon name="o-calendar" class="w-4 h-4 text-success inline" />
-                            {{ $booking->check_in->format('d M Y') }}
-                        </div>
-                        <div class="text-sm">
-                            <x-icon name="o-calendar" class="w-4 h-4 text-error inline" />
-                            {{ $booking->check_out->format('d M Y') }}
-                        </div>
-                    </div>
-                @endscope
-
-                @scope('cell_new_dates', $booking)
-                    <div>
-                        <div class="text-sm font-semibold">
-                            <x-icon name="o-calendar" class="w-4 h-4 text-success inline" />
-                            {{ $booking->new_check_in?->format('d M Y') ?? 'N/A' }}
-                        </div>
-                        <div class="text-sm font-semibold">
-                            <x-icon name="o-calendar" class="w-4 h-4 text-error inline" />
-                            {{ $booking->new_check_out?->format('d M Y') ?? 'N/A' }}
-                        </div>
-                    </div>
-                @endscope
-
                 @scope('cell_fee', $booking)
                     <strong class="text-warning">{{ currency_format($booking->reschedule_fee ?? 0) }}</strong>
                 @endscope
@@ -303,21 +342,18 @@ new class extends Component {
                     </div>
                 @endscope
 
-                @scope('cell_reason', $booking)
-                    <x-button icon="o-eye" class="btn-sm btn-ghost"
-                        wire:click="openReasonModal('{{ addslashes($booking->reschedule_reason) }}')" label="View" />
+                @scope('cell_view', $booking)
+                    <x-button icon="o-eye"
+                        class="btn-sm btn-ghost btn-circle {{ $this->lastViewedBookingId === $booking->id ? 'ring-2 ring-success' : '' }}"
+                        wire:click="openDetailsModal({{ $booking->id }})" tooltip="View Details" />
                 @endscope
 
                 @scope('cell_actions', $booking)
                     <div class="flex gap-2">
                         <x-button icon="o-check-circle" class="btn-sm btn-success"
-                            wire:click="openApproveModal({{ $booking->id }})" spinner>
-                            Approve
-                        </x-button>
+                            wire:click="openApproveModal({{ $booking->id }})" tooltip="Approve" />
                         <x-button icon="o-x-circle" class="btn-sm btn-error"
-                            wire:click="openRejectModal({{ $booking->id }})" spinner>
-                            Reject
-                        </x-button>
+                            wire:click="openRejectModal({{ $booking->id }})" tooltip="Reject" />
                     </div>
                 @endscope
             </x-table>
@@ -341,18 +377,33 @@ new class extends Component {
                 </x-alert>
 
                 <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <h6 class="font-semibold mb-2">Current Dates:</h6>
-                        <div class="text-sm">Check-in: {{ $selectedBooking->check_in->format('d M Y') }}</div>
-                        <div class="text-sm">Check-out: {{ $selectedBooking->check_out->format('d M Y') }}</div>
-                    </div>
-                    <div>
-                        <h6 class="font-semibold mb-2">New Dates:</h6>
-                        <div class="text-sm font-semibold text-success">Check-in:
-                            {{ $selectedBooking->new_check_in?->format('d M Y') ?? 'N/A' }}</div>
-                        <div class="text-sm font-semibold text-error">Check-out:
-                            {{ $selectedBooking->new_check_out?->format('d M Y') ?? 'N/A' }}</div>
-                    </div>
+                    @if ($selectedBooking->bookingable instanceof \App\Models\Boat)
+                        <div>
+                            <h6 class="font-semibold mb-2">Current Details:</h6>
+                            <div class="text-sm">Date: {{ $selectedBooking->check_in->format('d M Y') }}</div>
+                            <div class="text-sm">Duration: {{ $this->getBookingDuration($selectedBooking) }}</div>
+                        </div>
+                        <div>
+                            <h6 class="font-semibold mb-2">New Details:</h6>
+                            <div class="text-sm font-semibold text-success">Date:
+                                {{ $selectedBooking->new_check_in?->format('d M Y') ?? 'N/A' }}</div>
+                            <div class="text-sm font-semibold text-primary">Duration:
+                                {{ $this->getRequestedDuration($selectedBooking) }}</div>
+                        </div>
+                    @else
+                        <div>
+                            <h6 class="font-semibold mb-2">Current Dates:</h6>
+                            <div class="text-sm">Check-in: {{ $selectedBooking->check_in->format('d M Y') }}</div>
+                            <div class="text-sm">Check-out: {{ $selectedBooking->check_out->format('d M Y') }}</div>
+                        </div>
+                        <div>
+                            <h6 class="font-semibold mb-2">New Dates:</h6>
+                            <div class="text-sm font-semibold text-success">Check-in:
+                                {{ $selectedBooking->new_check_in?->format('d M Y') ?? 'N/A' }}</div>
+                            <div class="text-sm font-semibold text-error">Check-out:
+                                {{ $selectedBooking->new_check_out?->format('d M Y') ?? 'N/A' }}</div>
+                        </div>
+                    @endif
                 </div>
 
                 <x-input label="Reschedule Fee" wire:model="rescheduleFee" type="number" step="0.01"
@@ -386,7 +437,8 @@ new class extends Component {
                                 class="radio radio-primary mr-2">
                             <div>
                                 <span class="font-medium">Collect Manually / Waive Fee</span>
-                                <p class="text-xs text-gray-500">Collect payment manually from customer or waive the fee
+                                <p class="text-xs text-gray-500">Collect payment manually from customer or waive the
+                                    fee
                                 </p>
                             </div>
                         </label>
@@ -446,5 +498,159 @@ new class extends Component {
         <x-slot:actions>
             <x-button label="Close" @click="$wire.closeReasonModal()" />
         </x-slot:actions>
+    </x-modal>
+
+    <!-- Details Modal -->
+    <x-modal wire:model="showDetailsModal" title="Reschedule Request Details" class="backdrop-blur"
+        box-class="max-w-7xl w-full mx-4">
+        @if ($selectedBooking)
+            <div class="space-y-3 max-h-[80vh] overflow-y-auto px-1">
+                <!-- Booking Information -->
+                <div>
+                    <h3 class="font-semibold text-base mb-2 flex items-center gap-1.5">
+                        <x-icon name="o-document-text" class="w-4 h-4" />
+                        Booking Information
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 p-3 bg-base-200 rounded-lg">
+                        <div>
+                            <span class="text-sm text-gray-500">Booking ID</span>
+                            <p class="font-semibold">#{{ $selectedBooking->id }}</p>
+                        </div>
+                        <div>
+                            <span class="text-sm text-gray-500">Property</span>
+                            <p class="font-semibold">{{ $selectedBooking->bookingable->name ?? 'N/A' }}</p>
+                            <p class="text-xs text-gray-500">{{ class_basename($selectedBooking->bookingable_type) }}
+                            </p>
+                        </div>
+                        <div>
+                            <span class="text-sm text-gray-500">Customer</span>
+                            <p class="font-semibold">{{ $selectedBooking->user->name ?? 'N/A' }}</p>
+                            <p class="text-xs text-gray-500">{{ $selectedBooking->user->email ?? 'N/A' }}</p>
+                        </div>
+                        <div>
+                            <span class="text-sm text-gray-500">Guest Name</span>
+                            <p class="font-semibold">{{ $selectedBooking->guest_name ?? 'N/A' }}</p>
+                        </div>
+                        <div>
+                            <span class="text-sm text-gray-500">Wallet Balance</span>
+                            <p class="font-semibold text-info">
+                                {{ currency_format($selectedBooking->user->wallet_balance ?? 0) }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Booking Details -->
+                <div>
+                    <h3 class="font-semibold text-base mb-2 flex items-center gap-1.5">
+                        <x-icon name="o-calendar" class="w-4 h-4 text-primary" />
+                        Current Booking
+                    </h3>
+                    <div class="p-3 bg-base-200 rounded-lg">
+                        @if ($selectedBooking->bookingable instanceof \App\Models\Boat)
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div>
+                                    <span class="text-sm text-gray-500">Date</span>
+                                    <p class="font-semibold">{{ $selectedBooking->check_in->format('d M Y') }}</p>
+                                </div>
+                                <div>
+                                    <span class="text-sm text-gray-500">Duration</span>
+                                    <p class="font-semibold">{{ $this->getBookingDuration($selectedBooking) }}</p>
+                                </div>
+                                <div>
+                                    <span class="text-sm text-gray-500">Time</span>
+                                    <p class="font-semibold">{{ $selectedBooking->check_in->format('h:i A') }} -
+                                        {{ $selectedBooking->check_out->format('h:i A') }}</p>
+                                </div>
+                            </div>
+                        @else
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <span class="text-sm text-gray-500">Check-in</span>
+                                    <p class="font-semibold">{{ $selectedBooking->check_in->format('d M Y') }}</p>
+                                </div>
+                                <div>
+                                    <span class="text-sm text-gray-500">Check-out</span>
+                                    <p class="font-semibold">{{ $selectedBooking->check_out->format('d M Y') }}</p>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Requested Changes -->
+                <div>
+                    <h3 class="font-semibold text-base mb-2 flex items-center gap-1.5">
+                        <x-icon name="o-calendar" class="w-4 h-4 text-success" />
+                        Requested Changes
+                    </h3>
+                    <div class="p-3 bg-success/10 rounded-lg border border-success/20">
+                        @if ($selectedBooking->bookingable instanceof \App\Models\Boat)
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div>
+                                    <span class="text-sm text-gray-500">New Date</span>
+                                    <p class="font-semibold text-success">
+                                        {{ $selectedBooking->new_check_in?->format('d M Y') ?? 'N/A' }}</p>
+                                </div>
+                                <div>
+                                    <span class="text-sm text-gray-500">Duration</span>
+                                    <p class="font-semibold text-success">
+                                        {{ $this->getRequestedDuration($selectedBooking) }}</p>
+                                </div>
+                                @if ($selectedBooking->requested_time_slot)
+                                    <div>
+                                        <span class="text-sm text-gray-500">Time Slot</span>
+                                        <p class="font-semibold text-success">
+                                            {{ $selectedBooking->requested_time_slot }}</p>
+                                    </div>
+                                @endif
+                            </div>
+                        @else
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <span class="text-sm text-gray-500">New Check-in</span>
+                                    <p class="font-semibold text-success">
+                                        {{ $selectedBooking->new_check_in?->format('d M Y') ?? 'N/A' }}</p>
+                                </div>
+                                <div>
+                                    <span class="text-sm text-gray-500">New Check-out</span>
+                                    <p class="font-semibold text-success">
+                                        {{ $selectedBooking->new_check_out?->format('d M Y') ?? 'N/A' }}</p>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Reschedule Details -->
+                <div>
+                    <h3 class="font-semibold text-base mb-2 flex items-center gap-1.5">
+                        <x-icon name="o-information-circle" class="w-4 h-4" />
+                        Request Details
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <div class="p-3 bg-base-200 rounded-lg">
+                            <span class="text-sm text-gray-500">Reschedule Fee</span>
+                            <p class="font-semibold text-warning text-lg">
+                                {{ currency_format($selectedBooking->reschedule_fee ?? 0) }}</p>
+                        </div>
+                        <div class="p-3 bg-base-200 rounded-lg">
+                            <span class="text-sm text-gray-500">Requested On</span>
+                            <p class="font-semibold">
+                                {{ $selectedBooking->reschedule_requested_at?->format('d M Y, h:i A') ?? 'N/A' }}</p>
+                        </div>
+                        @if ($selectedBooking->reschedule_reason)
+                            <div class="p-3 bg-base-200 rounded-lg md:col-span-2">
+                                <span class="text-sm text-gray-500 block mb-1">Reason for Rescheduling</span>
+                                <p class="whitespace-pre-line text-sm">{{ $selectedBooking->reschedule_reason }}</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <x-slot:actions>
+                <x-button label="Close" @click="$wire.closeDetailsModal()" />
+            </x-slot:actions>
+        @endif
     </x-modal>
 </div>

@@ -34,6 +34,44 @@ new class extends Component {
         $this->loadBookedDates();
     }
 
+    public function getBookingDuration(): string
+    {
+        if (!$this->isBoatBooking) {
+            return '';
+        }
+
+        // For boat bookings, calculate duration from check_in and check_out times
+        if (!$this->booking->check_in || !$this->booking->check_out) {
+            return 'N/A';
+        }
+
+        // Calculate duration in hours
+        $duration = $this->booking->check_in->diffInHours($this->booking->check_out);
+
+        if ($duration === 0) {
+            // If same hour, try diffInMinutes
+            $minutes = $this->booking->check_in->diffInMinutes($this->booking->check_out);
+            if ($minutes === 15) {
+                return '15 Minutes';
+            } elseif ($minutes === 30) {
+                return '30 Minutes';
+            } elseif ($minutes < 60) {
+                return $minutes . ' Minutes';
+            }
+            $duration = 1; // Default to 1 hour if less than an hour
+        }
+
+        if ($duration === 1) {
+            return '1 Hour';
+        } elseif ($duration === 2) {
+            return '2 Hours';
+        } elseif ($duration === 3) {
+            return '3 Hours';
+        } else {
+            return $duration . ' Hours';
+        }
+    }
+
     public function calculateRescheduleFee(): void
     {
         $this->rescheduleFee = match (true) {
@@ -73,7 +111,32 @@ new class extends Component {
 
     public function generateTimeSlots(): void
     {
-        $this->availableTimeSlots = ['09:00 AM - 11:00 AM', '11:00 AM - 01:00 PM', '01:00 PM - 03:00 PM', '03:00 PM - 05:00 PM', '05:00 PM - 07:00 PM'];
+        // Get the original duration from check_in and check_out
+        $originalDuration = $this->booking->check_in->diffInHours($this->booking->check_out);
+
+        // For very short durations, check minutes
+        if ($originalDuration === 0) {
+            $minutes = $this->booking->check_in->diffInMinutes($this->booking->check_out);
+            if ($minutes === 15 || $minutes === 30) {
+                // For limousine 15-min or 30-min bookings
+                $this->availableTimeSlots = match ($minutes) {
+                    15 => ['09:00 AM - 09:15 AM', '09:30 AM - 09:45 AM', '10:00 AM - 10:15 AM', '10:30 AM - 10:45 AM', '11:00 AM - 11:15 AM'],
+                    30 => ['09:00 AM - 09:30 AM', '09:30 AM - 10:00 AM', '10:00 AM - 10:30 AM', '10:30 AM - 11:00 AM', '11:00 AM - 11:30 AM'],
+                    default => [],
+                };
+                return;
+            }
+            $originalDuration = 1; // Default to 1 hour
+        }
+
+        // Generate slots based on duration
+        $allSlots = [
+            1 => ['09:00 AM - 10:00 AM', '10:00 AM - 11:00 AM', '11:00 AM - 12:00 PM', '12:00 PM - 01:00 PM', '01:00 PM - 02:00 PM', '02:00 PM - 03:00 PM', '03:00 PM - 04:00 PM', '04:00 PM - 05:00 PM', '05:00 PM - 06:00 PM', '06:00 PM - 07:00 PM'],
+            2 => ['09:00 AM - 11:00 AM', '11:00 AM - 01:00 PM', '01:00 PM - 03:00 PM', '03:00 PM - 05:00 PM', '05:00 PM - 07:00 PM'],
+            3 => ['09:00 AM - 12:00 PM', '12:00 PM - 03:00 PM', '03:00 PM - 06:00 PM'],
+        ];
+
+        $this->availableTimeSlots = $allSlots[$originalDuration] ?? $allSlots[2];
     }
 
     public function updatedNewCheckIn($value): void
@@ -247,12 +310,13 @@ new class extends Component {
             <strong>Reschedule Request Pending</strong>
             <p class="mb-0 mt-2">Your reschedule request is being reviewed by our team.</p>
             <div class="mt-2">
-                <small><strong>New Check-in:</strong> {{ $booking->new_check_in?->format('d M Y') }}</small><br>
+                <small><strong>New Date:</strong> {{ $booking->new_check_in?->format('d M Y') }}</small><br>
                 @if (!$booking->bookingable instanceof \App\Models\Boat)
                     <small><strong>New Check-out:</strong> {{ $booking->new_check_out?->format('d M Y') }}</small><br>
-                @endif
-                @if ($booking->requested_time_slot)
-                    <small><strong>Requested Time:</strong> {{ $booking->requested_time_slot }}</small><br>
+                @else
+                    @if ($booking->requested_time_slot)
+                        <small><strong>New Time Slot:</strong> {{ $booking->requested_time_slot }}</small><br>
+                    @endif
                 @endif
                 <small><strong>Reschedule Fee:</strong> {{ currency_format($booking->reschedule_fee ?? 0) }}</small>
             </div>
@@ -283,14 +347,19 @@ new class extends Component {
                                 <ul class="list-unstyled">
                                     <li><strong>Reference:</strong> #{{ $booking->id }}</li>
                                     <li><strong>Property:</strong> {{ $booking->bookingable->name ?? 'N/A' }}</li>
-                                    @if (!$isBoatBooking)
+                                    @if ($isBoatBooking)
+                                        <li><strong>Date:</strong> {{ $booking->check_in->format('d M Y') }}</li>
+                                        <li><strong>Duration:</strong> {{ $this->getBookingDuration() }}</li>
+                                    @else
                                         <li><strong>Duration:</strong> {{ $originalNights }}
                                             {{ Str::plural('night', $originalNights) }}</li>
+                                        <li><strong>Current Check-in:</strong>
+                                            {{ $booking->check_in->format('d M Y') }}
+                                        </li>
+                                        <li><strong>Current Check-out:</strong>
+                                            {{ $booking->check_out->format('d M Y') }}
+                                        </li>
                                     @endif
-                                    <li><strong>Current Check-in:</strong> {{ $booking->check_in->format('d M Y') }}
-                                    </li>
-                                    <li><strong>Current Check-out:</strong> {{ $booking->check_out->format('d M Y') }}
-                                    </li>
                                     <li><strong>Total Amount:</strong>
                                         {{ currency_format($booking->total_amount ?? $booking->price) }}
                                     </li>
@@ -350,8 +419,13 @@ new class extends Component {
                                 @if ($newCheckIn)
                                     <div class="mb-3">
                                         <label class="form-label">
-                                            <strong>Select Time Slot <span class="text-danger">*</span></strong>
+                                            <strong>Select Time ({{ $this->getBookingDuration() }} duration) <span
+                                                    class="text-danger">*</span></strong>
                                         </label>
+                                        <small class="text-muted d-block mb-2">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            You can only reschedule to the same duration as your original booking
+                                        </small>
                                         <div class="d-flex flex-wrap gap-2">
                                             @foreach ($availableTimeSlots as $slot)
                                                 <label class="time-slot-btn">
