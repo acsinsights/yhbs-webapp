@@ -25,7 +25,7 @@
             <div class="row">
                 <div class="col-lg-8">
                     <!-- Boat Image Gallery -->
-                    <div class="package-img-area mb-4">
+                    <div class="package-img-area mb-3">
                         @php
                             $boatMainImage = null;
                             if ($boat->image) {
@@ -51,36 +51,34 @@
                             }
                         @endphp
                         <img id="mainBoatImage" src="{{ $boatMainImage }}" alt="{{ $boat->name }}"
-                            class="img-fluid rounded"
-                            style="width: 100%; height: 450px; object-fit: cover; cursor: pointer;">
+                            class="img-fluid rounded" style="width: 100%; height: 500px; object-fit: cover;">
                     </div>
 
                     <!-- Additional Images / Thumbnails -->
                     @if ($boat->library && $boat->library->count() > 0)
-                        <div class="row g-3 mb-4">
-                            @foreach ($boat->library as $imageData)
-                                @php
-                                    // Skip if imageData is not an array or object
-                                    if (!is_array($imageData) && !is_object($imageData)) {
-                                        continue;
-                                    }
-                                    // Convert to array if it's an object
+                        <div class="mb-4" style="overflow-x: auto; white-space: nowrap;">
+                            <div style="display: inline-flex; gap: 8px;">
+                                @foreach ($boat->library as $imageData)
+                                    @php
+                                        // Skip if imageData is not an array or object
+                                        if (!is_array($imageData) && !is_object($imageData)) {
+                                            continue;
+                                        }
+                                        // Convert to array if it's an object
 $imageArray = is_object($imageData) ? (array) $imageData : $imageData;
 // Get the URL or path
 $libraryImage = $imageArray['url'] ?? ($imageArray['path'] ?? null);
-                                    if (!$libraryImage) {
-                                        continue;
-                                    }
-                                @endphp
-                                <div class="col-md-4">
-                                    <img src="{{ $libraryImage }}" alt="{{ $boat->name }}"
-                                        class="img-fluid rounded boat-thumbnail"
-                                        style="width: 100%; height: 200px; object-fit: cover; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s;"
-                                        onclick="changeMainImage('{{ $libraryImage }}')"
-                                        onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'"
+                                        if (!$libraryImage) {
+                                            continue;
+                                        }
+                                    @endphp
+                                    <img src="{{ $libraryImage }}" alt="{{ $boat->name }}" class="rounded boat-thumbnail"
+                                        style="width: 100px; height: 80px; object-fit: cover; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; border: 2px solid transparent;"
+                                        onclick="changeMainImage('{{ $libraryImage }}', this)"
+                                        onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.3)'"
                                         onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
-                                </div>
-                            @endforeach
+                                @endforeach
+                            </div>
                         </div>
                     @endif
 
@@ -225,7 +223,7 @@ $libraryImage = $imageArray['url'] ?? ($imageArray['path'] ?? null);
 @section('scripts')
     <!-- Image Gallery Script -->
     <script>
-        function changeMainImage(imageUrl) {
+        function changeMainImage(imageUrl, thumbnail) {
             const mainImage = document.getElementById('mainBoatImage');
             if (mainImage) {
                 // Add fade effect
@@ -235,6 +233,16 @@ $libraryImage = $imageArray['url'] ?? ($imageArray['path'] ?? null);
                     mainImage.src = imageUrl;
                     mainImage.style.opacity = '1';
                 }, 200);
+
+                // Remove border from all thumbnails
+                document.querySelectorAll('.boat-thumbnail').forEach(thumb => {
+                    thumb.style.border = '2px solid transparent';
+                });
+
+                // Add border to clicked thumbnail
+                if (thumbnail) {
+                    thumbnail.style.border = '2px solid #007bff';
+                }
 
                 // Smooth scroll to main image
                 mainImage.scrollIntoView({
