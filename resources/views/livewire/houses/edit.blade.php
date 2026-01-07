@@ -68,6 +68,8 @@ new class extends Component {
         $this->adults = $house->adults;
         $this->children = $house->children;
         $this->number_of_rooms = $house->number_of_rooms;
+
+        // Load existing library metadata from model
         $this->library = $house->library ?? new Collection();
     }
 
@@ -123,7 +125,7 @@ new class extends Component {
         ]);
 
         // Sync media files and update library metadata
-        $this->syncMedia(model: $this->house, library: 'library', files: 'files', storage_subpath: '/houses/library', model_field: 'library', visibility: 'public', disk: 'public');
+        $this->syncMedia(model: $this->house, storage_subpath: '/houses/library', disk: 'public');
 
         $this->success('House updated successfully.', redirectTo: route('admin.houses.index'));
     }
@@ -131,8 +133,12 @@ new class extends Component {
 @section('cdn')
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.2.1/tinymce.min.js" referrerpolicy="origin"></script>
 
+    {{-- Cropper.js --}}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+
+    {{-- Sortable.js --}}
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.1/Sortable.min.js"></script>
 @endsection
 <div class="pb-4">
     @php
