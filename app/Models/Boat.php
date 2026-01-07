@@ -43,8 +43,7 @@ class Boat extends Model
         'booking_policy',
         'allows_same_day_booking',
         'requires_advance_booking',
-        'is_monthly_schedule',
-        'library',
+        'is_monthly_schedule', 
     ];
 
     protected $casts = [

@@ -145,7 +145,7 @@ new class extends Component {
         $imagePath = $this->existing_image;
         if ($this->image instanceof UploadedFile) {
             $url = $this->image->store('boats', 'public');
-            $imagePath = $url;
+            $imagePath = "/storage/$url";
         }
 
         $this->boat->update([
@@ -387,12 +387,12 @@ new class extends Component {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-4 md:mt-6">
                 <x-file wire:model="image" label="Main Boat Image" placeholder="Upload boat image" crop-after-change
                     :crop-config="$config2" hint="Max: 5MB">
-                    <img src="{{ $this->existing_image ? asset('storage/' . $this->existing_image) : 'https://placehold.co/600x400' }}"
+                    <img src="{{ $existing_image ? (str_starts_with($existing_image, 'http') ? $existing_image : asset($existing_image)) : 'https://placehold.co/600x400' }}"
                         alt="Boat Image" class="rounded-md object-cover w-full h-35 md:h-40" />
                 </x-file>
 
                 <x-image-library wire:model="files" wire:library="library" :preview="$library" label="Gallery Images"
-                    hint="Max 5MB per image" change-text="Change" crop-text="Crop" remove-text="Remove"
+                    hint="Max 1MB per image" change-text="Change" crop-text="Crop" remove-text="Remove"
                     crop-title-text="Crop image" crop-cancel-text="Cancel" crop-save-text="Crop"
                     add-files-text="Add images" />
             </div>

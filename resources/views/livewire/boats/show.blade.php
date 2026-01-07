@@ -44,15 +44,36 @@ new class extends Component {
     $slides = [];
 
     // Add main image first if it exists
-    if ($boat->image && is_string($boat->image)) {
-        $slides[] = ['image' => asset('storage/' . $boat->image)];
+    if ($boat->image) {
+        $slides[] = ['image' => asset($boat->image)];
     }
 
-    // Add additional images if available
-    if ($boat->images && is_array($boat->images)) {
-        foreach ($boat->images as $img) {
-            if ($img && is_string($img)) {
-                $slides[] = ['image' => asset('storage/' . $img)];
+    // Add library images
+    if ($boat->library && is_iterable($boat->library)) {
+        foreach ($boat->library as $item) {
+            $imageUrl = null;
+
+            // Handle object/array structure with url, path, uuid
+            if (is_array($item) || is_object($item)) {
+                $item = (array) $item;
+                // Use url if available (full URL), otherwise construct from path
+                if (!empty($item['url'])) {
+                    $imageUrl = $item['url'];
+                } elseif (!empty($item['path'])) {
+                    // Ensure path starts with /
+                    $path = $item['path'];
+                    if (!str_starts_with($path, '/')) {
+                        $path = '/' . $path;
+                    }
+                    $imageUrl = asset('storage' . $path);
+                }
+            } elseif (is_string($item) && $item !== '') {
+                // Backward compatibility: handle string paths
+                $imageUrl = asset($item);
+            }
+
+            if ($imageUrl) {
+                $slides[] = ['image' => $imageUrl];
             }
         }
     }
