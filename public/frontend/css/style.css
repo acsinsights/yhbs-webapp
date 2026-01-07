@@ -44058,3 +44058,31 @@ header.style-3.two .main-menu>ul>li.active>a i {
     background-color: #e0f2fe !important;
     border-color: #0ea5e9 !important;
 }
+
+/* ================================
+   Custom Image Gallery Scrollbar
+   ================================ */
+.custom-scroll-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.custom-scroll-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.custom-scroll-container::-webkit-scrollbar-thumb {
+    background: linear-gradient(to right, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+    transition: background 0.3s ease;
+}
+
+.custom-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to right, #764ba2 0%, #667eea 100%);
+}
+
+/* Firefox */
+.custom-scroll-container {
+    scrollbar-width: thin;
+    scrollbar-color: #667eea #f1f1f1;
+}

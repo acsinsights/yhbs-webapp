@@ -75,7 +75,7 @@ $libraryImage = $imageArray['url'] ?? ($imageArray['path'] ?? null);
                                     @endphp
                                     <img src="{{ $libraryImage }}" alt="{{ $boat->name }}" class="rounded boat-thumbnail"
                                         style="width: 100px; height: 80px; object-fit: cover; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; border: 2px solid transparent;"
-                                        onclick="changeMainImage('{{ $libraryImage }}', this)"
+                                        onclick="changeMainImageBoat('{{ $libraryImage }}', this)"
                                         onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.3)'"
                                         onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
                                 @endforeach
@@ -219,67 +219,4 @@ $libraryImage = $imageArray['url'] ?? ($imageArray['path'] ?? null);
             </div>
         </div>
     </div>
-@endsection
-
-@section('styles')
-    <style>
-        .custom-scroll-container::-webkit-scrollbar {
-            height: 8px;
-        }
-
-        .custom-scroll-container::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-
-        .custom-scroll-container::-webkit-scrollbar-thumb {
-            background: linear-gradient(to right, #667eea 0%, #764ba2 100%);
-            border-radius: 10px;
-            transition: background 0.3s ease;
-        }
-
-        .custom-scroll-container::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(to right, #764ba2 0%, #667eea 100%);
-        }
-
-        /* Firefox */
-        .custom-scroll-container {
-            scrollbar-width: thin;
-            scrollbar-color: #667eea #f1f1f1;
-        }
-    </style>
-@endsection
-
-@section('scripts')
-    <!-- Image Gallery Script -->
-    <script>
-        function changeMainImage(imageUrl, thumbnail) {
-            const mainImage = document.getElementById('mainBoatImage');
-            if (mainImage) {
-                // Add fade effect
-                mainImage.style.opacity = '0.5';
-
-                setTimeout(() => {
-                    mainImage.src = imageUrl;
-                    mainImage.style.opacity = '1';
-                }, 200);
-
-                // Remove border from all thumbnails
-                document.querySelectorAll('.boat-thumbnail').forEach(thumb => {
-                    thumb.style.border = '2px solid transparent';
-                });
-
-                // Add border to clicked thumbnail
-                if (thumbnail) {
-                    thumbnail.style.border = '2px solid #007bff';
-                }
-
-                // Smooth scroll to main image
-                mainImage.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center'
-                });
-            }
-        }
-    </script>
 @endsection

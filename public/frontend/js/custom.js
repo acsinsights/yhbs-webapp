@@ -3116,3 +3116,88 @@
     window.initRescheduleDatePicker = initRescheduleDatePicker;
 
 })(jQuery);
+
+// ================================
+// Image Gallery Functions
+// ================================
+
+// Change main image for houses
+function changeMainImageHouse(imageUrl, thumbnail) {
+    const mainImage = document.getElementById('mainHouseImage');
+    if (mainImage) {
+        // Add fade effect
+        mainImage.style.opacity = '0.5';
+        
+        setTimeout(() => {
+            mainImage.src = imageUrl;
+            mainImage.style.opacity = '1';
+        }, 200);
+        
+        // Remove border from all thumbnails
+        document.querySelectorAll('.house-thumbnail').forEach(thumb => {
+            thumb.style.border = '2px solid transparent';
+        });
+        
+        // Add border to clicked thumbnail
+        if (thumbnail) {
+            thumbnail.style.border = '2px solid #007bff';
+        }
+        
+        // Smooth scroll to main image
+        mainImage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+// Change main image for rooms
+function changeMainImageRoom(imageUrl, thumbnail) {
+    const mainImage = document.getElementById('mainRoomImage');
+    if (mainImage) {
+        // Add fade effect
+        mainImage.style.opacity = '0.5';
+        
+        setTimeout(() => {
+            mainImage.src = imageUrl;
+            mainImage.style.opacity = '1';
+        }, 200);
+        
+        // Remove border from all thumbnails
+        document.querySelectorAll('.room-thumbnail').forEach(thumb => {
+            thumb.style.border = '2px solid transparent';
+        });
+        
+        // Add border to clicked thumbnail
+        if (thumbnail) {
+            thumbnail.style.border = '2px solid #007bff';
+        }
+        
+        // Smooth scroll to main image
+        mainImage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+// Change main image for boats
+function changeMainImageBoat(imageUrl, thumbnail) {
+    const mainImage = document.getElementById('mainBoatImage');
+    if (mainImage) {
+        // Add fade effect
+        mainImage.style.opacity = '0.5';
+        
+        setTimeout(() => {
+            mainImage.src = imageUrl;
+            mainImage.style.opacity = '1';
+        }, 200);
+        
+        // Remove border from all thumbnails
+        document.querySelectorAll('.boat-thumbnail').forEach(thumb => {
+            thumb.style.border = '2px solid transparent';
+        });
+        
+        // Add border to clicked thumbnail
+        if (thumbnail) {
+            thumbnail.style.border = '2px solid #007bff';
+        }
+        
+        // Smooth scroll to main image
+        mainImage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
