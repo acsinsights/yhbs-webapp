@@ -678,7 +678,7 @@
                         <div class="card-body">
                             <div class="payment-breakdown">
                                 @php
-                                    // Get values from booking object (already calculated in controller)
+                                    // Get values from booking object
                                     $nights = $booking->nights ?? 1;
                                     $pricePerNight = $booking->price_per_night ?? 0;
                                     $serviceFee = $booking->service_fee ?? 0;
@@ -686,12 +686,17 @@
                                     $discount = $booking->discount_amount ?? 0;
                                     $walletUsed = $booking->wallet_amount_used ?? 0;
 
-                                    // Use actual stored price (accounts for tiered pricing)
-                                    $baseAmount =
-                                        isset($booking->total_amount) && $booking->total_amount > 0
-                                            ? $booking->total_amount
-                                            : $booking->price ?? 0;
-                                    $subtotal = $booking->price ?? $pricePerNight * $nights;
+                                    // Calculate the base subtotal BEFORE discount
+                                    // $booking->price is the final amount after discount
+                                    // So we need to add back the discount to show original price
+                                    $subtotal = $booking->price + $discount;
+
+                                    // Final amount (this is what user actually pays)
+                                    $finalAmount =
+                                        $booking->price -
+                                        $walletUsed +
+                                        ($booking->reschedule_fee ?? 0) +
+                                        ($booking->extra_fee ?? 0);
                                 @endphp
 
                                 @if ($booking->property_type === 'Boat')
@@ -764,7 +769,7 @@
                                     <div class="divider"></div>
                                     <div class="payment-row" style="font-weight: 600;">
                                         <span>Subtotal</span>
-                                        <span>{{ currency_format($baseAmount + ($booking->reschedule_fee ?? 0) + ($booking->extra_fee ?? 0)) }}</span>
+                                        <span>{{ currency_format($subtotal + ($booking->reschedule_fee ?? 0) + ($booking->extra_fee ?? 0)) }}</span>
                                     </div>
                                 @endif
 
@@ -792,7 +797,7 @@
 
                             <div class="total-amount">
                                 <span>Total Paid</span>
-                                <span>{{ currency_format($baseAmount + ($booking->reschedule_fee ?? 0) + ($booking->extra_fee ?? 0) - ($booking->discount_amount ?? 0) - ($booking->wallet_amount_used ?? 0)) }}</span>
+                                <span>{{ currency_format($finalAmount) }}</span>
                             </div>
 
                             @if (
@@ -800,7 +805,6 @@
                                     (isset($booking->wallet_amount_used) && $booking->wallet_amount_used > 0))
                                 <div class="text-center mt-3">
                                     @php
-                                        $originalAmount = $subtotal ?? 0;
                                         $totalSavings =
                                             ($booking->discount_amount ?? 0) + ($booking->wallet_amount_used ?? 0);
                                     @endphp

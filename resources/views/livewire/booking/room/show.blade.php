@@ -709,7 +709,7 @@ new class extends Component {
                         <div class="flex justify-between items-center">
                             <span class="text-base font-semibold">Total Amount</span>
                             <span
-                                class="text-2xl font-bold">{{ currency_format((($booking->total_amount > 0 ? $booking->total_amount : $booking->price) ?? 0) + ($booking->reschedule_fee ?? 0) + ($booking->extra_fee ?? 0) - ($booking->discount_amount ?? 0) - ($booking->wallet_amount_used ?? 0)) }}</span>
+                                class="text-2xl font-bold">{{ currency_format($booking->price + ($booking->reschedule_fee ?? 0) + ($booking->extra_fee ?? 0) - ($booking->wallet_amount_used ?? 0)) }}</span>
                         </div>
                     </div>
 

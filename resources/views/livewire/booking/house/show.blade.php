@@ -842,18 +842,12 @@ new class extends Component {
                         <div class="flex justify-between items-center">
                             <span class="text-base font-semibold">Total Amount</span>
                             @php
-                                // Calculate correct total
-                                $baseAmount =
-                                    $booking->price_per_night && $booking->nights
-                                        ? $booking->price_per_night * $booking->nights
-                                        : $booking->price ?? 0;
+                                // booking->price already has discount applied
+                                // Final amount = price (after discount) - wallet + fees
                                 $calculatedTotal =
-                                    $baseAmount +
-                                    ($booking->service_fee ?? 0) +
-                                    ($booking->tax ?? 0) +
+                                    $booking->price +
                                     ($booking->reschedule_fee ?? 0) +
                                     ($booking->extra_fee ?? 0) -
-                                    ($booking->discount_amount ?? 0) -
                                     ($booking->wallet_amount_used ?? 0);
                             @endphp
                             <span class="text-2xl font-bold">{{ currency_format($calculatedTotal) }}</span>

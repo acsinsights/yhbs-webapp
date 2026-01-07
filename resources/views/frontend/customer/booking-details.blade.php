@@ -298,7 +298,7 @@
                         <div class="card-body">
                             <div class="payment-breakdown">
                                 @php
-                                    // Get values from booking object (already calculated in controller)
+                                    // Get values from booking object
                                     $nights = $booking->nights ?? 1;
                                     $pricePerNight = $booking->price_per_night ?? 0;
                                     $serviceFee = $booking->service_fee ?? 0;
@@ -306,12 +306,9 @@
                                     $discount = $booking->discount_amount ?? 0;
                                     $walletUsed = $booking->wallet_amount_used ?? 0;
 
-                                    // Use actual stored price (accounts for tiered pricing)
-                                    $baseAmount =
-                                        isset($booking->total_amount) && $booking->total_amount > 0
-                                            ? $booking->total_amount
-                                            : $booking->price ?? 0;
-                                    $subtotal = $booking->price ?? $pricePerNight * $nights;
+                                    // booking->price already has discount applied
+                                    // Add discount back to show original subtotal before discount
+                                    $subtotal = $booking->price + $discount;
                                 @endphp
 
                                 @if (!$isBoat)
@@ -375,7 +372,7 @@
                                     <div class="divider"></div>
                                     <div class="payment-row" style="font-weight: 600;">
                                         <span>Subtotal</span>
-                                        <span>{{ currency_format($baseAmount + ($booking->reschedule_fee ?? 0) + ($booking->extra_fee ?? 0)) }}</span>
+                                        <span>{{ currency_format($subtotal + ($booking->reschedule_fee ?? 0) + ($booking->extra_fee ?? 0)) }}</span>
                                     </div>
                                 @endif
 
@@ -403,7 +400,7 @@
 
                             <div class="total-amount">
                                 <span>Total Paid</span>
-                                <span>{{ currency_format($baseAmount + ($booking->reschedule_fee ?? 0) + ($booking->extra_fee ?? 0) - ($booking->discount_amount ?? 0) - ($booking->wallet_amount_used ?? 0)) }}</span>
+                                <span>{{ currency_format($booking->price - $walletUsed + ($booking->reschedule_fee ?? 0) + ($booking->extra_fee ?? 0)) }}</span>
                             </div>
 
                             <div class="payment-status mt-3">
