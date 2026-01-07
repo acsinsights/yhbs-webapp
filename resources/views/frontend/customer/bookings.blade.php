@@ -95,18 +95,16 @@
                                                         {{ $booking->status?->label() ?? 'Pending' }}
                                                     </span>
 
-                                                    @if ($booking->cancellation_status === 'pending')
-                                                        <span class="badge bg-warning">
-                                                            <i class="bi bi-clock me-1"></i>Cancellation Pending
-                                                        </span>
-                                                    @elseif($booking->cancellation_status === 'approved' || $booking->cancelled_at)
-                                                        <span class="badge bg-danger">
-                                                            <i class="bi bi-x-circle me-1"></i>Cancelled
-                                                        </span>
-                                                    @elseif($booking->cancellation_status === 'rejected')
-                                                        <span class="badge bg-info">
-                                                            <i class="bi bi-info-circle me-1"></i>Cancellation Declined
-                                                        </span>
+                                                    @if ($booking->status !== App\Enums\BookingStatusEnum::CANCELLED)
+                                                        @if ($booking->cancellation_status === 'pending')
+                                                            <span class="badge bg-warning">
+                                                                <i class="bi bi-clock me-1"></i>Cancellation Pending
+                                                            </span>
+                                                        @elseif($booking->cancellation_status === 'rejected')
+                                                            <span class="badge bg-info">
+                                                                <i class="bi bi-info-circle me-1"></i>Cancellation Declined
+                                                            </span>
+                                                        @endif
                                                     @endif
                                                 </div>
                                                 <h4>{{ $booking->bookingable?->name ?? 'Property Name' }}</h4>
@@ -278,18 +276,16 @@
                                                         {{ $booking->status?->label() ?? 'Confirmed' }}
                                                     </span>
 
-                                                    @if ($booking->cancellation_status === 'pending')
-                                                        <span class="badge bg-warning">
-                                                            <i class="bi bi-clock me-1"></i>Cancellation Pending
-                                                        </span>
-                                                    @elseif($booking->cancellation_status === 'approved' || $booking->cancelled_at)
-                                                        <span class="badge bg-danger">
-                                                            <i class="bi bi-x-circle me-1"></i>Cancelled
-                                                        </span>
-                                                    @elseif($booking->cancellation_status === 'rejected')
-                                                        <span class="badge bg-info">
-                                                            <i class="bi bi-info-circle me-1"></i>Cancellation Declined
-                                                        </span>
+                                                    @if ($booking->status !== App\Enums\BookingStatusEnum::CANCELLED)
+                                                        @if ($booking->cancellation_status === 'pending')
+                                                            <span class="badge bg-warning">
+                                                                <i class="bi bi-clock me-1"></i>Cancellation Pending
+                                                            </span>
+                                                        @elseif($booking->cancellation_status === 'rejected')
+                                                            <span class="badge bg-info">
+                                                                <i class="bi bi-info-circle me-1"></i>Cancellation Declined
+                                                            </span>
+                                                        @endif
                                                     @endif
                                                 </div>
                                                 <h4>{{ $booking->bookingable?->name ?? 'Property Name' }}</h4>
@@ -441,18 +437,16 @@
                                                         {{ $booking->status?->label() ?? 'Pending' }}
                                                     </span>
 
-                                                    @if ($booking->cancellation_status === 'pending')
-                                                        <span class="badge bg-warning">
-                                                            <i class="bi bi-clock me-1"></i>Cancellation Pending
-                                                        </span>
-                                                    @elseif($booking->cancellation_status === 'approved' || $booking->cancelled_at)
-                                                        <span class="badge bg-danger">
-                                                            <i class="bi bi-x-circle me-1"></i>Cancelled
-                                                        </span>
-                                                    @elseif($booking->cancellation_status === 'rejected')
-                                                        <span class="badge bg-info">
-                                                            <i class="bi bi-info-circle me-1"></i>Cancellation Declined
-                                                        </span>
+                                                    @if ($booking->status !== App\Enums\BookingStatusEnum::CANCELLED)
+                                                        @if ($booking->cancellation_status === 'pending')
+                                                            <span class="badge bg-warning">
+                                                                <i class="bi bi-clock me-1"></i>Cancellation Pending
+                                                            </span>
+                                                        @elseif($booking->cancellation_status === 'rejected')
+                                                            <span class="badge bg-info">
+                                                                <i class="bi bi-info-circle me-1"></i>Cancellation Declined
+                                                            </span>
+                                                        @endif
                                                     @endif
                                                 </div>
                                                 <h4>{{ $booking->bookingable?->name ?? 'Property Name' }}</h4>
