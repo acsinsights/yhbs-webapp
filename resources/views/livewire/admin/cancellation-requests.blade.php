@@ -173,6 +173,7 @@ new class extends Component {
             <x-table :headers="[
                 ['key' => 'id', 'label' => 'ID'],
                 ['key' => 'customer', 'label' => 'Customer'],
+                ['key' => 'guest_name', 'label' => 'Guest Name'],
                 ['key' => 'property', 'label' => 'Property'],
                 ['key' => 'dates', 'label' => 'Check-in / Check-out'],
                 ['key' => 'amount', 'label' => 'Amount'],
@@ -189,6 +190,29 @@ new class extends Component {
                         <div class="font-semibold">{{ $booking->user->name ?? 'N/A' }}</div>
                         <div class="text-xs text-gray-500">{{ $booking->user->email ?? 'N/A' }}</div>
                     </div>
+                @endscope
+
+                @scope('cell_guest_name', $booking)
+                    @php
+                        $guestName = 'N/A';
+                        if ($booking->guest_details && is_array($booking->guest_details)) {
+                            // Try to get first adult name
+                            if (
+                                isset($booking->guest_details['adult_names']) &&
+                                is_array($booking->guest_details['adult_names'])
+                            ) {
+                                $guestName = $booking->guest_details['adult_names'][0] ?? 'N/A';
+                            }
+                            // Fallback to customer name
+                            if ($guestName === 'N/A' && isset($booking->guest_details['customer']['first_name'])) {
+                                $guestName =
+                                    $booking->guest_details['customer']['first_name'] .
+                                    ' ' .
+                                    ($booking->guest_details['customer']['last_name'] ?? '');
+                            }
+                        }
+                    @endphp
+                    <div class="text-sm">{{ $guestName }}</div>
                 @endscope
 
                 @scope('cell_property', $booking)
