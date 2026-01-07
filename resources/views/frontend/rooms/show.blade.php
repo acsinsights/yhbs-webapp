@@ -30,21 +30,23 @@
                 <div class="col-lg-8">
                     <!-- Room Image -->
                     <div class="package-img-area mb-4">
-                        @if ($room->image)
-                            @if (str_starts_with($room->image, '/default'))
-                                <img src="{{ asset($room->image) }}" alt="{{ $room->name }}" class="img-fluid rounded"
-                                    style="width: 100%; height: 450px; object-fit: cover;">
-                            @else
-                                <img src="{{ asset('storage/' . $room->image) }}" alt="{{ $room->name }}"
-                                    class="img-fluid rounded" style="width: 100%; height: 450px; object-fit: cover;">
-                            @endif
-                        @else
-                            <img src="{{ asset('frontend/img/home2/houses/5.jpg') }}" alt="{{ $room->name }}"
-                                class="img-fluid rounded" style="width: 100%; height: 450px; object-fit: cover;">
-                        @endif
+                        @php
+                            if ($room->image) {
+                                if (str_starts_with($room->image, '/default')) {
+                                    $mainImageUrl = asset($room->image);
+                                } else {
+                                    $mainImageUrl = asset('storage/' . $room->image);
+                                }
+                            } else {
+                                $mainImageUrl = asset('frontend/img/home2/houses/5.jpg');
+                            }
+                        @endphp
+                        <img id="mainRoomImage" src="{{ $mainImageUrl }}" alt="{{ $room->name }}"
+                            class="img-fluid rounded"
+                            style="width: 100%; height: 450px; object-fit: cover; cursor: pointer;">
                     </div>
 
-                    <!-- Additional Images -->
+                    <!-- Additional Images / Thumbnails -->
                     @if ($room->library && $room->library->count() > 0)
                         <div class="row g-3 mb-4">
                             @foreach ($room->library as $imageData)
@@ -62,8 +64,12 @@ $libraryImage = $imageArray['url'] ?? ($imageArray['path'] ?? null);
                                     }
                                 @endphp
                                 <div class="col-md-4">
-                                    <img src="{{ $libraryImage }}" alt="{{ $room->name }}" class="img-fluid rounded"
-                                        style="width: 100%; height: 200px; object-fit: cover;">
+                                    <img src="{{ $libraryImage }}" alt="{{ $room->name }}"
+                                        class="img-fluid rounded room-thumbnail"
+                                        style="width: 100%; height: 200px; object-fit: cover; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s;"
+                                        onclick="changeMainImage('{{ $libraryImage }}')"
+                                        onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'"
+                                        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
                                 </div>
                             @endforeach
                         </div>
@@ -254,4 +260,26 @@ $libraryImage = $imageArray['url'] ?? ($imageArray['path'] ?? null);
 @section('scripts')
     <!-- Flatpickr JS -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <!-- Image Gallery Script -->
+    <script>
+        function changeMainImage(imageUrl) {
+            const mainImage = document.getElementById('mainRoomImage');
+            if (mainImage) {
+                // Add fade effect
+                mainImage.style.opacity = '0.5';
+
+                setTimeout(() => {
+                    mainImage.src = imageUrl;
+                    mainImage.style.opacity = '1';
+                }, 200);
+
+                // Smooth scroll to main image
+                mainImage.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }
+        }
+    </script>
 @endsection

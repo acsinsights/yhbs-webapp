@@ -50,11 +50,12 @@
                                 $boatMainImage = asset('frontend/img/Boats/yacht-default.jpg');
                             }
                         @endphp
-                        <img src="{{ $boatMainImage }}" alt="{{ $boat->name }}" class="img-fluid rounded"
-                            style="width: 100%; height: 450px; object-fit: cover;">
+                        <img id="mainBoatImage" src="{{ $boatMainImage }}" alt="{{ $boat->name }}"
+                            class="img-fluid rounded"
+                            style="width: 100%; height: 450px; object-fit: cover; cursor: pointer;">
                     </div>
 
-                    <!-- Additional Images -->
+                    <!-- Additional Images / Thumbnails -->
                     @if ($boat->library && $boat->library->count() > 0)
                         <div class="row g-3 mb-4">
                             @foreach ($boat->library as $imageData)
@@ -72,8 +73,12 @@ $libraryImage = $imageArray['url'] ?? ($imageArray['path'] ?? null);
                                     }
                                 @endphp
                                 <div class="col-md-4">
-                                    <img src="{{ $libraryImage }}" alt="{{ $boat->name }}" class="img-fluid rounded"
-                                        style="width: 100%; height: 200px; object-fit: cover;">
+                                    <img src="{{ $libraryImage }}" alt="{{ $boat->name }}"
+                                        class="img-fluid rounded boat-thumbnail"
+                                        style="width: 100%; height: 200px; object-fit: cover; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s;"
+                                        onclick="changeMainImage('{{ $libraryImage }}')"
+                                        onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'"
+                                        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
                                 </div>
                             @endforeach
                         </div>
@@ -215,4 +220,28 @@ $libraryImage = $imageArray['url'] ?? ($imageArray['path'] ?? null);
             </div>
         </div>
     </div>
+@endsection
+
+@section('scripts')
+    <!-- Image Gallery Script -->
+    <script>
+        function changeMainImage(imageUrl) {
+            const mainImage = document.getElementById('mainBoatImage');
+            if (mainImage) {
+                // Add fade effect
+                mainImage.style.opacity = '0.5';
+
+                setTimeout(() => {
+                    mainImage.src = imageUrl;
+                    mainImage.style.opacity = '1';
+                }, 200);
+
+                // Smooth scroll to main image
+                mainImage.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }
+        }
+    </script>
 @endsection

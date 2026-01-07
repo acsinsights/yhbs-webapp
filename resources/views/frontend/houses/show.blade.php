@@ -30,16 +30,14 @@
                 <div class="col-lg-8">
                     <!-- House Image -->
                     <div class="package-img-area mb-4">
-                        @if ($house->image)
-                            <img src="{{ asset($house->image) }}" alt="{{ $house->name }}" class="img-fluid rounded"
-                                style="width: 100%; height: 450px; object-fit: cover;">
-                        @else
-                            <img src="{{ asset('frontend/img/home2/houses/5.jpg') }}" alt="{{ $house->name }}"
-                                class="img-fluid rounded" style="width: 100%; height: 450px; object-fit: cover;">
-                        @endif
+                        @php
+                            $mainImageUrl = $house->image ? asset($house->image) : asset('frontend/img/home2/houses/5.jpg');
+                        @endphp
+                        <img id="mainHouseImage" src="{{ $mainImageUrl }}" alt="{{ $house->name }}" class="img-fluid rounded"
+                            style="width: 100%; height: 450px; object-fit: cover; cursor: pointer;">
                     </div>
 
-                    <!-- Additional Images -->
+                    <!-- Additional Images / Thumbnails -->
                     @if ($house->library && $house->library->count() > 0)
                         <div class="row g-3 mb-4">
                             @foreach ($house->library as $imageData)
@@ -57,8 +55,12 @@ $libraryImage = $imageArray['url'] ?? ($imageArray['path'] ?? null);
                                     }
                                 @endphp
                                 <div class="col-md-4">
-                                    <img src="{{ $libraryImage }}" alt="{{ $house->name }}" class="img-fluid rounded"
-                                        style="width: 100%; height: 200px; object-fit: cover;">
+                                    <img src="{{ $libraryImage }}" alt="{{ $house->name }}"
+                                        class="img-fluid rounded house-thumbnail"
+                                        style="width: 100%; height: 200px; object-fit: cover; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s;"
+                                        onclick="changeMainImage('{{ $libraryImage }}')"
+                                        onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'"
+                                        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
                                 </div>
                             @endforeach
                         </div>
@@ -230,4 +232,23 @@ $libraryImage = $imageArray['url'] ?? ($imageArray['path'] ?? null);
 @section('scripts')
     <!-- Flatpickr JS -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <!-- Image Gallery Script -->
+    <script>
+        function changeMainImage(imageUrl) {
+            const mainImage = document.getElementById('mainHouseImage');
+            if (mainImage) {
+                // Add fade effect
+                mainImage.style.opacity = '0.5';
+
+                setTimeout(() => {
+                    mainImage.src = imageUrl;
+                    mainImage.style.opacity = '1';
+                }, 200);
+
+                // Smooth scroll to main image
+                mainImage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    </script>
 @endsection
