@@ -5,6 +5,32 @@
 @section('styles')
     <!-- Flatpickr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        .custom-scroll-container::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .custom-scroll-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .custom-scroll-container::-webkit-scrollbar-thumb {
+            background: linear-gradient(to right, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            transition: background 0.3s ease;
+        }
+
+        .custom-scroll-container::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(to right, #764ba2 0%, #667eea 100%);
+        }
+
+        /* Firefox */
+        .custom-scroll-container {
+            scrollbar-width: thin;
+            scrollbar-color: #667eea #f1f1f1;
+        }
+    </style>
 @endsection
 
 @section('content')
@@ -47,7 +73,8 @@
 
                     <!-- Additional Images / Thumbnails -->
                     @if ($room->library && $room->library->count() > 0)
-                        <div class="mb-4" style="overflow-x: auto; white-space: nowrap;">
+                        <div class="mb-4 custom-scroll-container"
+                            style="overflow-x: auto; white-space: nowrap; padding-bottom: 10px;">
                             <div style="display: inline-flex; gap: 8px;">
                                 @foreach ($room->library as $imageData)
                                     @php
