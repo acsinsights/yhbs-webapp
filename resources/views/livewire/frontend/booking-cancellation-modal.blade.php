@@ -4,6 +4,7 @@ use Livewire\Volt\Component;
 use App\Models\Booking;
 use Illuminate\Support\Facades\{Auth, Mail};
 use App\Mail\BookingCancellationRequestMail;
+use App\Notifications\BookingCancellationRequestNotification;
 
 new class extends Component {
     public Booking $booking;
@@ -60,6 +61,12 @@ new class extends Component {
             Mail::to(config('mail.admin_email', 'admin@yhbs.com'))->send(new BookingCancellationRequestMail($this->booking));
         } catch (\Exception $e) {
             \Log::error('Failed to send cancellation request email: ' . $e->getMessage());
+        }
+
+        // Send notification to all admin and superadmin users
+        $admins = \App\Models\User::role(['admin', 'superadmin'])->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new BookingCancellationRequestNotification($this->booking));
         }
 
         session()->flash('success', 'Your cancellation request has been submitted successfully. Our team will review it and get back to you soon.');

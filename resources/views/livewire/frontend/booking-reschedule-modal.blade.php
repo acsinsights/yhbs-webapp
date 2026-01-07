@@ -5,6 +5,7 @@ use Livewire\Volt\Component;
 use App\Models\{Booking, Boat, House, Room};
 use Illuminate\Support\Facades\{Auth, Mail};
 use App\Mail\BookingRescheduleRequestMail;
+use App\Notifications\BookingRescheduleRequestNotification;
 
 new class extends Component {
     public Booking $booking;
@@ -183,6 +184,12 @@ new class extends Component {
             Mail::to(config('mail.admin_email', 'admin@yhbs.com'))->send(new BookingRescheduleRequestMail($this->booking));
         } catch (\Exception $e) {
             \Log::error('Failed to send reschedule request email: ' . $e->getMessage());
+        }
+
+        // Send notification to all admin and superadmin users
+        $admins = \App\Models\User::role(['admin', 'superadmin'])->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new BookingRescheduleRequestNotification($this->booking));
         }
 
         session()->flash('success', 'Your reschedule request has been submitted successfully. A fee of ' . currency_format($this->rescheduleFee) . ' will be charged if approved.');

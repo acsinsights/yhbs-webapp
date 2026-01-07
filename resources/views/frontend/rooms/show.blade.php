@@ -124,6 +124,24 @@ $libraryImage = $imageArray['url'] ?? ($imageArray['path'] ?? null);
                                         {{ currency_format($room->price_per_night) }}
                                     </div>
                                 @endif
+                                @if ($room->price_per_2night)
+                                    <div class="col-md-6 mb-3">
+                                        <strong><i class="bi bi-cash me-2"></i>Price for 2 Nights:</strong>
+                                        {{ currency_format($room->price_per_2night) }}
+                                    </div>
+                                @endif
+                                @if ($room->price_per_3night)
+                                    <div class="col-md-6 mb-3">
+                                        <strong><i class="bi bi-cash me-2"></i>Price for 3 Nights:</strong>
+                                        {{ currency_format($room->price_per_3night) }}
+                                    </div>
+                                @endif
+                                @if ($room->additional_night_price)
+                                    <div class="col-md-6 mb-3">
+                                        <strong><i class="bi bi-cash me-2"></i>Additional Night Price:</strong>
+                                        {{ currency_format($room->additional_night_price) }}
+                                    </div>
+                                @endif
                                 @if ($room->discount_price)
                                     <div class="col-md-6 mb-3">
                                         <strong><i class="bi bi-tag-fill me-2"></i>Discount Price:</strong>
