@@ -44,11 +44,16 @@ new class extends Component {
             // Handle object/array structure with url, path, uuid
             if (is_array($item) || is_object($item)) {
                 $item = (array) $item;
-                // Use url if available (full URL), otherwise use path
+                // Use url if available (full URL), otherwise construct from path
                 if (!empty($item['url'])) {
                     $imageUrl = $item['url'];
                 } elseif (!empty($item['path'])) {
-                    $imageUrl = asset('storage' . $item['path']);
+                    // Ensure path starts with /
+                    $path = $item['path'];
+                    if (!str_starts_with($path, '/')) {
+                        $path = '/' . $path;
+                    }
+                    $imageUrl = asset('storage' . $path);
                 }
             } elseif (is_string($item) && $item !== '') {
                 // Backward compatibility: handle string paths
