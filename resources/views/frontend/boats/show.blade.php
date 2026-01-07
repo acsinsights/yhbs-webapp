@@ -123,14 +123,6 @@ $libraryImage = $imageArray['url'] ?? ($imageArray['path'] ?? null);
                                 </div>
                             </div>
                         @endif
-
-                        @if ($boat->features)
-                            <div class="mb-4">
-                                <h4>Special Features</h4>
-                                <p>{!! nl2br(e($boat->features)) !!}</p>
-                            </div>
-                        @endif
-
                         <!-- Boat Specifications -->
                         <div class="mb-4">
                             <h4>Boat Specifications</h4>
@@ -159,6 +151,89 @@ $libraryImage = $imageArray['url'] ?? ($imageArray['path'] ?? null);
                                         </span>
                                     @endif
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Pricing Details -->
+                        <div class="mb-4">
+                            <h4>Pricing Information</h4>
+                            <div class="pricing-table">
+                                @if (in_array($boat->service_type, ['yacht', 'taxi']))
+                                    @if ($boat->price_1hour)
+                                        <div class="pricing-row d-flex justify-content-between border-bottom py-2">
+                                            <strong><i class="bi bi-clock me-2"></i>1 Hour Price:</strong>
+                                            <span class="text-primary fw-bold">{{ $boat->price_1hour }} KD</span>
+                                        </div>
+                                    @endif
+                                    @if ($boat->price_2hours)
+                                        <div class="pricing-row d-flex justify-content-between border-bottom py-2">
+                                            <strong><i class="bi bi-clock me-2"></i>2 Hours Price:</strong>
+                                            <span class="text-primary fw-bold">{{ $boat->price_2hours }} KD</span>
+                                        </div>
+                                    @endif
+                                    @if ($boat->price_3hours)
+                                        <div class="pricing-row d-flex justify-content-between border-bottom py-2">
+                                            <strong><i class="bi bi-clock me-2"></i>3 Hours Price:</strong>
+                                            <span class="text-primary fw-bold">{{ $boat->price_3hours }} KD</span>
+                                        </div>
+                                    @endif
+                                    @if ($boat->additional_hour_price)
+                                        <div class="pricing-row d-flex justify-content-between border-bottom py-2">
+                                            <strong><i class="bi bi-plus-circle me-2"></i>Additional Hour:</strong>
+                                            <span class="text-primary fw-bold">{{ $boat->additional_hour_price }} KD</span>
+                                        </div>
+                                    @endif
+                                @elseif ($boat->service_type === 'ferry')
+                                    @if ($boat->ferry_private_weekday)
+                                        <div class="pricing-row d-flex justify-content-between border-bottom py-2">
+                                            <strong><i class="bi bi-calendar-week me-2"></i>Private (Weekday):</strong>
+                                            <span class="text-primary fw-bold">{{ $boat->ferry_private_weekday }} KD</span>
+                                        </div>
+                                    @endif
+                                    @if ($boat->ferry_private_weekend)
+                                        <div class="pricing-row d-flex justify-content-between border-bottom py-2">
+                                            <strong><i class="bi bi-calendar-event me-2"></i>Private (Weekend):</strong>
+                                            <span class="text-primary fw-bold">{{ $boat->ferry_private_weekend }} KD</span>
+                                        </div>
+                                    @endif
+                                    @if ($boat->ferry_public_weekday)
+                                        <div class="pricing-row d-flex justify-content-between border-bottom py-2">
+                                            <strong><i class="bi bi-calendar-week me-2"></i>Public (Weekday):</strong>
+                                            <span class="text-primary fw-bold">{{ $boat->ferry_public_weekday }} KD</span>
+                                        </div>
+                                    @endif
+                                    @if ($boat->ferry_public_weekend)
+                                        <div class="pricing-row d-flex justify-content-between border-bottom py-2">
+                                            <strong><i class="bi bi-calendar-event me-2"></i>Public (Weekend):</strong>
+                                            <span class="text-primary fw-bold">{{ $boat->ferry_public_weekend }} KD</span>
+                                        </div>
+                                    @endif
+                                @elseif (in_array($boat->service_type, ['water_activities', 'limousine']))
+                                    @if ($boat->price_15min)
+                                        <div class="pricing-row d-flex justify-content-between border-bottom py-2">
+                                            <strong><i class="bi bi-clock me-2"></i>15 Minutes:</strong>
+                                            <span class="text-primary fw-bold">{{ $boat->price_15min }} KD</span>
+                                        </div>
+                                    @endif
+                                    @if ($boat->price_30min)
+                                        <div class="pricing-row d-flex justify-content-between border-bottom py-2">
+                                            <strong><i class="bi bi-clock me-2"></i>30 Minutes:</strong>
+                                            <span class="text-primary fw-bold">{{ $boat->price_30min }} KD</span>
+                                        </div>
+                                    @endif
+                                    @if ($boat->price_full_boat)
+                                        <div class="pricing-row d-flex justify-content-between border-bottom py-2">
+                                            <strong><i class="bi bi-tag me-2"></i>Full Boat:</strong>
+                                            <span class="text-primary fw-bold">{{ $boat->price_full_boat }} KD</span>
+                                        </div>
+                                    @endif
+                                @endif
+                                @if ($boat->price_per_hour)
+                                    <div class="pricing-row d-flex justify-content-between border-bottom py-2">
+                                        <strong><i class="bi bi-clock-history me-2"></i>Price Per Hour:</strong>
+                                        <span class="text-primary fw-bold">{{ $boat->price_per_hour }} KD</span>
+                                    </div>
+                                @endif
                             </div>
                         </div>
 
