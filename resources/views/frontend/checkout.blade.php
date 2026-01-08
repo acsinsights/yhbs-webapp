@@ -36,67 +36,6 @@
                 <div class="row">
                     <!-- Left Side - Customer Details -->
                     <div class="col-lg-7 mb-4">
-                        <!-- Customer Information -->
-                        <div class="checkout-card mb-4">
-                            <div class="card-header">
-                                <h4><i class="bi bi-person-lines-fill me-2"></i>Customer Information</h4>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="first_name" class="form-label">First Name *</label>
-                                        <input type="text" class="form-control @error('first_name') is-invalid @enderror"
-                                            id="first_name" name="first_name"
-                                            value="{{ old('first_name', auth()->user()->first_name ?? '') }}" required>
-                                        @error('first_name')
-                                            <div class="invalid-feedback" data-backend>{{ $message }}</div>
-                                        @enderror
-                                    </div>
-
-                                    <div class="col-md-6 mb-3">
-                                        <label for="last_name" class="form-label">Last Name *</label>
-                                        <input type="text" class="form-control @error('last_name') is-invalid @enderror"
-                                            id="last_name" name="last_name"
-                                            value="{{ old('last_name', auth()->user()->last_name ?? '') }}" required>
-                                        @error('last_name')
-                                            <div class="invalid-feedback" data-backend>{{ $message }}</div>
-                                        @enderror
-                                    </div>
-
-                                    <div class="col-md-6 mb-3">
-                                        <label for="email" class="form-label">Email Address *</label>
-                                        <input type="email" class="form-control @error('email') is-invalid @enderror"
-                                            id="email" name="email"
-                                            value="{{ old('email', auth()->user()->email ?? '') }}" required>
-                                        @error('email')
-                                            <div class="invalid-feedback" data-backend>{{ $message }}</div>
-                                        @enderror
-                                    </div>
-
-                                    <div class="col-md-6 mb-3">
-                                        <label for="phone" class="form-label">Phone Number *</label>
-                                        <input type="tel" class="form-control @error('phone') is-invalid @enderror"
-                                            id="phone" name="phone"
-                                            value="{{ old('phone', auth()->user()->phone ?? '') }}" required>
-                                        @error('phone')
-                                            <div class="invalid-feedback" data-backend>{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Special Requests -->
-                        <div class="checkout-card">
-                            <div class="card-header">
-                                <h4><i class="bi bi-chat-left-text me-2"></i>Special Requests</h4>
-                            </div>
-                            <div class="card-body">
-                                <label for="special_requests" class="form-label">Any special requests? (Optional)</label>
-                                <textarea class="form-control" id="special_requests" name="special_requests" rows="4"
-                                    placeholder="Early check-in, late check-out, dietary requirements, etc.">{{ old('special_requests') }}</textarea>
-                            </div>
-                        </div>
 
                         <!-- Guest Details -->
                         <div class="checkout-card mt-4">
@@ -148,6 +87,66 @@
                                 <button type="button" class="btn btn-outline-primary btn-sm" id="addGuestBtn">
                                     <i class="bi bi-plus-circle me-2"></i>Add Another Guest
                                 </button>
+                            </div>
+                        </div>
+                        <!-- Special Requests -->
+                        <div class="checkout-card">
+                            <div class="card-header">
+                                <h4><i class="bi bi-chat-left-text me-2"></i>Special Requests</h4>
+                            </div>
+                            <div class="card-body">
+                                <label for="special_requests" class="form-label">Any special requests? (Optional)</label>
+                                <textarea class="form-control" id="special_requests" name="special_requests" rows="4"
+                                    placeholder="Early check-in, late check-out, dietary requirements, etc.">{{ old('special_requests') }}</textarea>
+                            </div>
+                        </div>
+                        <!-- Customer Information -->
+                        <div class="checkout-card mb-4">
+                            <div class="card-header">
+                                <h4><i class="bi bi-person-lines-fill me-2"></i>Your Account Information</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="first_name" class="form-label">First Name *</label>
+                                        <input type="text" class="form-control @error('first_name') is-invalid @enderror"
+                                            id="first_name" name="first_name"
+                                            value="{{ old('first_name', auth()->user()->first_name ?? '') }}" required>
+                                        @error('first_name')
+                                            <div class="invalid-feedback" data-backend>{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label for="last_name" class="form-label">Last Name *</label>
+                                        <input type="text" class="form-control @error('last_name') is-invalid @enderror"
+                                            id="last_name" name="last_name"
+                                            value="{{ old('last_name', auth()->user()->last_name ?? '') }}" required>
+                                        @error('last_name')
+                                            <div class="invalid-feedback" data-backend>{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label for="email" class="form-label">Email Address *</label>
+                                        <input type="email" class="form-control @error('email') is-invalid @enderror"
+                                            id="email" name="email"
+                                            value="{{ old('email', auth()->user()->email ?? '') }}" required>
+                                        @error('email')
+                                            <div class="invalid-feedback" data-backend>{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label for="phone" class="form-label">Phone Number *</label>
+                                        <input type="tel" class="form-control @error('phone') is-invalid @enderror"
+                                            id="phone" name="phone"
+                                            value="{{ old('phone', auth()->user()->phone ?? '') }}" required>
+                                        @error('phone')
+                                            <div class="invalid-feedback" data-backend>{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
