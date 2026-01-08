@@ -211,18 +211,19 @@
                     </div>
                 @else
                     <!-- Guest User - Show Single Auth Button -->
-                    <div class="auth-buttons d-xl-flex d-none" style="gap: 10px;">
-                        <button onclick="openUnifiedAuthModal()" class="primary-btn1" style="background: #136497; border: none; cursor: pointer;">
-                            <span>
-                                <svg width="15" height="15" viewbox="0 0 15 15" xmlns="http://www.w3.org/2000/svg">
-                                    <g>
-                                        <path
-                                            d="M7.50105 7.78913C9.64392 7.78913 11.3956 6.03744 11.3956 3.89456C11.3956 1.75169 9.64392 0 7.50105 0C5.35818 0 3.60652 1.75169 3.60652 3.89456C3.60652 6.03744 5.35821 7.78913 7.50105 7.78913ZM14.1847 10.9014C14.0827 10.6463 13.9467 10.4082 13.7936 10.1871C13.0113 9.0306 11.8038 8.2653 10.4433 8.07822C10.2732 8.06123 10.0861 8.09522 9.95007 8.19727C9.23578 8.72448 8.38546 8.99658 7.50108 8.99658C6.61671 8.99658 5.76638 8.72448 5.05209 8.19727C4.91603 8.09522 4.72895 8.04421 4.5589 8.07822C3.19835 8.2653 1.97387 9.0306 1.20857 10.1871C1.05551 10.4082 0.919443 10.6633 0.817424 10.9014C0.766415 11.0034 0.783407 11.1225 0.834416 11.2245C0.970484 11.4626 1.14054 11.7007 1.2936 11.9048C1.53168 12.2279 1.78679 12.517 2.07592 12.7891C2.31401 13.0272 2.58611 13.2483 2.85824 13.4694C4.20177 14.4728 5.81742 15 7.48409 15C9.15076 15 10.7664 14.4728 12.1099 13.4694C12.382 13.2653 12.6541 13.0272 12.8923 12.7891C13.1644 12.517 13.4365 12.2279 13.6746 11.9048C13.8446 11.6837 13.9977 11.4626 14.1338 11.2245C14.2188 11.1225 14.2358 11.0034 14.1847 10.9014Z">
-                                        </path>
-                                    </g>
-                                </svg>
-                                Login / Create Account
-                            </span>
+                    <div class="auth-buttons d-xl-flex d-none align-items-center" style="gap: 10px;">
+                        <button onclick="openUnifiedAuthModal()"
+                            style="display: flex; align-items: center; gap: 8px; background: transparent; border: none; cursor: pointer; padding: 8px 12px; border-radius: 6px; transition: background 0.3s;">
+                            <div
+                                style="width: 40px; height: 40px; background: #136497; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                 <img src="{{ asset('default/user.svg') }}" width="100" class="p-2" alt="">
+                            </div>
+                            <div style="text-align: left;">
+                                <div style="font-size: 14px; font-weight: 600; color: #333; line-height: 1.2;">Login or
+                                </div>
+                                <div style="font-size: 14px; font-weight: 600; color: #333; line-height: 1.2;">Create
+                                    Account</div>
+                            </div>
                         </button>
                     </div>
                 @endauth
@@ -288,28 +289,31 @@
     <!-- header Section End-->
 
     <!-- Unified Auth Modal -->
-    <div id="unifiedAuthModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
-        <div style="background: white; border-radius: 15px; padding: 40px; max-width: 450px; width: 90%; position: relative; box-shadow: 0 10px 50px rgba(0,0,0,0.3);">
-            <button onclick="closeUnifiedAuthModal()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">&times;</button>
-            
+    <div id="unifiedAuthModal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+        <div
+            style="background: white; border-radius: 15px; padding: 40px; max-width: 450px; width: 90%; position: relative; box-shadow: 0 10px 50px rgba(0,0,0,0.3);">
+            <button onclick="closeUnifiedAuthModal()"
+                style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">&times;</button>
+
             <div id="emailStep">
                 <h3 style="margin: 0 0 10px 0; color: #1a1a1a; font-size: 24px;">Welcome!</h3>
                 <p style="margin: 0 0 25px 0; color: #666;">Enter your email to continue</p>
-                
+
                 <form id="emailForm" onsubmit="checkEmailAndProceed(event)">
                     <div style="margin-bottom: 20px;">
-                        <label style="display: block; margin-bottom: 8px; color: #333; font-weight: 500;">Email Address</label>
-                        <input type="email" id="authEmail" name="email" required 
+                        <label style="display: block; margin-bottom: 8px; color: #333; font-weight: 500;">Email
+                            Address</label>
+                        <input type="email" id="authEmail" name="email" required
                             style="width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; transition: border-color 0.3s;"
-                            onfocus="this.style.borderColor='#136497'" 
-                            onblur="this.style.borderColor='#e0e0e0'"
+                            onfocus="this.style.borderColor='#136497'" onblur="this.style.borderColor='#e0e0e0'"
                             placeholder="Enter your email">
                     </div>
-                    <div id="emailError" style="display: none; color: #dc3545; margin-bottom: 15px; font-size: 14px;"></div>
-                    <button type="submit" id="emailSubmitBtn" 
+                    <div id="emailError" style="display: none; color: #dc3545; margin-bottom: 15px; font-size: 14px;">
+                    </div>
+                    <button type="submit" id="emailSubmitBtn"
                         style="width: 100%; padding: 14px; background: #136497; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.3s;"
-                        onmouseover="this.style.background='#0d4d75'" 
-                        onmouseout="this.style.background='#136497'">
+                        onmouseover="this.style.background='#0d4d75'" onmouseout="this.style.background='#136497'">
                         Continue
                     </button>
                 </form>
@@ -342,16 +346,16 @@
         // Check email and redirect
         async function checkEmailAndProceed(event) {
             event.preventDefault();
-            
+
             const email = document.getElementById('authEmail').value;
             const submitBtn = document.getElementById('emailSubmitBtn');
             const errorDiv = document.getElementById('emailError');
-            
+
             // Disable button and show loading
             submitBtn.disabled = true;
             submitBtn.innerHTML = 'Checking...';
             errorDiv.style.display = 'none';
-            
+
             try {
                 const response = await fetch('{{ route('customer.check-email') }}', {
                     method: 'POST',
@@ -359,11 +363,13 @@
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
-                    body: JSON.stringify({ email: email })
+                    body: JSON.stringify({
+                        email: email
+                    })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.exists) {
                     // User exists - redirect to login with email pre-filled
                     window.location.href = '{{ route('customer.login') }}?email=' + encodeURIComponent(email);
