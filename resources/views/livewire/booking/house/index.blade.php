@@ -181,7 +181,7 @@ new class extends Component {
                             <x-button icon="o-bars-arrow-down" class="btn-circle" />
                         </x-slot:trigger>
 
-                        @if ($booking->canCheckIn())
+                        @if ($booking->canCheckIn() && (now()->isSameDay($booking->check_in) || now()->isAfter($booking->check_in)))
                             <x-menu-item icon="o-pencil" title="Edit Booking" class="btn-ghost btn-sm"
                                 link="{{ route('admin.bookings.house.edit', $booking->id) }}" />
                             <x-menu-item icon="o-arrow-right-end-on-rectangle" title="Check In"

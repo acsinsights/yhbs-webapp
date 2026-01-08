@@ -380,7 +380,9 @@ new class extends Component {
             <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.room.index') }}"
                 class="btn-ghost btn-outline" />
 
-            @if ($booking->status === \App\Enums\BookingStatusEnum::BOOKED)
+            @if (
+                ($booking->status === \App\Enums\BookingStatusEnum::BOOKED && now()->isSameDay($booking->check_in)) ||
+                    now()->isAfter($booking->check_in))
                 <x-button icon="o-arrow-right-end-on-rectangle" label="Check In" wire:click="checkin"
                     wire:confirm="Are you sure you want to check in this booking?" class="btn-info" spinner="checkin" />
             @elseif ($booking->canCheckOut())
