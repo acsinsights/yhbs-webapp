@@ -826,7 +826,7 @@
             const isGuest = {{ auth()->guest() ? 'true' : 'false' }};
 
             // Initialize guest management only
-            initGuestManagement(oldGuests);
+            initGuestManagement(oldGuests, {{ $booking->guests ?? 2 }});
 
             // Show email modal for guest users
             if (isGuest) {
