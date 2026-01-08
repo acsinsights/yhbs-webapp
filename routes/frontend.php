@@ -30,6 +30,9 @@ Route::get('/policy/{slug}', [PageController::class, 'policyPage'])->name('polic
 
 // Customer Routes
 Route::prefix('customer')->name('customer.')->group(function () {
+    // Email check endpoint (accessible to everyone)
+    Route::post('/check-email', [AuthController::class, 'checkEmail'])->name('check-email');
+
     // Guest routes (Login, Register, Forgot Password)
     Route::middleware('guest')->group(function () {
         Route::get('/login', [AuthController::class, 'showLogin'])->name('login');

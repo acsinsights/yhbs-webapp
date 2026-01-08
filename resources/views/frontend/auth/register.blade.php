@@ -71,8 +71,8 @@
                                     <i class="bi bi-envelope me-2"></i>Email Address
                                 </label>
                                 <input type="email" class="form-control @error('email') is-invalid @enderror"
-                                    id="email" name="email" placeholder="Enter your email" value="{{ old('email') }}"
-                                    required>
+                                    id="email" name="email" placeholder="Enter your email"
+                                    value="{{ old('email', request('email')) }}" required>
                                 @error('email')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
