@@ -166,8 +166,9 @@ new class extends Component {
                 'is_available' => !$isBooked,
             ];
 
-            // Move to next slot
-            $currentHour += $originalDuration;
+            // Move to next slot (add buffer time to create gap between slots)
+            $bufferHours = $bufferMinutes / 60;
+            $currentHour += $originalDuration + $bufferHours;
         }
 
         $this->availableTimeSlots = $slots;

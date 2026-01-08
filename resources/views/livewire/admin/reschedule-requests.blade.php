@@ -174,6 +174,39 @@ new class extends Component {
             return;
         }
 
+        // Validate that the requested time slot is still available (including buffer time for boats)
+        if ($this->selectedBooking->bookingable_type === 'App\\Models\\Boat') {
+            $bufferMinutes = $this->selectedBooking->bookingable->buffer_time ?? 0;
+            $newCheckIn = $this->selectedBooking->new_check_in;
+            $newCheckOut = $this->selectedBooking->new_check_out;
+
+            if ($newCheckIn && $newCheckOut) {
+                // Calculate end time with buffer
+                $endTimeWithBuffer = $newCheckOut->copy()->addMinutes($bufferMinutes);
+
+                // Check for overlapping bookings
+                $conflictingBooking = Booking::where('bookingable_type', 'App\\Models\\Boat')
+                    ->where('bookingable_id', $this->selectedBooking->bookingable_id)
+                    ->where('id', '!=', $this->selectedBooking->id)
+                    ->where('booking_status', '!=', 'cancelled')
+                    ->where(function ($query) use ($newCheckIn, $endTimeWithBuffer) {
+                        $query
+                            ->whereBetween('check_in', [$newCheckIn, $endTimeWithBuffer])
+                            ->orWhereBetween('check_out', [$newCheckIn, $endTimeWithBuffer])
+                            ->orWhere(function ($q) use ($newCheckIn, $endTimeWithBuffer) {
+                                $q->where('check_in', '<=', $newCheckIn)->where('check_out', '>=', $endTimeWithBuffer);
+                            });
+                    })
+                    ->exists();
+
+                if ($conflictingBooking) {
+                    $bufferText = $bufferMinutes > 0 ? " (including {$bufferMinutes} min buffer time)" : '';
+                    $this->error("The requested time slot is no longer available{$bufferText}. Please reject this request and ask customer to submit a new one.");
+                    return;
+                }
+            }
+        }
+
         $user = $this->selectedBooking->user;
         $walletBalance = $user->wallet_balance ?? 0;
 

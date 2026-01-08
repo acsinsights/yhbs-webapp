@@ -44086,3 +44086,6 @@ header.style-3.two .main-menu>ul>li.active>a i {
     scrollbar-width: thin;
     scrollbar-color: #667eea #f1f1f1;
 }
+.sticky-top{
+    z-index:1;
+}

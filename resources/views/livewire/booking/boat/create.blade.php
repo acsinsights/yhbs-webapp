@@ -169,6 +169,9 @@ new class extends Component {
             return collect();
         }
 
+        // Get buffer time for this boat
+        $bufferMinutes = $this->selectedBoat->buffer_time ?? 0;
+
         // Determine duration in hours
         $durationHours = match ($this->duration_slot) {
             '1h' => 1,
@@ -190,6 +193,7 @@ new class extends Component {
         while ($currentHour + $durationHours <= $endHour) {
             $startTime = Carbon::parse($this->check_in)->setTime(floor($currentHour), ($currentHour - floor($currentHour)) * 60);
             $endTime = $startTime->copy()->addMinutes($durationHours * 60);
+            $endTimeWithBuffer = $endTime->copy()->addMinutes($bufferMinutes);
 
             // Check if slot is in the past (for today's date)
             $now = Carbon::now();
@@ -198,24 +202,24 @@ new class extends Component {
                 $isPast = $startTime->lessThanOrEqualTo($now);
             }
 
-            // Check if this slot is already booked based on trip type
+            // Check if this slot is already booked based on trip type (including buffer time)
             // For private trips - slot becomes completely unavailable
             // For public trips - slot is available until min_passengers is reached
             $isBooked = false;
             $remainingSeats = null;
 
             if ($this->trip_type === 'private') {
-                // Check if any booking exists (private or public) in this slot
-                $isBooked = Booking::where('bookingable_type', Boat::class)->where('bookingable_id', $this->selectedBoat->id)->where('status', '!=', 'cancelled')->whereDate('check_in', $this->check_in)->where('check_in', '<', $endTime)->where('check_out', '>', $startTime)->exists();
+                // Check if any booking exists (private or public) in this slot with buffer time
+                $isBooked = Booking::where('bookingable_type', Boat::class)->where('bookingable_id', $this->selectedBoat->id)->where('status', '!=', 'cancelled')->whereDate('check_in', $this->check_in)->where('check_in', '<', $endTimeWithBuffer)->where('check_out', '>', $startTime)->exists();
             } elseif ($this->trip_type === 'public') {
-                // Check if there's a private booking in this slot
-                $hasPrivateBooking = Booking::where('bookingable_type', Boat::class)->where('bookingable_id', $this->selectedBoat->id)->where('status', '!=', 'cancelled')->where('trip_type', 'private')->whereDate('check_in', $this->check_in)->where('check_in', '<', $endTime)->where('check_out', '>', $startTime)->exists();
+                // Check if there's a private booking in this slot with buffer time
+                $hasPrivateBooking = Booking::where('bookingable_type', Boat::class)->where('bookingable_id', $this->selectedBoat->id)->where('status', '!=', 'cancelled')->where('trip_type', 'private')->whereDate('check_in', $this->check_in)->where('check_in', '<', $endTimeWithBuffer)->where('check_out', '>', $startTime)->exists();
 
                 if ($hasPrivateBooking) {
                     $isBooked = true;
                 } else {
-                    // Check if public bookings have reached max_passengers
-                    $currentPublicPassengers = Booking::where('bookingable_type', Boat::class)->where('bookingable_id', $this->selectedBoat->id)->where('status', '!=', 'cancelled')->where('trip_type', 'public')->whereDate('check_in', $this->check_in)->where('check_in', '<', $endTime)->where('check_out', '>', $startTime)->sum('adults');
+                    // Check if public bookings have reached max_passengers with buffer time
+                    $currentPublicPassengers = Booking::where('bookingable_type', Boat::class)->where('bookingable_id', $this->selectedBoat->id)->where('status', '!=', 'cancelled')->where('trip_type', 'public')->whereDate('check_in', $this->check_in)->where('check_in', '<', $endTimeWithBuffer)->where('check_out', '>', $startTime)->sum('adults');
 
                     // If max_passengers reached, slot is full
                     $maxPassengers = $this->selectedBoat->max_passengers ?? 20;
@@ -228,8 +232,8 @@ new class extends Component {
                 }
             } else {
                 // No trip type selected or not applicable (yacht/taxi)
-                // Standard interval overlap check
-                $isBooked = Booking::where('bookingable_type', Boat::class)->where('bookingable_id', $this->selectedBoat->id)->where('status', '!=', 'cancelled')->whereDate('check_in', $this->check_in)->where('check_in', '<', $endTime)->where('check_out', '>', $startTime)->exists();
+                // Standard interval overlap check with buffer time
+                $isBooked = Booking::where('bookingable_type', Boat::class)->where('bookingable_id', $this->selectedBoat->id)->where('status', '!=', 'cancelled')->whereDate('check_in', $this->check_in)->where('check_in', '<', $endTimeWithBuffer)->where('check_out', '>', $startTime)->exists();
             }
 
             // Mark as unavailable if booked OR if the time has passed
@@ -246,8 +250,9 @@ new class extends Component {
                 'remaining_seats' => $remainingSeats,
             ]);
 
-            // Move to next slot (step by duration only, no buffer time)
-            $currentHour += $durationHours;
+            // Move to next slot (step by duration + buffer time)
+            $bufferHours = $bufferMinutes / 60;
+            $currentHour += $durationHours + $bufferHours;
         }
 
         return $timeSlots;
