@@ -111,6 +111,11 @@ new class extends Component {
 
     public function generateTimeSlots(): void
     {
+        if (!$this->newCheckIn) {
+            $this->availableTimeSlots = [];
+            return;
+        }
+
         // Get the original duration from check_in and check_out
         $originalDuration = $this->booking->check_in->diffInHours($this->booking->check_out);
 
@@ -118,25 +123,54 @@ new class extends Component {
         if ($originalDuration === 0) {
             $minutes = $this->booking->check_in->diffInMinutes($this->booking->check_out);
             if ($minutes === 15 || $minutes === 30) {
-                // For limousine 15-min or 30-min bookings
-                $this->availableTimeSlots = match ($minutes) {
-                    15 => ['09:00 AM - 09:15 AM', '09:30 AM - 09:45 AM', '10:00 AM - 10:15 AM', '10:30 AM - 10:45 AM', '11:00 AM - 11:15 AM'],
-                    30 => ['09:00 AM - 09:30 AM', '09:30 AM - 10:00 AM', '10:00 AM - 10:30 AM', '10:30 AM - 11:00 AM', '11:00 AM - 11:30 AM'],
-                    default => [],
-                };
-                return;
+                $originalDuration = $minutes / 60; // Convert to hours
+            } else {
+                $originalDuration = 1; // Default to 1 hour
             }
-            $originalDuration = 1; // Default to 1 hour
         }
 
-        // Generate slots based on duration
-        $allSlots = [
-            1 => ['09:00 AM - 10:00 AM', '10:00 AM - 11:00 AM', '11:00 AM - 12:00 PM', '12:00 PM - 01:00 PM', '01:00 PM - 02:00 PM', '02:00 PM - 03:00 PM', '03:00 PM - 04:00 PM', '04:00 PM - 05:00 PM', '05:00 PM - 06:00 PM', '06:00 PM - 07:00 PM'],
-            2 => ['09:00 AM - 11:00 AM', '11:00 AM - 01:00 PM', '01:00 PM - 03:00 PM', '03:00 PM - 05:00 PM', '05:00 PM - 07:00 PM'],
-            3 => ['09:00 AM - 12:00 PM', '12:00 PM - 03:00 PM', '03:00 PM - 06:00 PM'],
-        ];
+        // Get buffer time from boat
+        $bufferMinutes = $this->booking->bookingable->buffer_time ?? 0;
 
-        $this->availableTimeSlots = $allSlots[$originalDuration] ?? $allSlots[2];
+        // Generate all possible time slots with availability check
+        $slots = [];
+        $startHour = 9; // 9 AM
+        $endHour = 19; // 7 PM
+        $currentHour = $startHour;
+
+        while ($currentHour + $originalDuration <= $endHour) {
+            $startTime = Carbon::parse($this->newCheckIn)->setTime(floor($currentHour), ($currentHour - floor($currentHour)) * 60);
+            $endTime = $startTime->copy()->addHours($originalDuration);
+            $endTimeWithBuffer = $endTime->copy()->addMinutes($bufferMinutes);
+
+            // Check if this slot is already booked (excluding current booking)
+            $isBooked = Booking::where('bookingable_type', Boat::class)
+                ->where('bookingable_id', $this->booking->bookingable_id)
+                ->where('id', '!=', $this->booking->id)
+                ->whereIn('status', ['pending', 'booked', 'checked_in'])
+                ->whereDate('check_in', $this->newCheckIn)
+                ->where(function ($query) use ($startTime, $endTimeWithBuffer) {
+                    $query
+                        ->whereBetween('check_in', [$startTime, $endTimeWithBuffer])
+                        ->orWhereBetween('check_out', [$startTime, $endTimeWithBuffer])
+                        ->orWhere(function ($q) use ($startTime, $endTimeWithBuffer) {
+                            $q->where('check_in', '<=', $startTime)->where('check_out', '>=', $endTimeWithBuffer);
+                        });
+                })
+                ->exists();
+
+            $displaySlot = $startTime->format('h:i A') . ' - ' . $endTime->format('h:i A');
+
+            $slots[] = [
+                'display' => $displaySlot,
+                'is_available' => !$isBooked,
+            ];
+
+            // Move to next slot
+            $currentHour += $originalDuration;
+        }
+
+        $this->availableTimeSlots = $slots;
     }
 
     public function updatedNewCheckIn($value): void
@@ -278,6 +312,19 @@ new class extends Component {
 
         .time-slot-btn:hover .btn {
             transform: scale(1.05);
+        }
+
+        .time-slot-btn.disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .time-slot-btn.disabled .btn {
+            cursor: not-allowed;
+        }
+
+        .time-slot-btn.disabled:hover .btn {
+            transform: none;
         }
 
         /* Make booked dates red in Flatpickr */
@@ -441,19 +488,29 @@ new class extends Component {
                                             You can only reschedule to the same duration as your original booking
                                         </small>
                                         <div class="d-flex flex-wrap gap-2">
-                                            @foreach ($availableTimeSlots as $slot)
-                                                <label class="time-slot-btn">
+                                            @forelse ($availableTimeSlots as $slot)
+                                                <label
+                                                    class="time-slot-btn {{ !$slot['is_available'] ? 'disabled' : '' }}">
                                                     <input class="d-none" type="radio"
-                                                        wire:model.live="selectedTimeSlot" value="{{ $slot }}">
+                                                        wire:model.live="selectedTimeSlot"
+                                                        value="{{ $slot['display'] }}"
+                                                        {{ !$slot['is_available'] ? 'disabled' : '' }}>
                                                     <span
-                                                        class="btn btn-sm {{ $selectedTimeSlot === $slot ? 'btn-success' : 'btn-outline-secondary' }}">
-                                                        <i class="bi bi-clock me-1"></i>{{ $slot }}
-                                                        @if ($selectedTimeSlot !== $slot)
+                                                        class="btn btn-sm {{ $selectedTimeSlot === $slot['display'] ? 'btn-success' : (!$slot['is_available'] ? 'btn-danger' : 'btn-outline-secondary') }}">
+                                                        <i class="bi bi-clock me-1"></i>{{ $slot['display'] }}
+                                                        @if ($slot['is_available'] && $selectedTimeSlot !== $slot['display'])
                                                             <span class="badge bg-success ms-1">Available</span>
+                                                        @elseif (!$slot['is_available'])
+                                                            <span class="badge bg-light text-dark ms-1">Booked</span>
                                                         @endif
                                                     </span>
                                                 </label>
-                                            @endforeach
+                                            @empty
+                                                <div class="alert alert-warning mb-0">
+                                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                                    No time slots available for the selected date.
+                                                </div>
+                                            @endforelse
                                         </div>
                                         @error('selectedTimeSlot')
                                             <div class="text-danger small mt-2">{{ $message }}</div>
