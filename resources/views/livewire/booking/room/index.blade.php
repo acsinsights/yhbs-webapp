@@ -98,12 +98,14 @@ new class extends Component {
                 @php
                     $guestName = 'N/A';
                     if ($booking->guest_details && is_array($booking->guest_details)) {
-                        // Try to get first adult name
+                        // Try to get first guest name from 'guests' array
                         if (
-                            isset($booking->guest_details['adult_names']) &&
-                            is_array($booking->guest_details['adult_names'])
+                            isset($booking->guest_details['guests']) &&
+                            is_array($booking->guest_details['guests']) &&
+                            count($booking->guest_details['guests']) > 0
                         ) {
-                            $guestName = $booking->guest_details['adult_names'][0] ?? 'N/A';
+                            $firstGuest = $booking->guest_details['guests'][0];
+                            $guestName = $firstGuest['name'] ?? 'N/A';
                         }
                         // Fallback to customer name
                         if ($guestName === 'N/A' && isset($booking->guest_details['customer']['first_name'])) {
@@ -111,6 +113,14 @@ new class extends Component {
                                 $booking->guest_details['customer']['first_name'] .
                                 ' ' .
                                 ($booking->guest_details['customer']['last_name'] ?? '');
+                        }
+                        // Legacy fallback to adult_names
+                        if (
+                            $guestName === 'N/A' &&
+                            isset($booking->guest_details['adult_names']) &&
+                            is_array($booking->guest_details['adult_names'])
+                        ) {
+                            $guestName = $booking->guest_details['adult_names'][0] ?? 'N/A';
                         }
                     }
                 @endphp
