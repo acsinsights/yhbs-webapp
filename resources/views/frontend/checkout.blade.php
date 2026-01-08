@@ -38,7 +38,7 @@
                     <div class="col-lg-7 mb-4">
 
                         <!-- Guest Details -->
-                        <div class="checkout-card mt-4">
+                        <div class="checkout-card mb-4">
                             <div class="card-header">
                                 <h4><i class="bi bi-person-lines-fill me-2"></i>Guest Information</h4>
                                 <small class="text-muted">Atleast one guest details required</small>
@@ -90,7 +90,7 @@
                             </div>
                         </div>
                         <!-- Special Requests -->
-                        <div class="checkout-card">
+                        <div class="checkout-card mb-4">
                             <div class="card-header">
                                 <h4><i class="bi bi-chat-left-text me-2"></i>Special Requests</h4>
                             </div>
@@ -101,7 +101,7 @@
                             </div>
                         </div>
                         <!-- Customer Information -->
-                        <div class="checkout-card mb-4">
+                        <div class="checkout-card mt-4">
                             <div class="card-header">
                                 <h4><i class="bi bi-person-lines-fill me-2"></i>Your Account Information</h4>
                             </div>
