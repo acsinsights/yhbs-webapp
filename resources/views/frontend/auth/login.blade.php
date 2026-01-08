@@ -77,7 +77,7 @@
                             <div class="text-center">
                                 <p class="mb-0">Don't have an account?
                                     <a href="{{ route('customer.register') }}" class="fw-bold text-decoration-none">
-                                        Register Now
+                                        Create Account
                                     </a>
                                 </p>
                             </div>
