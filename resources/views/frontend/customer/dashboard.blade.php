@@ -318,33 +318,36 @@
                         </div>
                         <div class="card-body">
                             @forelse($recentBookings as $booking)
-                                <div class="booking-item">
-                                    <div class="row align-items-center">
-                                        <div class="col-md-2">
-                                            <img src="{{ $booking['image'] }}" alt="Booking" class="booking-img">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <h5>{{ $booking['room_name'] }}</h5>
-                                            <p class="text-muted mb-1">
-                                                <i class="bi bi-calendar me-2"></i>{{ $booking['check_in'] }} -
-                                                {{ $booking['check_out'] }}
-                                            </p>
-                                            <p class="text-muted mb-0">
-                                                <i class="bi bi-hash me-2"></i>Booking ID: {{ $booking['booking_id'] }}
-                                            </p>
-                                        </div>
-                                        <div class="col-md-2 text-center">
-                                            <span
-                                                class="badge {{ $booking['status']?->badgeColor() ?? 'badge-secondary' }}">
-                                                {{ $booking['status']?->label() ?? 'Pending' }}
-                                            </span>
-                                        </div>
-                                        <div class="col-md-2 text-end">
-                                            <h5 class="text-primary mb-0">{{ currency_format($booking['total']) }}
-                                            </h5>
+                                <a href="{{ route('customer.booking.details', $booking['id']) }}"
+                                    class="text-decoration-none">
+                                    <div class="booking-item" style="cursor: pointer; transition: all 0.3s ease;">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-2">
+                                                <img src="{{ $booking['image'] }}" alt="Booking" class="booking-img">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h5>{{ $booking['room_name'] }}</h5>
+                                                <p class="text-muted mb-1">
+                                                    <i class="bi bi-calendar me-2"></i>{{ $booking['check_in'] }} -
+                                                    {{ $booking['check_out'] }}
+                                                </p>
+                                                <p class="text-muted mb-0">
+                                                    <i class="bi bi-hash me-2"></i>Booking ID: {{ $booking['booking_id'] }}
+                                                </p>
+                                            </div>
+                                            <div class="col-md-2 text-center">
+                                                <span
+                                                    class="badge {{ $booking['status']?->badgeColor() ?? 'badge-secondary' }}">
+                                                    {{ $booking['status']?->label() ?? 'Pending' }}
+                                                </span>
+                                            </div>
+                                            <div class="col-md-2 text-end">
+                                                <h5 class="text-primary mb-0">{{ currency_format($booking['total']) }}
+                                                </h5>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                </a>
                             @empty
                                 <div class="text-center py-5">
                                     <i class="bi bi-inbox" style="font-size: 48px; color: #ccc;"></i>
