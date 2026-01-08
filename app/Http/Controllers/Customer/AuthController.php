@@ -43,6 +43,14 @@ class AuthController extends Controller
                     ->with('success', 'Welcome back, ' . Auth::user()->first_name . '!');
             }
 
+            // Check if there's an intended URL (like checkout page)
+            $intendedUrl = session('url.intended');
+
+            if ($intendedUrl && str_contains($intendedUrl, '/checkout')) {
+                return redirect()->intended($intendedUrl)
+                    ->with('success', 'Welcome back, ' . Auth::user()->first_name . '!');
+            }
+
             return redirect()->intended(route('customer.dashboard'))
                 ->with('success', 'Welcome back, ' . Auth::user()->first_name . '!');
         }
@@ -242,6 +250,14 @@ class AuthController extends Controller
 
         // Login user
         Auth::login($user);
+
+        // Check if there's an intended URL (like checkout page)
+        $intendedUrl = session('url.intended');
+
+        if ($intendedUrl && str_contains($intendedUrl, '/checkout')) {
+            return redirect($intendedUrl)
+                ->with('success', 'Email verified successfully! Welcome to YHBS.');
+        }
 
         return redirect()->route('customer.dashboard')
             ->with('success', 'Email verified successfully! Welcome to YHBS.');
