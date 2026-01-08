@@ -84,7 +84,7 @@ new class extends Component {
 
     public function loadBookedDates(): void
     {
-        if ($this->isBoatBooking) {
+        if ($this->isBoatBooking || !$this->booking->check_out) {
             $this->bookedDates = [];
             return;
         }
@@ -221,9 +221,11 @@ new class extends Component {
 
     public function submitRescheduleRequest(): void
     {
+        $minDate = $this->booking->check_out ? $this->booking->check_out->format('Y-m-d') : now()->format('Y-m-d');
+
         $rules = [
             'rescheduleReason' => 'required|string|min:10|max:500',
-            'newCheckIn' => 'required|date|after_or_equal:' . $this->booking->check_out->format('Y-m-d'),
+            'newCheckIn' => 'required|date|after_or_equal:' . $minDate,
         ];
 
         if (!$this->isBoatBooking) {
@@ -409,16 +411,17 @@ new class extends Component {
                                     <li><strong>Reference:</strong> #{{ $booking->id }}</li>
                                     <li><strong>Property:</strong> {{ $booking->bookingable->name ?? 'N/A' }}</li>
                                     @if ($isBoatBooking)
-                                        <li><strong>Date:</strong> {{ $booking->check_in->format('d M Y') }}</li>
+                                        <li><strong>Date:</strong> {{ $booking->check_in?->format('d M Y') ?? 'N/A' }}
+                                        </li>
                                         <li><strong>Duration:</strong> {{ $this->getBookingDuration() }}</li>
                                     @else
                                         <li><strong>Duration:</strong> {{ $originalNights }}
                                             {{ Str::plural('night', $originalNights) }}</li>
                                         <li><strong>Current Check-in:</strong>
-                                            {{ $booking->check_in->format('d M Y') }}
+                                            {{ $booking->check_in?->format('d M Y') ?? 'N/A' }}
                                         </li>
                                         <li><strong>Current Check-out:</strong>
-                                            {{ $booking->check_out->format('d M Y') }}
+                                            {{ $booking->check_out?->format('d M Y') ?? 'N/A' }}
                                         </li>
                                     @endif
                                     <li><strong>Total Amount:</strong>
@@ -456,8 +459,10 @@ new class extends Component {
                                     </div>
                                     <small class="text-muted">
                                         <i class="bi bi-info-circle me-1"></i>
-                                        Select the date for your boat trip (from
-                                        {{ $booking->check_out->format('d M Y') }} onwards)
+                                        Select the date for your boat trip
+                                        @if ($booking->check_out)
+                                            (from {{ $booking->check_out->format('d M Y') }} onwards)
+                                        @endif
                                     </small>
 
                                     {{-- Hidden input for Livewire --}}
@@ -531,9 +536,11 @@ new class extends Component {
                                     </div>
                                     <small class="text-muted">
                                         <i class="bi bi-info-circle me-1"></i>
-                                        Select {{ $originalNights }}-night date range (from
-                                        {{ $booking->check_out->format('d M Y') }} onwards). Duration must remain the
-                                        same.
+                                        Select {{ $originalNights }}-night date range
+                                        @if ($booking->check_out)
+                                            (from {{ $booking->check_out->format('d M Y') }} onwards)
+                                        @endif
+                                        . Duration must remain the same.
                                         <span class="text-danger">• Dates marked in red are already booked</span>
                                     </small>
 
@@ -641,7 +648,7 @@ new class extends Component {
             }
 
             const bookedDates = @json($bookedDates);
-            const minDate = '{{ $booking->check_out->format('Y-m-d') }}';
+            const minDate = '{{ $booking->check_out?->format('Y-m-d') ?? now()->format('Y-m-d') }}';
 
             flatpickr(picker, {
                 mode: isBoatBooking ? 'single' : 'range',
