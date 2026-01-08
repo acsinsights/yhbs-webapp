@@ -10,7 +10,7 @@
 
 @section('content')
     <!-- Breadcrumb section Start-->
-    <div class="breadcrumb-section three"
+    {{-- <div class="breadcrumb-section three"
         style="background-image:linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url({{ asset('frontend/assets/img/innerpages/breadcrumb-bg6.jpg') }});">
         <div class="container">
             <div class="banner-content">
@@ -22,10 +22,10 @@
                 </ul>
             </div>
         </div>
-    </div>
+    </div> --}}
 
     <!-- House Details Section -->
-    <div class="package-details-section pt-120 pb-120">
+    <div class="package-details-section py-5">
         <div class="container">
             <div class="row">
                 <div class="col-lg-8">

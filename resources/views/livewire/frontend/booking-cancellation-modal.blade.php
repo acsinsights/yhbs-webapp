@@ -4,7 +4,7 @@ use Livewire\Volt\Component;
 use App\Models\Booking;
 use Illuminate\Support\Facades\{Auth, Mail};
 use App\Mail\BookingCancellationRequestMail;
-use App\Notifications\BookingCancellationRequestNotification;
+use App\Notifications\BookingStatusNotification;
 
 new class extends Component {
     public Booking $booking;
@@ -66,7 +66,7 @@ new class extends Component {
         // Send notification to all admin and superadmin users
         $admins = \App\Models\User::role(['admin', 'superadmin'])->get();
         foreach ($admins as $admin) {
-            $admin->notify(new BookingCancellationRequestNotification($this->booking));
+            $admin->notify(new BookingStatusNotification($this->booking, 'cancellation_request'));
         }
 
         session()->flash('success', 'Your cancellation request has been submitted successfully. Our team will review it and get back to you soon.');

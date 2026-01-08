@@ -7,6 +7,7 @@ use App\Enums\BookingStatusEnum;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\BookingCancellationApprovedMail;
 use App\Mail\BookingCancellationRejectedMail;
+use App\Notifications\BookingStatusNotification;
 use Mary\Traits\Toast;
 
 new class extends Component {
@@ -158,6 +159,11 @@ new class extends Component {
             \Log::error('Failed to send cancellation approval email: ' . $e->getMessage());
         }
 
+        // Send notification to customer
+        if ($this->selectedBooking->user) {
+            $this->selectedBooking->user->notify(new BookingStatusNotification($this->selectedBooking, 'cancellation_approved', ['refund_amount' => $this->refundAmount]));
+        }
+
         $this->success('Cancellation approved successfully. Refund has been credited to customer wallet.');
         $this->closeApproveModal();
         $this->resetPage();
@@ -181,6 +187,11 @@ new class extends Component {
             Mail::to($this->selectedBooking->user->email)->send(new BookingCancellationRejectedMail($this->selectedBooking, $this->rejectionReason));
         } catch (\Exception $e) {
             \Log::error('Failed to send cancellation rejection email: ' . $e->getMessage());
+        }
+
+        // Send notification to customer
+        if ($this->selectedBooking->user) {
+            $this->selectedBooking->user->notify(new BookingStatusNotification($this->selectedBooking, 'cancellation_rejected', ['rejection_reason' => $this->rejectionReason]));
         }
 
         $this->success('Cancellation request rejected.');
