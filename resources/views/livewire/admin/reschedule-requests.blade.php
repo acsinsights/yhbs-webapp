@@ -177,35 +177,54 @@ new class extends Component {
         $user = $this->selectedBooking->user;
         $walletBalance = $user->wallet_balance ?? 0;
 
+        // Calculate total fees to be deducted
+        $totalFees = $this->rescheduleFee + ($this->extraFee ?? 0);
+
         // Validate wallet balance if wallet payment is selected
-        if ($this->paymentMethod === 'wallet' && $this->rescheduleFee > 0) {
-            if ($walletBalance < $this->rescheduleFee) {
-                $this->error('Customer does not have sufficient wallet balance (' . currency_format($walletBalance) . '). Please select "Collect Manually" or reduce the fee.');
+        if ($this->paymentMethod === 'wallet' && $totalFees > 0) {
+            if ($walletBalance < $totalFees) {
+                $this->error('Customer does not have sufficient wallet balance (' . currency_format($walletBalance) . '). Total fees: ' . currency_format($totalFees) . '. Please select "Collect Manually" or reduce the fees.');
                 return;
             }
         }
 
         // Use database transaction
-        \DB::transaction(function () use ($user) {
-            // Deduct reschedule fee from wallet if wallet payment selected
-            if ($this->paymentMethod === 'wallet' && $this->rescheduleFee > 0) {
+        \DB::transaction(function () use ($user, $totalFees) {
+            // Deduct fees from wallet if wallet payment selected
+            if ($this->paymentMethod === 'wallet' && $totalFees > 0) {
                 $userLocked = \App\Models\User::lockForUpdate()->find($user->id);
                 $balanceBefore = $userLocked->wallet_balance ?? 0;
 
-                $userLocked->wallet_balance = $balanceBefore - $this->rescheduleFee;
+                $userLocked->wallet_balance = $balanceBefore - $totalFees;
                 $userLocked->save();
 
                 $balanceAfter = $userLocked->wallet_balance;
 
-                \App\Models\WalletTransaction::create([
-                    'user_id' => $user->id,
-                    'amount' => $this->rescheduleFee,
-                    'type' => 'debit',
-                    'balance_before' => $balanceBefore,
-                    'balance_after' => $balanceAfter,
-                    'description' => 'Reschedule fee for booking #' . $this->selectedBooking->id,
-                    'booking_id' => $this->selectedBooking->id,
-                ]);
+                // Create transaction for reschedule fee
+                if ($this->rescheduleFee > 0) {
+                    \App\Models\WalletTransaction::create([
+                        'user_id' => $user->id,
+                        'amount' => $this->rescheduleFee,
+                        'type' => 'debit',
+                        'balance_before' => $balanceBefore,
+                        'balance_after' => $balanceBefore - $this->rescheduleFee,
+                        'description' => 'Reschedule fee for booking #' . $this->selectedBooking->id,
+                        'booking_id' => $this->selectedBooking->id,
+                    ]);
+                }
+
+                // Create transaction for extra fee
+                if ($this->extraFee > 0) {
+                    \App\Models\WalletTransaction::create([
+                        'user_id' => $user->id,
+                        'amount' => $this->extraFee,
+                        'type' => 'debit',
+                        'balance_before' => $balanceBefore - $this->rescheduleFee,
+                        'balance_after' => $balanceAfter,
+                        'description' => 'Extra fee for booking #' . $this->selectedBooking->id . ($this->extraFeeRemark ? ' - ' . $this->extraFeeRemark : ''),
+                        'booking_id' => $this->selectedBooking->id,
+                    ]);
+                }
             }
 
             // Update booking dates and status
@@ -235,11 +254,12 @@ new class extends Component {
             \Log::error('Failed to send reschedule approval email: ' . $e->getMessage());
         }
 
+        $totalFees = $this->rescheduleFee + ($this->extraFee ?? 0);
         $successMessage = 'Reschedule approved successfully. Booking dates have been updated.';
-        if ($this->paymentMethod === 'wallet' && $this->rescheduleFee > 0) {
-            $successMessage .= ' Fee has been deducted from customer wallet.';
-        } elseif ($this->paymentMethod === 'manual' && $this->rescheduleFee > 0) {
-            $successMessage .= ' Fee will be collected manually from customer.';
+        if ($this->paymentMethod === 'wallet' && $totalFees > 0) {
+            $successMessage .= ' Total fees of ' . currency_format($totalFees) . ' have been deducted from customer wallet.';
+        } elseif ($this->paymentMethod === 'manual' && $totalFees > 0) {
+            $successMessage .= ' Total fees of ' . currency_format($totalFees) . ' will be collected manually from customer.';
         }
 
         $this->success($successMessage);
