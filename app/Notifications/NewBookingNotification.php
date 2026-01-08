@@ -44,6 +44,8 @@ class NewBookingNotification extends Notification
             default => 'Property',
         };
 
+        $propertyName = $this->booking->bookingable?->name ?? 'Property';
+
         return [
             'booking_id' => $this->booking->id,
             'booking_number' => $this->booking->booking_id,
@@ -51,7 +53,7 @@ class NewBookingNotification extends Notification
             'customer_name' => $this->booking->user->name ?? 'Guest',
             'total_amount' => $this->booking->total_amount,
             'check_in' => $this->booking->check_in?->format('M d, Y'),
-            'message' => "New {$bookingType} booking received from {$this->booking->user->name}",
+            'message' => "New {$bookingType} booking received for {$propertyName}",
             'icon' => 'o-calendar-days',
             'url' => $this->getBookingUrl(),
         ];
