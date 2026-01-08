@@ -18,6 +18,19 @@
     <!-- Checkout Section Start -->
     <div class="checkout-section pt-100 pb-100">
         <div class="container">
+            @if ($errors->any())
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <h5 class="alert-heading"><i class="bi bi-exclamation-triangle me-2"></i>Please fix the following
+                        errors:</h5>
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
             <form action="{{ route('booking.confirm') }}" method="POST" id="checkoutForm" novalidate>
                 @csrf
                 <div class="row">
@@ -69,14 +82,6 @@
                                             <div class="invalid-feedback" data-backend>{{ $message }}</div>
                                         @enderror
                                     </div>
-
-                                    <div class="col-12 mb-3">
-                                        <label for="address" class="form-label">Address</label>
-                                        <textarea class="form-control @error('address') is-invalid @enderror" id="address" name="address" rows="3">{{ old('address', auth()->user()->address ?? '') }}</textarea>
-                                        @error('address')
-                                            <div class="invalid-feedback" data-backend>{{ $message }}</div>
-                                        @enderror
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -94,25 +99,57 @@
                         </div>
 
                         <!-- Guest Details -->
-                        @if (isset($booking->guest_names) && count($booking->guest_names) > 0)
-                            <div class="checkout-card mt-4">
-                                <div class="card-header">
-                                    <h4><i class="bi bi-person-lines-fill me-2"></i>Guest Names</h4>
-                                </div>
-                                <div class="card-body">
-                                    <div class="guest-names-list">
-                                        @foreach ($booking->guest_names as $index => $guestName)
-                                            <div class="guest-name-item mb-2">
-                                                <input type="text" name="guest_names[]" class="form-control"
-                                                    value="{{ $guestName }}" readonly>
-                                                <input type="hidden" name="guest_names_hidden[]"
-                                                    value="{{ $guestName }}">
+                        <div class="checkout-card mt-4">
+                            <div class="card-header">
+                                <h4><i class="bi bi-person-lines-fill me-2"></i>Guest Information</h4>
+                                <small class="text-muted">Atleast one guest details required</small>
+                            </div>
+                            <div class="card-body">
+                                <div id="guestDetailsContainer">
+                                    <!-- First Guest (Required) -->
+                                    <div class="guest-detail-item mb-4 pb-3 border-bottom" data-guest-index="0">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="mb-0">Guest 1 *</h6>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-12 mb-3">
+                                                <label class="form-label">Full Name *</label>
+                                                <input type="text"
+                                                    class="form-control @error('guests.0.name') is-invalid @enderror"
+                                                    name="guests[0][name]" required value="{{ old('guests.0.name') }}"
+                                                    placeholder="Enter guest full name">
+                                                @error('guests.0.name')
+                                                    <div class="invalid-feedback">{{ $message }}</div>
+                                                @enderror
                                             </div>
-                                        @endforeach
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Email *</label>
+                                                <input type="email"
+                                                    class="form-control @error('guests.0.email') is-invalid @enderror"
+                                                    name="guests[0][email]" required value="{{ old('guests.0.email') }}"
+                                                    placeholder="Enter guest email">
+                                                @error('guests.0.email')
+                                                    <div class="invalid-feedback">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Phone Number *</label>
+                                                <input type="tel"
+                                                    class="form-control @error('guests.0.phone') is-invalid @enderror"
+                                                    name="guests[0][phone]" required value="{{ old('guests.0.phone') }}"
+                                                    placeholder="Enter guest phone">
+                                                @error('guests.0.phone')
+                                                    <div class="invalid-feedback">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="addGuestBtn">
+                                    <i class="bi bi-plus-circle me-2"></i>Add Another Guest
+                                </button>
                             </div>
-                        @endif
+                        </div>
                     </div>
 
                     <!-- Right Side - Booking Summary -->
@@ -680,6 +717,106 @@
 
 @section('scripts')
     <script>
+        // Guest Management
+        let guestCount = 1;
+
+        // Restore old guest data if validation failed
+        @if (old('guests'))
+            const oldGuests = @json(old('guests'));
+            const container = document.getElementById('guestDetailsContainer');
+
+            // Add additional guests that were previously entered
+            for (let i = 1; i < oldGuests.length; i++) {
+                const guest = oldGuests[i];
+                const guestHtml = `
+                    <div class="guest-detail-item mb-4 pb-3 border-bottom" data-guest-index="${i}">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">Guest ${i + 1}</h6>
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-guest-btn">
+                                <i class="bi bi-trash"></i> Remove
+                            </button>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Full Name *</label>
+                                <input type="text" class="form-control ${oldGuests[i].name ? '' : 'is-invalid'}"
+                                    name="guests[${i}][name]" required
+                                    value="${guest.name || ''}"
+                                    placeholder="Enter guest full name">
+                                @error('guests.${i}.name')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email <small class="text-muted">(Optional)</small></label>
+                                <input type="email" class="form-control"
+                                    name="guests[${i}][email]"
+                                    value="${guest.email || ''}"
+                                    placeholder="Enter guest email">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Phone Number <small class="text-muted">(Optional)</small></label>
+                                <input type="tel" class="form-control"
+                                    name="guests[${i}][phone]"
+                                    value="${guest.phone || ''}"
+                                    placeholder="Enter guest phone">
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', guestHtml);
+                guestCount++;
+            }
+        @endif
+
+        document.getElementById('addGuestBtn').addEventListener('click', function() {
+            const container = document.getElementById('guestDetailsContainer');
+            const guestHtml = `
+                <div class="guest-detail-item mb-4 pb-3 border-bottom" data-guest-index="${guestCount}">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Guest ${guestCount + 1}</h6>
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-guest-btn">
+                            <i class="bi bi-trash"></i> Remove
+                        </button>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Full Name *</label>
+                            <input type="text" class="form-control" name="guests[${guestCount}][name]" required placeholder="Enter guest full name">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email <small class="text-muted">(Optional)</small></label>
+                            <input type="email" class="form-control" name="guests[${guestCount}][email]" placeholder="Enter guest email">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Phone Number <small class="text-muted">(Optional)</small></label>
+                            <input type="tel" class="form-control" name="guests[${guestCount}][phone]" placeholder="Enter guest phone">
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', guestHtml);
+            guestCount++;
+        });
+
+        // Remove guest (event delegation)
+        document.getElementById('guestDetailsContainer').addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-guest-btn') || e.target.closest('.remove-guest-btn')) {
+                const btn = e.target.classList.contains('remove-guest-btn') ? e.target : e.target.closest(
+                    '.remove-guest-btn');
+                const guestItem = btn.closest('.guest-detail-item');
+                if (guestItem) {
+                    guestItem.remove();
+                    // Renumber remaining guests
+                    const guests = document.querySelectorAll('.guest-detail-item');
+                    guests.forEach((guest, index) => {
+                        guest.querySelector('h6').textContent = index === 0 ? 'Guest 1 *' :
+                            `Guest ${index + 1}`;
+                    });
+                }
+            }
+        });
+
         // Set currency symbol for JS functions
         document.body.setAttribute('data-currency-symbol', '{{ currency_symbol() }}');
 

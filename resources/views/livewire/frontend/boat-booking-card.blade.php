@@ -331,18 +331,11 @@ new class extends Component {
 
     public function proceedToBooking(): void
     {
-        // Validate - only first passenger name is required
+        // Validate
         $rules = [
             'bookingDate' => 'required|date|after_or_equal:' . $this->minDate(),
             'passengers' => 'required|integer|min:1|max:' . ($this->boat->max_passengers ?? 20),
-            'passengerNames' => 'required|array|min:' . $this->passengers,
-            'passengerNames.0' => 'required|string|max:255', // First passenger name required
         ];
-
-        // Rest of the passenger names are nullable
-        for ($i = 1; $i < $this->passengers; $i++) {
-            $rules["passengerNames.{$i}"] = 'nullable|string|max:255';
-        }
 
         $this->validate($rules);
 
@@ -377,7 +370,6 @@ new class extends Component {
             'check_out' => $this->bookingDate,
             'adults' => $this->passengers,
             'children' => 0,
-            'adult_names' => array_values($this->passengerNames),
             'start_time' => $this->startTime,
         ];
 
@@ -621,21 +613,6 @@ new class extends Component {
                     @error('passengers')
                         <small class="text-danger">{{ $message }}</small>
                     @enderror
-                </div>
-
-                {{-- Step 6: Passenger Names --}}
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">
-                        <i class="bi bi-person-badge text-primary"></i> Passenger Names
-                    </label>
-                    @foreach ($passengerNames as $index => $name)
-                        <input type="text" wire:model="passengerNames.{{ $index }}" class="form-control mb-2"
-                            placeholder="Passenger {{ $index + 1 }} Name" {{ $index === 0 ? 'required' : '' }}>
-                        @error('passengerNames.' . $index)
-                            <small class="text-danger">{{ $message }}</small>
-                        @enderror
-                    @endforeach
-                    <small class="text-muted">Only first passenger name is required</small>
                 </div>
 
                 @if ($errorMessage)

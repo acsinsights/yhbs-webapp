@@ -414,33 +414,11 @@ new class extends Component {
                 'children' => "nullable|integer|min:0|max:$maxChildren",
             ];
 
-            // Add validation for adult names only if adults > 0
-            if ($this->adults > 0) {
-                // Only first adult name is required
-                $rules['adultNames.0'] = 'required|string|min:1|max:255';
-                // Rest are optional
-                for ($i = 1; $i < $this->adults; $i++) {
-                    $rules["adultNames.{$i}"] = 'nullable|string|max:255';
-                }
-            }
-
-            // Add validation for children names only if children > 0
-            if ($this->children > 0) {
-                for ($i = 0; $i < $this->children; $i++) {
-                    $rules["childrenNames.{$i}"] = 'nullable|string|max:255';
-                }
-            }
-
             // Validate
             $validated = $this->validate($rules, [
                 'check_in.required' => 'Check-in date is required.',
                 'check_out.required' => 'Check-out date is required.',
-                'adultNames.0.required' => 'At least first guest name is required.',
             ]);
-
-            // Filter out empty names
-            $adultNames = array_values(array_filter($this->adultNames, fn($name) => !empty(trim($name))));
-            $childrenNames = array_values(array_filter($this->childrenNames, fn($name) => !empty(trim($name))));
 
             // Redirect to checkout with booking details
             $queryParams = [
@@ -450,8 +428,6 @@ new class extends Component {
                 'check_out' => $this->check_out,
                 'adults' => $this->adults,
                 'children' => $this->children,
-                'adult_names' => $adultNames,
-                'children_names' => $childrenNames,
             ];
 
             return redirect()->route('checkout', $queryParams);
@@ -666,56 +642,6 @@ new class extends Component {
                     <span class="text-danger small">{{ $message }}</span>
                 @enderror
             </div>
-
-            <!-- Guest Names -->
-            @if ($adults > 0 || $children > 0)
-                <div class="mb-3">
-                    <label class="form-label">
-                        <i class="bi bi-person-lines-fill me-2"></i>Guest Names
-                    </label>
-
-                    <!-- Adult Names -->
-                    @if ($adults > 0)
-                        <div class="mb-2">
-                            <small class="text-muted fw-bold d-block mb-2">
-                                <i class="bi bi-people me-1"></i>Adults (First name required, rest optional)
-                            </small>
-                            @for ($i = 0; $i < $adults; $i++)
-                                <div class="mb-2">
-                                    <input type="text" wire:model="adultNames.{{ $i }}"
-                                        class="form-control form-control-sm"
-                                        placeholder="Adult {{ $i + 1 }} Name{{ $i === 0 ? ' *' : '' }}"
-                                        {{ $i === 0 ? 'required' : '' }}>
-                                    @error("adultNames.{$i}")
-                                        <span class="text-danger small">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                            @endfor
-                        </div>
-                    @endif
-
-                    <!-- Children Names -->
-                    @if ($children > 0)
-                        <div class="mb-2">
-                            <small class="text-muted fw-bold d-block mb-2">
-                                <i class="bi bi-person me-1"></i>Children (Optional)
-                            </small>
-                            @for ($i = 0; $i < $children; $i++)
-                                <div class="mb-2">
-                                    <input type="text" wire:model="childrenNames.{{ $i }}"
-                                        class="form-control form-control-sm"
-                                        placeholder="Child {{ $i + 1 }} Name">
-                                    @error("childrenNames.{$i}")
-                                        <span class="text-danger small">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                            @endfor
-                        </div>
-                    @endif
-
-                    <small class="text-muted">Please provide names for all guests</small>
-                </div>
-            @endif
 
             <!-- Total Amount Display -->
             @if ($totalPrice && $isAvailable)

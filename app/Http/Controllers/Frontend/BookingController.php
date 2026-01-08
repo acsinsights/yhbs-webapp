@@ -422,25 +422,49 @@ class BookingController extends Controller
             'check_out' => 'required|date|after_or_equal:check_in',
             'adults' => 'required|integer|min:1',
             'children' => 'nullable|integer|min:0',
-            'adult_names' => 'nullable|array',
-            'children_names' => 'nullable|array',
             'payment_method' => 'required|in:cash,card,online,other',
             'total' => 'required|numeric|min:0',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|email',
             'phone' => 'required|string',
-            'address' => 'nullable|string',
             'special_requests' => 'nullable|string',
             'coupon_code' => 'nullable|string',
             'discount_amount' => 'nullable|numeric|min:0',
             'use_wallet_balance' => 'nullable|boolean',
+            'guests' => 'required|array|min:1',
+            'guests.0.name' => 'required|string|max:255',
+            'guests.0.email' => 'required|email',
+            'guests.0.phone' => 'required|string',
+            'guests.*.name' => 'required|string|max:255',
+            'guests.*.email' => 'nullable|email',
+            'guests.*.phone' => 'nullable|string',
             // Boat-specific fields
             'start_time' => 'nullable|string',
             'duration' => 'nullable|integer',
             'ferry_type' => 'nullable|string',
             'experience_duration' => 'nullable|string',
             'trip_type' => 'nullable|string|in:private,public',
+        ], [
+            // Custom validation messages
+            'guests.0.name.required' => 'Primary guest name is required.',
+            'guests.0.email.required' => 'Primary guest email is required.',
+            'guests.0.email.email' => 'Please enter a valid email address for primary guest.',
+            'guests.0.phone.required' => 'Primary guest phone number is required.',
+            'guests.*.name.required' => 'Guest name is required.',
+            'guests.*.email.email' => 'Please enter a valid email address.',
+            'first_name.required' => 'First name is required.',
+            'last_name.required' => 'Last name is required.',
+            'email.required' => 'Email address is required.',
+            'email.email' => 'Please enter a valid email address.',
+            'phone.required' => 'Phone number is required.',
+            'check_in.required' => 'Check-in date is required.',
+            'check_out.required' => 'Check-out date is required.',
+            'check_out.after_or_equal' => 'Check-out date must be after or equal to check-in date.',
+            'adults.required' => 'Number of adults is required.',
+            'adults.min' => 'At least one adult is required.',
+            'payment_method.required' => 'Please select a payment method.',
+            'total.required' => 'Total amount is required.',
         ]);
 
         // Determine bookingable type and get the property
@@ -530,17 +554,15 @@ class BookingController extends Controller
         // Calculate final amount to pay
         $finalTotal = (float) $validated['total'] - $walletAmountUsed;
 
-        // Combine guest names
+        // Prepare guest details
         $guestDetails = [
             'customer' => [
                 'first_name' => $validated['first_name'],
                 'last_name' => $validated['last_name'],
                 'email' => $validated['email'],
                 'phone' => $validated['phone'],
-                'address' => $validated['address'] ?? null,
             ],
-            'adult_names' => $validated['adult_names'] ?? [],
-            'children_names' => $validated['children_names'] ?? [],
+            'guests' => $validated['guests'], // Array of guest objects with name, email, phone
             'special_requests' => $validated['special_requests'] ?? null,
         ];
 
@@ -661,8 +683,94 @@ class BookingController extends Controller
             $admin->notify(new NewBookingNotification($booking));
         }
 
+        // Send booking confirmation emails
+        $this->sendBookingConfirmationEmails($booking, $validated['type']);
+
         return redirect()->route('booking.confirmation', ['id' => $booking->id])
             ->with('success', 'Booking confirmed successfully!');
+    }
+
+    /**
+     * Send booking confirmation emails to guests and account holder
+     */
+    private function sendBookingConfirmationEmails(Booking $booking, string $type)
+    {
+        // Determine property name and type
+        $propertyName = 'Property';
+        $propertyType = ucfirst($type);
+
+        if ($type === 'room' && $booking->bookingable) {
+            $propertyName = $booking->bookingable->name;
+        } elseif ($type === 'house' && $booking->bookingable) {
+            $propertyName = $booking->bookingable->name;
+        } elseif ($type === 'boat' && $booking->bookingable) {
+            $propertyName = $booking->bookingable->name;
+        }
+
+        $guests = $booking->guest_details['guests'] ?? [];
+        $customer = $booking->guest_details['customer'] ?? [];
+
+        // Get primary guest (first guest)
+        $primaryGuest = $guests[0] ?? null;
+
+        if (!$primaryGuest || empty($primaryGuest['email'])) {
+            \Log::error('Primary guest email not found for booking confirmation');
+            return;
+        }
+
+        // Collect CC recipients
+        $ccRecipients = [];
+
+        // Add other guests to CC (skip first guest as they are primary recipient)
+        foreach (array_slice($guests, 1) as $guest) {
+            if (!empty($guest['email']) && filter_var($guest['email'], FILTER_VALIDATE_EMAIL)) {
+                $ccRecipients[] = $guest['email'];
+            }
+        }
+
+        // Add account holder to CC if different from primary guest
+        if (
+            !empty($customer['email']) &&
+            filter_var($customer['email'], FILTER_VALIDATE_EMAIL) &&
+            $customer['email'] !== $primaryGuest['email']
+        ) {
+            $ccRecipients[] = $customer['email'];
+        }
+
+        // Remove duplicates from CC list
+        $ccRecipients = array_unique($ccRecipients);
+
+        // Send single email to primary guest with others in CC
+        try {
+            $mail = \Mail::to($primaryGuest['email']);
+
+            // Add CC recipients if any
+            if (!empty($ccRecipients)) {
+                $mail->cc($ccRecipients);
+            }
+
+            $mail->send(
+                new \App\Mail\BookingConfirmationMail(
+                    $booking,
+                    $propertyName,
+                    $propertyType,
+                    $primaryGuest['name'] ?? 'Guest',
+                    'guest'
+                )
+            );
+
+            \Log::info('Booking confirmation email sent', [
+                'booking_id' => $booking->id,
+                'to' => $primaryGuest['email'],
+                'cc' => $ccRecipients
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to send booking confirmation email: ' . $e->getMessage(), [
+                'booking_id' => $booking->id,
+                'to' => $primaryGuest['email'] ?? 'unknown',
+                'cc' => $ccRecipients ?? []
+            ]);
+        }
     }
 
     public function confirmation($id)
