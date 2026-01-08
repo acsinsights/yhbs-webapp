@@ -55,22 +55,14 @@ new class extends Component {
                 });
 
             // Merge and sort by created_at
-            $this->notifications = $userNotifications
-                ->merge($laravelNotifications)
-                ->sortByDesc('created_at')
-                ->take(10)
-                ->values()
-                ->toArray();
+            $this->notifications = $userNotifications->merge($laravelNotifications)->sortByDesc('created_at')->take(10)->values()->toArray();
 
             // Count unread from both sources
             $userUnreadCount = UserNotification::where('user_id', auth()->id())
                 ->unread()
                 ->count();
 
-            $laravelUnreadCount = auth()
-                ->user()
-                ->unreadNotifications()
-                ->count();
+            $laravelUnreadCount = auth()->user()->unreadNotifications()->count();
 
             $this->unreadCount = $userUnreadCount + $laravelUnreadCount;
         }
@@ -108,11 +100,7 @@ new class extends Component {
             }
         } else {
             // Laravel notifications
-            $notification = auth()
-                ->user()
-                ->notifications()
-                ->where('id', $notificationId)
-                ->first();
+            $notification = auth()->user()->notifications()->where('id', $notificationId)->first();
             if ($notification) {
                 $notification->markAsRead();
             }
@@ -202,9 +190,9 @@ new class extends Component {
                                 </p>
                             @endif
                             @if (isset($notification['data']['refund_amount']) && $notification['data']['refund_amount'] > 0)
-                                <p
-                                    style="margin: 0 0 8px 0; font-size: 12px; color: #28a745; font-weight: 600;">
-                                    <strong>Refund:</strong> {{ currency_format($notification['data']['refund_amount']) }}
+                                <p style="margin: 0 0 8px 0; font-size: 12px; color: #28a745; font-weight: 600;">
+                                    <strong>Refund:</strong>
+                                    {{ currency_format($notification['data']['refund_amount']) }}
                                 </p>
                             @endif
                             @if (isset($notification['data']['notes']) && $notification['data']['notes'])
