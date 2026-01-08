@@ -405,6 +405,15 @@
                                                 @endphp
                                                 <span id="subtotal">{{ currency_format($displaySubtotalCalc) }}</span>
                                             </div>
+
+                                            @php
+                                                // Calculate savings (only for houses/rooms, not boats)
+                                                $regularPrice =
+                                                    floatval($booking->price_per_night ?? 0) *
+                                                    floatval($booking->nights ?? 1);
+                                                $actualPrice = $displaySubtotalCalc;
+                                                $tieredPricingSavings = $regularPrice - $actualPrice;
+                                            @endphp
                                         @endif
                                         @if (($booking->service_fee ?? 0) > 0)
                                             <div class="price-row">
@@ -469,10 +478,52 @@
 
                                     <div class="divider"></div>
 
-                                    <!-- Wallet Balance Section -->
                                     @php
+                                        // Calculate total savings
+                                        $totalSavings = 0;
+
+                                        // 1. Tiered pricing savings (for rooms/houses)
+                                        if ($booking->type !== 'boat') {
+                                            $totalSavings += $tieredPricingSavings ?? 0;
+                                        }
+
+                                        // 2. Coupon discount savings
+                                        if (session('applied_coupon')) {
+                                            $coupon = session('applied_coupon');
+                                            $discountType = $coupon['discount_type'] ?? 'fixed';
+                                            $discountValue = floatval($coupon['discount_value'] ?? 0);
+                                            $maxDiscount =
+                                                isset($coupon['max_discount_amount']) && $coupon['max_discount_amount']
+                                                    ? floatval($coupon['max_discount_amount'])
+                                                    : null;
+
+                                            $backend = floatval($booking->subtotal ?? 0);
+                                            $calculated =
+                                                floatval($booking->price_per_night ?? 0) *
+                                                floatval($booking->nights ?? 1);
+                                            $displaySubtotal = $backend > 0 ? $backend : $calculated;
+                                            $displayBase =
+                                                $displaySubtotal +
+                                                (float) ($booking->service_fee ?? 0) +
+                                                (float) ($booking->tax ?? 0);
+
+                                            $couponDiscount = 0;
+                                            if ($discountType === 'percentage') {
+                                                $couponDiscount = round(($displayBase * $discountValue) / 100);
+                                                if ($maxDiscount && $couponDiscount > $maxDiscount) {
+                                                    $couponDiscount = round($maxDiscount);
+                                                }
+                                            } else {
+                                                $couponDiscount = round($discountValue);
+                                            }
+                                            $couponDiscount = min($couponDiscount, $displayBase);
+                                            $totalSavings += $couponDiscount;
+                                        }
+
                                         $walletBalance = auth()->user()->wallet_balance ?? 0;
                                     @endphp
+
+                                    <!-- Wallet Balance Section -->
                                     @if ($walletBalance > 0)
                                         <div class="wallet-section mb-3">
                                             <div class="wallet-card">
@@ -553,8 +604,22 @@
                                         <input type="hidden" id="walletBalance" value="{{ $walletBalance ?? 0 }}">
                                     </div>
 
+                                    @if ($totalSavings > 0)
+                                        <div class="price-row my-3"
+                                            style="background: #d4edda; padding: 12px; border-radius: 8px; border: 2px solid #28a745;">
+                                            <span style="color: #155724; font-weight: 600; font-size: 16px;">
+                                                <i class="bi bi-piggy-bank-fill me-2"></i>You Saved
+                                            </span>
+                                            <span id="totalSavingsDisplay"
+                                                style="color: #155724; font-weight: 600; font-size: 16px;">
+                                                {{ currency_format($totalSavings) }}
+                                            </span>
+                                        </div>
+                                    @endif
+
                                     <!-- Wallet Applied Amount -->
-                                    <div id="walletAppliedRow" class="wallet-applied-row mt-3" style="display: none;">
+                                    <div id="walletAppliedRow" class="wallet-applied-row"
+                                        style="display: none; margin-top: 1rem;">
                                         <div class="wallet-applied-content">
                                             <span>
                                                 <i class="bi bi-wallet2 me-2"></i>Wallet Balance Used
@@ -565,7 +630,8 @@
                                     </div>
 
                                     <!-- Amount to Pay -->
-                                    <div id="amountToPayRow" class="amount-to-pay-row" style="display: none;">
+                                    <div id="amountToPayRow" class="amount-to-pay-row"
+                                        style="display: none; margin-top: 0.75rem;">
                                         <span class="pay-label">
                                             <i class="bi bi-cash-coin me-2"></i><strong>Amount to Pay</strong>
                                         </span>
@@ -841,5 +907,80 @@
                 });
             }
         });
+
+        // Toggle wallet usage
+        function toggleWalletUsage(checkbox) {
+            console.log('Toggle wallet called, checked:', checkbox.checked);
+
+            const totalAmount = parseFloat(document.getElementById('originalTotal').value);
+            const walletBalance = parseFloat(document.getElementById('walletBalance').value);
+            const currencySymbol = document.body.getAttribute('data-currency-symbol') || 'KWD';
+
+            console.log('Total Amount:', totalAmount, 'Wallet Balance:', walletBalance);
+
+            const walletAppliedRow = document.getElementById('walletAppliedRow');
+            const amountToPayRow = document.getElementById('amountToPayRow');
+            const walletAppliedAmount = document.getElementById('walletAppliedAmount');
+            const amountToPay = document.getElementById('amountToPay');
+            const totalSavingsDisplay = document.getElementById('totalSavingsDisplay');
+
+            console.log('Elements found:', {
+                walletAppliedRow: !!walletAppliedRow,
+                amountToPayRow: !!amountToPayRow,
+                walletAppliedAmount: !!walletAppliedAmount,
+                amountToPay: !!amountToPay
+            });
+
+            // Get base savings (tiered pricing + coupon)
+            const baseSavings = {{ $totalSavings ?? 0 }};
+
+            if (checkbox.checked) {
+                // Calculate wallet usage
+                const walletUsed = Math.min(walletBalance, totalAmount);
+                const finalAmount = Math.max(0, totalAmount - walletUsed);
+
+                console.log('Wallet Used:', walletUsed, 'Final Amount:', finalAmount);
+
+                // Update savings display to include wallet
+                const totalSavingsWithWallet = baseSavings + walletUsed;
+                if (totalSavingsDisplay) {
+                    totalSavingsDisplay.textContent = currencySymbol + ' ' + totalSavingsWithWallet.toFixed(2);
+                }
+
+                // Show wallet applied and amount to pay rows
+                walletAppliedAmount.innerHTML = '-' + currencySymbol + ' ' + walletUsed.toFixed(2);
+                const amountToPayStrong = amountToPay.querySelector('strong');
+                if (amountToPayStrong) {
+                    amountToPayStrong.textContent = currencySymbol + ' ' + finalAmount.toFixed(2);
+                }
+
+                walletAppliedRow.style.display = 'block';
+                amountToPayRow.style.display = 'flex';
+
+                // Add show class for animation
+                setTimeout(() => {
+                    walletAppliedRow.classList.add('show');
+                    amountToPayRow.classList.add('show');
+                }, 10);
+
+                console.log('Rows should be visible now');
+            } else {
+                // Reset savings to base only (no wallet)
+                if (totalSavingsDisplay) {
+                    totalSavingsDisplay.textContent = currencySymbol + ' ' + baseSavings.toFixed(2);
+                }
+
+                // Hide wallet applied and amount to pay rows with animation
+                walletAppliedRow.classList.remove('show');
+                amountToPayRow.classList.remove('show');
+
+                setTimeout(() => {
+                    walletAppliedRow.style.display = 'none';
+                    amountToPayRow.style.display = 'none';
+                }, 300); // Wait for animation to complete
+
+                console.log('Rows hidden');
+            }
+        }
     </script>
 @endsection
