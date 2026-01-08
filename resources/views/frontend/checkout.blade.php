@@ -277,16 +277,6 @@
                                                 @endif
                                             </div>
                                         </div>
-                                        @if (isset($booking->guest_names) && count($booking->guest_names) > 0)
-                                            <div class="detail-row">
-                                                <div class="detail-label">
-                                                    <i class="bi bi-person-lines-fill me-2"></i>Total Guests
-                                                </div>
-                                                <div class="detail-value">
-                                                    {{ count($booking->guest_names) }} Persons
-                                                </div>
-                                            </div>
-                                        @endif
                                     </div>
 
                                     <div class="divider"></div>
