@@ -295,15 +295,29 @@ new class extends Component {
     </style>
 
     <!-- Reschedule Booking Button -->
+    @php
+        $checkInTime = \Carbon\Carbon::parse($booking->check_in);
+        $hoursUntilCheckIn = \Carbon\Carbon::now()->diffInHours($checkInTime, false);
+        $canRescheduleWithin48Hours = $hoursUntilCheckIn >= 48;
+    @endphp
+
     @if ($booking->canBeRescheduled())
-        <button wire:click="openModal" wire:loading.attr="disabled" class="btn btn-warning w-100 mt-2" type="button">
-            <span wire:loading.remove wire:target="openModal">
-                <i class="bi bi-calendar-event me-2"></i>Request Reschedule
-            </span>
-            <span wire:loading wire:target="openModal">
-                <i class="bi bi-hourglass-split me-2"></i>Loading...
-            </span>
-        </button>
+        @if ($canRescheduleWithin48Hours)
+            <button wire:click="openModal" wire:loading.attr="disabled" class="btn btn-warning w-100 mt-2" type="button">
+                <span wire:loading.remove wire:target="openModal">
+                    <i class="bi bi-calendar-event me-2"></i>Request Reschedule
+                </span>
+                <span wire:loading wire:target="openModal">
+                    <i class="bi bi-hourglass-split me-2"></i>Loading...
+                </span>
+            </button>
+        @else
+            <div class="alert alert-warning mt-2 mb-0">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>Reschedule Not Available</strong>
+                <p class="mb-0 mt-2 small">Reschedule requests must be made at least 48 hours before check-in time.</p>
+            </div>
+        @endif
     @elseif($booking->hasRescheduleRequest())
         <div class="alert alert-info mt-2">
             <i class="bi bi-clock me-2"></i>

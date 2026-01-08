@@ -45,6 +45,20 @@
                                         <i class="bi bi-info-circle me-1"></i>Cancellation Declined
                                     </span>
                                 @endif
+
+                                @if ($booking->reschedule_status === 'pending')
+                                    <span class="badge bg-warning ms-2">
+                                        <i class="bi bi-calendar-event me-1"></i>Reschedule Pending
+                                    </span>
+                                @elseif($booking->reschedule_status === 'approved')
+                                    <span class="badge bg-success ms-2">
+                                        <i class="bi bi-check-circle me-1"></i>Rescheduled
+                                    </span>
+                                @elseif($booking->reschedule_status === 'rejected')
+                                    <span class="badge bg-danger ms-2">
+                                        <i class="bi bi-x-circle me-1"></i>Reschedule Declined
+                                    </span>
+                                @endif
                             </div>
                         </div>
 
@@ -66,6 +80,23 @@
                         @elseif($booking->cancellation_status === 'rejected')
                             <div class="alert alert-danger mb-0 rounded-0">
                                 <small><i class="bi bi-x-circle me-2"></i>Cancellation request was declined</small>
+                            </div>
+                        @endif
+
+                        <!-- Reschedule Alert -->
+                        @if ($booking->reschedule_status === 'pending')
+                            <div class="alert alert-info mb-0 rounded-0">
+                                <small><i class="bi bi-calendar-event me-2"></i>Your reschedule request is under review. New
+                                    date: {{ $booking->new_check_in?->format('d M Y') ?? 'N/A' }}</small>
+                            </div>
+                        @elseif($booking->reschedule_status === 'approved')
+                            <div class="alert alert-success mb-0 rounded-0">
+                                <small><i class="bi bi-check-circle me-2"></i>Reschedule approved. Booking rescheduled
+                                    successfully.</small>
+                            </div>
+                        @elseif($booking->reschedule_status === 'rejected')
+                            <div class="alert alert-danger mb-0 rounded-0">
+                                <small><i class="bi bi-x-circle me-2"></i>Reschedule request was declined</small>
                             </div>
                         @endif
 

@@ -105,6 +105,20 @@
                                                                 <i class="bi bi-info-circle me-1"></i>Cancellation Declined
                                                             </span>
                                                         @endif
+
+                                                        @if ($booking->reschedule_status === 'pending')
+                                                            <span class="badge bg-warning">
+                                                                <i class="bi bi-calendar-event me-1"></i>Reschedule Pending
+                                                            </span>
+                                                        @elseif($booking->reschedule_status === 'approved')
+                                                            <span class="badge bg-success">
+                                                                <i class="bi bi-check-circle me-1"></i>Rescheduled
+                                                            </span>
+                                                        @elseif($booking->reschedule_status === 'rejected')
+                                                            <span class="badge bg-danger">
+                                                                <i class="bi bi-x-circle me-1"></i>Reschedule Declined
+                                                            </span>
+                                                        @endif
                                                     @endif
                                                 </div>
                                                 <h4>{{ $booking->bookingable?->name ?? 'Property Name' }}</h4>
@@ -286,6 +300,20 @@
                                                                 <i class="bi bi-info-circle me-1"></i>Cancellation Declined
                                                             </span>
                                                         @endif
+
+                                                        @if ($booking->reschedule_status === 'pending')
+                                                            <span class="badge bg-warning">
+                                                                <i class="bi bi-calendar-event me-1"></i>Reschedule Pending
+                                                            </span>
+                                                        @elseif($booking->reschedule_status === 'approved')
+                                                            <span class="badge bg-success">
+                                                                <i class="bi bi-check-circle me-1"></i>Rescheduled
+                                                            </span>
+                                                        @elseif($booking->reschedule_status === 'rejected')
+                                                            <span class="badge bg-danger">
+                                                                <i class="bi bi-x-circle me-1"></i>Reschedule Declined
+                                                            </span>
+                                                        @endif
                                                     @endif
                                                 </div>
                                                 <h4>{{ $booking->bookingable?->name ?? 'Property Name' }}</h4>
@@ -445,6 +473,20 @@
                                                         @elseif($booking->cancellation_status === 'rejected')
                                                             <span class="badge bg-info">
                                                                 <i class="bi bi-info-circle me-1"></i>Cancellation Declined
+                                                            </span>
+                                                        @endif
+
+                                                        @if ($booking->reschedule_status === 'pending')
+                                                            <span class="badge bg-warning">
+                                                                <i class="bi bi-calendar-event me-1"></i>Reschedule Pending
+                                                            </span>
+                                                        @elseif($booking->reschedule_status === 'approved')
+                                                            <span class="badge bg-success">
+                                                                <i class="bi bi-check-circle me-1"></i>Rescheduled
+                                                            </span>
+                                                        @elseif($booking->reschedule_status === 'rejected')
+                                                            <span class="badge bg-danger">
+                                                                <i class="bi bi-x-circle me-1"></i>Reschedule Declined
                                                             </span>
                                                         @endif
                                                     @endif
