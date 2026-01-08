@@ -18,8 +18,27 @@ use Carbon\Carbon;
 
 class BookingController extends Controller
 {
+    public function guestEmail(Request $request)
+    {
+        // Build the checkout URL with all parameters
+        $checkoutUrl = route('checkout');
+        if ($request->hasAny(['type', 'id', 'check_in', 'check_out', 'adults', 'children'])) {
+            $checkoutUrl .= '?' . http_build_query($request->all());
+        }
+
+        // Store the checkout URL for return after login/register
+        session(['checkout_return_url' => $checkoutUrl]);
+
+        return view('frontend.guest-email');
+    }
+
     public function checkout(Request $request)
     {
+        // Redirect guests to email entry page
+        if (auth()->guest()) {
+            return redirect()->route('guest.email', $request->all());
+        }
+
         $type = $request->get('type', 'room');
         $id = $request->get('id');
 

@@ -73,6 +73,9 @@ Route::prefix('customer')->name('customer.')->group(function () {
     Route::get('/logout', [AuthController::class, 'logout'])->name('logout.get');
 });
 
+// Guest Email Entry Page (for unauthenticated users going to checkout)
+Route::get('/guest-email', [BookingController::class, 'guestEmail'])->name('guest.email');
+
 // Checkout Route (accessible to both guest and authenticated users)
 Route::get('/checkout', [BookingController::class, 'checkout'])->name('checkout');
 

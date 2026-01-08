@@ -1,50 +1,32 @@
-<div>
-    @if ($showModal)
-        <style>
-            @keyframes spin {
-                from {
-                    transform: rotate(0deg);
-                }
-
-                to {
-                    transform: rotate(360deg);
-                }
-            }
-        </style>
-        <div id="unifiedAuthModal"
-            style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
-            <div
-                style="background: white; border-radius: 15px; padding: 40px; max-width: 450px; width: 90%; position: relative; box-shadow: 0 10px 50px rgba(0,0,0,0.3);">
-
-                <div id="emailStep">
-                    <h3 style="margin: 0 0 10px 0; color: #1a1a1a; font-size: 24px;">Welcome!</h3>
-                    <p style="margin: 0 0 25px 0; color: #666;">Please enter your email to continue with checkout</p>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h3 class="mb-2">Welcome!</h3>
+                    <p class="text-muted mb-4">Please enter your email to continue with checkout</p>
 
                     <form wire:submit.prevent="checkEmailAndProceed">
-                        <div style="margin-bottom: 20px;">
-                            <label style="display: block; margin-bottom: 8px; color: #333; font-weight: 500;">Email
-                                Address</label>
-                            <input type="email" wire:model="email" required
-                                style="width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; transition: border-color 0.3s;"
-                                onfocus="this.style.borderColor='#136497'" onblur="this.style.borderColor='#e0e0e0'"
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Email Address</label>
+                            <input type="email" wire:model="email" required class="form-control"
                                 placeholder="Enter your email">
                             @error('email')
-                                <div style="color: #dc3545; margin-top: 8px; font-size: 14px;">{{ $message }}</div>
+                                <div class="text-danger mt-2 small">{{ $message }}</div>
                             @enderror
                         </div>
 
                         @if ($error)
-                            <div style="color: #dc3545; margin-bottom: 15px; font-size: 14px;">
+                            <div class="alert alert-danger">
                                 {{ $error }}
                             </div>
                         @endif
 
-                        <button type="submit"
-                            style="width: 100%; padding: 14px; background: #136497; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.3s;"
-                            onmouseover="this.style.background='#0d4d75'" onmouseout="this.style.background='#136497'">
+                        <button type="submit" class="btn btn-primary w-100" wire:loading.attr="disabled">
                             <span wire:loading.remove>Continue</span>
                             <span wire:loading>
-                                <i class="bi bi-arrow-repeat" style="animation: spin 1s linear infinite;"></i>
+                                <span class="spinner-border spinner-border-sm me-2" role="status"
+                                    aria-hidden="true"></span>
                                 Processing...
                             </span>
                         </button>
@@ -52,13 +34,13 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <script>
-            document.addEventListener('livewire:initialized', () => {
-                Livewire.on('redirectToAuth', (event) => {
-                    window.location.href = event.url;
-                });
+    <script>
+        document.addEventListener('livewire:initialized', () => {
+            Livewire.on('redirectToAuth', (event) => {
+                window.location.href = event.url;
             });
-        </script>
-    @endif
+        });
+    </script>
 </div>
