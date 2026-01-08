@@ -861,12 +861,11 @@
                     <div class="info-box">
                         <h5><i class="bi bi-info-circle me-2"></i>Important Information</h5>
                         <ul>
-                            <li>Check-in time is from 2:00 PM</li>
-                            <li>Check-out time is before 12:00 PM</li>
-                            <li>Please bring a valid ID proof at the time of check-in</li>
-                            <li>For any queries, contact us at <a href="mailto:support@ikarus.com">support@ikarus.com</a>
-                            </li>
-                            <li>Cancellation policy applies as per terms and conditions</li>
+                            <li>Please carry a valid government-issued ID at the time of check-in</li>
+                            <li>For any queries or assistance, contact us at <a
+                                    href="mailto:support@ikarus.com">support@ikarus.com</a></li>
+                            <li>Cancellation is governed by our terms and conditions</li>
+                            <li>Rescheduling requests may be subject to additional charges</li>
                         </ul>
                     </div>
                 </div>

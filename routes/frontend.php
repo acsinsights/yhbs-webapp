@@ -73,9 +73,11 @@ Route::prefix('customer')->name('customer.')->group(function () {
     Route::get('/logout', [AuthController::class, 'logout'])->name('logout.get');
 });
 
+// Checkout Route (accessible to both guest and authenticated users)
+Route::get('/checkout', [BookingController::class, 'checkout'])->name('checkout');
+
 // Booking Routes (require authentication)
 Route::middleware(['auth', 'role:customer'])->group(function () {
-    Route::get('/checkout', [BookingController::class, 'checkout'])->name('checkout');
     Route::post('/booking/confirm', [BookingController::class, 'confirm'])->name('booking.confirm');
     Route::get('/booking/confirmation/{id}', [BookingController::class, 'confirmation'])->name('booking.confirmation');
 

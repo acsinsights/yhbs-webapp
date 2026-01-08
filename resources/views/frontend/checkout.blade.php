@@ -709,129 +709,137 @@
                     </div>
                 </div>
             </form>
+
+            <!-- Guest Email Modal - Plain HTML (Only for guests) -->
+            @guest
+                <div id="unifiedAuthModal"
+                    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+                    <div
+                        style="background: white; border-radius: 15px; padding: 40px; max-width: 450px; width: 90%; position: relative; box-shadow: 0 10px 50px rgba(0,0,0,0.3);">
+
+                        <div id="emailStep">
+                            <h3 style="margin: 0 0 10px 0; color: #1a1a1a; font-size: 24px;">Welcome!</h3>
+                            <p style="margin: 0 0 25px 0; color: #666;">Please enter your email to continue with checkout</p>
+
+                            <form id="emailCheckForm">
+                                <div style="margin-bottom: 20px;">
+                                    <label style="display: block; margin-bottom: 8px; color: #333; font-weight: 500;">Email
+                                        Address</label>
+                                    <input type="email" id="guestEmail" required
+                                        style="width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; transition: border-color 0.3s;"
+                                        onfocus="this.style.borderColor='#136497'" onblur="this.style.borderColor='#e0e0e0'"
+                                        placeholder="Enter your email">
+                                </div>
+
+                                <div id="emailErrorMsg"
+                                    style="display: none; color: #dc3545; margin-bottom: 15px; font-size: 14px;">
+                                </div>
+
+                                <button type="submit" id="emailSubmitBtn"
+                                    style="width: 100%; padding: 14px; background: #136497; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.3s;"
+                                    onmouseover="this.style.background='#0d4d75'"
+                                    onmouseout="this.style.background='#136497'">
+                                    Continue
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            @endguest
         </div>
     </div>
 
 @endsection
 
 @section('scripts')
+    <script src="{{ asset('frontend/js/checkout.js') }}"></script>
     <script>
-        // Guest Management
-        let guestCount = 1;
+        // Initialize checkout page on DOM ready
+        document.addEventListener('DOMContentLoaded', function() {
+            const oldGuests = @json(old('guests', []));
+            const isGuest = {{ auth()->guest() ? 'true' : 'false' }};
 
-        // Restore old guest data if validation failed
-        @if (old('guests'))
-            const oldGuests = @json(old('guests'));
-            const container = document.getElementById('guestDetailsContainer');
+            // Initialize guest management only
+            initGuestManagement(oldGuests);
 
-            // Add additional guests that were previously entered
-            for (let i = 1; i < oldGuests.length; i++) {
-                const guest = oldGuests[i];
-                const guestHtml = `
-                    <div class="guest-detail-item mb-4 pb-3 border-bottom" data-guest-index="${i}">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="mb-0">Guest ${i + 1}</h6>
-                            <button type="button" class="btn btn-sm btn-outline-danger remove-guest-btn">
-                                <i class="bi bi-trash"></i> Remove
-                            </button>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
-                                <label class="form-label">Full Name *</label>
-                                <input type="text" class="form-control ${oldGuests[i].name ? '' : 'is-invalid'}"
-                                    name="guests[${i}][name]" required
-                                    value="${guest.name || ''}"
-                                    placeholder="Enter guest full name">
-                                @error('guests.${i}.name')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Email <small class="text-muted">(Optional)</small></label>
-                                <input type="email" class="form-control"
-                                    name="guests[${i}][email]"
-                                    value="${guest.email || ''}"
-                                    placeholder="Enter guest email">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Phone Number <small class="text-muted">(Optional)</small></label>
-                                <input type="tel" class="form-control"
-                                    name="guests[${i}][phone]"
-                                    value="${guest.phone || ''}"
-                                    placeholder="Enter guest phone">
-                            </div>
-                        </div>
-                    </div>
-                `;
-                container.insertAdjacentHTML('beforeend', guestHtml);
-                guestCount++;
+            // Show email modal for guest users
+            if (isGuest) {
+                document.getElementById('unifiedAuthModal').style.display = 'flex';
+                document.getElementById('guestEmail').focus();
             }
-        @endif
 
-        document.getElementById('addGuestBtn').addEventListener('click', function() {
-            const container = document.getElementById('guestDetailsContainer');
-            const guestHtml = `
-                <div class="guest-detail-item mb-4 pb-3 border-bottom" data-guest-index="${guestCount}">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="mb-0">Guest ${guestCount + 1}</h6>
-                        <button type="button" class="btn btn-sm btn-outline-danger remove-guest-btn">
-                            <i class="bi bi-trash"></i> Remove
-                        </button>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <label class="form-label">Full Name *</label>
-                            <input type="text" class="form-control" name="guests[${guestCount}][name]" required placeholder="Enter guest full name">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Email <small class="text-muted">(Optional)</small></label>
-                            <input type="email" class="form-control" name="guests[${guestCount}][email]" placeholder="Enter guest email">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Phone Number <small class="text-muted">(Optional)</small></label>
-                            <input type="tel" class="form-control" name="guests[${guestCount}][phone]" placeholder="Enter guest phone">
-                        </div>
-                    </div>
-                </div>
-            `;
-            container.insertAdjacentHTML('beforeend', guestHtml);
-            guestCount++;
-        });
+            // Handle email form submission
+            const emailForm = document.getElementById('emailCheckForm');
+            if (emailForm) {
+                emailForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
 
-        // Remove guest (event delegation)
-        document.getElementById('guestDetailsContainer').addEventListener('click', function(e) {
-            if (e.target.classList.contains('remove-guest-btn') || e.target.closest('.remove-guest-btn')) {
-                const btn = e.target.classList.contains('remove-guest-btn') ? e.target : e.target.closest(
-                    '.remove-guest-btn');
-                const guestItem = btn.closest('.guest-detail-item');
-                if (guestItem) {
-                    guestItem.remove();
-                    // Renumber remaining guests
-                    const guests = document.querySelectorAll('.guest-detail-item');
-                    guests.forEach((guest, index) => {
-                        guest.querySelector('h6').textContent = index === 0 ? 'Guest 1 *' :
-                            `Guest ${index + 1}`;
-                    });
-                }
+                    const email = document.getElementById('guestEmail').value;
+                    const submitBtn = document.getElementById('emailSubmitBtn');
+                    const errorDiv = document.getElementById('emailErrorMsg');
+
+                    // Disable button
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Checking...';
+                    errorDiv.style.display = 'none';
+
+                    try {
+                        const response = await fetch('{{ route('customer.check-email') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector(
+                                    'meta[name="csrf-token"]').content,
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                email: email
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            const returnUrl = encodeURIComponent(window.location.href);
+
+                            if (data.exists) {
+                                // User exists - redirect to login
+                                window.location.href = '{{ route('customer.login') }}?return_url=' +
+                                    returnUrl + '&email=' + encodeURIComponent(email);
+                            } else {
+                                // User doesn't exist - redirect to register
+                                window.location.href = '{{ route('customer.register') }}?return_url=' +
+                                    returnUrl + '&email=' + encodeURIComponent(email);
+                            }
+                        } else {
+                            throw new Error(data.message || 'An error occurred');
+                        }
+                    } catch (error) {
+                        errorDiv.textContent = error.message || 'An error occurred. Please try again.';
+                        errorDiv.style.display = 'block';
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Continue';
+                    }
+                });
             }
-        });
 
-        // Set currency symbol for JS functions
-        document.body.setAttribute('data-currency-symbol', '{{ currency_symbol() }}');
+            // Set currency symbol for JS functions
+            document.body.setAttribute('data-currency-symbol', '{{ currency_symbol() }}');
 
-        // Listen for coupon events and reload page
-        document.addEventListener('livewire:init', () => {
-            Livewire.on('coupon-applied', () => {
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-            });
+            // Listen for coupon events and reload page
+            if (typeof Livewire !== 'undefined') {
+                Livewire.on('coupon-applied', () => {
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                });
 
-            Livewire.on('coupon-removed', () => {
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-            });
+                Livewire.on('coupon-removed', () => {
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                });
+            }
         });
     </script>
 @endsection

@@ -43,9 +43,15 @@ class AuthController extends Controller
                     ->with('success', 'Welcome back, ' . Auth::user()->first_name . '!');
             }
 
+            // Check if there's a return_url from query string (from checkout page)
+            $returnUrl = $request->query('return_url');
+            if ($returnUrl) {
+                return redirect($returnUrl)
+                    ->with('success', 'Welcome back, ' . Auth::user()->first_name . '!');
+            }
+
             // Check if there's an intended URL (like checkout page)
             $intendedUrl = session('url.intended');
-
             if ($intendedUrl && str_contains($intendedUrl, '/checkout')) {
                 return redirect()->intended($intendedUrl)
                     ->with('success', 'Welcome back, ' . Auth::user()->first_name . '!');
@@ -92,6 +98,11 @@ class AuthController extends Controller
                 'password' => Hash::make($validated['password']),
             ]
         ]);
+
+        // Store return_url if provided (from checkout page)
+        if ($request->has('return_url')) {
+            session(['registration_return_url' => $request->input('return_url')]);
+        }
 
         // Generate 6-digit OTP
         $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
@@ -251,9 +262,16 @@ class AuthController extends Controller
         // Login user
         Auth::login($user);
 
+        // Check if there's a return_url from registration (like checkout page)
+        $returnUrl = session('registration_return_url');
+        if ($returnUrl) {
+            session()->forget('registration_return_url');
+            return redirect($returnUrl)
+                ->with('success', 'Email verified successfully! Welcome to YHBS.');
+        }
+
         // Check if there's an intended URL (like checkout page)
         $intendedUrl = session('url.intended');
-
         if ($intendedUrl && str_contains($intendedUrl, '/checkout')) {
             return redirect($intendedUrl)
                 ->with('success', 'Email verified successfully! Welcome to YHBS.');

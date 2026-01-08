@@ -36,6 +36,10 @@
                         <form action="{{ route('customer.register.submit') }}" method="POST" class="auth-form">
                             @csrf
 
+                            @if (request()->has('return_url'))
+                                <input type="hidden" name="return_url" value="{{ request('return_url') }}">
+                            @endif
+
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group mb-3">
