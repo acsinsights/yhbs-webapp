@@ -797,26 +797,43 @@
 
                             <div class="divider"></div>
 
+                            @php
+                                // Calculate total savings
+                                $totalSavings = 0;
+
+                                // 1. Tiered pricing savings (for rooms/houses only)
+                                if ($booking->property_type !== 'Boat' && $nights > 0 && $pricePerNight > 0) {
+                                    $regularPrice = $pricePerNight * $nights;
+                                    $actualPrice = $subtotal; // This already includes tiered pricing
+                                    $tieredSavings = $regularPrice - $actualPrice;
+                                    if ($tieredSavings > 0) {
+                                        $totalSavings += $tieredSavings;
+                                    }
+                                }
+
+                                // 2. Coupon discount
+                                $totalSavings += $booking->discount_amount ?? 0;
+
+                                // 3. Wallet amount
+                                $totalSavings += $booking->wallet_amount_used ?? 0;
+                            @endphp
+
+                            @if ($totalSavings > 0)
+                                <div
+                                    style="background: #d4edda; padding: 15px; border-radius: 8px; border: 2px solid #28a745; margin-bottom: 20px; text-align: center;">
+                                    <span style="color: #155724; font-weight: 600; font-size: 18px;">
+                                        <i class="bi bi-piggy-bank-fill me-2"></i>You Saved
+                                    </span>
+                                    <span style="color: #155724; font-weight: 700; font-size: 20px;">
+                                        {{ currency_format($totalSavings) }}
+                                    </span>
+                                </div>
+                            @endif
+
                             <div class="total-amount">
                                 <span>Total Paid</span>
                                 <span>{{ currency_format($finalAmount) }}</span>
                             </div>
-
-                            @if (
-                                (isset($booking->discount_amount) && $booking->discount_amount > 0) ||
-                                    (isset($booking->wallet_amount_used) && $booking->wallet_amount_used > 0))
-                                <div class="text-center mt-3">
-                                    @php
-                                        $totalSavings =
-                                            ($booking->discount_amount ?? 0) + ($booking->wallet_amount_used ?? 0);
-                                    @endphp
-                                    <p class="text-success mb-0">
-                                        <i class="bi bi-check-circle-fill me-2"></i>
-                                        <strong>You saved {{ currency_format($totalSavings) }} on this
-                                            booking!</strong>
-                                    </p>
-                                </div>
-                            @endif
 
                             <div class="payment-status">
                                 @if (($booking->payment_status ?? 'pending') === 'paid')

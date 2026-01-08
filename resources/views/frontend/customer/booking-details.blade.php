@@ -434,6 +434,39 @@
 
                             <div class="divider"></div>
 
+                            @php
+                                // Calculate total savings
+                                $totalSavings = 0;
+
+                                // 1. Tiered pricing savings (for rooms/houses only)
+                                if (!$isBoat && $nights > 0 && $pricePerNight > 0) {
+                                    $regularPrice = $pricePerNight * $nights;
+                                    $actualPrice = $subtotal; // This already includes tiered pricing
+                                    $tieredSavings = $regularPrice - $actualPrice;
+                                    if ($tieredSavings > 0) {
+                                        $totalSavings += $tieredSavings;
+                                    }
+                                }
+
+                                // 2. Coupon discount
+                                $totalSavings += $discount;
+
+                                // 3. Wallet amount
+                                $totalSavings += $walletUsed;
+                            @endphp
+
+                            @if ($totalSavings > 0)
+                                <div
+                                    style="background: #d4edda; padding: 15px; border-radius: 8px; border: 2px solid #28a745; margin-bottom: 20px; text-align: center;">
+                                    <span style="color: #155724; font-weight: 600; font-size: 18px;">
+                                        <i class="bi bi-piggy-bank-fill me-2"></i>You Saved
+                                    </span>
+                                    <span style="color: #155724; font-weight: 700; font-size: 20px;">
+                                        {{ currency_format($totalSavings) }}
+                                    </span>
+                                </div>
+                            @endif
+
                             <div class="total-amount">
                                 <span>Total Paid</span>
                                 <span>{{ currency_format($booking->price - $walletUsed + ($booking->reschedule_fee ?? 0) + ($booking->extra_fee ?? 0)) }}</span>
