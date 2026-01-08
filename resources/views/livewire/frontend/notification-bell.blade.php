@@ -15,33 +15,125 @@ new class extends Component {
     public function loadNotifications(): void
     {
         if (auth()->check()) {
-            $this->notifications = UserNotification::where('user_id', auth()->id())
+            // Get custom UserNotifications
+            $userNotifications = UserNotification::where('user_id', auth()->id())
                 ->latest()
-                ->take(10)
+                ->take(5)
                 ->get()
+                ->map(function ($notification) {
+                    return [
+                        'id' => $notification->id,
+                        'type' => $notification->type ?? 'info',
+                        'title' => $notification->title,
+                        'message' => $notification->message,
+                        'data' => $notification->data ?? [],
+                        'is_read' => $notification->is_read,
+                        'created_at' => $notification->created_at,
+                        'source' => 'user_notifications',
+                    ];
+                });
+
+            // Get Laravel notifications (booking status, etc.)
+            $laravelNotifications = auth()
+                ->user()
+                ->notifications()
+                ->latest()
+                ->take(5)
+                ->get()
+                ->map(function ($notification) {
+                    $data = $notification->data;
+                    return [
+                        'id' => $notification->id,
+                        'type' => $data['icon'] ?? 'info',
+                        'title' => $this->getNotificationTitle($notification->type, $data),
+                        'message' => $data['message'] ?? 'Notification',
+                        'data' => $data,
+                        'is_read' => $notification->read_at !== null,
+                        'created_at' => $notification->created_at,
+                        'source' => 'notifications',
+                    ];
+                });
+
+            // Merge and sort by created_at
+            $this->notifications = $userNotifications
+                ->merge($laravelNotifications)
+                ->sortByDesc('created_at')
+                ->take(10)
+                ->values()
                 ->toArray();
 
-            $this->unreadCount = UserNotification::where('user_id', auth()->id())
+            // Count unread from both sources
+            $userUnreadCount = UserNotification::where('user_id', auth()->id())
                 ->unread()
                 ->count();
+
+            $laravelUnreadCount = auth()
+                ->user()
+                ->unreadNotifications()
+                ->count();
+
+            $this->unreadCount = $userUnreadCount + $laravelUnreadCount;
         }
     }
 
-    public function markAsRead(int $notificationId): void
+    private function getNotificationTitle(string $type, array $data): string
     {
-        $notification = UserNotification::find($notificationId);
-        if ($notification && $notification->user_id === auth()->id()) {
-            $notification->markAsRead();
-            $this->loadNotifications();
+        // Extract notification type from class name
+        if (str_contains($type, 'BookingStatusNotification')) {
+            $bookingType = $data['booking_type'] ?? 'Booking';
+            $bookingNumber = $data['booking_number'] ?? '';
+
+            if (isset($data['refund_amount'])) {
+                return "Cancellation Approved - {$bookingType} #{$bookingNumber}";
+            } elseif (isset($data['rejection_reason']) && str_contains($data['message'], 'cancellation')) {
+                return "Cancellation Rejected - {$bookingType} #{$bookingNumber}";
+            } elseif (str_contains($data['message'], 'reschedule') && str_contains($data['message'], 'approved')) {
+                return "Reschedule Approved - {$bookingType} #{$bookingNumber}";
+            } elseif (str_contains($data['message'], 'reschedule') && str_contains($data['message'], 'declined')) {
+                return "Reschedule Rejected - {$bookingType} #{$bookingNumber}";
+            }
+
+            return "{$bookingType} Booking #{$bookingNumber}";
         }
+
+        return 'Notification';
+    }
+
+    public function markAsRead(string $notificationId, string $source = 'user_notifications'): void
+    {
+        if ($source === 'user_notifications') {
+            $notification = UserNotification::find($notificationId);
+            if ($notification && $notification->user_id === auth()->id()) {
+                $notification->markAsRead();
+            }
+        } else {
+            // Laravel notifications
+            $notification = auth()
+                ->user()
+                ->notifications()
+                ->where('id', $notificationId)
+                ->first();
+            if ($notification) {
+                $notification->markAsRead();
+            }
+        }
+        $this->loadNotifications();
     }
 
     public function markAllAsRead(): void
     {
+        // Mark custom UserNotifications as read
         UserNotification::where('user_id', auth()->id())
             ->unread()
             ->get()
             ->each->markAsRead();
+
+        // Mark Laravel notifications as read
+        auth()
+            ->user()
+            ->unreadNotifications()
+            ->update(['read_at' => now()]);
+
         $this->loadNotifications();
     }
 }; ?>
@@ -103,10 +195,22 @@ new class extends Component {
                             <p style="margin: 0 0 8px 0; font-size: 13px; color: #555; line-height: 1.5;">
                                 {{ $notification['message'] }}
                             </p>
+                            @if (isset($notification['data']['rejection_reason']) && $notification['data']['rejection_reason'])
+                                <p
+                                    style="margin: 0 0 8px 0; font-size: 12px; color: #666; font-style: italic; padding-left: 10px; border-left: 2px solid #ddd;">
+                                    <strong>Reason:</strong> {{ $notification['data']['rejection_reason'] }}
+                                </p>
+                            @endif
+                            @if (isset($notification['data']['refund_amount']) && $notification['data']['refund_amount'] > 0)
+                                <p
+                                    style="margin: 0 0 8px 0; font-size: 12px; color: #28a745; font-weight: 600;">
+                                    <strong>Refund:</strong> {{ currency_format($notification['data']['refund_amount']) }}
+                                </p>
+                            @endif
                             @if (isset($notification['data']['notes']) && $notification['data']['notes'])
                                 <p
                                     style="margin: 0 0 8px 0; font-size: 12px; color: #666; font-style: italic; padding-left: 10px; border-left: 2px solid #ddd;">
-                                    <strong>Reason:</strong> {{ $notification['data']['notes'] }}
+                                    <strong>Note:</strong> {{ $notification['data']['notes'] }}
                                 </p>
                             @endif
                             <p style="margin: 0; font-size: 11px; color: #999;">
@@ -115,7 +219,7 @@ new class extends Component {
                         </div>
                         @if (!$notification['is_read'])
                             <button wire:key="mark-read-{{ $notification['id'] }}"
-                                wire:click="markAsRead({{ $notification['id'] }})"
+                                wire:click="markAsRead('{{ $notification['id'] }}', '{{ $notification['source'] }}')"
                                 style="background: #667eea; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; white-space: nowrap; margin-left: 10px;">
                                 Mark Read
                             </button>
