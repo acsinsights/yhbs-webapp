@@ -268,14 +268,6 @@
                 <div class="info-label">Booking Date:</div>
                 <div class="info-value">{{ $booking->created_at->format('F d, Y h:i A') }}</div>
             </div>
-            <div class="info-row">
-                <div class="info-label">Status:</div>
-                <div class="info-value">
-                    <span class="status-badge status-{{ strtolower(str_replace('_', '', $booking->status->value)) }}">
-                        {{ $booking->status->label() }}
-                    </span>
-                </div>
-            </div>
         </div>
     </div>
 

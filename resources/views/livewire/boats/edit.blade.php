@@ -342,14 +342,22 @@ new class extends Component {
                         </div>
                     @elseif($service_type === 'limousine')
                         <div class="space-y-4">
-                            <h4 class="font-semibold text-base">Time-based Pricing</h4>
+                            <h4 class="font-semibold text-base">Private Trip Pricing (Per Hour)</h4>
+                            <div class="grid grid-cols-1 gap-4">
+                                <x-input label="Price Per Hour (KD)" type="number" step="0.01"
+                                    wire:model="price_full_boat" placeholder="80.00"
+                                    hint="Private limousine booking price per hour" />
+                            </div>
+                            <h4 class="font-semibold text-base mt-4">Public Trip Pricing (Per Person/Hour)</h4>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <x-input label="15 Minutes (KD)" type="number" step="0.01"
-                                    wire:model="price_15min" placeholder="0.00" />
+                                    wire:model="price_15min" placeholder="5.00"
+                                    hint="Price per person for 15 minutes" />
                                 <x-input label="30 Minutes (KD)" type="number" step="0.01"
-                                    wire:model="price_30min" placeholder="0.00" />
-                                <x-input label="Full Boat/Hour (KD)" type="number" step="0.01"
-                                    wire:model="price_full_boat" placeholder="0.00" />
+                                    wire:model="price_30min" placeholder="10.00"
+                                    hint="Price per person for 30 minutes" />
+                                <x-input label="1 Hour (KD)" type="number" step="0.01" wire:model="price_1hour"
+                                    placeholder="50.00" hint="Price per person for 1 hour" />
                             </div>
                         </div>
                     @else

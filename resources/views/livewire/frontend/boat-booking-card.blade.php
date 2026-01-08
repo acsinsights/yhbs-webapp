@@ -270,6 +270,7 @@ new class extends Component {
                 '15' => 0.25,
                 '30' => 0.5,
                 'full' => 1,
+                '1hour' => 1,
                 default => null,
             };
         }
@@ -307,17 +308,20 @@ new class extends Component {
             // Multiply by duration for ferry
             $basePrice = $basePrice * (float) $this->duration;
         } elseif ($this->serviceType === 'limousine' && $this->experienceDuration && $this->tripType) {
-            if ($this->experienceDuration == '15' && $this->boat->price_15min) {
-                $basePrice = $this->boat->price_15min;
-            } elseif ($this->experienceDuration == '30' && $this->boat->price_30min) {
-                $basePrice = $this->boat->price_30min;
-            } elseif ($this->experienceDuration == 'full' && $this->boat->price_full_boat) {
-                $basePrice = $this->boat->price_full_boat;
-            }
-
-            // For public trips, multiply by passengers
-            if ($this->tripType === 'public') {
-                $basePrice = $basePrice * $this->passengers;
+            if ($this->tripType === 'private') {
+                // Private Trip: Per Hour (Full Boat)
+                if ($this->experienceDuration == 'full' && $this->boat->price_full_boat) {
+                    $basePrice = $this->boat->price_full_boat;
+                }
+            } elseif ($this->tripType === 'public') {
+                // Public Trip: Per Person based on duration
+                if ($this->experienceDuration == '15' && $this->boat->price_15min) {
+                    $basePrice = $this->boat->price_15min * $this->passengers;
+                } elseif ($this->experienceDuration == '30' && $this->boat->price_30min) {
+                    $basePrice = $this->boat->price_30min * $this->passengers;
+                } elseif ($this->experienceDuration == '1hour' && $this->boat->price_1hour) {
+                    $basePrice = $this->boat->price_1hour * $this->passengers;
+                }
             }
         }
 
@@ -495,15 +499,26 @@ new class extends Component {
                     </label>
                     <select wire:model.live="experienceDuration" class="form-control" required>
                         <option value="">Choose experience...</option>
-                        @if ($boat->price_15min)
-                            <option value="15">15 Minutes - {{ currency_format($boat->price_15min) }}</option>
-                        @endif
-                        @if ($boat->price_30min)
-                            <option value="30">30 Minutes - {{ currency_format($boat->price_30min) }}</option>
-                        @endif
-                        @if ($boat->price_full_boat)
-                            <option value="full">Full Experience - {{ currency_format($boat->price_full_boat) }}
-                            </option>
+                        @if ($tripType === 'private')
+                            {{-- Private Trip: Per Hour Pricing --}}
+                            @if ($boat->price_full_boat)
+                                <option value="full">1 Hour - {{ currency_format($boat->price_full_boat) }} (Private)
+                                </option>
+                            @endif
+                        @elseif ($tripType === 'public')
+                            {{-- Public Trip: Per Person Pricing --}}
+                            @if ($boat->price_15min)
+                                <option value="15">15 Minutes - {{ currency_format($boat->price_15min) }} per person
+                                </option>
+                            @endif
+                            @if ($boat->price_30min)
+                                <option value="30">30 Minutes - {{ currency_format($boat->price_30min) }} per
+                                    person</option>
+                            @endif
+                            @if ($boat->price_1hour)
+                                <option value="1hour">1 Hour - {{ currency_format($boat->price_1hour) }} per person
+                                </option>
+                            @endif
                         @endif
                     </select>
                     @error('experienceDuration')
