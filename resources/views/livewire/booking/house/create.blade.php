@@ -157,6 +157,21 @@ new class extends Component {
         if ($this->adults < $currentCount) {
             $this->guests = array_slice($this->guests, 0, $this->adults);
         }
+
+        // Reset house selection and pagination when guest count changes
+        $this->resetPage();
+
+        // Check if currently selected house can still accommodate the new guest count
+        if ($this->house_id) {
+            $selectedHouse = House::find($this->house_id);
+            $totalGuests = $this->adults + $this->children;
+            $houseCapacity = ($selectedHouse->adults ?? 0) + ($selectedHouse->children ?? 0);
+
+            if ($totalGuests > $houseCapacity) {
+                $this->house_id = null;
+                $this->warning('House deselected as it cannot accommodate ' . $totalGuests . ' guests.');
+            }
+        }
     }
 
     public function addGuest(): void
@@ -177,6 +192,21 @@ new class extends Component {
             }
         } elseif ($this->children < $currentCount) {
             $this->childrenNames = array_slice($this->childrenNames, 0, $this->children);
+        }
+
+        // Reset house selection and pagination when guest count changes
+        $this->resetPage();
+
+        // Check if currently selected house can still accommodate the new guest count
+        if ($this->house_id) {
+            $selectedHouse = House::find($this->house_id);
+            $totalGuests = $this->adults + $this->children;
+            $houseCapacity = ($selectedHouse->adults ?? 0) + ($selectedHouse->children ?? 0);
+
+            if ($totalGuests > $houseCapacity) {
+                $this->house_id = null;
+                $this->warning('House deselected as it cannot accommodate ' . $totalGuests . ' guests.');
+            }
         }
     }
 
@@ -450,6 +480,10 @@ new class extends Component {
         if ($checkIn && $checkOut && $checkIn->lt($checkOut)) {
             $query = House::active()->available($checkIn, $checkOut);
 
+            // Filter by guest capacity (adults + children)
+            $totalGuests = $this->adults + $this->children;
+            $query->whereRaw('(COALESCE(adults, 0) + COALESCE(children, 0)) >= ?', [$totalGuests]);
+
             // Filter by search term
             if (!empty($this->house_search)) {
                 $search = $this->house_search;
@@ -471,6 +505,11 @@ new class extends Component {
 
         // Set minimum date for check-in (current date/time)
         $view->minCheckInDate = Carbon::now()->format('Y-m-d\TH:i');
+
+        // Pass guest data to view
+        $view->adults = $this->adults;
+        $view->children = $this->children;
+        $view->guests = $this->guests;
 
         // Pass breakdown data to view
         $view->totalNights = $this->totalNights;
@@ -558,13 +597,15 @@ new class extends Component {
                                 {{-- Filter Info --}}
                                 <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-base-content/70">
                                     {{-- Loading Indicator --}}
-                                    <div wire:loading wire:target="check_in,check_out,house_search,perPage"
+                                    <div wire:loading
+                                        wire:target="check_in,check_out,house_search,perPage,adults,children"
                                         class="flex items-center gap-2 text-primary">
                                         <x-loading class="loading-dots" />
                                         <span>Loading houses...</span>
                                     </div>
 
-                                    <div wire:loading.remove wire:target="check_in,check_out,house_search,perPage"
+                                    <div wire:loading.remove
+                                        wire:target="check_in,check_out,house_search,perPage,adults,children"
                                         class="flex items-center gap-2">
                                         <x-icon name="o-funnel" class="w-4 h-4" />
                                         <span>
@@ -576,6 +617,8 @@ new class extends Component {
                                                 of
                                                 {{ $availableHouses->total() }})
                                             @endif
+                                            for {{ $adults + $children }}
+                                            {{ $adults + $children === 1 ? 'guest' : 'guests' }}
                                         </span>
                                     </div>
                                     @if (!empty($house_search))
@@ -588,7 +631,8 @@ new class extends Component {
                                 </div>
 
                                 {{-- Loading Overlay for House Grid --}}
-                                <div wire:loading wire:target="check_in,check_out,house_search,perPage" class="mt-4">
+                                <div wire:loading wire:target="check_in,check_out,house_search,perPage,adults,children"
+                                    class="mt-4">
                                     <div
                                         class="flex items-center justify-center py-12 bg-base-200/50 rounded-xl border-2 border-dashed border-base-300">
                                         <div class="text-center">
@@ -599,7 +643,8 @@ new class extends Component {
                                     </div>
                                 </div>
 
-                                <div wire:loading.remove wire:target="check_in,check_out,house_search,perPage">
+                                <div wire:loading.remove
+                                    wire:target="check_in,check_out,house_search,perPage,adults,children">
                                     @if ($availableHouses->count() > 0)
                                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
                                             @foreach ($availableHouses as $house)
@@ -609,8 +654,7 @@ new class extends Component {
                                                     // Use house's price_per_night instead of summing room prices
                                                     $totalPrice = $house->price_per_night ?? 0;
                                                 @endphp
-                                                <label wire:click="$wire.house_id = {{ $house->id }}"
-                                                    class="relative cursor-pointer group block">
+                                                <label class="relative cursor-pointer group block">
                                                     <input type="radio" wire:model.live="house_id"
                                                         value="{{ $house->id }}" class="sr-only">
                                                     <div

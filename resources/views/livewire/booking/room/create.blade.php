@@ -148,6 +148,21 @@ new class extends Component {
         if ($this->adults < $currentCount) {
             $this->guests = array_slice($this->guests, 0, $this->adults);
         }
+
+        // Reset room selection and pagination when guest count changes
+        $this->resetPage();
+
+        // Check if currently selected room can still accommodate the new guest count
+        if ($this->room_id) {
+            $selectedRoom = Room::find($this->room_id);
+            $totalGuests = $this->adults + $this->children;
+            $roomCapacity = ($selectedRoom->adults ?? 0) + ($selectedRoom->children ?? 0);
+
+            if ($totalGuests > $roomCapacity) {
+                $this->room_id = null;
+                $this->warning('Room deselected as it cannot accommodate ' . $totalGuests . ' guests.');
+            }
+        }
     }
 
     public function addGuest(): void
@@ -168,6 +183,21 @@ new class extends Component {
             }
         } elseif ($this->children < $currentCount) {
             $this->childrenNames = array_slice($this->childrenNames, 0, $this->children);
+        }
+
+        // Reset room selection and pagination when guest count changes
+        $this->resetPage();
+
+        // Check if currently selected room can still accommodate the new guest count
+        if ($this->room_id) {
+            $selectedRoom = Room::find($this->room_id);
+            $totalGuests = $this->adults + $this->children;
+            $roomCapacity = ($selectedRoom->adults ?? 0) + ($selectedRoom->children ?? 0);
+
+            if ($totalGuests > $roomCapacity) {
+                $this->room_id = null;
+                $this->warning('Room deselected as it cannot accommodate ' . $totalGuests . ' guests.');
+            }
         }
     }
 
@@ -440,6 +470,10 @@ new class extends Component {
         if ($checkIn && $checkOut && $checkIn->lt($checkOut)) {
             $query = Room::active()->available($checkIn, $checkOut);
 
+            // Filter by guest capacity (adults + children)
+            $totalGuests = $this->adults + $this->children;
+            $query->whereRaw('(COALESCE(adults, 0) + COALESCE(children, 0)) >= ?', [$totalGuests]);
+
             // Filter by search term
             if (!empty($this->room_search)) {
                 $search = $this->room_search;
@@ -461,6 +495,11 @@ new class extends Component {
 
         // Set minimum date for check-in (current date/time)
         $view->minCheckInDate = Carbon::now()->format('Y-m-d\TH:i');
+
+        // Pass guest data to view
+        $view->adults = $this->adults;
+        $view->children = $this->children;
+        $view->guests = $this->guests;
 
         // Pass breakdown data to view
         $view->totalNights = $this->totalNights;
@@ -514,8 +553,8 @@ new class extends Component {
                         @php
                             $selectedRoom =
                                 $availableRooms->firstWhere('id', $room_id) ?? ($room_id ? Room::find($room_id) : null);
-                            $maxAdults = $selectedRoom?->adults ?? 2;
-                            $maxChildren = $selectedRoom?->children ?? 5;
+                            $maxAdults = $selectedRoom?->adults ?? 10;
+                            $maxChildren = $selectedRoom?->children ?? 10;
                         @endphp
 
                         {{-- Guest Details Section --}}
@@ -544,13 +583,15 @@ new class extends Component {
                                 {{-- Filter Info --}}
                                 <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-base-content/70">
                                     {{-- Loading Indicator --}}
-                                    <div wire:loading wire:target="check_in,check_out,room_search,perPage"
+                                    <div wire:loading
+                                        wire:target="check_in,check_out,room_search,perPage,adults,children"
                                         class="flex items-center gap-2 text-primary">
                                         <x-loading class="loading-dots" />
                                         <span>Loading rooms...</span>
                                     </div>
 
-                                    <div wire:loading.remove wire:target="check_in,check_out,room_search,perPage"
+                                    <div wire:loading.remove
+                                        wire:target="check_in,check_out,room_search,perPage,adults,children"
                                         class="flex items-center gap-2">
                                         <x-icon name="o-funnel" class="w-4 h-4" />
                                         <span>
@@ -561,6 +602,8 @@ new class extends Component {
                                                 {{ $availableRooms->firstItem() }}-{{ $availableRooms->lastItem() }} of
                                                 {{ $availableRooms->total() }})
                                             @endif
+                                            for {{ $adults + $children }}
+                                            {{ $adults + $children === 1 ? 'guest' : 'guests' }}
                                         </span>
                                     </div>
                                     @if (!empty($room_search))
@@ -573,7 +616,8 @@ new class extends Component {
                                 </div>
 
                                 {{-- Loading Overlay for Room Grid --}}
-                                <div wire:loading wire:target="check_in,check_out,room_search,perPage" class="mt-4">
+                                <div wire:loading wire:target="check_in,check_out,room_search,perPage,adults,children"
+                                    class="mt-4">
                                     <div
                                         class="flex items-center justify-center py-12 bg-base-200/50 rounded-xl border-2 border-dashed border-base-300">
                                         <div class="text-center">
@@ -584,15 +628,15 @@ new class extends Component {
                                     </div>
                                 </div>
 
-                                <div wire:loading.remove wire:target="check_in,check_out,room_search,perPage">
+                                <div wire:loading.remove
+                                    wire:target="check_in,check_out,room_search,perPage,adults,children">
                                     @if ($availableRooms->count() > 0)
                                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
                                             @foreach ($availableRooms as $room)
                                                 @php
                                                     $isSelected = $room_id == $room->id;
                                                 @endphp
-                                                <label wire:click="$wire.room_id = {{ $room->id }}"
-                                                    class="relative cursor-pointer group block">
+                                                <label class="relative cursor-pointer group block">
                                                     <input type="radio" wire:model.live="room_id"
                                                         value="{{ $room->id }}" class="sr-only">
                                                     <div

@@ -376,6 +376,10 @@ new class extends Component {
                     });
             });
 
+            // Filter by guest capacity (adults + children)
+            $totalGuests = $this->adults + $this->children;
+            $query->whereRaw('(COALESCE(adults, 0) + COALESCE(children, 0)) >= ?', [$totalGuests]);
+
             // Filter by search term
             if (!empty($this->house_search)) {
                 $search = $this->house_search;
@@ -405,6 +409,10 @@ new class extends Component {
 
         // Set minimum date for check-in (current date/time)
         $view->minCheckInDate = Carbon::now()->format('Y-m-d\TH:i');
+
+        // Pass guest data to view
+        $view->adults = $this->adults;
+        $view->children = $this->children;
     }
 }; ?>
 
@@ -552,8 +560,7 @@ new class extends Component {
                                                     $isSelected = $house_id == $house->id;
                                                     $isCurrentHouse = $house->id == $booking->bookingable_id;
                                                 @endphp
-                                                <label wire:click="$wire.house_id = {{ $house->id }}"
-                                                    class="relative cursor-pointer group block">
+                                                <label class="relative cursor-pointer group block">
                                                     <input type="radio" wire:model.live="house_id"
                                                         value="{{ $house->id }}" class="sr-only">
                                                     <div
