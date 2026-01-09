@@ -32,7 +32,7 @@
                                     <i class="bi bi-person-circle"></i>
                                 @endif
                             </div>
-                            <h5>{{ auth()->user()->name ?? 'Guest User' }}</h5>
+                            <h5>{{ trim((auth()->user()->first_name ?? '') . ' ' . (auth()->user()->last_name ?? '')) ?: (auth()->user()->name ?? 'Guest User') }}</h5>
                             <p class="text-muted">Member since
                                 {{ auth()->user()->created_at ? auth()->user()->created_at->format('M Y') : 'N/A' }}</p>
                         </div>

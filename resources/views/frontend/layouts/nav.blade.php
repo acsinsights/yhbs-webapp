@@ -155,7 +155,7 @@
                                         </path>
                                     </g>
                                 </svg>
-                                {{ auth()->user()->name ?? 'My Account' }}
+                                {{ trim((auth()->user()->first_name ?? '') . ' ' . (auth()->user()->last_name ?? '')) ?: (auth()->user()->name ?? 'My Account') }}
                                 <i class="bi bi-chevron-down ms-1"></i>
                             </span>
                         </a>
@@ -164,7 +164,7 @@
                             style="position: absolute; top: 100%; right: 0; background: white; min-width: 250px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-radius: 10px; margin-top: 10px; padding: 10px 0; display: none; z-index: 1000;">
                             <div style="padding: 15px 20px; border-bottom: 2px solid #f0f0f0;">
                                 <p style="margin: 0; font-weight: 700; color: #1a1a1a;">
-                                    {{ auth()->user()->name ?? 'Guest' }}</p>
+                                    {{ trim((auth()->user()->first_name ?? '') . ' ' . (auth()->user()->last_name ?? '')) ?: (auth()->user()->name ?? 'Guest') }}</p>
                                 <p style="margin: 0; font-size: 13px; color: #6c757d;">{{ auth()->user()->email ?? '' }}
                                 </p>
                             </div>
