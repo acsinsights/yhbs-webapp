@@ -417,9 +417,57 @@ new class extends Component {
                                 : $booking->guest_details;
                         @endphp
 
-                        @if (isset($guestDetails['adults']) &&
+                        @if (isset($guestDetails['guests']) &&
+                                is_array($guestDetails['guests']) &&
+                                count(array_filter($guestDetails['guests'], fn($g) => !empty($g['name'] ?? ''))) > 0)
+                            <div>
+                                <div class="text-sm text-base-content/50 mb-2">Passenger Details</div>
+                                <div class="space-y-3">
+                                    @foreach ($guestDetails['guests'] as $index => $guest)
+                                        @if (!empty($guest['name']))
+                                            <div class="p-3 bg-base-200/50 rounded-lg border border-base-300">
+                                                <div class="flex items-start gap-3">
+                                                    <div class="mt-1">
+                                                        <x-icon name="o-user-circle" class="w-5 h-5 text-primary" />
+                                                    </div>
+                                                    <div class="flex-1 space-y-1">
+                                                        <div class="flex items-center gap-2">
+                                                            <span
+                                                                class="text-sm font-semibold">{{ $guest['name'] }}</span>
+                                                            <x-badge value="Passenger {{ $index + 1 }}"
+                                                                class="badge-xs badge-primary" />
+                                                        </div>
+                                                        @if (!empty($guest['email']))
+                                                            <div
+                                                                class="flex items-center gap-2 text-xs text-base-content/70">
+                                                                <x-icon name="o-envelope" class="w-3.5 h-3.5" />
+                                                                <a href="mailto:{{ $guest['email'] }}"
+                                                                    class="hover:text-primary hover:underline">
+                                                                    {{ $guest['email'] }}
+                                                                </a>
+                                                            </div>
+                                                        @endif
+                                                        @if (!empty($guest['phone']))
+                                                            <div
+                                                                class="flex items-center gap-2 text-xs text-base-content/70">
+                                                                <x-icon name="o-phone" class="w-3.5 h-3.5" />
+                                                                <a href="tel:{{ $guest['phone'] }}"
+                                                                    class="hover:text-primary hover:underline">
+                                                                    {{ $guest['phone'] }}
+                                                                </a>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            </div>
+                        @elseif (isset($guestDetails['adults']) &&
                                 is_array($guestDetails['adults']) &&
                                 count(array_filter($guestDetails['adults'])) > 0)
+                            {{-- Fallback for old format with just names --}}
                             <div>
                                 <div class="text-sm text-base-content/50 mb-2">Passenger Names</div>
                                 <div class="space-y-2">
