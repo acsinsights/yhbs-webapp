@@ -4,6 +4,7 @@
     'maxChildren',
     'adults' => 1,
     'children' => 0,
+    'guests' => [],
 ])
 
 <x-card class="bg-base-200">
@@ -23,13 +24,22 @@
     {{-- Guest Names --}}
     @if ($adults > 0)
         <div class="mt-6">
-            <h4 class="text-sm font-semibold text-base-content mb-3 flex items-center gap-2">
-                <x-icon name="o-user" class="w-4 h-4" />
-                Guest Details
-            </h4>
-            <p class="text-xs text-base-content/60 mb-3">First guest name is required. Email and phone are optional</p>
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <x-icon name="o-user" class="w-4 h-4" />
+                    <h4 class="text-sm font-semibold text-base-content">Guest Details</h4>
+                </div>
+                @if (count($guests) < $adults)
+                    <button type="button" wire:click="addGuest" class="btn btn-sm btn-primary">
+                        <x-icon name="o-plus" class="w-4 h-4" />
+                        Add Guest ({{ count($guests) }}/{{ $adults }})
+                    </button>
+                @endif
+            </div>
+            <p class="text-xs text-base-content/60 mb-3">You can add up to {{ $adults }} guest(s). First guest
+                details are required.</p>
             <div class="space-y-4">
-                @for ($i = 0; $i < $adults; $i++)
+                @foreach ($guests as $i => $guest)
                     <div wire:key="guest-{{ $i }}" class="p-4 border border-base-300 rounded-lg bg-base-100">
                         <div class="flex items-center justify-between mb-3">
                             <h5 class="font-semibold text-sm">Guest {{ $i + 1 }}{{ $i === 0 ? ' *' : '' }}</h5>
@@ -44,8 +54,16 @@
                                 type="tel" placeholder="Enter guest phone" icon="o-phone" />
                         </div>
                     </div>
-                @endfor
+                @endforeach
             </div>
+            @if (count($guests) < $adults)
+                <div class="mt-4">
+                    <button type="button" wire:click="addGuest" class="btn btn-sm btn-primary w-full">
+                        <x-icon name="o-plus" class="w-4 h-4" />
+                        Add Guest ({{ count($guests) }}/{{ $adults }})
+                    </button>
+                </div>
+            @endif
         </div>
     @endif
 </x-card>

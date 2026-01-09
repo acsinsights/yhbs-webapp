@@ -142,14 +142,19 @@ new class extends Component {
 
     public function updatedAdults(): void
     {
-        // Initialize guests array
+        // Only trim guests array if new adults count is less than current guest count
+        // Don't auto-add guests - user must click Add Guest button
         $currentCount = count($this->guests);
-        if ($this->adults > $currentCount) {
-            for ($i = $currentCount; $i < $this->adults; $i++) {
-                $this->guests[$i] = ['name' => '', 'email' => '', 'phone' => ''];
-            }
-        } elseif ($this->adults < $currentCount) {
+        if ($this->adults < $currentCount) {
             $this->guests = array_slice($this->guests, 0, $this->adults);
+        }
+    }
+
+    public function addGuest(): void
+    {
+        $currentCount = count($this->guests);
+        if ($currentCount < $this->adults) {
+            $this->guests[] = ['name' => '', 'email' => '', 'phone' => ''];
         }
     }
 
@@ -515,9 +520,7 @@ new class extends Component {
 
                         {{-- Guest Details Section --}}
                         <x-booking.guest-section stepNumber="3" :maxAdults="$maxAdults" :maxChildren="$maxChildren" :adults="$adults"
-                            :children="$children" />
-
-                        {{-- Room Selection Section --}}
+                            :children="$children" :guests="$guests" />
                         <div class="rounded-2xl border border-base-300/80 bg-base-100 p-6 shadow-sm">
                             <div class="flex items-start justify-between gap-3">
                                 <div>

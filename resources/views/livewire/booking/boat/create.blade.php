@@ -91,14 +91,19 @@ new class extends Component {
 
     public function updatedAdults(): void
     {
-        // Initialize guests array
+        // Only trim guests array if new adults count is less than current guest count
+        // Don't auto-add guests - user must click Add Guest button
         $currentCount = count($this->guests);
-        if ($this->adults > $currentCount) {
-            for ($i = $currentCount; $i < $this->adults; $i++) {
-                $this->guests[$i] = ['name' => '', 'email' => '', 'phone' => ''];
-            }
-        } elseif ($this->adults < $currentCount) {
+        if ($this->adults < $currentCount) {
             $this->guests = array_slice($this->guests, 0, $this->adults);
+        }
+    }
+
+    public function addGuest(): void
+    {
+        $currentCount = count($this->guests);
+        if ($currentCount < $this->adults) {
+            $this->guests[] = ['name' => '', 'email' => '', 'phone' => ''];
         }
     }
 
@@ -580,7 +585,8 @@ new class extends Component {
             'breadcrumbs' => [['label' => 'Dashboard', 'url' => route('admin.index')], ['label' => 'Boat Bookings', 'url' => route('admin.bookings.boat.index')], ['label' => 'Create Booking']],
         ];
     }
-}; ?>
+};
+?>
 
 <div>
     @php
@@ -1198,7 +1204,7 @@ new class extends Component {
                                 }
                             @endphp
                             <x-booking.guest-section :stepNumber="$guestStepNumber" :maxAdults="$maxAdults" :maxChildren="$maxChildren"
-                                :adults="$adults" :children="$children" />
+                                :adults="$adults" :children="$children" :guests="$guests" />
 
                             {{-- Payment Details Section --}}
                             <x-card class="bg-base-200">
@@ -1247,71 +1253,68 @@ new class extends Component {
                             </x-card>
                         @endif
                     </div>
+                    <x-card class="bg-gradient-to-br from-primary/5 to-primary/10">
+                        <h3 class="text-lg font-bold text-base-content mb-4">Booking Summary</h3>
 
-                    {{-- Summary Column --}}
-                    <div class="sticky top-24">
-                        <x-card class="bg-gradient-to-br from-primary/5 to-primary/10">
-                            <h3 class="text-lg font-bold text-base-content mb-4">Booking Summary</h3>
+                        @if ($amount > 0)
+                            <div class="bg-success/10 rounded-lg p-4 mb-4">
+                                <div class="text-sm text-base-content/60 mb-1">Total Amount</div>
+                                <div class="text-3xl font-bold text-success">KD {{ number_format($amount, 2) }}
+                                </div>
+                            </div>
+                        @endif
 
-                            @if ($amount > 0)
-                                <div class="bg-success/10 rounded-lg p-4 mb-4">
-                                    <div class="text-sm text-base-content/60 mb-1">Total Amount</div>
-                                    <div class="text-3xl font-bold text-success">KD {{ number_format($amount, 2) }}
-                                    </div>
+                        <div class="space-y-3 text-sm">
+                            @if ($selectedBoat)
+                                <div class="flex items-center gap-2 text-base-content/70">
+                                    <x-icon name="o-archive-box" class="w-4 h-4" />
+                                    <span>{{ $selectedBoat->name }}</span>
                                 </div>
                             @endif
 
-                            <div class="space-y-3 text-sm">
-                                @if ($selectedBoat)
-                                    <div class="flex items-center gap-2 text-base-content/70">
-                                        <x-icon name="o-archive-box" class="w-4 h-4" />
-                                        <span>{{ $selectedBoat->name }}</span>
-                                    </div>
-                                @endif
+                            @if ($check_in)
+                                <div class="flex items-center gap-2 text-base-content/70">
+                                    <x-icon name="o-calendar" class="w-4 h-4" />
+                                    <span>{{ \Carbon\Carbon::parse($check_in)->format('M d, Y') }}</span>
+                                </div>
+                            @endif
 
-                                @if ($check_in)
-                                    <div class="flex items-center gap-2 text-base-content/70">
-                                        <x-icon name="o-calendar" class="w-4 h-4" />
-                                        <span>{{ \Carbon\Carbon::parse($check_in)->format('M d, Y') }}</span>
-                                    </div>
-                                @endif
+                            @if ($adults > 0)
+                                <div class="flex items-center gap-2 text-base-content/70">
+                                    <x-icon name="o-user-group" class="w-4 h-4" />
+                                    <span>{{ $adults }}
+                                        Adults{{ $children > 0 ? ', ' . $children . ' Children' : '' }}</span>
+                                </div>
+                            @endif
 
-                                @if ($adults > 0)
-                                    <div class="flex items-center gap-2 text-base-content/70">
-                                        <x-icon name="o-user-group" class="w-4 h-4" />
-                                        <span>{{ $adults }}
-                                            Adults{{ $children > 0 ? ', ' . $children . ' Children' : '' }}</span>
-                                    </div>
-                                @endif
+                            @if ($selected_time_slot)
+                                <div class="flex items-center gap-2 text-base-content/70">
+                                    <x-icon name="o-clock" class="w-4 h-4" />
+                                    <span>{{ $selected_time_slot }}</span>
+                                </div>
+                            @endif
+                        </div>
+                            <x-card class="mt-4">
+                        <div class="space-y-2">
+                            <x-button label="Create Booking" type="submit" icon="o-check-circle"
+                                class="btn-primary w-full btn-lg" spinner="save" />
+                            <x-button label="Cancel" link="{{ route('admin.bookings.boat.index') }}" icon="o-x-mark"
+                                class="btn-ghost w-full" />
+                        </div>
+                    </x-card>
 
-                                @if ($selected_time_slot)
-                                    <div class="flex items-center gap-2 text-base-content/70">
-                                        <x-icon name="o-clock" class="w-4 h-4" />
-                                        <span>{{ $selected_time_slot }}</span>
-                                    </div>
-                                @endif
-                            </div>
-                        </x-card>
+                    <x-card class="mt-4">
+                        <h4 class="text-sm font-semibold text-base-content mb-3">Information</h4>
+                        <div class="text-xs space-y-2 text-base-content/70">
+                            <p>• All fields marked with * are required</p>
+                            <p>• Booking will be created with confirmed status</p>
+                            <p>• Customer will receive confirmation email</p>
+                            <p>• You can modify booking details later</p>
+                        </div>
+                    </x-card>
+                    </x-card>
 
-                        <x-card class="mt-4">
-                            <div class="space-y-2">
-                                <x-button label="Create Booking" type="submit" icon="o-check-circle"
-                                    class="btn-primary w-full btn-lg" spinner="save" />
-                                <x-button label="Cancel" link="{{ route('admin.bookings.boat.index') }}"
-                                    icon="o-x-mark" class="btn-ghost w-full" />
-                            </div>
-                        </x-card>
 
-                        <x-card class="mt-4">
-                            <h4 class="text-sm font-semibold text-base-content mb-3">Information</h4>
-                            <div class="text-xs space-y-2 text-base-content/70">
-                                <p>• All fields marked with * are required</p>
-                                <p>• Booking will be created with confirmed status</p>
-                                <p>• Customer will receive confirmation email</p>
-                                <p>• You can modify booking details later</p>
-                            </div>
-                        </x-card>
-                    </div>
                 </div>
             </div>
         </x-form>
