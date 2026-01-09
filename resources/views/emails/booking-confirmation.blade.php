@@ -197,6 +197,39 @@
                     </span>
                     <span class="info-value">{{ \Carbon\Carbon::parse($booking->check_in)->format('d M Y') }}</span>
                 </div>
+                @if ($propertyType === 'Boat' && $booking->start_time)
+                    <div class="info-row">
+                        <span class="info-label">Time Slot:</span>
+                        <span class="info-value">
+                            @php
+                                $startTime = $booking->start_time;
+                                $duration = 0;
+
+                                if ($booking->service_type === 'hourly' && isset($booking->duration)) {
+                                    $duration = (float) $booking->duration;
+                                } elseif (
+                                    $booking->service_type === 'experience' &&
+                                    isset($booking->experience_duration)
+                                ) {
+                                    $duration =
+                                        $booking->experience_duration === 'full'
+                                            ? 1
+                                            : (float) $booking->experience_duration / 60;
+                                } else {
+                                    $duration = 1;
+                                }
+
+                                try {
+                                    $start = \Carbon\Carbon::createFromFormat('H:i', $startTime);
+                                    $end = $start->copy()->addHours($duration);
+                                    echo $start->format('h:i A') . ' - ' . $end->format('h:i A');
+                                } catch (\Exception $e) {
+                                    echo $startTime;
+                                }
+                            @endphp
+                        </span>
+                    </div>
+                @endif
                 @if ($propertyType !== 'Boat')
                     <div class="info-row">
                         <span class="info-label">Check-out:</span>

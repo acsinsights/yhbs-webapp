@@ -25,15 +25,24 @@
         <div class="mt-6">
             <h4 class="text-sm font-semibold text-base-content mb-3 flex items-center gap-2">
                 <x-icon name="o-user" class="w-4 h-4" />
-                Guest Names
+                Guest Details
             </h4>
-            <p class="text-xs text-base-content/60 mb-3">Only first guest name is required, rest are optional</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <p class="text-xs text-base-content/60 mb-3">First guest name is required. Email and phone are optional</p>
+            <div class="space-y-4">
                 @for ($i = 0; $i < $adults; $i++)
-                    <div wire:key="adult-{{ $i }}">
-                        <x-input wire:model="adultNames.{{ $i }}"
-                            label="Guest {{ $i + 1 }} Name{{ $i === 0 ? ' *' : '' }}"
-                            placeholder="Enter full name" icon="o-user" />
+                    <div wire:key="guest-{{ $i }}" class="p-4 border border-base-300 rounded-lg bg-base-100">
+                        <div class="flex items-center justify-between mb-3">
+                            <h5 class="font-semibold text-sm">Guest {{ $i + 1 }}{{ $i === 0 ? ' *' : '' }}</h5>
+                        </div>
+                        <div class="grid grid-cols-1 gap-3">
+                            <x-input wire:model="guests.{{ $i }}.name"
+                                label="Full Name{{ $i === 0 ? ' *' : '' }}" placeholder="Enter guest full name"
+                                icon="o-user" />
+                            <x-input wire:model="guests.{{ $i }}.email" label="Email (Optional)"
+                                type="email" placeholder="Enter guest email" icon="o-envelope" />
+                            <x-input wire:model="guests.{{ $i }}.phone" label="Phone Number (Optional)"
+                                type="tel" placeholder="Enter guest phone" icon="o-phone" />
+                        </div>
                     </div>
                 @endfor
             </div>

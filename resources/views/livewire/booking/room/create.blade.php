@@ -25,7 +25,7 @@ new class extends Component {
     public ?string $date_range = null;
     public int $adults = 1;
     public int $children = 0;
-    public array $adultNames = [];
+    public array $guests = [['name' => '', 'email' => '', 'phone' => '']];
     public array $childrenNames = [];
     public ?float $amount = null;
     public bool $amountManuallySet = false;
@@ -142,14 +142,14 @@ new class extends Component {
 
     public function updatedAdults(): void
     {
-        // Initialize adult names array
-        $currentCount = count($this->adultNames);
+        // Initialize guests array
+        $currentCount = count($this->guests);
         if ($this->adults > $currentCount) {
             for ($i = $currentCount; $i < $this->adults; $i++) {
-                $this->adultNames[$i] = '';
+                $this->guests[$i] = ['name' => '', 'email' => '', 'phone' => ''];
             }
         } elseif ($this->adults < $currentCount) {
-            $this->adultNames = array_slice($this->adultNames, 0, $this->adults);
+            $this->guests = array_slice($this->guests, 0, $this->adults);
         }
     }
 
@@ -323,7 +323,9 @@ new class extends Component {
                 'check_out' => 'required|date|after:check_in',
                 'adults' => 'required|integer|min:1',
                 'children' => 'required|integer|min:0',
-                'adultNames.0' => 'required|string|max:255',
+                'guests.0.name' => 'required|string|max:255',
+                'guests.0.email' => 'required|email|max:255',
+                'guests.0.phone' => 'required|string|max:20',
                 'amount' => 'required|numeric|min:0|max:999999999.99',
                 'payment_method' => 'required|in:cash,card',
                 'payment_status' => 'required|in:paid,pending',
@@ -331,7 +333,10 @@ new class extends Component {
             [
                 'amount.max' => 'Amount cannot exceed ' . currency_format(999999999.99) . '.',
                 'amount.min' => 'Amount must be greater than or equal to 0.',
-                'adultNames.0.required' => 'At least first guest name is required.',
+                'guests.0.name.required' => 'First guest name is required.',
+                'guests.0.email.required' => 'First guest email is required.',
+                'guests.0.email.email' => 'First guest email must be valid.',
+                'guests.0.phone.required' => 'First guest phone is required.',
             ],
         );
 
@@ -348,8 +353,13 @@ new class extends Component {
 
         $room = Room::findOrFail($this->room_id);
 
+        // Filter out empty guest entries
+        $validGuests = array_filter($this->guests, function ($guest) {
+            return !empty($guest['name']);
+        });
+
         $guestDetails = [
-            'adults' => array_values(array_filter($this->adultNames)),
+            'adults' => array_values($validGuests),
             'children' => array_values(array_filter($this->childrenNames)),
         ];
 
@@ -376,7 +386,45 @@ new class extends Component {
             $admin->notify(new NewBookingNotification($booking));
         }
 
-        $this->success('Booking created successfully.', redirectTo: route('admin.bookings.house.show', $booking->id));
+        // Send confirmation email to guest 1 (TO) and customer + additional guests (CC)
+        try {
+            $customer = User::find($this->user_id);
+
+            // Guest 1 email (primary recipient)
+            $guest1Email = $this->guests[0]['email'] ?? null;
+            $guest1Name = $this->guests[0]['name'] ?? 'Guest';
+
+            if ($guest1Email && $room) {
+                // Build CC list: customer + additional guests
+                $ccEmails = [];
+
+                // Add customer email if different from guest 1
+                if ($customer && $customer->email && $customer->email !== $guest1Email) {
+                    $ccEmails[] = $customer->email;
+                }
+
+                // Add additional guests (from index 1 onwards)
+                for ($i = 1; $i < count($this->guests); $i++) {
+                    if (!empty($this->guests[$i]['email']) && $this->guests[$i]['email'] !== $guest1Email) {
+                        $ccEmails[] = $this->guests[$i]['email'];
+                    }
+                }
+
+                // Remove duplicates
+                $ccEmails = array_unique($ccEmails);
+
+                // Send email
+                $mail = \Mail::to($guest1Email);
+                if (!empty($ccEmails)) {
+                    $mail->cc($ccEmails);
+                }
+                $mail->send(new \App\Mail\BookingConfirmationMail($booking, $room->name, 'Room', $guest1Name, 'guest'));
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to send booking confirmation email: ' . $e->getMessage());
+        }
+
+        $this->success('Booking created successfully.', redirectTo: route('admin.bookings.room.show', $booking->id));
     }
 
     public function rendering(View $view)
