@@ -59,7 +59,7 @@
               <div class="row gy-md-4 gy-5">
                   <div class="col-lg-3 col-md-4 col-sm-6">
                       <div class="footer-logo-and-addition-info">
-                          <a href="index.html" class="footer-logo">
+                          <a href="{{ route('home') }}" class="footer-logo">
                               <img src="{{ asset('frontend/img/footer-logo.svg') }}" alt="">
                           </a>
                           <div class="address-area">

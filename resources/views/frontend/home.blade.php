@@ -1341,77 +1341,77 @@
                     <div class="swiper-wrapper">
                         <div class="swiper-slide">
                             <div class="destination-card2">
-                                <a href="destination-details.html" class="destination-img">
+                                <a href="javascript:void(0);" class="destination-img">
                                     <img src="{{ asset('frontend/img/home2/destination-img1.jpg') }}" alt="">
                                 </a>
                                 <div class="destination-content">
-                                    <h5><a href="destination-details.html">Failaka Island, Kuwait</a></h5>
+                                    <h5><a href="javascript:void(0);">Failaka Island, Kuwait</a></h5>
                                     <span>Tours (10)</span>
                                 </div>
                             </div>
                         </div>
                         <div class="swiper-slide">
                             <div class="destination-card2">
-                                <a href="destination-details.html" class="destination-img">
+                                <a href="javascript:void(0);" class="destination-img">
                                     <img src="{{ asset('frontend/img/home2/destination-img2.jpg') }}" alt="">
                                 </a>
                                 <div class="destination-content">
-                                    <h5><a href="destination-details.html">Kubbar Island</a></h5>
+                                    <h5><a href="javascript:void(0);">Kubbar Island</a></h5>
                                     <span>Tours (06)</span>
                                 </div>
                             </div>
                         </div>
                         <div class="swiper-slide">
                             <div class="destination-card2">
-                                <a href="destination-details.html" class="destination-img">
+                                <a href="javascript:void(0);" class="destination-img">
                                     <img src="{{ asset('frontend/img/home2/destination-img3.jpg') }}" alt="">
                                 </a>
                                 <div class="destination-content">
-                                    <h5><a href="destination-details.html">Marina Waves – Sea Promenade</a></h5>
+                                    <h5><a href="javascript:void(0);">Marina Waves – Sea Promenade</a></h5>
                                     <span>Tours (08)</span>
                                 </div>
                             </div>
                         </div>
                         <div class="swiper-slide">
                             <div class="destination-card2">
-                                <a href="destination-details.html" class="destination-img">
+                                <a href="javascript:void(0);" class="destination-img">
                                     <img src="{{ asset('frontend/img/home2/destination-img4.jpg') }}" alt="">
                                 </a>
                                 <div class="destination-content">
-                                    <h5><a href="destination-details.html">Garouh Island</a></h5>
+                                    <h5><a href="javascript:void(0);">Garouh Island</a></h5>
                                     <span>Tours (05)</span>
                                 </div>
                             </div>
                         </div>
                         <div class="swiper-slide">
                             <div class="destination-card2">
-                                <a href="destination-details.html" class="destination-img">
+                                <a href="javascript:void(0);" class="destination-img">
                                     <img src="{{ asset('frontend/img/home2/destination-img5.jpg') }}" alt="">
                                 </a>
                                 <div class="destination-content">
-                                    <h5><a href="destination-details.html">Al Kout Marina</a></h5>
+                                    <h5><a href="javascript:void(0);">Al Kout Marina</a></h5>
                                     <span>Tours (15)</span>
                                 </div>
                             </div>
                         </div>
                         <div class="swiper-slide">
                             <div class="destination-card2">
-                                <a href="destination-details.html" class="destination-img">
+                                <a href="javascript:void(0);" class="destination-img">
                                     <img src="{{ asset('frontend/img/home2/destination-img6.jpg') }}" alt="">
                                 </a>
                                 <div class="destination-content">
-                                    <h5><a href="destination-details.html">Souq Sharq Marina</a></h5>
+                                    <h5><a href="javascript:void(0);">Souq Sharq Marina</a></h5>
                                     <span>Tours (09)</span>
                                 </div>
                             </div>
                         </div>
                         <div class="swiper-slide">
                             <div class="destination-card2">
-                                <a href="destination-details.html" class="destination-img">
+                                <a href="javascript:void(0);" class="destination-img">
                                     <img src="{{ asset('frontend/img/home2/destination-img7.jpg') }}" alt="">
                                 </a>
                                 <div class="destination-content">
-                                    <h5><a href="destination-details.html">Doha Port Waterfront</a></h5>
+                                    <h5><a href="javascript:void(0);">Doha Port Waterfront</a></h5>
                                     <span>Tours (04)</span>
                                 </div>
                             </div>
@@ -1595,8 +1595,9 @@
                 <img src="{{ asset('frontend/img/home2/icon/trustpilot-star.svg') }}" alt="">
                 <div class="text-and-logo">
                     <p>5.0 Rating out of 5.0 based on <span>24K+ reviews</span></p>
-                    <a href="http://trustpilot.com/"><img
-                            src="{{ asset('frontend/img/home2/icon/trustpilot-logo.svg') }}" alt=""></a>
+                    <a href="javascript:void(0);">
+                        <img src="{{ asset('frontend/img/home2/icon/trustpilot-logo.svg') }}" alt="">
+                    </a>
                 </div>
             </div>
         </div>
@@ -2143,11 +2144,10 @@
                     data-wow-duration="1500ms">
                     <span>Limited Offer</span>
                     <h2>Flash 50% off all tour packages</h2>
-                    <a href="travel-package-01.html" class="primary-btn1 two black-bg">
+                    <a href="javascript:void(0);" class="primary-btn1 two black-bg">
                         <span>
                             Grab the Deal Now
-                            <svg width="10" height="10" viewbox="0 0 10 10"
-                                xmlns="http://www.w3.org/2000/svg">
+                            <svg width="10" height="10" viewbox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
                                 <path
                                     d="M9.73535 1.14746C9.57033 1.97255 9.32924 3.26406 9.24902 4.66797C9.16817 6.08312 9.25559 7.5453 9.70214 8.73633C9.84754 9.12406 9.65129 9.55659 9.26367 9.70215C8.9001 9.83849 8.4969 9.67455 8.32812 9.33398L8.29785 9.26367L8.19921 8.98438C7.73487 7.5758 7.67054 5.98959 7.75097 4.58203C7.77875 4.09598 7.82525 3.62422 7.87988 3.17969L1.53027 9.53027C1.23738 9.82317 0.762615 9.82317 0.469722 9.53027C0.176829 9.23738 0.176829 8.76262 0.469722 8.46973L6.83593 2.10254C6.3319 2.16472 5.79596 2.21841 5.25 2.24902C3.8302 2.32862 2.2474 2.26906 0.958003 1.79102L0.704097 1.68945L0.635738 1.65527C0.303274 1.47099 0.157578 1.06102 0.310542 0.704102C0.463655 0.347333 0.860941 0.170391 1.22363 0.28418L1.29589 0.310547L1.48828 0.387695C2.47399 0.751207 3.79966 0.827571 5.16601 0.750977C6.60111 0.670504 7.97842 0.428235 8.86132 0.262695L9.95312 0.0585938L9.73535 1.14746Z">
                                 </path>
@@ -2155,8 +2155,7 @@
                         </span>
                         <span>
                             Grab the Deal Now
-                            <svg width="10" height="10" viewbox="0 0 10 10"
-                                xmlns="http://www.w3.org/2000/svg">
+                            <svg width="10" height="10" viewbox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
                                 <path
                                     d="M9.73535 1.14746C9.57033 1.97255 9.32924 3.26406 9.24902 4.66797C9.16817 6.08312 9.25559 7.5453 9.70214 8.73633C9.84754 9.12406 9.65129 9.55659 9.26367 9.70215C8.9001 9.83849 8.4969 9.67455 8.32812 9.33398L8.29785 9.26367L8.19921 8.98438C7.73487 7.5758 7.67054 5.98959 7.75097 4.58203C7.77875 4.09598 7.82525 3.62422 7.87988 3.17969L1.53027 9.53027C1.23738 9.82317 0.762615 9.82317 0.469722 9.53027C0.176829 9.23738 0.176829 8.76262 0.469722 8.46973L6.83593 2.10254C6.3319 2.16472 5.79596 2.21841 5.25 2.24902C3.8302 2.32862 2.2474 2.26906 0.958003 1.79102L0.704097 1.68945L0.635738 1.65527C0.303274 1.47099 0.157578 1.06102 0.310542 0.704102C0.463655 0.347333 0.860941 0.170391 1.22363 0.28418L1.29589 0.310547L1.48828 0.387695C2.47399 0.751207 3.79966 0.827571 5.16601 0.750977C6.60111 0.670504 7.97842 0.428235 8.86132 0.262695L9.95312 0.0585938L9.73535 1.14746Z">
                                 </path>
@@ -2173,8 +2172,7 @@
                     class="vector2">
             </div>
         </div>
-        <img src="{{ asset('frontend/img/home2/vector/home2-offer-banner-vector.svg') }}" alt=""
-            class="vector">
+        <img src="{{ asset('frontend/img/home2/vector/home2-offer-banner-vector.svg') }}" alt="" class="vector">
     </div>
 
     <!-- home2 offer package Section Start-->
@@ -2609,7 +2607,7 @@
     <!-- home2 offer package Section End-->
 
     <!-- home2 award banner Section Start-->
-    <div class="home2-award-banner-section mb-100"
+    {{-- <div class="home2-award-banner-section mb-100"
         style="background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.25) 100%), url({{ asset('frontend/img/home2/home2-award-banner-bg.jpg') }});">
         <div class="container">
             <div class="banner-content">
@@ -2653,7 +2651,7 @@
                 <span class="vector two"></span>
             </div>
         </div>
-    </div>
+    </div> --}}
     <!-- home2 award banner Section End-->
 
     <!-- home2 partner area Section Start-->
@@ -2740,11 +2738,10 @@
             </div>
             <div class="row wow animate fadeInUp" data-wow-delay="200ms" data-wow-duration="1500ms">
                 <div class="col-lg-12 d-flex justify-content-center">
-                    <a href="travel-inspiration-01.html" class="primary-btn1 transparent">
+                    <a href="{{ route('blogs.index') }}" class="primary-btn1 transparent">
                         <span>
                             View All Inspiration
-                            <svg width="10" height="10" viewbox="0 0 10 10"
-                                xmlns="http://www.w3.org/2000/svg">
+                            <svg width="10" height="10" viewbox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
                                 <path
                                     d="M9.73535 1.14746C9.57033 1.97255 9.32924 3.26406 9.24902 4.66797C9.16817 6.08312 9.25559 7.5453 9.70214 8.73633C9.84754 9.12406 9.65129 9.55659 9.26367 9.70215C8.9001 9.83849 8.4969 9.67455 8.32812 9.33398L8.29785 9.26367L8.19921 8.98438C7.73487 7.5758 7.67054 5.98959 7.75097 4.58203C7.77875 4.09598 7.82525 3.62422 7.87988 3.17969L1.53027 9.53027C1.23738 9.82317 0.762615 9.82317 0.469722 9.53027C0.176829 9.23738 0.176829 8.76262 0.469722 8.46973L6.83593 2.10254C6.3319 2.16472 5.79596 2.21841 5.25 2.24902C3.8302 2.32862 2.2474 2.26906 0.958003 1.79102L0.704097 1.68945L0.635738 1.65527C0.303274 1.47099 0.157578 1.06102 0.310542 0.704102C0.463655 0.347333 0.860941 0.170391 1.22363 0.28418L1.29589 0.310547L1.48828 0.387695C2.47399 0.751207 3.79966 0.827571 5.16601 0.750977C6.60111 0.670504 7.97842 0.428235 8.86132 0.262695L9.95312 0.0585938L9.73535 1.14746Z">
                                 </path>
@@ -2752,8 +2749,7 @@
                         </span>
                         <span>
                             View All Inspiration
-                            <svg width="10" height="10" viewbox="0 0 10 10"
-                                xmlns="http://www.w3.org/2000/svg">
+                            <svg width="10" height="10" viewbox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
                                 <path
                                     d="M9.73535 1.14746C9.57033 1.97255 9.32924 3.26406 9.24902 4.66797C9.16817 6.08312 9.25559 7.5453 9.70214 8.73633C9.84754 9.12406 9.65129 9.55659 9.26367 9.70215C8.9001 9.83849 8.4969 9.67455 8.32812 9.33398L8.29785 9.26367L8.19921 8.98438C7.73487 7.5758 7.67054 5.98959 7.75097 4.58203C7.77875 4.09598 7.82525 3.62422 7.87988 3.17969L1.53027 9.53027C1.23738 9.82317 0.762615 9.82317 0.469722 9.53027C0.176829 9.23738 0.176829 8.76262 0.469722 8.46973L6.83593 2.10254C6.3319 2.16472 5.79596 2.21841 5.25 2.24902C3.8302 2.32862 2.2474 2.26906 0.958003 1.79102L0.704097 1.68945L0.635738 1.65527C0.303274 1.47099 0.157578 1.06102 0.310542 0.704102C0.463655 0.347333 0.860941 0.170391 1.22363 0.28418L1.29589 0.310547L1.48828 0.387695C2.47399 0.751207 3.79966 0.827571 5.16601 0.750977C6.60111 0.670504 7.97842 0.428235 8.86132 0.262695L9.95312 0.0585938L9.73535 1.14746Z">
                                 </path>
@@ -2935,7 +2931,7 @@
                         <h2>IKARUS Marine Gallery</h2>
                         <p>From yacht cruises to island escapes, explore real moments from our marine trips that showcase
                             the true spirit of IKARUS.</p>
-                        <a href="travel-package-02.html" class="primary-btn1 two black-bg">
+                        <a href="javascript:void(0);" class="primary-btn1 two black-bg">
                             <span>
                                 Book Your Trip
                                 <svg width="10" height="10" viewbox="0 0 10 10"

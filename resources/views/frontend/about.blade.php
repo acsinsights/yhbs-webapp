@@ -13,7 +13,7 @@
             <div class="banner-content">
                 <h1>About Us</h1>
                 <ul class="breadcrumb-list">
-                    <li><a href="index.html">Home</a></li>
+                    <li><a href="{{ route('home') }}">Home</a></li>
                     <li>About Us</li>
                 </ul>
             </div>
@@ -146,7 +146,7 @@
                     data-wow-duration="1500ms">
                     <div class="batch">
                         <span>Flat 30% Discounts All Packages</span>
-                        <a href="travel-package-01.html">Check Offer
+                        <a href="javascript:void(0);">Check Offer
                             <svg width="10" height="10" viewbox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M1 9L9 1M9 1C7.22222 1.33333 3.33333 2 1 1M9 1C8.66667 2.66667 8 6.33333 9 9"
                                     stroke-width="1.5" stroke-linecap="round"></path>

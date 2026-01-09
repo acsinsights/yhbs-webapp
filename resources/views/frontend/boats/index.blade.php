@@ -4,7 +4,7 @@
 
     <!-- Breadcrumb section Start-->
     <div class="breadcrumb-section three"
-        style="background-image:linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url({{ asset('frontend/img/Boats/yacht-sailing.jpg') }});">
+        style="background-image:linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url({{ asset('frontend/img/boats/breadcrumb-img.jpg') }});">
         <div class="container">
             <div class="banner-content">
                 <h1>Boats & Marine Services</h1>
