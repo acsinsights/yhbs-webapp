@@ -76,6 +76,17 @@
                 {{-- Dashboard --}}
                 <x-menu-item title="Dashboard" icon="o-presentation-chart-bar" link="{{ route('admin.index') }}" />
 
+                @php
+                    $unreadNotifications = auth()->user()->unreadNotifications->count();
+                @endphp
+                <x-menu-item title="Booking Notifications" icon="o-bell" link="{{ route('admin.notifications') }}">
+                    @if ($unreadNotifications > 0)
+                        <x-slot:actions>
+                            <x-badge value="{{ $unreadNotifications }}" class="badge-error" />
+                        </x-slot:actions>
+                    @endif
+                </x-menu-item>
+
                 @role('reception|admin|superadmin')
                     {{-- Bookings Section --}}
                     <x-menu-separator title="Bookings" />
