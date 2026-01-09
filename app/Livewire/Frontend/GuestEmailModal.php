@@ -32,10 +32,10 @@ class GuestEmailModal extends Component
 
         if ($user) {
             // User exists - redirect to login with return URL
-            $redirectUrl = route('customer.login', ['return_url' => $returnUrl, 'email' => $this->email]);
+            $redirectUrl = route('customer.login', ['return_url' => urlencode($returnUrl), 'email' => $this->email]);
         } else {
             // User doesn't exist - redirect to register with return URL
-            $redirectUrl = route('customer.register', ['return_url' => $returnUrl, 'email' => $this->email]);
+            $redirectUrl = route('customer.register', ['return_url' => urlencode($returnUrl), 'email' => $this->email]);
         }
 
         // Use JavaScript to redirect to avoid Livewire routing issues

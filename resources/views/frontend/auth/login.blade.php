@@ -29,6 +29,11 @@
                         <form action="{{ route('customer.login.submit') }}" method="POST" class="auth-form">
                             @csrf
 
+                            <!-- Hidden field to pass return_url from query string -->
+                            @if (request('return_url'))
+                                <input type="hidden" name="return_url" value="{{ request('return_url') }}">
+                            @endif
+
                             <div class="form-group mb-3">
                                 <label for="email" class="form-label">
                                     <i class="bi bi-envelope me-2"></i>Email Address

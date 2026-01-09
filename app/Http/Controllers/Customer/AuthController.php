@@ -43,9 +43,16 @@ class AuthController extends Controller
                     ->with('success', 'Welcome back, ' . Auth::user()->first_name . '!');
             }
 
-            // Check if there's a return_url from query string (from checkout page)
-            $returnUrl = $request->query('return_url');
+            // Check if there's a return_url from POST data (hidden field from form)
+            $returnUrl = $request->input('return_url');
+            if (!$returnUrl) {
+                // If not in POST, check query string
+                $returnUrl = $request->query('return_url');
+            }
+
             if ($returnUrl) {
+                // Decode URL if it was encoded
+                $returnUrl = urldecode($returnUrl);
                 return redirect($returnUrl)
                     ->with('success', 'Welcome back, ' . Auth::user()->first_name . '!');
             }
