@@ -51,7 +51,15 @@ new class extends Component {
         if ($property === 'showRescheduleModal' && $this->showRescheduleModal) {
             $this->new_date_range = null;
             $this->reschedule_notes = null;
-            $this->rescheduleFee = $this->booking->calculateRescheduleFee();
+
+            // Calculate reschedule fee with fallback
+            try {
+                $this->rescheduleFee = $this->booking->calculateRescheduleFee();
+            } catch (\Exception $e) {
+                \Log::error('Failed to calculate reschedule fee: ' . $e->getMessage());
+                $this->rescheduleFee = 0;
+            }
+
             $this->paymentMethod = 'wallet';
             $this->loadBookedDates();
             $this->dispatch('reinit-datepicker');
@@ -208,7 +216,8 @@ new class extends Component {
 
     public function rescheduleBooking(): void
     {
-        $this->validate([
+        // Validate inputs
+        $validated = $this->validate([
             'new_date_range' => 'required|string',
             'reschedule_notes' => 'nullable|string|min:3',
             'rescheduleFee' => 'required|numeric|min:0',
@@ -223,8 +232,13 @@ new class extends Component {
             return;
         }
 
-        $newCheckIn = Carbon::parse(trim($dates[0]));
-        $newCheckOut = Carbon::parse(trim($dates[1]));
+        try {
+            $newCheckIn = Carbon::parse(trim($dates[0]));
+            $newCheckOut = Carbon::parse(trim($dates[1]));
+        } catch (\Exception $e) {
+            $this->error('Invalid date format. Please select valid dates.');
+            return;
+        }
 
         // Validate dates
         if ($newCheckIn->isBefore(Carbon::today())) {
@@ -238,8 +252,8 @@ new class extends Component {
         }
 
         // Validate that the number of nights remains the same
-        $newNights = $newCheckIn->diffInDays($newCheckOut);
-        if ($newNights !== $this->originalNights) {
+        $newNights = (int) $newCheckIn->diffInDays($newCheckOut);
+        if ($newNights !== (int) $this->originalNights) {
             $this->error("Booking must maintain the same duration. Original: {$this->originalNights} nights, Selected: {$newNights} nights.");
             return;
         }

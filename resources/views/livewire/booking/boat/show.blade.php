@@ -27,6 +27,9 @@ new class extends Component {
     public bool $showHistoryDrawer = false;
     public $activities = [];
     public ?string $reschedule_duration = null;
+    public float $rescheduleFee = 0;
+    public string $paymentMethod = 'wallet';
+    public array $bookedSlots = [];
 
     public function mount(Booking $booking): void
     {
@@ -43,13 +46,32 @@ new class extends Component {
         $this->extra_fee_remark = $booking->extra_fee_remark;
         $this->booking_status = $booking->status->value;
 
-        // Extract duration from notes
-        if ($booking->notes && preg_match('/Duration\/Slot: (\d+)h/', $booking->notes, $matches)) {
-            $this->reschedule_duration = $matches[1] . 'h';
-        } elseif ($booking->check_in && $booking->check_out) {
-            $hours = $booking->check_in->diffInHours($booking->check_out);
-            $this->reschedule_duration = $hours . 'h';
+        // Extract duration - try multiple methods
+        $durationHours = null;
+
+        // Method 1: From notes (Duration/Slot: Xh or Duration/Slot: Xmin)
+        if ($booking->notes) {
+            if (preg_match('/Duration\/Slot:\s*(\d+)h/', $booking->notes, $matches)) {
+                $durationHours = (int) $matches[1];
+            } elseif (preg_match('/Duration\/Slot:\s*(\d+)min/', $booking->notes, $matches)) {
+                $minutes = (int) $matches[1];
+                $durationHours = $minutes / 60; // Convert to decimal hours
+            }
         }
+
+        // Method 2: Calculate from check_in and check_out if available
+        if (!$durationHours && $booking->check_in && $booking->check_out) {
+            $totalMinutes = $booking->check_in->diffInMinutes($booking->check_out);
+            $durationHours = $totalMinutes / 60; // Get decimal hours
+        }
+
+        // Method 3: Default to 1 hour if nothing found
+        if (!$durationHours) {
+            $durationHours = 1;
+        }
+
+        // Store as string with h suffix
+        $this->reschedule_duration = $durationHours . 'h';
 
         // Explicitly set modal states to false
         $this->showRescheduleModal = false;
@@ -63,6 +85,16 @@ new class extends Component {
             $this->new_check_in = null;
             $this->new_time_slot = null;
             $this->reschedule_notes = null;
+
+            // Calculate reschedule fee
+            try {
+                $this->rescheduleFee = $this->booking->calculateRescheduleFee();
+            } catch (\Exception $e) {
+                \Log::error('Failed to calculate reschedule fee: ' . $e->getMessage());
+                $this->rescheduleFee = 0;
+            }
+
+            $this->paymentMethod = 'wallet';
         }
 
         if ($property === 'showHistoryDrawer' && $this->showHistoryDrawer) {
@@ -204,38 +236,88 @@ new class extends Component {
             'new_check_in' => 'required|date|after_or_equal:today',
             'new_time_slot' => 'required|string',
             'reschedule_notes' => 'nullable|string|min:3',
+            'rescheduleFee' => 'required|numeric|min:0',
+            'paymentMethod' => 'required|in:wallet,manual',
         ]);
 
         $newCheckIn = Carbon::parse($this->new_check_in . ' ' . $this->new_time_slot);
 
-        // Calculate duration from current booking
+        // Calculate duration from current booking (in hours, can be decimal)
         $durationHours = 1;
         if ($this->booking->check_in && $this->booking->check_out) {
-            $durationHours = $this->booking->check_in->diffInHours($this->booking->check_out);
+            $durationMinutes = $this->booking->check_in->diffInMinutes($this->booking->check_out);
+            $durationHours = $durationMinutes / 60; // Convert to decimal hours
         }
 
         $oldCheckIn = $this->booking->check_in->format('M d, Y h:i A');
         $oldCheckOut = $this->booking->check_out->format('M d, Y h:i A');
-        $newCheckOut = $newCheckIn->copy()->addHours($durationHours);
+        $newCheckOut = $newCheckIn->copy()->addMinutes($durationHours * 60);
 
-        // Update booking with new date/time
-        $this->booking->update([
-            'check_in' => $newCheckIn,
-            'check_out' => $newCheckOut,
-        ]);
+        $user = $this->booking->user;
+        $walletBalance = $user->wallet_balance ?? 0;
 
-        // Log rescheduling
-        activity()
-            ->performedOn($this->booking)
-            ->causedBy(auth()->user())
-            ->withProperties([
-                'old_check_in' => $oldCheckIn,
-                'old_check_out' => $oldCheckOut,
-                'new_check_in' => $newCheckIn->format('M d, Y h:i A'),
-                'new_check_out' => $newCheckOut->format('M d, Y h:i A'),
-                'notes' => $this->reschedule_notes,
-            ])
-            ->log('Booking rescheduled from ' . $oldCheckIn . ' to ' . $newCheckIn->format('M d, Y h:i A') . ($this->reschedule_notes ? '. Reason: ' . $this->reschedule_notes : ''));
+        // Validate wallet balance if wallet payment is selected
+        if ($this->paymentMethod === 'wallet' && $this->rescheduleFee > 0) {
+            if ($walletBalance < $this->rescheduleFee) {
+                $this->error('Customer does not have sufficient wallet balance (' . currency_format($walletBalance) . '). Please select "Collect Manually" or reduce the fee.');
+                return;
+            }
+        }
+
+        // Use database transaction
+        \DB::transaction(function () use ($user, $newCheckIn, $newCheckOut, $oldCheckIn, $oldCheckOut) {
+            // Deduct reschedule fee from wallet if wallet payment selected
+            if ($this->paymentMethod === 'wallet' && $this->rescheduleFee > 0) {
+                $userLocked = \App\Models\User::lockForUpdate()->find($user->id);
+                $balanceBefore = $userLocked->wallet_balance ?? 0;
+
+                $userLocked->wallet_balance = $balanceBefore - $this->rescheduleFee;
+                $userLocked->save();
+
+                $balanceAfter = $userLocked->wallet_balance;
+
+                \App\Models\WalletTransaction::create([
+                    'user_id' => $user->id,
+                    'amount' => $this->rescheduleFee,
+                    'type' => 'debit',
+                    'balance_before' => $balanceBefore,
+                    'balance_after' => $balanceAfter,
+                    'description' => 'Reschedule fee for booking #' . $this->booking->booking_id,
+                    'booking_id' => $this->booking->id,
+                ]);
+            }
+
+            // Update booking with new date/time
+            $this->booking->update([
+                'check_in' => $newCheckIn,
+                'check_out' => $newCheckOut,
+                'reschedule_fee' => $this->rescheduleFee,
+                'rescheduled_by' => auth()->id(),
+            ]);
+
+            // Log rescheduling
+            $description = "Rescheduled from {$oldCheckIn} to " . $newCheckIn->format('M d, Y h:i A');
+            if ($this->reschedule_notes) {
+                $description .= ". Reason: {$this->reschedule_notes}";
+            }
+            if ($this->rescheduleFee > 0) {
+                $description .= '. Reschedule fee: ' . currency_format($this->rescheduleFee) . ' (' . ($this->paymentMethod === 'wallet' ? 'Deducted from wallet' : 'To be collected manually') . ')';
+            }
+
+            activity()
+                ->performedOn($this->booking)
+                ->causedBy(auth()->user())
+                ->withProperties([
+                    'old_check_in' => $oldCheckIn,
+                    'old_check_out' => $oldCheckOut,
+                    'new_check_in' => $newCheckIn->format('M d, Y h:i A'),
+                    'new_check_out' => $newCheckOut->format('M d, Y h:i A'),
+                    'reschedule_fee' => $this->rescheduleFee,
+                    'payment_method' => $this->paymentMethod,
+                    'notes' => $this->reschedule_notes,
+                ])
+                ->log($description);
+        });
 
         $this->showRescheduleModal = false;
         $this->success('Booking rescheduled successfully.');
@@ -248,18 +330,21 @@ new class extends Component {
             return collect();
         }
 
-        // Determine duration in hours
-        $durationHours = (int) str_replace('h', '', $this->reschedule_duration);
+        // Determine duration in hours (can be decimal like 0.25 for 15 min)
+        $durationHours = (float) str_replace('h', '', $this->reschedule_duration);
+        $durationMinutes = $durationHours * 60;
 
         $timeSlots = collect();
         $startHour = 9; // 9 AM
         $endHour = 18; // 6 PM
 
         // Generate slots based on duration
-        $currentHour = $startHour;
-        while ($currentHour + $durationHours <= $endHour) {
-            $startTime = Carbon::parse($this->new_check_in)->setTime(floor($currentHour), ($currentHour - floor($currentHour)) * 60);
-            $endTime = $startTime->copy()->addMinutes($durationHours * 60);
+        $currentMinutes = $startHour * 60; // Start in minutes
+        $endMinutes = $endHour * 60;
+
+        while ($currentMinutes + $durationMinutes <= $endMinutes) {
+            $startTime = Carbon::parse($this->new_check_in)->startOfDay()->addMinutes($currentMinutes);
+            $endTime = $startTime->copy()->addMinutes($durationMinutes);
 
             // Add buffer time from boat configuration
             $bufferMinutes = $this->booking->bookingable->buffer_time ?? 0;
@@ -293,8 +378,8 @@ new class extends Component {
                 'duration' => $durationHours,
             ]);
 
-            // Move to next slot (step by duration)
-            $currentHour += $durationHours;
+            // Move to next slot (step by duration in minutes)
+            $currentMinutes += $durationMinutes;
         }
 
         return $timeSlots;
@@ -807,6 +892,30 @@ new class extends Component {
             <x-textarea label="Reason for Rescheduling (Optional)" wire:model="reschedule_notes"
                 placeholder="Enter reason for rescheduling..." rows="3"
                 hint="Provide context for the date change" />
+
+            <div class="divider">Reschedule Fee</div>
+
+            <x-input label="Reschedule Fee" wire:model="rescheduleFee" type="number" step="0.01" min="0"
+                icon="o-currency-dollar" hint="Fee will be charged to customer for rescheduling" />
+
+            <x-alert title="Customer Wallet Balance"
+                description="Current balance: {{ currency_format($booking->user->wallet_balance ?? 0) }}"
+                icon="o-wallet" class="alert-info" />
+
+            <x-radio label="Payment Method" :options="[
+                ['id' => 'wallet', 'name' => 'Deduct from Wallet'],
+                ['id' => 'manual', 'name' => 'Collect Manually'],
+            ]" wire:model="paymentMethod" />
+
+            @if ($paymentMethod === 'wallet' && $rescheduleFee > 0)
+                <x-alert title="Wallet Deduction"
+                    description="The reschedule fee will be automatically deducted from customer's wallet balance."
+                    icon="o-information-circle" class="alert-warning" />
+            @elseif ($paymentMethod === 'manual' && $rescheduleFee > 0)
+                <x-alert title="Manual Collection"
+                    description="You will need to collect the reschedule fee manually from the customer."
+                    icon="o-information-circle" class="alert-info" />
+            @endif
         </div>
 
         <x-slot:actions>
