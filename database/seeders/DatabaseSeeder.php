@@ -25,7 +25,7 @@ class DatabaseSeeder extends Seeder
             RoomSeeder::class,
             BoatServiceTypeSeeder::class,
             BoatSeeder::class,
-            BookingSeeder::class,
+            // BookingSeeder::class,
             WebsiteSettingSeeder::class,
             PageMetaSeeder::class,
             SliderSeeder::class,

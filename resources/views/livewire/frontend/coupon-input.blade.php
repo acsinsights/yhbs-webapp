@@ -61,8 +61,8 @@ new class extends Component {
                 $this->successMessage = $result['message'] ?? 'Coupon applied successfully!';
                 $this->couponCode = '';
 
-                // Refresh the page to recalculate prices
-                $this->dispatch('coupon-applied');
+                // Dispatch event to update price breakdown (no page refresh)
+                $this->dispatch('coupon-updated', coupon: $this->appliedCoupon);
             } else {
                 $this->errorMessage = $result['error'];
             }
@@ -81,8 +81,8 @@ new class extends Component {
         $this->successMessage = 'Coupon removed successfully';
         $this->errorMessage = '';
 
-        // Refresh the page to recalculate prices
-        $this->dispatch('coupon-removed');
+        // Dispatch event to update price breakdown (no page refresh)
+        $this->dispatch('coupon-updated', coupon: null);
     }
 
     public function getDiscountTextProperty(): string
