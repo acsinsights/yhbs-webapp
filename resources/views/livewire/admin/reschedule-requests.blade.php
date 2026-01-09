@@ -57,6 +57,81 @@ new class extends Component {
         $this->paymentMethod = 'wallet';
         $this->showApproveModal = true;
     }
+    public function isRequestedDateAvailable(): bool
+    {
+        if (!$this->selectedBooking || !$this->selectedBooking->new_check_in || !$this->selectedBooking->new_check_out) {
+            return true; // Can't determine, assume available
+        }
+
+        $newCheckIn = $this->selectedBooking->new_check_in;
+        $newCheckOut = $this->selectedBooking->new_check_out;
+        $bookingableType = $this->selectedBooking->bookingable_type;
+        $bookingableId = $this->selectedBooking->bookingable_id;
+
+        // Check for boats with buffer time and time slot overlap
+        if ($bookingableType === 'App\\Models\\Boat') {
+            $bufferMinutes = $this->selectedBooking->bookingable->buffer_time ?? 0;
+            $endTimeWithBuffer = $newCheckOut->copy()->addMinutes($bufferMinutes);
+
+            return !Booking::where('bookingable_type', 'App\\Models\\Boat')
+                ->where('bookingable_id', $bookingableId)
+                ->where('id', '!=', $this->selectedBooking->id)
+                ->whereIn('status', ['pending', 'booked', 'checked_in'])
+                ->whereDate('check_in', $newCheckIn->format('Y-m-d'))
+                ->where(function ($query) use ($newCheckIn, $endTimeWithBuffer, $newCheckOut) {
+                    $query
+                        // Existing booking's check_in is between new slot's time range
+                        ->whereBetween('check_in', [$newCheckIn, $endTimeWithBuffer])
+                        // Existing booking's check_out is between new slot's time range
+                        ->orWhereBetween('check_out', [$newCheckIn, $endTimeWithBuffer])
+                        // Existing booking completely contains the new slot
+                        ->orWhere(function ($q) use ($newCheckIn, $newCheckOut) {
+                            $q->where('check_in', '<=', $newCheckIn)->where('check_out', '>=', $newCheckOut);
+                        })
+                        // New slot completely contains the existing booking
+                        ->orWhere(function ($q) use ($newCheckIn, $endTimeWithBuffer) {
+                            $q->where('check_in', '>=', $newCheckIn)->where('check_out', '<=', $endTimeWithBuffer);
+                        });
+                })
+                ->exists();
+        }
+
+        // Check for rooms
+        if ($bookingableType === 'App\\Models\\Room') {
+            return !Booking::where('bookingable_type', 'App\\Models\\Room')
+                ->where('bookingable_id', $bookingableId)
+                ->where('id', '!=', $this->selectedBooking->id)
+                ->whereIn('status', ['pending', 'booked', 'checked_in'])
+                ->where(function ($query) use ($newCheckIn, $newCheckOut) {
+                    $query
+                        ->whereBetween('check_in', [$newCheckIn, $newCheckOut])
+                        ->orWhereBetween('check_out', [$newCheckIn, $newCheckOut])
+                        ->orWhere(function ($q) use ($newCheckIn, $newCheckOut) {
+                            $q->where('check_in', '<=', $newCheckIn)->where('check_out', '>=', $newCheckOut);
+                        });
+                })
+                ->exists();
+        }
+
+        // Check for houses
+        if ($bookingableType === 'App\\Models\\House') {
+            return !Booking::where('bookingable_type', 'App\\Models\\House')
+                ->where('bookingable_id', $bookingableId)
+                ->where('id', '!=', $this->selectedBooking->id)
+                ->whereIn('status', ['pending', 'booked', 'checked_in'])
+                ->where(function ($query) use ($newCheckIn, $newCheckOut) {
+                    $query
+                        ->whereBetween('check_in', [$newCheckIn, $newCheckOut])
+                        ->orWhereBetween('check_out', [$newCheckIn, $newCheckOut])
+                        ->orWhere(function ($q) use ($newCheckIn, $newCheckOut) {
+                            $q->where('check_in', '<=', $newCheckIn)->where('check_out', '>=', $newCheckOut);
+                        });
+                })
+                ->exists();
+        }
+
+        return true; // Unknown type, assume available
+    }
 
     public function closeApproveModal(): void
     {
@@ -174,19 +249,22 @@ new class extends Component {
             return;
         }
 
-        // Validate that the requested time slot is still available (including buffer time for boats)
-        if ($this->selectedBooking->bookingable_type === 'App\\Models\\Boat') {
-            $bufferMinutes = $this->selectedBooking->bookingable->buffer_time ?? 0;
-            $newCheckIn = $this->selectedBooking->new_check_in;
-            $newCheckOut = $this->selectedBooking->new_check_out;
+        // Validate that the requested time slot is still available for all booking types
+        $newCheckIn = $this->selectedBooking->new_check_in;
+        $newCheckOut = $this->selectedBooking->new_check_out;
+        $bookingableType = $this->selectedBooking->bookingable_type;
+        $bookingableId = $this->selectedBooking->bookingable_id;
 
-            if ($newCheckIn && $newCheckOut) {
-                // Calculate end time with buffer
+        if ($newCheckIn && $newCheckOut) {
+            $conflictingBooking = null;
+
+            // Check for boats with buffer time
+            if ($bookingableType === 'App\\Models\\Boat') {
+                $bufferMinutes = $this->selectedBooking->bookingable->buffer_time ?? 0;
                 $endTimeWithBuffer = $newCheckOut->copy()->addMinutes($bufferMinutes);
 
-                // Check for overlapping bookings
                 $conflictingBooking = Booking::where('bookingable_type', 'App\\Models\\Boat')
-                    ->where('bookingable_id', $this->selectedBooking->bookingable_id)
+                    ->where('bookingable_id', $bookingableId)
                     ->where('id', '!=', $this->selectedBooking->id)
                     ->where('booking_status', '!=', 'cancelled')
                     ->where(function ($query) use ($newCheckIn, $endTimeWithBuffer) {
@@ -202,6 +280,50 @@ new class extends Component {
                 if ($conflictingBooking) {
                     $bufferText = $bufferMinutes > 0 ? " (including {$bufferMinutes} min buffer time)" : '';
                     $this->error("The requested time slot is no longer available{$bufferText}. Please reject this request and ask customer to submit a new one.");
+                    return;
+                }
+            }
+
+            // Check for rooms
+            if ($bookingableType === 'App\\Models\\Room') {
+                $conflictingBooking = Booking::where('bookingable_type', 'App\\Models\\Room')
+                    ->where('bookingable_id', $bookingableId)
+                    ->where('id', '!=', $this->selectedBooking->id)
+                    ->whereIn('status', ['pending', 'booked', 'checked_in'])
+                    ->where(function ($query) use ($newCheckIn, $newCheckOut) {
+                        $query
+                            ->whereBetween('check_in', [$newCheckIn, $newCheckOut])
+                            ->orWhereBetween('check_out', [$newCheckIn, $newCheckOut])
+                            ->orWhere(function ($q) use ($newCheckIn, $newCheckOut) {
+                                $q->where('check_in', '<=', $newCheckIn)->where('check_out', '>=', $newCheckOut);
+                            });
+                    })
+                    ->exists();
+
+                if ($conflictingBooking) {
+                    $this->error('The requested dates are no longer available. Another booking exists for this room during the requested period. Please reject this request and ask customer to submit a new one.');
+                    return;
+                }
+            }
+
+            // Check for houses
+            if ($bookingableType === 'App\\Models\\House') {
+                $conflictingBooking = Booking::where('bookingable_type', 'App\\Models\\House')
+                    ->where('bookingable_id', $bookingableId)
+                    ->where('id', '!=', $this->selectedBooking->id)
+                    ->whereIn('status', ['pending', 'booked', 'checked_in'])
+                    ->where(function ($query) use ($newCheckIn, $newCheckOut) {
+                        $query
+                            ->whereBetween('check_in', [$newCheckIn, $newCheckOut])
+                            ->orWhereBetween('check_out', [$newCheckIn, $newCheckOut])
+                            ->orWhere(function ($q) use ($newCheckIn, $newCheckOut) {
+                                $q->where('check_in', '<=', $newCheckIn)->where('check_out', '>=', $newCheckOut);
+                            });
+                    })
+                    ->exists();
+
+                if ($conflictingBooking) {
+                    $this->error('The requested dates are no longer available. Another booking exists for this house during the requested period. Please reject this request and ask customer to submit a new one.');
                     return;
                 }
             }
@@ -429,6 +551,20 @@ new class extends Component {
                     Booking #{{ $selectedBooking->id }} - {{ $selectedBooking->bookingable->name ?? 'N/A' }}
                 </x-alert>
 
+                @if (!$this->isRequestedDateAvailable())
+                    <x-alert icon="o-exclamation-triangle" class="alert-error mb-4">
+                        <div>
+                            <p class="font-bold">⚠️ Requested dates are NOT available!</p>
+                            <p class="text-sm mt-1">
+                                Another booking already exists for this
+                                {{ $selectedBooking->bookingable_type === 'App\\Models\\Boat' ? 'boat' : ($selectedBooking->bookingable_type === 'App\\Models\\Room' ? 'room' : 'house') }}
+                                during the requested time period. Please reject this request and ask the customer to
+                                choose different dates.
+                            </p>
+                        </div>
+                    </x-alert>
+                @endif
+
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     @if ($selectedBooking->bookingable instanceof \App\Models\Boat)
                         <div>
@@ -513,7 +649,8 @@ new class extends Component {
 
             <x-slot:actions>
                 <x-button label="Cancel" @click="$wire.closeApproveModal()" />
-                <x-button label="Approve & Update" class="btn-success" wire:click="approveReschedule" spinner />
+                <x-button label="Approve & Update" class="btn-success" wire:click="approveReschedule" spinner
+                    :disabled="!$this->isRequestedDateAvailable()" />
             </x-slot:actions>
         @endif
     </x-modal>

@@ -1313,8 +1313,6 @@ new class extends Component {
                         </div>
                     </x-card>
                     </x-card>
-
-
                 </div>
             </div>
         </x-form>

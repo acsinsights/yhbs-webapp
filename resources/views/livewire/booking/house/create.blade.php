@@ -404,7 +404,7 @@ new class extends Component {
         });
 
         $guestDetails = [
-            'adults' => array_values($validGuests),
+            'guests' => array_values($validGuests),
             'children' => array_values(array_filter($this->childrenNames)),
         ];
 
