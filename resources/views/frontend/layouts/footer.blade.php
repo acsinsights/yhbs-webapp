@@ -76,8 +76,6 @@
                           <div class="mb-3">
                               <div id="google_translate_element"></div>
                           </div>
-                          <a href="#"><img src="{{ asset('frontend/img/home1/icon/google-play.svg') }}"
-                                  alt=""></a>
                       </div>
                   </div>
                   <div class="col-lg-2 col-md-4 col-sm-6 d-flex justify-content-md-end">

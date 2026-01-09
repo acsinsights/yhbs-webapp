@@ -520,7 +520,7 @@ new class extends Component {
                 'icon' => 's-home',
             ],
             [
-                'link' => route('admin.bookings.house.index'),
+                'link' => route('admin.bookings.room.index'),
                 'label' => 'Room Bookings',
             ],
             [
@@ -531,7 +531,7 @@ new class extends Component {
 
     <x-header title="Create Room Booking" separator>
         <x-slot:subtitle>
-            <p class="text-sm text-base-content/50 mb-2">Create a new house room booking</p>
+            <p class="text-sm text-base-content/50 mb-2">Create a new room booking</p>
             <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
         </x-slot:subtitle>
         <x-slot:actions>
