@@ -2657,7 +2657,7 @@
     <!-- home2 award banner Section End-->
 
     <!-- home2 partner area Section Start-->
-    <div class="partner-section mb-100">
+    {{-- <div class="partner-section mb-100">
         <div class="container">
             <div class="partner-title wow animate fadeInDown" data-wow-delay="200ms" data-wow-duration="1500ms">
                 <h5>Those Company You Can Easily Trust!</h5>
@@ -2695,7 +2695,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> --}}
     <!-- home2 partner area Section End-->
 
     <!-- home2 blog Section Start-->
