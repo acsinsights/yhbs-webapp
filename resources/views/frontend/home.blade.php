@@ -78,7 +78,7 @@
             </div>
         </div>
     </div>
-    <div class="filter-wrapper">
+    {{-- <div class="filter-wrapper">
         <div class="container">
             <ul class="filter-item-list">
                 <li class="single-item active" data-filter="houses">
@@ -1200,11 +1200,11 @@
                 <p>Can’t find what you’re looking for? create your <a href="contact.html">Custom Itinerary</a></p>
             </div>
         </div>
-    </div>
+    </div> --}}
     <!-- home2 Banner Section End-->
 
     <!-- home2 package slider Section Start-->
-    <div class="home2-oneday-trip-section mb-100" style="margin-top: 100px">
+    {{-- <div class="home2-oneday-trip-section mb-100" style="margin-top: 100px">
         <div class="container">
             <div class="row justify-content-center mb-50 wow animate fadeInDown" data-wow-delay="200ms"
                 data-wow-duration="1500ms">
@@ -1241,11 +1241,11 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> --}}
     <!-- home2 package slider Section End-->
 
     <!-- home2 service Section Start-->
-    <div class="home2-service-section mb-100">
+    <div class="home2-service-section pt-100 mb-100">
         <div class="container">
             <div class="service-wrapper two">
                 <div class="row justify-content-center wow animate fadeInDown" data-wow-delay="200ms"
