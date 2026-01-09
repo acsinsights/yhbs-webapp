@@ -506,42 +506,52 @@ new class extends Component {
                                 is_array($guestDetails['guests']) &&
                                 count(array_filter($guestDetails['guests'], fn($g) => !empty($g['name'] ?? ''))) > 0)
                             <div>
-                                <div class="text-sm text-base-content/50 mb-2">Passenger Details</div>
+                                <div class="flex items-center gap-2 mb-3">
+                                    <div class="p-1.5 bg-primary/10 rounded-lg">
+                                        <x-icon name="o-user-group" class="w-4 h-4 text-primary" />
+                                    </div>
+                                    <div class="text-sm font-bold text-primary">Passenger Details
+                                        ({{ count(array_filter($guestDetails['guests'], fn($g) => !empty($g['name'] ?? ''))) }})
+                                    </div>
+                                </div>
                                 <div class="space-y-3">
                                     @foreach ($guestDetails['guests'] as $index => $guest)
                                         @if (!empty($guest['name']))
-                                            <div class="p-3 bg-base-200/50 rounded-lg border border-base-300">
+                                            <div
+                                                class="p-4 bg-gradient-to-br from-base-200 to-base-200/50 rounded-xl border border-base-300 hover:shadow-md transition-shadow">
                                                 <div class="flex items-start gap-3">
-                                                    <div class="mt-1">
-                                                        <x-icon name="o-user-circle" class="w-5 h-5 text-primary" />
+                                                    <div class="p-2 bg-primary/10 rounded-lg">
+                                                        <x-icon name="o-user-circle" class="w-6 h-6 text-primary" />
                                                     </div>
-                                                    <div class="flex-1 space-y-1">
-                                                        <div class="flex items-center gap-2">
+                                                    <div class="flex-1 space-y-2">
+                                                        <div class="flex items-center justify-between">
                                                             <span
-                                                                class="text-sm font-semibold">{{ $guest['name'] }}</span>
+                                                                class="font-bold text-base">{{ $guest['name'] }}</span>
                                                             <x-badge value="Passenger {{ $index + 1 }}"
-                                                                class="badge-xs badge-primary" />
+                                                                class="badge-primary badge-sm" />
                                                         </div>
-                                                        @if (!empty($guest['email']))
-                                                            <div
-                                                                class="flex items-center gap-2 text-xs text-base-content/70">
-                                                                <x-icon name="o-envelope" class="w-3.5 h-3.5" />
-                                                                <a href="mailto:{{ $guest['email'] }}"
-                                                                    class="hover:text-primary hover:underline">
-                                                                    {{ $guest['email'] }}
-                                                                </a>
-                                                            </div>
-                                                        @endif
-                                                        @if (!empty($guest['phone']))
-                                                            <div
-                                                                class="flex items-center gap-2 text-xs text-base-content/70">
-                                                                <x-icon name="o-phone" class="w-3.5 h-3.5" />
-                                                                <a href="tel:{{ $guest['phone'] }}"
-                                                                    class="hover:text-primary hover:underline">
-                                                                    {{ $guest['phone'] }}
-                                                                </a>
-                                                            </div>
-                                                        @endif
+                                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                            @if (!empty($guest['email']))
+                                                                <div class="flex items-center gap-2 text-sm">
+                                                                    <x-icon name="o-envelope"
+                                                                        class="w-4 h-4 text-base-content/60" />
+                                                                    <a href="mailto:{{ $guest['email'] }}"
+                                                                        class="hover:text-primary hover:underline truncate">
+                                                                        {{ $guest['email'] }}
+                                                                    </a>
+                                                                </div>
+                                                            @endif
+                                                            @if (!empty($guest['phone']))
+                                                                <div class="flex items-center gap-2 text-sm">
+                                                                    <x-icon name="o-phone"
+                                                                        class="w-4 h-4 text-base-content/60" />
+                                                                    <a href="tel:{{ $guest['phone'] }}"
+                                                                        class="hover:text-primary hover:underline">
+                                                                        {{ $guest['phone'] }}
+                                                                    </a>
+                                                                </div>
+                                                            @endif
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -554,15 +564,18 @@ new class extends Component {
                                 count(array_filter($guestDetails['adults'])) > 0)
                             {{-- Fallback for old format with just names --}}
                             <div>
-                                <div class="text-sm text-base-content/50 mb-2">Passenger Names</div>
-                                <div class="space-y-2">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <div class="p-1.5 bg-primary/10 rounded-lg">
+                                        <x-icon name="o-users" class="w-4 h-4 text-primary" />
+                                    </div>
+                                    <div class="text-sm font-bold text-primary">Passengers
+                                        ({{ count(array_filter($guestDetails['adults'])) }})</div>
+                                </div>
+                                <div class="flex flex-wrap gap-2">
                                     @foreach ($guestDetails['adults'] as $index => $name)
                                         @if ($name)
-                                            <div class="flex items-center gap-2 p-2 bg-base-200 rounded-lg">
-                                                <x-icon name="o-user" class="w-4 h-4 text-primary" />
-                                                <span class="text-sm font-medium flex-1">{{ $name }}</span>
-                                                <x-badge value="Passenger {{ $index + 1 }}"
-                                                    class="badge-xs badge-primary" />
+                                            <div class="px-3 py-2 bg-primary/10 border border-primary/30 rounded-lg">
+                                                <span class="text-sm font-medium">{{ $name }}</span>
                                             </div>
                                         @endif
                                     @endforeach
@@ -574,15 +587,19 @@ new class extends Component {
                                 is_array($guestDetails['children']) &&
                                 count(array_filter($guestDetails['children'])) > 0)
                             <div>
-                                <div class="text-sm text-base-content/50 mb-2">Children Names</div>
-                                <div class="space-y-2">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <div class="p-1.5 bg-secondary/10 rounded-lg">
+                                        <x-icon name="o-sparkles" class="w-4 h-4 text-secondary" />
+                                    </div>
+                                    <div class="text-sm font-bold text-secondary">Children
+                                        ({{ count(array_filter($guestDetails['children'])) }})</div>
+                                </div>
+                                <div class="flex flex-wrap gap-2">
                                     @foreach ($guestDetails['children'] as $index => $name)
                                         @if ($name)
-                                            <div class="flex items-center gap-2 p-2 bg-base-200 rounded-lg">
-                                                <x-icon name="o-user" class="w-4 h-4 text-secondary" />
-                                                <span class="text-sm font-medium flex-1">{{ $name }}</span>
-                                                <x-badge value="Child {{ $index + 1 }}"
-                                                    class="badge-xs badge-secondary" />
+                                            <div
+                                                class="px-3 py-2 bg-secondary/10 border border-secondary/30 rounded-lg">
+                                                <span class="text-sm font-medium">{{ $name }}</span>
                                             </div>
                                         @endif
                                     @endforeach

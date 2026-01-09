@@ -571,16 +571,22 @@ new class extends Component {
                     {{-- Guest Details --}}
                     @if ($booking->guest_details)
                         <div class="mt-4 border-t pt-4">
-                            <div class="text-sm font-semibold text-base-content/80 mb-3">
-                                <x-icon name="o-users" class="w-4 h-4 inline mr-1" />
-                                Guest Information
+                            <div class="flex items-center gap-2 mb-4">
+                                <div class="p-2 bg-primary/10 rounded-lg">
+                                    <x-icon name="o-users" class="w-5 h-5 text-primary" />
+                                </div>
+                                <h3 class="text-lg font-bold text-base-content">Guest Information</h3>
                             </div>
                             @if (is_array($booking->guest_details))
-                                <div class="space-y-3">
+                                <div class="space-y-4">
                                     @foreach ($booking->guest_details as $key => $value)
                                         @php
                                             // Skip empty children_names and special_requests
-                                            $skipEmpty = in_array($key, ['children_names', 'special_requests']);
+                                            $skipEmpty = in_array($key, [
+                                                'children_names',
+                                                'special_requests',
+                                                'children',
+                                            ]);
                                             if ($skipEmpty) {
                                                 if (
                                                     is_array($value) &&
@@ -594,46 +600,126 @@ new class extends Component {
                                             }
                                         @endphp
                                         @if (is_array($value))
-                                            <div class="bg-base-200/50 p-3 rounded-lg">
-                                                <div class="font-semibold text-xs uppercase text-primary mb-2">
-                                                    {{ str_replace('_', ' ', ucfirst($key)) }}
+                                            @if ($key === 'guests')
+                                                {{-- New format with detailed guest info --}}
+                                                <div>
+                                                    <div class="text-sm font-semibold text-primary mb-3">
+                                                        <x-icon name="o-user-group" class="w-4 h-4 inline mr-1" />
+                                                        Guests
+                                                        ({{ count(array_filter($value, fn($g) => !empty($g['name'] ?? ''))) }})
+                                                    </div>
+                                                    <div class="grid gap-3">
+                                                        @foreach ($value as $index => $guest)
+                                                            @if (!empty($guest['name']))
+                                                                <div
+                                                                    class="p-4 bg-gradient-to-br from-base-200 to-base-200/50 rounded-xl border border-base-300 hover:shadow-md transition-shadow">
+                                                                    <div class="flex items-start gap-3">
+                                                                        <div class="p-2 bg-primary/10 rounded-lg">
+                                                                            <x-icon name="o-user-circle"
+                                                                                class="w-6 h-6 text-primary" />
+                                                                        </div>
+                                                                        <div class="flex-1 space-y-2">
+                                                                            <div
+                                                                                class="flex items-center justify-between">
+                                                                                <span
+                                                                                    class="font-bold text-base">{{ $guest['name'] }}</span>
+                                                                                <x-badge
+                                                                                    value="Guest {{ $index + 1 }}"
+                                                                                    class="badge-primary badge-sm" />
+                                                                            </div>
+                                                                            <div
+                                                                                class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                                                @if (!empty($guest['email']))
+                                                                                    <div
+                                                                                        class="flex items-center gap-2 text-sm">
+                                                                                        <x-icon name="o-envelope"
+                                                                                            class="w-4 h-4 text-base-content/60" />
+                                                                                        <a href="mailto:{{ $guest['email'] }}"
+                                                                                            class="hover:text-primary hover:underline truncate">
+                                                                                            {{ $guest['email'] }}
+                                                                                        </a>
+                                                                                    </div>
+                                                                                @endif
+                                                                                @if (!empty($guest['phone']))
+                                                                                    <div
+                                                                                        class="flex items-center gap-2 text-sm">
+                                                                                        <x-icon name="o-phone"
+                                                                                            class="w-4 h-4 text-base-content/60" />
+                                                                                        <a href="tel:{{ $guest['phone'] }}"
+                                                                                            class="hover:text-primary hover:underline">
+                                                                                            {{ $guest['phone'] }}
+                                                                                        </a>
+                                                                                    </div>
+                                                                                @endif
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            @endif
+                                                        @endforeach
+                                                    </div>
                                                 </div>
-                                                <div class="space-y-1">
-                                                    @if ($key === 'customer')
-                                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                                            @foreach ($value as $subKey => $subValue)
-                                                                @if (!is_array($subValue))
-                                                                    <div class="text-xs">
+                                            @elseif ($key === 'customer')
+                                                <div
+                                                    class="p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20">
+                                                    <div class="flex items-center gap-2 mb-3">
+                                                        <x-icon name="o-identification" class="w-4 h-4 text-primary" />
+                                                        <div class="font-semibold text-sm text-primary">Customer
+                                                            Details</div>
+                                                    </div>
+                                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                        @foreach ($value as $subKey => $subValue)
+                                                            @if (!is_array($subValue))
+                                                                <div class="flex items-start gap-2">
+                                                                    <span
+                                                                        class="text-xs text-base-content/60 mt-0.5">{{ ucwords(str_replace('_', ' ', $subKey)) }}:</span>
+                                                                    <span
+                                                                        class="text-sm font-semibold">{{ $subValue }}</span>
+                                                                </div>
+                                                            @endif
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @elseif (in_array($key, ['adult_names', 'children_names']))
+                                                @if (!empty($value) && count(array_filter($value)) > 0)
+                                                    <div>
+                                                        <div
+                                                            class="text-sm font-semibold mb-2 {{ $key === 'adult_names' ? 'text-primary' : 'text-secondary' }}">
+                                                            <x-icon
+                                                                name="{{ $key === 'adult_names' ? 'o-user-group' : 'o-sparkles' }}"
+                                                                class="w-4 h-4 inline mr-1" />
+                                                            {{ $key === 'adult_names' ? 'Adults' : 'Children' }}
+                                                            ({{ count(array_filter($value)) }})
+                                                        </div>
+                                                        <div class="flex flex-wrap gap-2">
+                                                            @foreach ($value as $index => $name)
+                                                                @if (!empty($name))
+                                                                    <div
+                                                                        class="px-3 py-2 bg-{{ $key === 'adult_names' ? 'primary' : 'secondary' }}/10 border border-{{ $key === 'adult_names' ? 'primary' : 'secondary' }}/30 rounded-lg">
                                                                         <span
-                                                                            class="text-base-content/60">{{ ucwords(str_replace('_', ' ', $subKey)) }}:</span>
-                                                                        <span
-                                                                            class="font-medium">{{ $subValue }}</span>
+                                                                            class="text-sm font-medium">{{ $name }}</span>
                                                                     </div>
                                                                 @endif
                                                             @endforeach
                                                         </div>
-                                                    @elseif (in_array($key, ['adult_names', 'children_names']))
-                                                        @if (!empty($value) && count(array_filter($value)) > 0)
-                                                            <div class="flex flex-wrap gap-2">
-                                                                @foreach ($value as $index => $name)
-                                                                    @if (!empty($name))
-                                                                        <x-badge value="{{ $name }}"
-                                                                            class="badge-soft {{ $key === 'adult_names' ? 'badge-primary' : 'badge-secondary' }}" />
-                                                                    @endif
-                                                                @endforeach
-                                                            </div>
-                                                        @endif
-                                                    @else
+                                                    </div>
+                                                @endif
+                                            @else
+                                                <div class="bg-base-200/50 p-4 rounded-xl border border-base-300">
+                                                    <div class="font-semibold text-sm text-primary mb-2">
+                                                        {{ str_replace('_', ' ', ucwords($key)) }}
+                                                    </div>
+                                                    <div class="space-y-2">
                                                         @foreach ($value as $subKey => $subValue)
                                                             @if (!is_array($subValue))
-                                                                <div class="text-xs">
+                                                                <div class="flex items-start gap-2 text-sm">
                                                                     <span
                                                                         class="text-base-content/60">{{ ucfirst($subKey) }}:</span>
                                                                     <span
                                                                         class="font-medium">{{ $subValue }}</span>
                                                                 </div>
                                                             @else
-                                                                <div class="text-xs">
+                                                                <div class="flex items-start gap-2 text-sm">
                                                                     <span
                                                                         class="text-base-content/60">{{ ucfirst($subKey) }}:</span>
                                                                     <span
@@ -641,15 +727,15 @@ new class extends Component {
                                                                 </div>
                                                             @endif
                                                         @endforeach
-                                                    @endif
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            @endif
                                         @else
-                                            <div class="bg-base-200/50 p-3 rounded-lg">
-                                                <div class="text-xs">
+                                            <div class="bg-base-200/50 p-4 rounded-xl border border-base-300">
+                                                <div class="text-sm">
                                                     <span
                                                         class="text-base-content/60 font-medium">{{ ucwords(str_replace('_', ' ', $key)) }}:</span>
-                                                    <div class="mt-1 text-sm">{{ $value }}</div>
+                                                    <div class="mt-2 font-semibold">{{ $value }}</div>
                                                 </div>
                                             </div>
                                         @endif
