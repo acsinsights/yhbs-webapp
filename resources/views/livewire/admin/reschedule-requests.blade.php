@@ -59,45 +59,163 @@ new class extends Component {
     }
     public function isRequestedDateAvailable(): bool
     {
-        if (!$this->selectedBooking || !$this->selectedBooking->new_check_in || !$this->selectedBooking->new_check_out) {
+        if (!$this->selectedBooking || !$this->selectedBooking->new_check_in) {
             return true; // Can't determine, assume available
         }
 
         $newCheckIn = $this->selectedBooking->new_check_in;
-        $newCheckOut = $this->selectedBooking->new_check_out;
         $bookingableType = $this->selectedBooking->bookingable_type;
         $bookingableId = $this->selectedBooking->bookingable_id;
 
         // Check for boats with buffer time and time slot overlap
         if ($bookingableType === 'App\\Models\\Boat') {
-            $bufferMinutes = $this->selectedBooking->bookingable->buffer_time ?? 0;
-            $endTimeWithBuffer = $newCheckOut->copy()->addMinutes($bufferMinutes);
+            $tripType = $this->selectedBooking->trip_type;
 
-            return !Booking::where('bookingable_type', 'App\\Models\\Boat')
-                ->where('bookingable_id', $bookingableId)
-                ->where('id', '!=', $this->selectedBooking->id)
-                ->whereIn('status', ['pending', 'booked', 'checked_in'])
-                ->whereDate('check_in', $newCheckIn->format('Y-m-d'))
-                ->where(function ($query) use ($newCheckIn, $endTimeWithBuffer, $newCheckOut) {
-                    $query
-                        // Existing booking's check_in is between new slot's time range
-                        ->whereBetween('check_in', [$newCheckIn, $endTimeWithBuffer])
-                        // Existing booking's check_out is between new slot's time range
-                        ->orWhereBetween('check_out', [$newCheckIn, $endTimeWithBuffer])
-                        // Existing booking completely contains the new slot
-                        ->orWhere(function ($q) use ($newCheckIn, $newCheckOut) {
-                            $q->where('check_in', '<=', $newCheckIn)->where('check_out', '>=', $newCheckOut);
-                        })
-                        // New slot completely contains the existing booking
-                        ->orWhere(function ($q) use ($newCheckIn, $endTimeWithBuffer) {
-                            $q->where('check_in', '>=', $newCheckIn)->where('check_out', '<=', $endTimeWithBuffer);
+            // For boats, use requested_time_slot to calculate duration
+            $requestedTimeSlot = $this->selectedBooking->requested_time_slot;
+            if (empty($requestedTimeSlot)) {
+                return true; // Can't determine without time slot
+            }
+
+            // Parse the requested time slot (e.g., "09:00 AM - 10:00 AM")
+            if (preg_match('/(\d+):(\d+)\s*(AM|PM)\s*-\s*(\d+):(\d+)\s*(AM|PM)/', $requestedTimeSlot, $matches)) {
+                $startHour = (int) $matches[1];
+                $startMinute = (int) $matches[2];
+                $startPeriod = $matches[3];
+                $endHour = (int) $matches[4];
+                $endMinute = (int) $matches[5];
+                $endPeriod = $matches[6];
+
+                // Convert to 24-hour format
+                if ($startPeriod === 'PM' && $startHour !== 12) {
+                    $startHour += 12;
+                } elseif ($startPeriod === 'AM' && $startHour === 12) {
+                    $startHour = 0;
+                }
+
+                if ($endPeriod === 'PM' && $endHour !== 12) {
+                    $endHour += 12;
+                } elseif ($endPeriod === 'AM' && $endHour === 12) {
+                    $endHour = 0;
+                }
+
+                // Create Carbon instances for the exact time slot
+                $newCheckInTime = $newCheckIn->copy()->setTime($startHour, $startMinute);
+                $newCheckOutTime = $newCheckIn->copy()->setTime($endHour, $endMinute);
+            } else {
+                return true; // Can't parse time slot
+            }
+
+            $bufferMinutes = $this->selectedBooking->bookingable->buffer_time ?? 0;
+            $endTimeWithBuffer = $newCheckOutTime->copy()->addMinutes($bufferMinutes);
+
+            // For PRIVATE trips: Check if slot is completely free
+            if ($tripType === 'private') {
+                return !Booking::where('bookingable_type', 'App\\Models\\Boat')
+                    ->where('bookingable_id', $bookingableId)
+                    ->where('id', '!=', $this->selectedBooking->id)
+                    ->whereIn('status', ['pending', 'booked', 'checked_in'])
+                    ->whereDate('check_in', $newCheckIn->format('Y-m-d'))
+                    ->where(function ($query) use ($newCheckInTime, $endTimeWithBuffer, $newCheckOutTime) {
+                        $query->whereBetween('check_in', [$newCheckInTime, $endTimeWithBuffer])->orWhere(function ($q) use ($newCheckInTime, $newCheckOutTime) {
+                            $q->where('check_in', '<=', $newCheckInTime)->where('check_in', '>=', $newCheckInTime->copy()->subHours(24));
                         });
-                })
-                ->exists();
+                    })
+                    ->exists();
+            }
+
+            // For PUBLIC trips: Check if enough seats are available
+            if ($tripType === 'public') {
+                $requestedSeats = ($this->selectedBooking->adults ?? 0) + ($this->selectedBooking->children ?? 0);
+                $maxPassengers = $this->selectedBooking->bookingable->max_passengers ?? 0;
+
+                // Get all bookings on the same date for this boat (public trips) - including those without time slot
+                $allBookings = Booking::where('bookingable_type', 'App\\Models\\Boat')
+                    ->where('bookingable_id', $bookingableId)
+                    ->where('id', '!=', $this->selectedBooking->id)
+                    ->where('trip_type', 'public')
+                    ->whereIn('status', ['pending', 'booked', 'checked_in'])
+                    ->whereDate('check_in', $newCheckIn->format('Y-m-d'))
+                    ->get();
+
+                // Calculate booked seats for overlapping time slots
+                $bookedSeats = 0;
+                foreach ($allBookings as $existingBooking) {
+                    $existingSlot = $existingBooking->requested_time_slot;
+
+                    // Try to get time slot from guest_details if requested_time_slot is empty
+                    if (empty($existingSlot) && isset($existingBooking->guest_details['boat_details']['start_time'])) {
+                        $startTime = $existingBooking->guest_details['boat_details']['start_time'];
+                        $duration = $existingBooking->guest_details['boat_details']['duration'] ?? 1;
+
+                        // Calculate end time
+                        if ($startTime) {
+                            try {
+                                $start = \Carbon\Carbon::createFromFormat('H:i', $startTime);
+                                $end = $start->copy()->addHours((int) $duration);
+                                $existingSlot = $start->format('h:i A') . ' - ' . $end->format('h:i A');
+                            } catch (\Exception $e) {
+                                // If parsing fails, skip this booking with warning
+                                continue;
+                            }
+                        }
+                    }
+
+                    // Skip if still no time slot info available
+                    if (empty($existingSlot)) {
+                        continue;
+                    }
+
+                    // Parse existing booking time slot
+                    if (preg_match('/(\d+):(\d+)\s*(AM|PM)\s*-\s*(\d+):(\d+)\s*(AM|PM)/', $existingSlot, $existingMatches)) {
+                        $existingStartHour = (int) $existingMatches[1];
+                        $existingStartMinute = (int) $existingMatches[2];
+                        $existingStartPeriod = $existingMatches[3];
+                        $existingEndHour = (int) $existingMatches[4];
+                        $existingEndMinute = (int) $existingMatches[5];
+                        $existingEndPeriod = $existingMatches[6];
+
+                        // Convert to 24-hour format
+                        if ($existingStartPeriod === 'PM' && $existingStartHour !== 12) {
+                            $existingStartHour += 12;
+                        } elseif ($existingStartPeriod === 'AM' && $existingStartHour === 12) {
+                            $existingStartHour = 0;
+                        }
+
+                        if ($existingEndPeriod === 'PM' && $existingEndHour !== 12) {
+                            $existingEndHour += 12;
+                        } elseif ($existingEndPeriod === 'AM' && $existingEndHour === 12) {
+                            $existingEndHour = 0;
+                        }
+
+                        // Create time values for comparison (minutes from midnight)
+                        $newStartMinutes = $startHour * 60 + $startMinute;
+                        $newEndMinutes = $endHour * 60 + $endMinute;
+                        $existingStartMinutes = $existingStartHour * 60 + $existingStartMinute;
+                        $existingEndMinutes = $existingEndHour * 60 + $existingEndMinute;
+
+                        // Check if time slots overlap
+                        // Two slots overlap if: (StartA < EndB) AND (EndA > StartB)
+                        $overlaps = $newStartMinutes < $existingEndMinutes && $newEndMinutes > $existingStartMinutes;
+
+                        if ($overlaps) {
+                            $bookedSeats += ($existingBooking->adults ?? 0) + ($existingBooking->children ?? 0);
+                        }
+                    }
+                }
+
+                $availableSeats = $maxPassengers - $bookedSeats;
+                return $availableSeats >= $requestedSeats;
+            }
         }
 
         // Check for rooms
         if ($bookingableType === 'App\\Models\\Room') {
+            $newCheckOut = $this->selectedBooking->new_check_out;
+            if (!$newCheckOut) {
+                return true; // Can't determine without check_out
+            }
+
             return !Booking::where('bookingable_type', 'App\\Models\\Room')
                 ->where('bookingable_id', $bookingableId)
                 ->where('id', '!=', $this->selectedBooking->id)
@@ -115,6 +233,11 @@ new class extends Component {
 
         // Check for houses
         if ($bookingableType === 'App\\Models\\House') {
+            $newCheckOut = $this->selectedBooking->new_check_out;
+            if (!$newCheckOut) {
+                return true; // Can't determine without check_out
+            }
+
             return !Booking::where('bookingable_type', 'App\\Models\\House')
                 ->where('bookingable_id', $bookingableId)
                 ->where('id', '!=', $this->selectedBooking->id)
@@ -131,6 +254,196 @@ new class extends Component {
         }
 
         return true; // Unknown type, assume available
+    }
+
+    public function getAvailabilityMessage(): ?string
+    {
+        if (!$this->selectedBooking || !$this->selectedBooking->new_check_in) {
+            return null;
+        }
+
+        $bookingableType = $this->selectedBooking->bookingable_type;
+
+        if ($bookingableType === 'App\\Models\\Boat') {
+            $tripType = $this->selectedBooking->trip_type;
+            $newCheckIn = $this->selectedBooking->new_check_in;
+            $bookingableId = $this->selectedBooking->bookingable_id;
+            $requestedTimeSlot = $this->selectedBooking->requested_time_slot;
+
+            if (empty($requestedTimeSlot)) {
+                return null;
+            }
+
+            if ($tripType === 'private') {
+                $hasConflict = Booking::where('bookingable_type', 'App\\Models\\Boat')
+                    ->where('bookingable_id', $bookingableId)
+                    ->where('id', '!=', $this->selectedBooking->id)
+                    ->whereIn('status', ['pending', 'booked', 'checked_in'])
+                    ->whereDate('check_in', $newCheckIn->format('Y-m-d'))
+                    ->where('requested_time_slot', $requestedTimeSlot)
+                    ->exists();
+
+                if ($hasConflict) {
+                    return "This time slot ({$requestedTimeSlot}) has already been booked by another customer for a private trip. Please reject this request and ask the customer to choose a different time slot.";
+                }
+            } elseif ($tripType === 'public') {
+                $requestedSeats = ($this->selectedBooking->adults ?? 0) + ($this->selectedBooking->children ?? 0);
+                $maxPassengers = $this->selectedBooking->bookingable->max_passengers ?? 0;
+
+                // Parse requested time slot
+                if (!preg_match('/(\d+):(\d+)\s*(AM|PM)\s*-\s*(\d+):(\d+)\s*(AM|PM)/', $requestedTimeSlot, $matches)) {
+                    return null;
+                }
+
+                $startHour = (int) $matches[1];
+                $startMinute = (int) $matches[2];
+                $startPeriod = $matches[3];
+                $endHour = (int) $matches[4];
+                $endMinute = (int) $matches[5];
+                $endPeriod = $matches[6];
+
+                // Convert to 24-hour format
+                if ($startPeriod === 'PM' && $startHour !== 12) {
+                    $startHour += 12;
+                } elseif ($startPeriod === 'AM' && $startHour === 12) {
+                    $startHour = 0;
+                }
+
+                if ($endPeriod === 'PM' && $endHour !== 12) {
+                    $endHour += 12;
+                } elseif ($endPeriod === 'AM' && $endHour === 12) {
+                    $endHour = 0;
+                }
+
+                $newStartMinutes = $startHour * 60 + $startMinute;
+                $newEndMinutes = $endHour * 60 + $endMinute;
+
+                // Get all bookings and check for overlaps (including those without time slot for debugging)
+                $allBookings = Booking::where('bookingable_type', 'App\\Models\\Boat')
+                    ->where('bookingable_id', $bookingableId)
+                    ->where('id', '!=', $this->selectedBooking->id)
+                    ->where('trip_type', 'public')
+                    ->whereIn('status', ['pending', 'booked', 'checked_in'])
+                    ->whereDate('check_in', $newCheckIn->format('Y-m-d'))
+                    ->get();
+
+                $bookedSeats = 0;
+                $overlappingBookings = [];
+                $skippedBookings = []; // For debugging
+
+                foreach ($allBookings as $existingBooking) {
+                    $existingSlot = $existingBooking->requested_time_slot;
+
+                    // Try to get time slot from guest_details if requested_time_slot is empty
+                    if (empty($existingSlot) && isset($existingBooking->guest_details['boat_details']['start_time'])) {
+                        $startTime = $existingBooking->guest_details['boat_details']['start_time'];
+                        $duration = $existingBooking->guest_details['boat_details']['duration'] ?? 1;
+
+                        // Calculate end time
+                        if ($startTime) {
+                            try {
+                                $start = \Carbon\Carbon::createFromFormat('H:i', $startTime);
+                                $end = $start->copy()->addHours((int) $duration);
+                                $existingSlot = $start->format('h:i A') . ' - ' . $end->format('h:i A');
+                            } catch (\Exception $e) {
+                                // If parsing fails, add to skipped
+                                $skippedBookings[] = [
+                                    'booking_id' => $existingBooking->booking_id,
+                                    'seats' => ($existingBooking->adults ?? 0) + ($existingBooking->children ?? 0),
+                                    'reason' => 'Failed to parse time from guest_details',
+                                ];
+                                continue;
+                            }
+                        }
+                    }
+
+                    // Track bookings without time slot
+                    if (empty($existingSlot)) {
+                        $skippedBookings[] = [
+                            'booking_id' => $existingBooking->booking_id,
+                            'seats' => ($existingBooking->adults ?? 0) + ($existingBooking->children ?? 0),
+                            'reason' => 'No time slot',
+                        ];
+                        continue;
+                    }
+
+                    if (preg_match('/(\d+):(\d+)\s*(AM|PM)\s*-\s*(\d+):(\d+)\s*(AM|PM)/', $existingSlot, $existingMatches)) {
+                        $existingStartHour = (int) $existingMatches[1];
+                        $existingStartMinute = (int) $existingMatches[2];
+                        $existingStartPeriod = $existingMatches[3];
+                        $existingEndHour = (int) $existingMatches[4];
+                        $existingEndMinute = (int) $existingMatches[5];
+                        $existingEndPeriod = $existingMatches[6];
+
+                        if ($existingStartPeriod === 'PM' && $existingStartHour !== 12) {
+                            $existingStartHour += 12;
+                        } elseif ($existingStartPeriod === 'AM' && $existingStartHour === 12) {
+                            $existingStartHour = 0;
+                        }
+
+                        if ($existingEndPeriod === 'PM' && $existingEndHour !== 12) {
+                            $existingEndHour += 12;
+                        } elseif ($existingEndPeriod === 'AM' && $existingEndHour === 12) {
+                            $existingEndHour = 0;
+                        }
+
+                        $existingStartMinutes = $existingStartHour * 60 + $existingStartMinute;
+                        $existingEndMinutes = $existingEndHour * 60 + $existingEndMinute;
+
+                        // Check overlap
+                        if ($newStartMinutes < $existingEndMinutes && $newEndMinutes > $existingStartMinutes) {
+                            $seats = ($existingBooking->adults ?? 0) + ($existingBooking->children ?? 0);
+                            $bookedSeats += $seats;
+                            $overlappingBookings[] = [
+                                'slot' => $existingSlot,
+                                'seats' => $seats,
+                                'booking_id' => $existingBooking->booking_id,
+                            ];
+                        }
+                    }
+                }
+
+                $availableSeats = $maxPassengers - $bookedSeats;
+
+                if ($availableSeats < $requestedSeats) {
+                    $overlappingInfo = '';
+                    if (!empty($overlappingBookings)) {
+                        $overlappingInfo = "\n\nOverlapping bookings:\n";
+                        foreach ($overlappingBookings as $overlap) {
+                            $overlappingInfo .= "• Booking #{$overlap['booking_id']}: {$overlap['slot']} ({$overlap['seats']} seats)\n";
+                        }
+                    }
+                    if (!empty($skippedBookings)) {
+                        $overlappingInfo .= "\n⚠️ WARNING: Some bookings skipped (no time slot data):\n";
+                        foreach ($skippedBookings as $skipped) {
+                            $overlappingInfo .= "• Booking #{$skipped['booking_id']}: {$skipped['seats']} seats - {$skipped['reason']}\n";
+                        }
+                    }
+                    return "⚠️ Time Slot: {$requestedTimeSlot} - Only {$availableSeats} seat(s) available out of {$requestedSeats} requested. The requested time slot does not have enough seats available. Please reject this request.{$overlappingInfo}";
+                }
+
+                $overlappingInfo = '';
+                if (!empty($overlappingBookings)) {
+                    $overlappingInfo = "\n\nOverlapping bookings found:\n";
+                    foreach ($overlappingBookings as $overlap) {
+                        $overlappingInfo .= "• Booking #{$overlap['booking_id']}: {$overlap['slot']} ({$overlap['seats']} seats)\n";
+                    }
+                }
+
+                // Add debug info for skipped bookings
+                if (!empty($skippedBookings)) {
+                    $overlappingInfo .= "\n⚠️ WARNING: Some bookings on this date have no time slot data:\n";
+                    foreach ($skippedBookings as $skipped) {
+                        $overlappingInfo .= "• Booking #{$skipped['booking_id']}: {$skipped['seats']} seats\n";
+                    }
+                    $overlappingInfo .= "These bookings were NOT counted in availability calculation. Please verify manually.\n";
+                }
+
+                return "✓ Time Slot: {$requestedTimeSlot} - Available seats: {$availableSeats} out of {$maxPassengers} total seats (Customer requested: {$requestedSeats} seats). This reschedule request can be approved.{$overlappingInfo}";
+            }
+        }
+
+        return null;
     }
 
     public function closeApproveModal(): void
@@ -383,15 +696,44 @@ new class extends Component {
             }
 
             // Update booking dates and status
-            $this->selectedBooking->update([
+            $updateData = [
                 'reschedule_status' => 'approved',
                 'check_in' => $this->selectedBooking->new_check_in,
-                'check_out' => $this->selectedBooking->new_check_out,
                 'reschedule_fee' => $this->rescheduleFee,
                 'rescheduled_by' => auth()->id(),
                 'extra_fee' => $this->extraFee > 0 ? $this->extraFee : null,
                 'extra_fee_remark' => $this->extraFee > 0 ? $this->extraFeeRemark : null,
-            ]);
+            ];
+
+            // For boats, calculate check_out from requested_time_slot
+            if ($this->selectedBooking->bookingable_type === 'App\\Models\\Boat' && $this->selectedBooking->requested_time_slot) {
+                $requestedTimeSlot = $this->selectedBooking->requested_time_slot;
+
+                // Parse time slot to get end time
+                if (preg_match('/(\d+):(\d+)\s*(AM|PM)\s*-\s*(\d+):(\d+)\s*(AM|PM)/', $requestedTimeSlot, $matches)) {
+                    $endHour = (int) $matches[4];
+                    $endMinute = (int) $matches[5];
+                    $endPeriod = $matches[6];
+
+                    // Convert to 24-hour format
+                    if ($endPeriod === 'PM' && $endHour !== 12) {
+                        $endHour += 12;
+                    } elseif ($endPeriod === 'AM' && $endHour === 12) {
+                        $endHour = 0;
+                    }
+
+                    // Set check_out time based on requested_time_slot
+                    $updateData['check_out'] = $this->selectedBooking->new_check_in->copy()->setTime($endHour, $endMinute);
+                } else {
+                    // Fallback: set check_out same as new_check_out (might be null)
+                    $updateData['check_out'] = $this->selectedBooking->new_check_out;
+                }
+            } else {
+                // For rooms/houses, use new_check_out
+                $updateData['check_out'] = $this->selectedBooking->new_check_out;
+            }
+
+            $this->selectedBooking->update($updateData);
 
             // Create notification for the customer
             \App\Models\UserNotification::create([
@@ -549,17 +891,39 @@ new class extends Component {
             <div class="space-y-4">
                 <x-alert icon="o-information-circle" class="alert-info mb-4">
                     Booking #{{ $selectedBooking->id }} - {{ $selectedBooking->bookingable->name ?? 'N/A' }}
+                    @if ($selectedBooking->trip_type)
+                        <span class="badge badge-sm ml-2">
+                            {{ ucfirst($selectedBooking->trip_type) }} Trip
+                        </span>
+                    @endif
                 </x-alert>
 
                 @if (!$this->isRequestedDateAvailable())
                     <x-alert icon="o-exclamation-triangle" class="alert-error mb-4">
                         <div>
-                            <p class="font-bold">⚠️ Requested dates are NOT available!</p>
+                            <p class="font-bold">⚠️ Requested slot is NOT available!</p>
                             <p class="text-sm mt-1">
-                                Another booking already exists for this
-                                {{ $selectedBooking->bookingable_type === 'App\\Models\\Boat' ? 'boat' : ($selectedBooking->bookingable_type === 'App\\Models\\Room' ? 'room' : 'house') }}
-                                during the requested time period. Please reject this request and ask the customer to
-                                choose different dates.
+                                @if ($this->getAvailabilityMessage())
+                                    {{ $this->getAvailabilityMessage() }}
+                                @else
+                                    Another booking already exists for this
+                                    {{ $selectedBooking->bookingable_type === 'App\\Models\\Boat' ? 'boat' : ($selectedBooking->bookingable_type === 'App\\Models\\Room' ? 'room' : 'house') }}
+                                    during the requested time period. Please reject this request and ask the customer
+                                    to
+                                    choose different dates.
+                                @endif
+                            </p>
+                        </div>
+                    </x-alert>
+                @elseif (
+                    $this->getAvailabilityMessage() &&
+                        $selectedBooking->bookingable_type === 'App\\Models\\Boat' &&
+                        $selectedBooking->trip_type === 'public')
+                    <x-alert icon="o-information-circle" class="alert-success mb-4">
+                        <div>
+                            <p class="font-bold">✓ Availability Status</p>
+                            <p class="text-sm mt-1">
+                                {{ $this->getAvailabilityMessage() }}
                             </p>
                         </div>
                     </x-alert>
