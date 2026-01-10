@@ -131,6 +131,9 @@ new class extends Component {
 
         // Get buffer time from boat
         $bufferMinutes = $this->booking->bookingable->buffer_time ?? 0;
+        $boatMaxPassengers = $this->booking->bookingable->max_passengers ?? 0;
+        $isPublicTrip = $this->booking->trip_type === 'public';
+        $requestedSeats = ($this->booking->adults ?? 0) + ($this->booking->children ?? 0);
 
         // Generate all possible time slots with availability check
         $slots = [];
@@ -143,8 +146,8 @@ new class extends Component {
             $endTime = $startTime->copy()->addHours($originalDuration);
             $endTimeWithBuffer = $endTime->copy()->addMinutes($bufferMinutes);
 
-            // Check if this slot is already booked (excluding current booking)
-            $isBooked = Booking::where('bookingable_type', Boat::class)
+            // Check for conflicting bookings in this time slot
+            $conflictingBookings = Booking::where('bookingable_type', Boat::class)
                 ->where('bookingable_id', $this->booking->bookingable_id)
                 ->where('id', '!=', $this->booking->id)
                 ->whereIn('status', ['pending', 'booked', 'checked_in'])
@@ -157,13 +160,55 @@ new class extends Component {
                             $q->where('check_in', '<=', $startTime)->where('check_out', '>=', $endTimeWithBuffer);
                         });
                 })
-                ->exists();
+                ->get();
 
             $displaySlot = $startTime->format('h:i A') . ' - ' . $endTime->format('h:i A');
 
+            // Check if there's a private booking in this slot
+            $hasPrivateBooking = $conflictingBookings->where('trip_type', 'private')->isNotEmpty();
+
+            // Calculate available seats for public trips
+            $bookedSeats = 0;
+            $availableSeats = $boatMaxPassengers;
+            $isAvailable = true;
+            $requiresApproval = false;
+
+            if ($hasPrivateBooking) {
+                // If there's a private booking, slot is not available for public trips
+                // But private trips can request (requires admin approval)
+                if ($isPublicTrip) {
+                    $isAvailable = false;
+                    $availableSeats = 0;
+                } else {
+                    // Private trip trying to book over another private trip - requires approval
+                    $isAvailable = true;
+                    $requiresApproval = true;
+                    $availableSeats = 0;
+                }
+            } else {
+                // No private bookings, check public bookings
+                $bookedSeats = $conflictingBookings->where('trip_type', 'public')->sum(function ($booking) {
+                    return ($booking->adults ?? 0) + ($booking->children ?? 0);
+                });
+
+                $availableSeats = $boatMaxPassengers - $bookedSeats;
+
+                if ($isPublicTrip) {
+                    // For public trips, check if enough seats are available
+                    $isAvailable = $availableSeats >= $requestedSeats;
+                } else {
+                    // For private trips, only available if no bookings at all
+                    $isAvailable = $conflictingBookings->isEmpty();
+                }
+            }
+
             $slots[] = [
                 'display' => $displaySlot,
-                'is_available' => !$isBooked,
+                'is_available' => $isAvailable,
+                'available_seats' => $availableSeats,
+                'booked_seats' => $bookedSeats,
+                'requires_approval' => $requiresApproval,
+                'has_private_booking' => $hasPrivateBooking,
             ];
 
             // Move to next slot (add buffer time to create gap between slots)
@@ -492,6 +537,13 @@ new class extends Component {
                                         <small class="text-muted d-block mb-2">
                                             <i class="bi bi-info-circle me-1"></i>
                                             You can only reschedule to the same duration as your original booking
+                                            @if ($booking->trip_type === 'public')
+                                                <br><i class="bi bi-people me-1"></i>Public Trip - Available seats shown
+                                                for each slot
+                                            @else
+                                                <br><i class="bi bi-star me-1"></i>Private Trip - Full boat exclusivity
+                                                required
+                                            @endif
                                         </small>
                                         <div class="d-flex flex-wrap gap-2">
                                             @forelse ($availableTimeSlots as $slot)
@@ -504,10 +556,43 @@ new class extends Component {
                                                     <span
                                                         class="btn btn-sm {{ $selectedTimeSlot === $slot['display'] ? 'btn-success' : (!$slot['is_available'] ? 'btn-danger' : 'btn-outline-secondary') }}">
                                                         <i class="bi bi-clock me-1"></i>{{ $slot['display'] }}
-                                                        @if ($slot['is_available'] && $selectedTimeSlot !== $slot['display'])
-                                                            <span class="badge bg-success ms-1">Available</span>
-                                                        @elseif (!$slot['is_available'])
-                                                            <span class="badge bg-light text-dark ms-1">Booked</span>
+                                                        @if ($booking->trip_type === 'public')
+                                                            @if ($slot['is_available'] && $selectedTimeSlot !== $slot['display'])
+                                                                <span class="badge bg-success ms-1">
+                                                                    <i
+                                                                        class="bi bi-person-check me-1"></i>{{ $slot['available_seats'] }}
+                                                                    seats
+                                                                </span>
+                                                            @elseif ($slot['is_available'] && $selectedTimeSlot === $slot['display'])
+                                                                <span class="badge bg-white text-success ms-1">
+                                                                    <i
+                                                                        class="bi bi-person-check me-1"></i>{{ $slot['available_seats'] }}
+                                                                    seats
+                                                                </span>
+                                                            @else
+                                                                <span class="badge bg-light text-dark ms-1">
+                                                                    @if ($slot['has_private_booking'])
+                                                                        <i class="bi bi-lock me-1"></i>Private Booked
+                                                                    @else
+                                                                        <i class="bi bi-person-x me-1"></i>Full
+                                                                    @endif
+                                                                </span>
+                                                            @endif
+                                                        @else
+                                                            {{-- Private Trip --}}
+                                                            @if ($slot['is_available'] && $selectedTimeSlot !== $slot['display'])
+                                                                @if ($slot['requires_approval'])
+                                                                    <span class="badge bg-warning ms-1">
+                                                                        <i class="bi bi-hourglass me-1"></i>Needs
+                                                                        Approval
+                                                                    </span>
+                                                                @else
+                                                                    <span class="badge bg-success ms-1">Available</span>
+                                                                @endif
+                                                            @elseif (!$slot['is_available'])
+                                                                <span
+                                                                    class="badge bg-light text-dark ms-1">Booked</span>
+                                                            @endif
                                                         @endif
                                                     </span>
                                                 </label>

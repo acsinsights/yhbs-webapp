@@ -26,7 +26,7 @@
                         <p class="mb-0">Manage your bookings and profile from your dashboard</p>
                     </div>
                     <div class="col-md-4 text-end">
-                        <a href="{{ route('customer.profile') }}" class="btn btn-outline-primary">
+                        <a href="{{ route('customer.profile') }}" class="btn text-primary-emphasis btn-outline-primary">
                             <i class="bi bi-person-circle me-2"></i>View Profile
                         </a>
                     </div>
