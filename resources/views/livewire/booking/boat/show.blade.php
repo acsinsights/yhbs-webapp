@@ -250,7 +250,7 @@ new class extends Component {
         }
 
         $oldCheckIn = $this->booking->check_in->format('M d, Y h:i A');
-        $oldCheckOut = $this->booking->check_out->format('M d, Y h:i A');
+        $oldCheckOut = $this->booking->check_out ? $this->booking->check_out->format('M d, Y h:i A') : 'N/A';
         $newCheckOut = $newCheckIn->copy()->addMinutes($durationHours * 60);
 
         $user = $this->booking->user;
@@ -856,7 +856,7 @@ new class extends Component {
     <x-modal wire:model="showRescheduleModal" title="Reschedule Booking" class="backdrop-blur">
         <div class="space-y-4">
             <x-alert title="Current Booking"
-                description="Departure: {{ $booking->check_in->format('M d, Y h:i A') }} | Return: {{ $booking->check_out->format('M d, Y h:i A') }}"
+                description="Departure: {{ $booking->check_in->format('M d, Y h:i A') }}{{ $booking->check_out ? ' | Return: ' . $booking->check_out->format('M d, Y h:i A') : '' }}"
                 icon="o-information-circle" class="alert-info" />
 
             <x-input label="New Date *" type="date" icon="o-calendar" wire:model.live="new_check_in"
