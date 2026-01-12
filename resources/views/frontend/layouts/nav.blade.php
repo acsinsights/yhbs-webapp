@@ -138,76 +138,80 @@
 
                 @auth
                     <!-- Logged In User Menu -->
-                    <div class="user-menu-dropdown d-xl-flex d-none"
-                        style="position: relative; display: flex; align-items: center; gap: 20px;">
+                    <div class="d-xl-flex d-none" style="display: flex; align-items: center; gap: 20px;">
 
                         <!-- Notification Bell -->
                         @role('customer')
                             <livewire:frontend.notification-bell />
                         @endrole
 
-                        <a href="#" class="primary-btn1 black-bg user-dropdown-toggle" style="position: relative;">
-                            <span>
-                                <svg width="15" height="15" viewbox="0 0 15 15" xmlns="http://www.w3.org/2000/svg">
-                                    <g>
-                                        <path
-                                            d="M7.50105 7.78913C9.64392 7.78913 11.3956 6.03744 11.3956 3.89456C11.3956 1.75169 9.64392 0 7.50105 0C5.35818 0 3.60652 1.75169 3.60652 3.89456C3.60652 6.03744 5.35821 7.78913 7.50105 7.78913ZM14.1847 10.9014C14.0827 10.6463 13.9467 10.4082 13.7936 10.1871C13.0113 9.0306 11.8038 8.2653 10.4433 8.07822C10.2732 8.06123 10.0861 8.09522 9.95007 8.19727C9.23578 8.72448 8.38546 8.99658 7.50108 8.99658C6.61671 8.99658 5.76638 8.72448 5.05209 8.19727C4.91603 8.09522 4.72895 8.04421 4.5589 8.07822C3.19835 8.2653 1.97387 9.0306 1.20857 10.1871C1.05551 10.4082 0.919443 10.6633 0.817424 10.9014C0.766415 11.0034 0.783407 11.1225 0.834416 11.2245C0.970484 11.4626 1.14054 11.7007 1.2936 11.9048C1.53168 12.2279 1.78679 12.517 2.07592 12.7891C2.31401 13.0272 2.58611 13.2483 2.85824 13.4694C4.20177 14.4728 5.81742 15 7.48409 15C9.15076 15 10.7664 14.4728 12.1099 13.4694C12.382 13.2653 12.6541 13.0272 12.8923 12.7891C13.1644 12.517 13.4365 12.2279 13.6746 11.9048C13.8446 11.6837 13.9977 11.4626 14.1338 11.2245C14.2188 11.1225 14.2358 11.0034 14.1847 10.9014Z">
-                                        </path>
-                                    </g>
-                                </svg>
-                                {{ trim((auth()->user()->first_name ?? '') . ' ' . (auth()->user()->last_name ?? '')) ?: auth()->user()->name ?? 'My Account' }}
-                                <i class="bi bi-chevron-down ms-1"></i>
-                            </span>
-                        </a>
-
-                        <div class="user-dropdown-menu"
-                            style="position: absolute; top: 100%; right: 0; background: white; min-width: 250px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-radius: 10px; margin-top: 10px; padding: 10px 0; display: none; z-index: 1000;">
-                            <div style="padding: 15px 20px; border-bottom: 2px solid #f0f0f0;">
-                                <p style="margin: 0; font-weight: 700; color: #1a1a1a;">
-                                    {{ trim((auth()->user()->first_name ?? '') . ' ' . (auth()->user()->last_name ?? '')) ?: auth()->user()->name ?? 'Guest' }}
-                                </p>
-                                <p style="margin: 0; font-size: 13px; color: #6c757d;">{{ auth()->user()->email ?? '' }}
-                                </p>
-                            </div>
-                            @role('admin|superadmin|reception')
-                                <a href="{{ route('admin.index') }}"
-                                    style="display: flex; align-items: center; padding: 12px 20px; color: #333; text-decoration: none; transition: all 0.3s;">
-                                    <i class="bi bi-speedometer2"
-                                        style="font-size: 18px; margin-right: 10px; color: #667eea;"></i>
-                                    Admin Dashboard
-                                </a>
-                            @endrole
-                            @role('customer')
-                                <a href="{{ route('customer.dashboard') }}"
-                                    style="display: flex; align-items: center; padding: 12px 20px; color: #333; text-decoration: none; transition: all 0.3s;">
-                                    <i class="bi bi-speedometer2"
-                                        style="font-size: 18px; margin-right: 10px; color: #667eea;"></i>
-                                    Dashboard
-                                </a>
-                                <a href="{{ route('customer.bookings') }}"
-                                    style="display: flex; align-items: center; padding: 12px 20px; color: #333; text-decoration: none; transition: all 0.3s;">
-                                    <i class="bi bi-calendar-check"
-                                        style="font-size: 18px; margin-right: 10px; color: #667eea;"></i>
-                                    My Bookings
-                                </a>
-                                <a href="{{ route('customer.profile') }}"
-                                    style="display: flex; align-items: center; padding: 12px 20px; color: #333; text-decoration: none; transition: all 0.3s;">
-                                    <i class="bi bi-person-circle"
-                                        style="font-size: 18px; margin-right: 10px; color: #667eea;"></i>
-                                    My Profile
-                                </a>
-                            @endrole
-                            <div style="border-top: 2px solid #f0f0f0; margin: 10px 0;"></div>
-                            <a href="{{ route('customer.logout') }}"
-                                onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
-                                style="display: flex; align-items: center; padding: 12px 20px; color: #dc3545; text-decoration: none; transition: all 0.3s;">
-                                <i class="bi bi-box-arrow-right" style="font-size: 18px; margin-right: 10px;"></i>
-                                Logout
+                        <!-- User Dropdown -->
+                        <div class="user-dropdown-wrapper" style="position: relative;">
+                            <a href="#" class="primary-btn1 black-bg user-dropdown-toggle">
+                                <span>
+                                    <svg width="15" height="15" viewbox="0 0 15 15"
+                                        xmlns="http://www.w3.org/2000/svg">
+                                        <g>
+                                            <path
+                                                d="M7.50105 7.78913C9.64392 7.78913 11.3956 6.03744 11.3956 3.89456C11.3956 1.75169 9.64392 0 7.50105 0C5.35818 0 3.60652 1.75169 3.60652 3.89456C3.60652 6.03744 5.35821 7.78913 7.50105 7.78913ZM14.1847 10.9014C14.0827 10.6463 13.9467 10.4082 13.7936 10.1871C13.0113 9.0306 11.8038 8.2653 10.4433 8.07822C10.2732 8.06123 10.0861 8.09522 9.95007 8.19727C9.23578 8.72448 8.38546 8.99658 7.50108 8.99658C6.61671 8.99658 5.76638 8.72448 5.05209 8.19727C4.91603 8.09522 4.72895 8.04421 4.5589 8.07822C3.19835 8.2653 1.97387 9.0306 1.20857 10.1871C1.05551 10.4082 0.919443 10.6633 0.817424 10.9014C0.766415 11.0034 0.783407 11.1225 0.834416 11.2245C0.970484 11.4626 1.14054 11.7007 1.2936 11.9048C1.53168 12.2279 1.78679 12.517 2.07592 12.7891C2.31401 13.0272 2.58611 13.2483 2.85824 13.4694C4.20177 14.4728 5.81742 15 7.48409 15C9.15076 15 10.7664 14.4728 12.1099 13.4694C12.382 13.2653 12.6541 13.0272 12.8923 12.7891C13.1644 12.517 13.4365 12.2279 13.6746 11.9048C13.8446 11.6837 13.9977 11.4626 14.1338 11.2245C14.2188 11.1225 14.2358 11.0034 14.1847 10.9014Z">
+                                            </path>
+                                        </g>
+                                    </svg>
+                                    {{ trim((auth()->user()->first_name ?? '') . ' ' . (auth()->user()->last_name ?? '')) ?: auth()->user()->name ?? 'My Account' }}
+                                    <i class="bi bi-chevron-down ms-1"></i>
+                                </span>
                             </a>
-                            <form id="logout-form" action="{{ route('customer.logout') }}" method="POST"
-                                style="display: none;">
-                                @csrf
-                            </form>
+
+                            <div class="user-dropdown-menu"
+                                style="position: absolute; top: 100%; right: 0; background: white; min-width: 250px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-radius: 10px; margin-top: 10px; padding: 10px 0; display: none; z-index: 1000;">
+                                <div style="padding: 15px 20px; border-bottom: 2px solid #f0f0f0;">
+                                    <p style="margin: 0; font-weight: 700; color: #1a1a1a;">
+                                        {{ trim((auth()->user()->first_name ?? '') . ' ' . (auth()->user()->last_name ?? '')) ?: auth()->user()->name ?? 'Guest' }}
+                                    </p>
+                                    <p style="margin: 0; font-size: 13px; color: #6c757d;">
+                                        {{ auth()->user()->email ?? '' }}
+                                    </p>
+                                </div>
+                                @role('admin|superadmin|reception')
+                                    <a href="{{ route('admin.index') }}"
+                                        style="display: flex; align-items: center; padding: 12px 20px; color: #333; text-decoration: none; transition: all 0.3s;">
+                                        <i class="bi bi-speedometer2"
+                                            style="font-size: 18px; margin-right: 10px; color: #667eea;"></i>
+                                        Admin Dashboard
+                                    </a>
+                                @endrole
+                                @role('customer')
+                                    <a href="{{ route('customer.dashboard') }}"
+                                        style="display: flex; align-items: center; padding: 12px 20px; color: #333; text-decoration: none; transition: all 0.3s;">
+                                        <i class="bi bi-speedometer2"
+                                            style="font-size: 18px; margin-right: 10px; color: #667eea;"></i>
+                                        Dashboard
+                                    </a>
+                                    <a href="{{ route('customer.bookings') }}"
+                                        style="display: flex; align-items: center; padding: 12px 20px; color: #333; text-decoration: none; transition: all 0.3s;">
+                                        <i class="bi bi-calendar-check"
+                                            style="font-size: 18px; margin-right: 10px; color: #667eea;"></i>
+                                        My Bookings
+                                    </a>
+                                    <a href="{{ route('customer.profile') }}"
+                                        style="display: flex; align-items: center; padding: 12px 20px; color: #333; text-decoration: none; transition: all 0.3s;">
+                                        <i class="bi bi-person-circle"
+                                            style="font-size: 18px; margin-right: 10px; color: #667eea;"></i>
+                                        My Profile
+                                    </a>
+                                @endrole
+                                <div style="border-top: 2px solid #f0f0f0; margin: 10px 0;"></div>
+                                <a href="{{ route('customer.logout') }}"
+                                    onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
+                                    style="display: flex; align-items: center; padding: 12px 20px; color: #dc3545; text-decoration: none; transition: all 0.3s;">
+                                    <i class="bi bi-box-arrow-right" style="font-size: 18px; margin-right: 10px;"></i>
+                                    Logout
+                                </a>
+                                <form id="logout-form" action="{{ route('customer.logout') }}" method="POST"
+                                    style="display: none;">
+                                    @csrf
+                                </form>
+                            </div>
                         </div>
                     </div>
                 @else
@@ -387,31 +391,19 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            const dropdownContainer = document.querySelector('.user-menu-dropdown');
+            const userDropdownWrapper = document.querySelector('.user-dropdown-wrapper');
             const dropdownMenu = document.querySelector('.user-dropdown-menu');
             let hideTimeout;
 
-            if (dropdownContainer && dropdownMenu) {
-                // Show dropdown on hover
-                dropdownContainer.addEventListener('mouseenter', function() {
+            if (userDropdownWrapper && dropdownMenu) {
+                // Show dropdown on hover over wrapper
+                userDropdownWrapper.addEventListener('mouseenter', function() {
                     clearTimeout(hideTimeout);
                     dropdownMenu.style.display = 'block';
                 });
 
-                // Hide dropdown with delay when mouse leaves
-                dropdownContainer.addEventListener('mouseleave', function() {
-                    hideTimeout = setTimeout(function() {
-                        dropdownMenu.style.display = 'none';
-                    }, 300); // 300ms delay before hiding
-                });
-
-                // Keep dropdown visible when hovering over the menu itself
-                dropdownMenu.addEventListener('mouseenter', function() {
-                    clearTimeout(hideTimeout);
-                    dropdownMenu.style.display = 'block';
-                });
-
-                dropdownMenu.addEventListener('mouseleave', function() {
+                // Hide dropdown with delay when mouse leaves wrapper
+                userDropdownWrapper.addEventListener('mouseleave', function() {
                     hideTimeout = setTimeout(function() {
                         dropdownMenu.style.display = 'none';
                     }, 300);

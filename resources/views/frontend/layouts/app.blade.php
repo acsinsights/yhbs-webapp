@@ -41,6 +41,24 @@
     <link href="{{ asset('frontend/css/boxicons.min.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('frontend/css/style.css') }}">
 
+    <style>
+        /* Hide Alpine elements until Alpine is loaded */
+        [x-cloak] {
+            display: none !important;
+        }
+
+        /* Aggressively hide notification drawer from appearing on page load */
+        .notification-bell-wrapper>div[style*="position: fixed"] {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+
+        .notification-bell-wrapper template {
+            display: none !important;
+        }
+    </style>
+
     <!-- Google Translate Widget Script -->
     <script type="text/javascript">
         function googleTranslateElementInit() {
