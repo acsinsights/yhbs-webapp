@@ -55,7 +55,7 @@ new class extends Component {
                 });
 
             // Merge and sort by created_at
-            $this->notifications = $userNotifications->merge($laravelNotifications)->sortByDesc('created_at')->take(10)->values()->toArray();
+            $this->notifications = collect($userNotifications)->merge($laravelNotifications)->sortByDesc('created_at')->take(10)->values()->toArray();
 
             // Count unread from both sources
             $userUnreadCount = UserNotification::where('user_id', auth()->id())
