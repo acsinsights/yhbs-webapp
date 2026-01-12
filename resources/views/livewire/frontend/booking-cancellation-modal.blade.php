@@ -132,10 +132,10 @@ new class extends Component {
                             <h6>Booking Details:</h6>
                             <ul class="list-unstyled">
                                 <li><strong>Reference:</strong> #{{ $booking->id }}</li>
-                                @if($booking->check_in)
+                                @if ($booking->check_in)
                                     <li><strong>Check-in:</strong> {{ $booking->check_in->format('d M Y') }}</li>
                                 @endif
-                                @if($booking->check_out)
+                                @if ($booking->check_out)
                                     <li><strong>Check-out:</strong> {{ $booking->check_out->format('d M Y') }}</li>
                                 @endif
                                 <li><strong>Total Amount:</strong>
