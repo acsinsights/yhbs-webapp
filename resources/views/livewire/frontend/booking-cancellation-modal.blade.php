@@ -132,8 +132,12 @@ new class extends Component {
                             <h6>Booking Details:</h6>
                             <ul class="list-unstyled">
                                 <li><strong>Reference:</strong> #{{ $booking->id }}</li>
-                                <li><strong>Check-in:</strong> {{ $booking->check_in->format('d M Y') }}</li>
-                                <li><strong>Check-out:</strong> {{ $booking->check_out->format('d M Y') }}</li>
+                                @if($booking->check_in)
+                                    <li><strong>Check-in:</strong> {{ $booking->check_in->format('d M Y') }}</li>
+                                @endif
+                                @if($booking->check_out)
+                                    <li><strong>Check-out:</strong> {{ $booking->check_out->format('d M Y') }}</li>
+                                @endif
                                 <li><strong>Total Amount:</strong>
                                     {{ currency_format($booking->total_amount) }}</li>
                             </ul>
