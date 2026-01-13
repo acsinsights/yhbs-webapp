@@ -16,6 +16,79 @@
     {{-- Fonts --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @yield('cdn')
+
+    <!-- Google Translate Widget Script -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            try {
+                new google.translate.TranslateElement({
+                    pageLanguage: 'en',
+                    includedLanguages: 'en,hi,ar,es,fr,de,ja,zh-CN,ru,pt,it,ko,tr,nl,pl,sv,id,th,vi',
+                    layout: google.translate.TranslateElement.InlineLayout.HORIZONTAL
+                }, 'google_translate_element');
+
+                // Style after a short delay
+                setTimeout(function() {
+                    const select = document.querySelector('#google_translate_element select');
+                    if (select) {
+                        select.className =
+                            'select select-bordered select-sm bg-base-100 text-base-content font-medium rounded-lg px-3 py-2 cursor-pointer hover:bg-base-200 transition-all min-w-[150px]';
+                    }
+                }, 500);
+            } catch (e) {
+                console.error('Google Translate error:', e);
+            }
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit">
+    </script>
+
+    <!-- Google Translate Custom Styles -->
+    <style>
+        /* Remove top spacing and hide unwanted elements */
+        body {
+            top: 0 !important;
+        }
+
+        body>.skiptranslate,
+        .goog-logo-link,
+        .gskiptranslate,
+        .goog-te-gadget span,
+        .goog-te-banner-frame,
+        #goog-gt-tt,
+        .goog-te-balloon-frame,
+        div#goog-gt-tt {
+            display: none !important;
+        }
+
+        .goog-te-gadget {
+            color: transparent !important;
+            font-size: 0px;
+        }
+
+        .goog-text-highlight {
+            background: transparent !important;
+            box-shadow: transparent !important;
+        }
+
+        /* Custom dropdown styling for admin panel */
+        #google_translate_element {
+            display: inline-block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        #google_translate_element select {
+            display: inline-block !important;
+            visibility: visible !important;
+        }
+
+        /* Make sure the container is visible */
+        .goog-te-combo {
+            display: inline-block !important;
+            visibility: visible !important;
+        }
+    </style>
 </head>
 
 <body class="min-h-screen font-sans antialiased bg-base-200/50 dark:bg-base-200">
@@ -194,6 +267,11 @@
                 </div>
                 <div class="navbar-center"></div>
                 <div class="gap-1.5 navbar-end">
+                    {{-- Google Translate Widget --}}
+                    <div class="flex items-center" wire:ignore>
+                        <div id="google_translate_element" class="inline-block"></div>
+                    </div>
+
                     @auth
                         {{-- Notifications Bell with Auto-Reload --}}
                         <livewire:admin.notification-bell />
@@ -273,6 +351,50 @@
 
     {{-- Flatpickr JS --}}
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    {{-- Google Translate Styling with Tailwind --}}
+    <script>
+        // Function to reinitialize and style Google Translate
+        function reinitGoogleTranslate() {
+            const element = document.getElementById('google_translate_element');
+            if (element) {
+                // Check if select already exists
+                const existingSelect = element.querySelector('select');
+                if (!existingSelect) {
+                    // Reinitialize if no select found
+                    if (typeof google !== 'undefined' && google.translate) {
+                        try {
+                            new google.translate.TranslateElement({
+                                pageLanguage: 'en',
+                                includedLanguages: 'en,hi,ar,es,fr,de,ja,zh-CN,ru,pt,it,ko,tr,nl,pl,sv,id,th,vi',
+                                layout: google.translate.TranslateElement.InlineLayout.HORIZONTAL
+                            }, 'google_translate_element');
+                        } catch (e) {
+                            console.log('Google Translate already initialized');
+                        }
+                    }
+                }
+                
+                // Style the select element
+                setTimeout(function() {
+                    const select = element.querySelector('select');
+                    if (select) {
+                        select.className = 'select select-bordered select-sm bg-base-100 text-base-content font-medium rounded-lg px-3 py-2 cursor-pointer hover:bg-base-200 transition-all min-w-[150px]';
+                    }
+                }, 300);
+            }
+        }
+
+        // Re-initialize on Livewire navigation
+        document.addEventListener('livewire:navigated', function() {
+            setTimeout(reinitGoogleTranslate, 200);
+        });
+
+        // Also try on load
+        window.addEventListener('load', function() {
+            setTimeout(reinitGoogleTranslate, 500);
+        });
+    </script>
 
     {{-- Notification mark as read script --}}
     <script>
