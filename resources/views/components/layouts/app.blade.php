@@ -374,12 +374,13 @@
                         }
                     }
                 }
-                
+
                 // Style the select element
                 setTimeout(function() {
                     const select = element.querySelector('select');
                     if (select) {
-                        select.className = 'select select-bordered select-sm bg-base-100 text-base-content font-medium rounded-lg px-3 py-2 cursor-pointer hover:bg-base-200 transition-all min-w-[150px]';
+                        select.className =
+                            'select select-bordered select-sm bg-base-100 text-base-content font-medium rounded-lg px-3 py-2 cursor-pointer hover:bg-base-200 transition-all min-w-[150px]';
                     }
                 }, 300);
             }
