@@ -23,14 +23,6 @@
                             style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                                 <tr>
-                                    <td align="center" style="padding-bottom: 20px;">
-                                        <div
-                                            style="width: 80px; height: 80px; background-color: rgba(255, 255, 255, 0.2); border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
-                                            <span style="color: #ffffff; font-size: 32px; font-weight: bold;">✓</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
                                     <td align="center">
                                         <h1
                                             style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">
