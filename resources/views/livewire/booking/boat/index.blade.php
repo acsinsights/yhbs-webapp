@@ -141,91 +141,92 @@ new class extends Component {
 
             @scope('cell_boat_name', $booking)
                 @if ($booking->bookingable)
-                    <br class="flex gap-2 items-center">
-                    <x-badge value="{{ $booking->bookingable->name }}" class="badge-primary" /> </br>
-                    <span class="text-xs text-base-content/50">{{ $booking->bookingable->service_type_label }}</span>
-    </div>
-@else
-    <span class="text-base-content/50">—</span>
-    @endif
-@endscope
-
-@scope('cell_check_in', $booking)
-    @if ($booking->check_in)
-        <div class="flex flex-col gap-1">
-            <span class="font-semibold">{{ $booking->check_in->format('M d, Y') }}</span>
-            <div class="flex items-center gap-2 text-xs">
-                <span class="text-primary font-medium">
-                    {{ $booking->check_in->format('h:i A') }}
-                </span>
-                @if ($booking->check_out)
-                    <span class="text-base-content/30">→</span>
-                    <span class="text-success font-medium">
-                        {{ $booking->check_out->format('h:i A') }}
-                    </span>
+                    <div class="flex flex-col gap-1">
+                        <x-badge value="{{ $booking->bookingable->name }}"
+                            class="badge-primary !h-auto !min-h-[2rem] !w-auto !min-w-[140px] !max-w-full whitespace-normal !px-4 !py-1.5 !text-sm !leading-snug !text-left !justify-start !items-start" />
+                        <span class="text-xs text-base-content/50">{{ $booking->bookingable->service_type_label }}</span>
+                    </div>
+                @else
+                    <span class="text-base-content/50">—</span>
                 @endif
-            </div>
-            @php
-                // Extract duration from notes if available
-                $durationInfo = '';
-                if ($booking->notes && str_contains($booking->notes, 'Duration/Slot:')) {
-                    preg_match('/Duration\/Slot: ([^\n\(]+)/', $booking->notes, $matches);
-                    if (!empty($matches[1])) {
-                        $durationInfo = trim($matches[1]);
-                    }
-                }
-            @endphp
-            @if ($durationInfo)
-                <span class="text-xs badge badge-sm badge-neutral mt-1">{{ $durationInfo }}</span>
-            @endif
-        </div>
-    @else
-        <span class="text-base-content/50">—</span>
-    @endif
-@endscope
+            @endscope
 
-@scope('cell_price', $booking)
-    <div class="font-semibold">
-        KD {{ number_format($booking->price ?? 0, 2) }}
-    </div>
-@endscope
+            @scope('cell_check_in', $booking)
+                @if ($booking->check_in)
+                    <div class="flex flex-col gap-1">
+                        <span class="font-semibold">{{ $booking->check_in->format('M d, Y') }}</span>
+                        <div class="flex items-center gap-2 text-xs">
+                            <span class="text-primary font-medium">
+                                {{ $booking->check_in->format('h:i A') }}
+                            </span>
+                            @if ($booking->check_out)
+                                <span class="text-base-content/30">→</span>
+                                <span class="text-success font-medium">
+                                    {{ $booking->check_out->format('h:i A') }}
+                                </span>
+                            @endif
+                        </div>
+                        @php
+                            // Extract duration from notes if available
+                            $durationInfo = '';
+                            if ($booking->notes && str_contains($booking->notes, 'Duration/Slot:')) {
+                                preg_match('/Duration\/Slot: ([^\n\(]+)/', $booking->notes, $matches);
+                                if (!empty($matches[1])) {
+                                    $durationInfo = trim($matches[1]);
+                                }
+                            }
+                        @endphp
+                        @if ($durationInfo)
+                            <span class="text-xs badge badge-sm badge-neutral mt-1">{{ $durationInfo }}</span>
+                        @endif
+                    </div>
+                @else
+                    <span class="text-base-content/50">—</span>
+                @endif
+            @endscope
 
-@scope('cell_payment_status', $booking)
-    <div class="text-center">
-        <x-badge :value="$booking->payment_status->label()" class="{{ $booking->payment_status->badgeColor() }}" />
-    </div>
-@endscope
+            @scope('cell_price', $booking)
+                <div class="font-semibold">
+                    KD {{ number_format($booking->price ?? 0, 2) }}
+                </div>
+            @endscope
 
-@scope('cell_payment_method', $booking)
-    <div class="text-center">
-        <x-badge :value="$booking->payment_method->label()" class="{{ $booking->payment_method->badgeColor() }}" />
-    </div>
-@endscope
+            @scope('cell_payment_status', $booking)
+                <div class="text-center">
+                    <x-badge :value="$booking->payment_status->label()" class="{{ $booking->payment_status->badgeColor() }}" />
+                </div>
+            @endscope
 
-@scope('cell_status', $booking)
-    <x-badge :value="$booking->status->label()" class="{{ $booking->status->badgeColor() }}" />
-@endscope
+            @scope('cell_payment_method', $booking)
+                <div class="text-center">
+                    <x-badge :value="$booking->payment_method->label()" class="{{ $booking->payment_method->badgeColor() }}" />
+                </div>
+            @endscope
 
-@scope('actions', $booking)
-    <div class="flex items-center gap-2 justify-end">
-        <x-dropdown>
-            <x-slot:trigger>
-                <x-button icon="o-bars-arrow-down" class="btn-circle" />
-            </x-slot:trigger>
+            @scope('cell_status', $booking)
+                <x-badge :value="$booking->status->label()" class="{{ $booking->status->badgeColor() }}" />
+            @endscope
 
-            @if ($booking->status->value !== 'cancelled')
-                <x-menu-item icon="o-pencil" title="Edit Booking" class="btn-ghost btn-sm"
-                    link="{{ route('admin.bookings.boat.edit', $booking->id) }}" />
-            @endif
-            <x-menu-item icon="o-eye" link="{{ route('admin.bookings.boat.show', $booking->id) }}"
-                class="btn-ghost btn-sm" title="View Details" />
-        </x-dropdown>
-    </div>
-@endscope
+            @scope('actions', $booking)
+                <div class="flex items-center gap-2 justify-end">
+                    <x-dropdown>
+                        <x-slot:trigger>
+                            <x-button icon="o-bars-arrow-down" class="btn-circle" />
+                        </x-slot:trigger>
 
-<x-slot:empty>
-    <x-empty icon="o-archive-box" message="No bookings found" />
-</x-slot:empty>
-</x-table>
-</x-card>
+                        @if ($booking->status->value !== 'cancelled')
+                            <x-menu-item icon="o-pencil" title="Edit Booking" class="btn-ghost btn-sm"
+                                link="{{ route('admin.bookings.boat.edit', $booking->id) }}" />
+                        @endif
+                        <x-menu-item icon="o-eye" link="{{ route('admin.bookings.boat.show', $booking->id) }}"
+                            class="btn-ghost btn-sm" title="View Details" />
+                    </x-dropdown>
+                </div>
+            @endscope
+
+            <x-slot:empty>
+                <x-empty icon="o-archive-box" message="No bookings found" />
+            </x-slot:empty>
+        </x-table>
+    </x-card>
 </div>

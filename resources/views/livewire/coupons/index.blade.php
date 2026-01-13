@@ -83,7 +83,7 @@ new class extends Component {
 
             @scope('cell_discount_type', $coupon)
                 <x-badge :value="$coupon->discount_type->label()"
-                    class="{{ $coupon->discount_type->value === 'percentage' ? 'badge-info' : 'badge-success' }}" />
+                    class="{{ $coupon->discount_type->value === 'percentage' ? 'badge-info' : 'badge-success' }} !h-auto !min-h-[2rem] !w-auto !min-w-[140px] !max-w-full whitespace-normal !px-4 !py-1.5 !text-sm !leading-snug !text-left !justify-start !items-start !text-white" />
             @endscope
 
             @scope('cell_discount_value', $coupon)
