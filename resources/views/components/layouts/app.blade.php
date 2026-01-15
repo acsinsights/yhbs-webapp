@@ -32,7 +32,7 @@
                     const select = document.querySelector('#google_translate_element select');
                     if (select) {
                         select.className =
-                            'select select-bordered select-sm bg-base-100 text-base-content font-medium rounded-lg px-3 py-2 cursor-pointer hover:bg-base-200 transition-all min-w-[150px]';
+                            'select select-bordered select-sm bg-base-100 text-base-content font-medium rounded-lg px-1.5 sm:px-3 py-1 sm:py-2 cursor-pointer hover:bg-base-200 transition-all min-w-[100px] sm:min-w-[150px] text-xs sm:text-sm max-w-[120px] sm:max-w-none';
                     }
                 }, 500);
             } catch (e) {
@@ -99,16 +99,16 @@
                 <div class="hidden-when-collapsed ">
                     <div class="flex items-center gap-2">
                         <img src="{{ asset('frontend/img/header-logo2.svg') }}" width="500" alt="logo"
-                            class="light-logo" />
+                            class="light-logo w-48 sm:w-64 md:w-80 lg:w-96 xl:w-[500px]" />
                         <img src="{{ asset('frontend/img/header-logo2.svg') }}" width="500" alt="logo"
-                            class="dark-logo" />
+                            class="dark-logo w-48 sm:w-64 md:w-80 lg:w-96 xl:w-[500px]" />
                     </div>
                 </div>
                 <div class="display-when-collapsed hidden mx-5 mt-4 lg:mb-6 h-[28px]">
                     <img src="{{ asset('frontend/img/header-logo2.svg') }}" width="500" alt="logo"
-                        class="light-logo" />
+                        class="light-logo w-48 sm:w-64 md:w-80 lg:w-96 xl:w-[500px]" />
                     <img src="{{ asset('frontend/img/header-logo2.svg') }}" width="500" alt="logo"
-                        class="dark-logo" />
+                        class="dark-logo w-48 sm:w-64 md:w-80 lg:w-96 xl:w-[500px]" />
                 </div>
                 {{-- Text Logo --}}
                 {{-- <div class="hidden-when-collapsed">
@@ -134,14 +134,15 @@
                 <div class="p-5 pt-3 hidden-when-collapsed ">
                     <div class="flex items-center gap-2 mt-2">
                         <img src="{{ asset('frontend/img/admin-logo.svg') }}" width="250" alt="logo"
-                            class="light-logo" />
+                            class="light-logo w-32 sm:w-48 md:w-[250px]" />
                         <img src="{{ asset('frontend/img/admin-logo-light.svg') }}" width="250" alt="logo"
-                            class="dark-logo" />
+                            class="dark-logo w-32 sm:w-48 md:w-[250px]" />
                     </div>
                 </div>
 
                 <div class="display-when-collapsed hidden mx-2 mt-4 lg:mb-3">
-                    <img src="{{ asset('frontend/img/fav-icon.svg') }}" width="50" alt="IKARUS Logo" />
+                    <img src="{{ asset('frontend/img/fav-icon.svg') }}" width="50" alt="IKARUS Logo"
+                        class="w-8 sm:w-10 md:w-[50px]" />
                 </div>
             </a>
 
@@ -261,44 +262,48 @@
         {{-- The `$slot` goes here --}}
         <x-slot:content class="lg:pt-0">
             <div role="navigation" aria-label="Navbar"
-                class="navbar topbar-wrapper z-10 border-b border-base-200 px-3">
-                <div class="gap-3 navbar-start">
-
-                </div>
-                <div class="navbar-center"></div>
-                <div class="gap-1.5 navbar-end">
+                class="navbar topbar-wrapper z-[5] border-b border-base-200 px-2 sm:px-3">
+                <div class="navbar-start w-auto">
                     {{-- Google Translate Widget --}}
-                    <div class="flex items-center" wire:ignore>
-                        <div id="google_translate_element" class="inline-block"></div>
+                    <div class="flex items-center shrink-0" wire:ignore>
+                        <div id="google_translate_element" class="inline-block">
+                        </div>
                     </div>
-
+                </div>
+                <div class="navbar-center flex-1"></div>
+                <div class="gap-1 sm:gap-2 navbar-end w-auto flex-nowrap">
                     @auth
                         {{-- Notifications Bell with Auto-Reload --}}
-                        <livewire:admin.notification-bell />
+                        <div class="shrink-0">
+                            <livewire:admin.notification-bell />
+                        </div>
                     @endauth
 
-                    <div class="tooltip  tooltip-bottom" data-tip="Toggle Theme">
-                        <x-theme-toggle class=" btn-sm w-12 h-12 btn-ghost" lightTheme="light" darkTheme="dark" />
+                    <div class="tooltip tooltip-bottom shrink-0" data-tip="Toggle Theme">
+                        <x-theme-toggle class="btn-sm w-9 h-9 sm:w-12 sm:h-12 btn-ghost" lightTheme="light"
+                            darkTheme="dark" />
                     </div>
                     @auth
-                        <div class="dropdown dropdown-bottom dropdown-end">
-                            <label tabindex="0" class="btn btn-ghost rounded-btn px-1.5 hover:bg-base-content/20">
-                                <div class="flex items-center gap-2">
+                        <div class="dropdown dropdown-bottom dropdown-end shrink-0">
+                            <label tabindex="0"
+                                class="btn btn-ghost rounded-btn px-1 sm:px-1.5 hover:bg-base-content/20">
+                                <div class="flex items-center gap-1 sm:gap-2">
                                     <div aria-label="Avatar photo" class="avatar placeholder">
                                         @if (auth()->user()->image)
-                                            <div class="w-8 h-8 rounded-md bg-base-content/10">
+                                            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-md bg-base-content/10">
                                                 <img src="{{ asset(auth()->user()->image) }}"
                                                     alt="{{ auth()->user()->name }}">
                                             </div>
                                         @else
                                             <div class="select-none avatar avatar-placeholder">
-                                                <div class="w-8 rounded-full bg-primary text-primary-content">
-                                                    <span class="text-md">{{ substr(auth()->user()->name, 0, 1) }}</span>
+                                                <div class="w-7 sm:w-8 rounded-full bg-primary text-primary-content">
+                                                    <span
+                                                        class="text-sm sm:text-md">{{ substr(auth()->user()->name, 0, 1) }}</span>
                                                 </div>
                                             </div>
                                         @endif
                                     </div>
-                                    <div class="flex flex-col items-start">
+                                    <div class="hidden sm:flex flex-col items-start">
                                         <p class="text-sm/none">
                                             {{ auth()->user()->name }}
                                         </p>

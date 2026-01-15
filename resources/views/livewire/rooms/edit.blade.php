@@ -307,8 +307,9 @@ new class extends Component {
                     :options="$categories" icon="o-squares-2x2" hint="Select one or more categories for this room"
                     searchable clearable>
                     <x-slot:append>
-                        <x-button icon="o-plus" label="Add Category" class="btn-primary join-item btn-sm md:btn-md"
-                            @click="$wire.addCategoryModal = true" responsive />
+                        <x-button icon="o-plus" label="Add Category"
+                            class="btn-primary join-item btn-sm md:btn-md ml-2" @click="$wire.addCategoryModal = true"
+                            responsive />
                     </x-slot:append>
                 </x-choices-offline>
             </div>
@@ -319,8 +320,9 @@ new class extends Component {
                     :options="$amenities" icon="o-sparkles" hint="Select one or more amenities available in this room"
                     searchable clearable>
                     <x-slot:append>
-                        <x-button icon="o-plus" label="Add Amenity" class="btn-primary join-item btn-sm md:btn-md"
-                            @click="$wire.addAmenityModal = true" responsive />
+                        <x-button icon="o-plus" label="Add Amenity"
+                            class="btn-primary join-item btn-sm md:btn-md ml-2" @click="$wire.addAmenityModal = true"
+                            responsive />
                     </x-slot:append>
                 </x-choices-offline>
             </div>

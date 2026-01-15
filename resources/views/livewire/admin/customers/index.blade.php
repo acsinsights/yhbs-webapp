@@ -113,11 +113,13 @@ new class extends Component {
                     @endif
                     <div>
                         <div class="font-semibold">{{ $customer->name }}</div>
-                        @if ($customer->email_verified_at)
-                            <x-badge value="Verified" class="badge-xs badge-success" />
-                        @else
-                            <x-badge value="Not Verified" class="badge-xs badge-warning" />
-                        @endif
+                        <div class="mt-1">
+                            @if ($customer->email_verified_at)
+                                <x-badge value="Verified" class="badge-xs badge-success whitespace-nowrap" />
+                            @else
+                                <x-badge value="Not Verified" class="badge-xs badge-warning whitespace-nowrap" />
+                            @endif
+                        </div>
                     </div>
                 </div>
             @endscope

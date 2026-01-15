@@ -1,4 +1,4 @@
-<div wire:poll.15s="loadNotifications" class="dropdown dropdown-bottom dropdown-end">
+<div wire:poll.15s="loadNotifications" class="dropdown sm:dropdown-end">
     <label tabindex="0" class="btn btn-ghost btn-circle relative">
         <x-icon name="o-bell" class="w-6 h-6" />
         @if ($unreadCount > 0)
@@ -7,7 +7,8 @@
             </span>
         @endif
     </label>
-    <div tabindex="0" class="dropdown-content card card-compact z-[1] w-96 p-2 shadow bg-base-100 rounded-box mt-3">
+    <div tabindex="0" style="left: 50% !important; transform: translateX(-50%) !important;"
+        class="dropdown-content card card-compact z-[1000] w-[88vw] sm:w-96 p-2 shadow-xl bg-base-100 rounded-box mt-3 sm:!left-auto sm:!right-0 sm:!translate-x-0">
         <div class="card-body">
             <div class="flex items-center justify-between mb-2">
                 <h3 class="card-title text-sm">Notifications</h3>
@@ -18,10 +19,10 @@
                 @endif
             </div>
             <div class="divider my-0"></div>
-            <div class="max-h-96 overflow-y-auto space-y-2">
+            <div class="max-h-[50vh] sm:max-h-96 overflow-y-auto space-y-2">
                 @forelse($notifications as $notification)
                     <div wire:key="notification-{{ $notification->id }}"
-                        class="block p-3 rounded-lg hover:bg-base-200 transition cursor-pointer {{ is_null($notification->read_at) ? 'bg-primary/5' : '' }}"
+                        class="block p-2 sm:p-3 rounded-lg hover:bg-base-200 transition cursor-pointer {{ is_null($notification->read_at) ? 'bg-primary/5' : '' }}"
                         wire:click="$dispatch('navigateToNotification', { id: '{{ $notification->id }}', url: '{{ $notification->data['url'] ?? '#' }}' })">
                         <div class="flex gap-3">
                             <div class="flex-shrink-0">
@@ -30,10 +31,10 @@
                             </div>
                             <div class="flex-1 min-w-0">
                                 <p
-                                    class="text-sm font-medium {{ is_null($notification->read_at) ? 'text-base-content' : 'text-base-content/70' }}">
+                                    class="text-xs sm:text-sm font-medium {{ is_null($notification->read_at) ? 'text-base-content' : 'text-base-content/70' }} break-words">
                                     {{ $notification->data['message'] ?? 'New notification' }}
                                 </p>
-                                <p class="text-xs text-base-content/50 mt-1">
+                                <p class="text-[10px] sm:text-xs text-base-content/50 mt-1">
                                     {{ $notification->created_at->diffForHumans() }}
                                 </p>
                             </div>

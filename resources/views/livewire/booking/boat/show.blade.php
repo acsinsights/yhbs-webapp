@@ -412,12 +412,12 @@ new class extends Component {
 
     <x-header title="Booking Details" separator>
         <x-slot:subtitle>
-            <p class="text-sm text-base-content/50 mb-2">View booking information</p>
-            <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-3" />
+            <p class="text-xs sm:text-sm text-base-content/50 mb-2">View booking information</p>
+            <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" class="mb-2 sm:mb-3" />
         </x-slot:subtitle>
         <x-slot:actions>
             <x-button icon="o-arrow-left" label="Back" link="{{ route('admin.bookings.boat.index') }}"
-                class="btn-ghost btn-outline" />
+                class="btn-ghost btn-outline btn-sm" responsive />
 
             <x-dropdown icon="o-ellipsis-vertical" class="btn-ghost btn-circle">
                 <x-menu-item title="History" icon="o-clock" wire:click.stop="$set('showHistoryDrawer', true)" />
@@ -436,55 +436,58 @@ new class extends Component {
         </x-slot:actions>
     </x-header>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
         {{-- Main Details --}}
-        <div class="lg:col-span-2 space-y-6">
+        <div class="lg:col-span-2 space-y-3 sm:space-y-4 lg:space-y-6">
             {{-- Booking Information --}}
             <x-card shadow>
                 <x-slot:title>
-                    <div class="flex items-center gap-2">
-                        <x-icon name="o-document-text" class="w-5 h-5" />
-                        <span>Booking Information</span>
+                    <div class="flex items-center gap-1.5 sm:gap-2">
+                        <x-icon name="o-document-text" class="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span class="text-sm sm:text-base">Booking Information</span>
                     </div>
                 </x-slot:title>
                 <x-slot:menu>
-                    <div class="flex items-center gap-2">
-                        <x-badge :value="$booking->status->label()" class="{{ $booking->status->badgeColor() }}" />
+                    <div class="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 sm:gap-2">
+                        <x-badge :value="$booking->status->label()" class="{{ $booking->status->badgeColor() }} text-xs" />
                         @if ($booking->status->value !== 'cancelled')
-                            <x-button icon="o-pencil" label="Update Status" wire:click="$set('showStatusModal', true)"
-                                class="btn-ghost btn-sm" />
+                            <x-button icon="o-pencil" label="Update" wire:click="$set('showStatusModal', true)"
+                                class="btn-ghost btn-xs sm:btn-sm" responsive />
                         @endif
                     </div>
                 </x-slot:menu>
 
-                <div class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-3 sm:space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                         <div>
-                            <div class="text-sm text-base-content/50 mb-1">Booking ID</div>
-                            <div class="font-semibold">#{{ $booking->booking_id }}</div>
+                            <div class="text-xs sm:text-sm text-base-content/50 mb-1">Booking ID</div>
+                            <div class="font-semibold text-sm sm:text-base">#{{ $booking->booking_id }}</div>
                         </div>
                         <div>
-                            <div class="text-sm text-base-content/50 mb-1">Booking Date</div>
-                            <div class="font-semibold">{{ $booking->created_at->format('M d, Y h:i A') }}</div>
+                            <div class="text-xs sm:text-sm text-base-content/50 mb-1">Booking Date</div>
+                            <div class="font-semibold text-sm sm:text-base">
+                                {{ $booking->created_at->format('M d, Y h:i A') }}</div>
                         </div>
                     </div>
 
                     @if ($booking->check_in)
                         <div>
-                            <div class="text-sm text-base-content/50 mb-1">Time Slot</div>
-                            <div class="font-semibold">
+                            <div class="text-xs sm:text-sm text-base-content/50 mb-1">Time Slot</div>
+                            <div class="font-semibold text-sm sm:text-base">
                                 {{ $booking->check_in->format('M d, Y') }}<br>
-                                <span class="text-primary">{{ $booking->check_in->format('h:i A') }}</span>
+                                <span
+                                    class="text-primary text-xs sm:text-sm">{{ $booking->check_in->format('h:i A') }}</span>
                                 @if ($booking->check_out)
                                     <span class="text-base-content/30"> → </span>
-                                    <span class="text-success">{{ $booking->check_out->format('h:i A') }}</span>
+                                    <span
+                                        class="text-success text-xs sm:text-sm">{{ $booking->check_out->format('h:i A') }}</span>
                                 @endif
                             </div>
                         </div>
                     @endif
 
                     <div>
-                        <div class="text-sm text-base-content/50 mb-1">Passengers</div>
+                        <div class="text-xs sm:text-sm text-base-content/50 mb-1">Passengers</div>
                         <x-badge :value="$booking->adults ?? 0" class="badge-soft badge-primary" />
                     </div>
 
@@ -506,29 +509,30 @@ new class extends Component {
                                 is_array($guestDetails['guests']) &&
                                 count(array_filter($guestDetails['guests'], fn($g) => !empty($g['name'] ?? ''))) > 0)
                             <div>
-                                <div class="flex items-center gap-2 mb-3">
-                                    <div class="p-1.5 bg-primary/10 rounded-lg">
-                                        <x-icon name="o-user-group" class="w-4 h-4 text-primary" />
+                                <div class="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                                    <div class="p-1 sm:p-1.5 bg-primary/10 rounded-lg">
+                                        <x-icon name="o-user-group" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
                                     </div>
-                                    <div class="text-sm font-bold text-primary">Passenger Details
+                                    <div class="text-xs sm:text-sm font-bold text-primary">Passenger Details
                                         ({{ count(array_filter($guestDetails['guests'], fn($g) => !empty($g['name'] ?? ''))) }})
                                     </div>
                                 </div>
-                                <div class="space-y-3">
+                                <div class="space-y-2 sm:space-y-3">
                                     @foreach ($guestDetails['guests'] as $index => $guest)
                                         @if (!empty($guest['name']))
                                             <div
-                                                class="p-4 bg-gradient-to-br from-base-200 to-base-200/50 rounded-xl border border-base-300 hover:shadow-md transition-shadow">
-                                                <div class="flex items-start gap-3">
-                                                    <div class="p-2 bg-primary/10 rounded-lg">
-                                                        <x-icon name="o-user-circle" class="w-6 h-6 text-primary" />
+                                                class="p-2.5 sm:p-4 bg-gradient-to-br from-base-200 to-base-200/50 rounded-lg sm:rounded-xl border border-base-300 hover:shadow-md transition-shadow">
+                                                <div class="flex items-start gap-2 sm:gap-3">
+                                                    <div class="p-1.5 sm:p-2 bg-primary/10 rounded-lg">
+                                                        <x-icon name="o-user-circle"
+                                                            class="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                                                     </div>
-                                                    <div class="flex-1 space-y-2">
+                                                    <div class="flex-1 space-y-1.5 sm:space-y-2">
                                                         <div class="flex items-center justify-between">
                                                             <span
-                                                                class="font-bold text-base">{{ $guest['name'] }}</span>
+                                                                class="font-bold text-sm sm:text-base">{{ $guest['name'] }}</span>
                                                             <x-badge value="Passenger {{ $index + 1 }}"
-                                                                class="badge-primary badge-sm" />
+                                                                class="badge-primary badge-xs sm:badge-sm" />
                                                         </div>
                                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                                                             @if (!empty($guest['email']))
@@ -621,33 +625,34 @@ new class extends Component {
             @if ($booking->bookingable)
                 <x-card shadow>
                     <x-slot:title>
-                        <div class="flex items-center gap-2">
-                            <x-icon name="o-archive-box" class="w-5 h-5" />
-                            <span>Boat Information</span>
+                        <div class="flex items-center gap-1.5 sm:gap-2">
+                            <x-icon name="o-archive-box" class="w-4 h-4 sm:w-5 sm:h-5" />
+                            <span class="text-sm sm:text-base">Boat Information</span>
                         </div>
                     </x-slot:title>
 
-                    <div class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-3 sm:space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                             <div>
-                                <div class="text-sm text-base-content/50 mb-1">Boat Name</div>
-                                <div class="font-semibold text-lg">{{ $booking->bookingable->name }}</div>
+                                <div class="text-xs sm:text-sm text-base-content/50 mb-1">Boat Name</div>
+                                <div class="font-semibold text-base sm:text-lg">{{ $booking->bookingable->name }}
+                                </div>
                             </div>
                             <div>
-                                <div class="text-sm text-base-content/50 mb-1">Service Type</div>
-                                <x-badge :value="$booking->bookingable->service_type_label" class="badge-primary" />
+                                <div class="text-xs sm:text-sm text-base-content/50 mb-1">Service Type</div>
+                                <x-badge :value="$booking->bookingable->service_type_label" class="badge-primary text-xs" />
                             </div>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                             <div>
-                                <div class="text-sm text-base-content/50 mb-1">Capacity</div>
-                                <div class="text-sm">
+                                <div class="text-xs sm:text-sm text-base-content/50 mb-1">Capacity</div>
+                                <div class="text-xs sm:text-sm">
                                     {{ $booking->bookingable->min_passengers }}-{{ $booking->bookingable->max_passengers }}
                                     passengers</div>
                             </div>
                             <div>
-                                <div class="text-sm text-base-content/50 mb-1">Location</div>
-                                <div class="text-sm">{{ $booking->bookingable->location ?? 'N/A' }}</div>
+                                <div class="text-xs sm:text-sm text-base-content/50 mb-1">Location</div>
+                                <div class="text-xs sm:text-sm">{{ $booking->bookingable->location ?? 'N/A' }}</div>
                             </div>
                         </div>
                     </div>
@@ -656,32 +661,32 @@ new class extends Component {
         </div>
 
         {{-- Sidebar --}}
-        <div class="space-y-6">
+        <div class="space-y-3 sm:space-y-4 lg:space-y-6">
             {{-- Customer Information --}}
             <x-card shadow>
                 <x-slot:title>
-                    <div class="flex items-center gap-2">
-                        <x-icon name="o-user" class="w-5 h-5" />
-                        <span>Customer</span>
+                    <div class="flex items-center gap-1.5 sm:gap-2">
+                        <x-icon name="o-user" class="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span class="text-sm sm:text-base">Customer</span>
                     </div>
                 </x-slot:title>
 
-                <div class="space-y-4">
+                <div class="space-y-3 sm:space-y-4">
                     <div>
-                        <div class="text-sm text-base-content/50 mb-1">Name</div>
-                        <div class="font-semibold">{{ $booking->user->name ?? 'N/A' }}</div>
+                        <div class="text-xs sm:text-sm text-base-content/50 mb-1">Name</div>
+                        <div class="font-semibold text-sm sm:text-base">{{ $booking->user->name ?? 'N/A' }}</div>
                     </div>
 
                     @if ($booking->user)
                         <div>
-                            <div class="text-sm text-base-content/50 mb-1">Email</div>
-                            <div class="text-sm">{{ $booking->user->email }}</div>
+                            <div class="text-xs sm:text-sm text-base-content/50 mb-1">Email</div>
+                            <div class="text-xs sm:text-sm break-all">{{ $booking->user->email }}</div>
                         </div>
 
                         @if ($booking->user->phone)
                             <div>
-                                <div class="text-sm text-base-content/50 mb-1">Phone</div>
-                                <div class="text-sm">{{ $booking->user->phone }}</div>
+                                <div class="text-xs sm:text-sm text-base-content/50 mb-1">Phone</div>
+                                <div class="text-xs sm:text-sm">{{ $booking->user->phone }}</div>
                             </div>
                         @endif
                     @endif
@@ -691,24 +696,25 @@ new class extends Component {
             {{-- Payment Information --}}
             <x-card shadow>
                 <x-slot:title>
-                    <div class="flex items-center gap-2">
-                        <x-icon name="o-currency-dollar" class="w-5 h-5" />
-                        <span>Payment Summary</span>
+                    <div class="flex items-center gap-1.5 sm:gap-2">
+                        <x-icon name="o-currency-dollar" class="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span class="text-sm sm:text-base">Payment Summary</span>
                     </div>
                 </x-slot:title>
                 <x-slot:menu>
                     @if ($booking->status->value !== 'cancelled')
                         <x-button icon="o-pencil" label="Update" wire:click="$set('showPaymentModal', true)"
-                            class="btn-ghost btn-sm" />
+                            class="btn-ghost btn-xs sm:btn-sm" responsive />
                     @endif
                 </x-slot:menu>
 
-                <div class="space-y-4">
+                <div class="space-y-3 sm:space-y-4">
                     <!-- Booking Amount with Breakdown -->
-                    <div class="p-4 bg-base-200 rounded-lg space-y-2">
-                        <h3 class="text-sm font-semibold text-base-content/70 mb-3">Payment Breakdown</h3>
+                    <div class="p-2.5 sm:p-4 bg-base-200 rounded-lg space-y-1.5 sm:space-y-2">
+                        <h3 class="text-xs sm:text-sm font-semibold text-base-content/70 mb-2 sm:mb-3">Payment
+                            Breakdown</h3>
 
-                        <div class="flex justify-between items-center text-sm">
+                        <div class="flex justify-between items-center text-xs sm:text-sm">
                             @php
                                 $durationHours =
                                     $booking->check_out && $booking->check_in
@@ -726,7 +732,7 @@ new class extends Component {
                         </div>
 
                         @if ($booking->reschedule_fee && $booking->reschedule_fee > 0)
-                            <div class="flex justify-between items-center text-sm">
+                            <div class="flex justify-between items-center text-xs sm:text-sm">
                                 <span class="text-base-content/60">Reschedule Fee</span>
                                 <span
                                     class="font-medium text-warning">{{ currency_format($booking->reschedule_fee) }}</span>
@@ -734,12 +740,12 @@ new class extends Component {
                         @endif
 
                         @if ($booking->extra_fee && $booking->extra_fee > 0)
-                            <div class="flex justify-between items-center text-sm">
+                            <div class="flex justify-between items-center text-xs sm:text-sm">
                                 <span class="text-base-content/60">Extra Fee</span>
                                 <span class="font-medium text-info">{{ currency_format($booking->extra_fee) }}</span>
                             </div>
                             @if ($booking->extra_fee_remark)
-                                <div class="text-xs text-base-content/50 italic ml-2">
+                                <div class="text-[10px] sm:text-xs text-base-content/50 italic ml-2">
                                     <x-icon name="o-information-circle" class="w-3 h-3 inline" />
                                     {{ $booking->extra_fee_remark }}
                                 </div>
@@ -747,7 +753,7 @@ new class extends Component {
                         @endif
 
                         @if ($booking->discount_amount && $booking->discount_amount > 0)
-                            <div class="flex justify-between items-center text-sm">
+                            <div class="flex justify-between items-center text-xs sm:text-sm">
                                 <span class="text-base-content/60">Discount</span>
                                 <span
                                     class="font-medium text-success">-{{ currency_format($booking->discount_amount) }}</span>
@@ -755,29 +761,29 @@ new class extends Component {
                         @endif
 
                         @if ($booking->wallet_amount_used && $booking->wallet_amount_used > 0)
-                            <div class="flex justify-between items-center text-sm">
+                            <div class="flex justify-between items-center text-xs sm:text-sm">
                                 <span class="text-base-content/60">Wallet Used</span>
                                 <span
                                     class="font-medium text-secondary">-{{ currency_format($booking->wallet_amount_used) }}</span>
                             </div>
                         @endif
 
-                        <div class="divider my-2"></div>
+                        <div class="divider my-1 sm:my-2"></div>
 
                         <div class="flex justify-between items-center">
-                            <span class="text-base font-semibold">Total Amount</span>
+                            <span class="text-sm sm:text-base font-semibold">Total Amount</span>
                             <span
-                                class="text-2xl font-bold">{{ currency_format($booking->price + ($booking->reschedule_fee ?? 0) + ($booking->extra_fee ?? 0) - ($booking->wallet_amount_used ?? 0)) }}</span>
+                                class="text-lg sm:text-2xl font-bold">{{ currency_format($booking->price + ($booking->reschedule_fee ?? 0) + ($booking->extra_fee ?? 0) - ($booking->wallet_amount_used ?? 0)) }}</span>
                         </div>
                     </div>
 
                     <div>
-                        <div class="text-sm text-base-content/50 mb-1">Payment Method</div>
-                        <x-badge :value="$booking->payment_method->label()" class="{{ $booking->payment_method->badgeColor() }}" />
+                        <div class="text-xs sm:text-sm text-base-content/50 mb-1">Payment Method</div>
+                        <x-badge :value="$booking->payment_method->label()" class="{{ $booking->payment_method->badgeColor() }} text-xs" />
                     </div>
                     <div>
-                        <div class="text-sm text-base-content/50 mb-1">Payment Status</div>
-                        <x-badge :value="$booking->payment_status->label()" class="{{ $booking->payment_status->badgeColor() }}" />
+                        <div class="text-xs sm:text-sm text-base-content/50 mb-1">Payment Status</div>
+                        <x-badge :value="$booking->payment_status->label()" class="{{ $booking->payment_status->badgeColor() }} text-xs" />
                     </div>
 
                 </div>
@@ -814,18 +820,28 @@ new class extends Component {
 
     {{-- Booking Status Update Modal --}}
     <x-modal wire:model="showStatusModal" title="Update Booking Status" class="backdrop-blur">
-        <div class="space-y-4 h-50 py-2">
-            <x-choices-offline label="Booking Status *" wire:model="booking_status" :options="[
-                ['id' => 'pending', 'name' => 'Pending'],
-                ['id' => 'booked', 'name' => 'Booked'],
-                ['id' => 'cancelled', 'name' => 'Cancelled'],
-            ]" icon="o-flag"
-                searchable single />
+        <style>
+            @media (max-width: 640px) {
+                #showStatusModal .flex.gap-4.hover\:bg-base-200.items-center.justify-start.px-3.py-3 {
+                    padding-top: 0.5rem !important;
+                    padding-bottom: 0.5rem !important;
+                }
+            }
+        </style>
+        <div class="space-y-4 py-2 pb-4 sm:pb-6" style="min-height: 180px;">
+            <div class="text-xs sm:text-sm">
+                <x-choices-offline label="Booking Status *" wire:model="booking_status" :options="[
+                    ['id' => 'pending', 'name' => 'Pending'],
+                    ['id' => 'booked', 'name' => 'Booked'],
+                    ['id' => 'cancelled', 'name' => 'Cancelled'],
+                ]"
+                    icon="o-flag" searchable single />
+            </div>
         </div>
 
         <x-slot:actions>
-            <x-button label="Cancel" @click="$wire.showStatusModal = false" />
-            <x-button label="Update" wire:click="updateStatus" class="btn-primary" spinner="updateStatus" />
+            <x-button label="Cancel" @click="$wire.showStatusModal = false" class="btn-sm" />
+            <x-button label="Update" wire:click="updateStatus" class="btn-primary btn-sm" spinner="updateStatus" />
         </x-slot:actions>
     </x-modal>
 

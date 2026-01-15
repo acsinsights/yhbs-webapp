@@ -126,7 +126,7 @@ new class extends Component {
             @endscope
 
             @scope('cell_service_type', $boat)
-                <x-badge :value="$boat->service_type_label" class="badge-soft badge-primary" />
+                <x-badge :value="$boat->service_type_label" class="badge-soft badge-primary whitespace-nowrap" />
             @endscope
 
             @scope('cell_max_passengers', $boat)

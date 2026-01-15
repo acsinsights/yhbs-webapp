@@ -122,7 +122,7 @@ new class extends Component {
         <x-table :headers="$headers" :rows="$amenities" :sort-by="$sortBy" with-pagination per-page="perPage"
             :per-page-values="[10, 25, 50, 100]">
             @scope('cell_name', $amenity)
-                <x-badge :value="$amenity->name" class="badge-soft badge-primary" />
+                <x-badge :value="$amenity->name" class="badge-soft badge-primary whitespace-nowrap" />
             @endscope
 
             @scope('cell_slug', $amenity)
@@ -191,8 +191,10 @@ new class extends Component {
                 <x-input wire:model="edit_name" label="Amenity Name" placeholder="Enter amenity name" icon="o-tag"
                     hint="Unique amenity name" />
 
-                <x-select wire:model="edit_type" label="Type" placeholder="Select type" :options="[['id' => 'room', 'name' => 'Room'], ['id' => 'yacht', 'name' => 'Yacht']]"
-                    option-value="id" option-label="name" icon="o-sparkles" hint="Amenity type" />
+                <div class="mb-32">
+                    <x-select wire:model="edit_type" label="Type" placeholder="Select type" :options="[['id' => 'room', 'name' => 'Room'], ['id' => 'yacht', 'name' => 'Yacht']]"
+                        option-value="id" option-label="name" icon="o-sparkles" hint="Amenity type" />
+                </div>
             </div>
 
             <x-slot:actions>

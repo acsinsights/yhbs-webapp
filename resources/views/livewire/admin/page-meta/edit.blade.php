@@ -15,7 +15,7 @@ new class extends Component {
     public $metaKeywords;
 
     public $pageMeta;
-    
+
     public function mount($id)
     {
         $this->pageMeta = PageMeta::findOrFail($id);
@@ -27,28 +27,31 @@ new class extends Component {
 
     public function save()
     {
-        $this->validate([
-            'metaTitle' => 'nullable|string|max:60',
-            'metaDescription' => 'nullable|string|max:155',
-            'metaKeywords' => 'nullable|string|max:500',
-        ], [
-            'metaTitle.max' => 'Meta title should be maximum 60 characters for optimal SEO.',
-            'metaDescription.max' => 'Meta description should be maximum 155 characters for optimal SEO.',
-        ]);
+        $this->validate(
+            [
+                'metaTitle' => 'nullable|string|max:60',
+                'metaDescription' => 'nullable|string|max:155',
+                'metaKeywords' => 'nullable|string|max:500',
+            ],
+            [
+                'metaTitle.max' => 'Meta title should be maximum 60 characters for optimal SEO.',
+                'metaDescription.max' => 'Meta description should be maximum 155 characters for optimal SEO.',
+            ],
+        );
 
         $this->pageMeta->meta_title = $this->metaTitle;
         $this->pageMeta->meta_description = $this->metaDescription;
         $this->pageMeta->meta_keywords = $this->metaKeywords;
         $this->pageMeta->save();
-        
+
         $this->success('Page meta updated successfully', redirectTo: route('admin.page-meta.index'));
     }
 };
 ?>
 
-<div>
-    <div class="breadcrumbs mb-4 text-sm">
-        <h1 class="text-2xl font-bold mb-2">
+<div class="max-w-4xl mx-auto px-2 sm:px-4">
+    <div class="breadcrumbs mb-4 text-sm overflow-x-auto">
+        <h1 class="text-xl sm:text-2xl font-bold mb-2">
             Edit Page Meta
         </h1>
         <ul>
@@ -58,95 +61,105 @@ new class extends Component {
         </ul>
     </div>
     <hr class="mb-5">
-    
-    <x-form wire:submit.prevent="save">
-        <x-input label="Page Name" wire:model="pageName" readonly />
-        
+
+    <x-form wire:submit.prevent="save" class="space-y-4">
+        <div class="w-full overflow-hidden">
+            <x-input label="Page Name" wire:model="pageName" readonly class="w-full" />
+        </div>
+
         @php
             $titleLength = mb_strlen($metaTitle ?? '');
             $descLength = mb_strlen($metaDescription ?? '');
         @endphp
-        
-        <div class="form-control">
-            <label class="label">
-                <span class="label-text font-semibold">Meta Title <span class="text-error">*</span></span>
-                <span class="label-text-alt">
-                    <span class="{{ $titleLength > 60 ? 'text-error' : ($titleLength >= 50 ? 'text-success' : 'text-warning') }}">
+
+        <div class="form-control w-full overflow-hidden">
+            <label class="label flex-wrap">
+                <span class="label-text font-semibold text-xs sm:text-sm">Meta Title <span
+                        class="text-error">*</span></span>
+                <span class="label-text-alt text-xs">
+                    <span
+                        class="{{ $titleLength > 60 ? 'text-error' : ($titleLength >= 50 ? 'text-success' : 'text-warning') }}">
                         {{ $titleLength }}/60
                     </span>
                 </span>
             </label>
-            <x-input wire:model.live="metaTitle" placeholder="Enter meta title (50-60 characters recommended)" />
+            <x-input wire:model.live="metaTitle" placeholder="Enter meta title" class="w-full" />
             <label class="label">
-                <span class="label-text-alt">
-                    <div class="text-xs text-base-content/70 mt-1">
+                <span class="label-text-alt w-full block">
+                    <div class="text-[10px] sm:text-xs text-base-content/70 mt-1 break-words max-w-full">
                         <p class="font-semibold mb-1">📌 SEO Guidelines:</p>
-                        <ul class="list-disc list-inside space-y-0.5">
-                            <li>Ideal length: <strong>50-60 characters</strong></li>
-                            <li>Primary keyword <strong>start mein rakho</strong></li>
-                            <li>Brand name include karo (optional)</li>
+                        <ul class="list-disc list-inside space-y-0.5 pl-0">
+                            <li class="break-words">Length: <strong>50-60 chars</strong></li>
+                            <li class="break-words">Keyword at start</li>
+                            <li class="break-words">Include brand (optional)</li>
                         </ul>
                     </div>
-                    @if($titleLength > 60)
-                        <span class="text-error text-xs mt-1">⚠️ Title too long! Google will truncate it.</span>
+                    @if ($titleLength > 60)
+                        <span class="text-error text-[10px] sm:text-xs mt-1 block break-words">⚠️ Too long!</span>
                     @elseif($titleLength < 50 && $titleLength > 0)
-                        <span class="text-warning text-xs mt-1">💡 Consider adding more characters (50-60 recommended)</span>
+                        <span class="text-warning text-[10px] sm:text-xs mt-1 block break-words">💡 Add more
+                            (50-60)</span>
                     @elseif($titleLength >= 50 && $titleLength <= 60)
-                        <span class="text-success text-xs mt-1">✅ Perfect length for SEO!</span>
+                        <span class="text-success text-[10px] sm:text-xs mt-1 block">✅ Perfect!</span>
                     @endif
                 </span>
             </label>
         </div>
 
-        <div class="form-control">
-            <label class="label">
-                <span class="label-text font-semibold">Meta Description</span>
-                <span class="label-text-alt">
-                    <span class="{{ $descLength > 155 ? 'text-error' : ($descLength >= 140 ? 'text-success' : 'text-warning') }}">
+        <div class="form-control w-full overflow-hidden">
+            <label class="label flex-wrap">
+                <span class="label-text font-semibold text-xs sm:text-sm">Meta Description</span>
+                <span class="label-text-alt text-xs">
+                    <span
+                        class="{{ $descLength > 155 ? 'text-error' : ($descLength >= 140 ? 'text-success' : 'text-warning') }}">
                         {{ $descLength }}/155
                     </span>
                 </span>
             </label>
-            <x-textarea wire:model.live="metaDescription" rows="4" placeholder="Enter meta description (140-155 characters recommended)" />
+            <x-textarea wire:model.live="metaDescription" rows="4" placeholder="Enter description"
+                class="w-full" />
             <label class="label">
-                <span class="label-text-alt">
-                    <div class="text-xs text-base-content/70 mt-1">
+                <span class="label-text-alt w-full block">
+                    <div class="text-[10px] sm:text-xs text-base-content/70 mt-1 break-words max-w-full">
                         <p class="font-semibold mb-1">📌 SEO Guidelines:</p>
-                        <ul class="list-disc list-inside space-y-0.5">
-                            <li>Ideal length: <strong>140-155 characters</strong></li>
-                            <li>Include <strong>keyword + benefits + CTA</strong></li>
-                            <li>Compelling description jo users ko click karne ke liye motivate kare</li>
+                        <ul class="list-disc list-inside space-y-0.5 pl-0">
+                            <li class="break-words">Length: <strong>140-155 chars</strong></li>
+                            <li class="break-words">Include keyword + CTA</li>
+                            <li class="break-words">Compelling text</li>
                         </ul>
                     </div>
-                    @if($descLength > 155)
-                        <span class="text-error text-xs mt-1">⚠️ Description too long! Google will truncate it.</span>
+                    @if ($descLength > 155)
+                        <span class="text-error text-[10px] sm:text-xs mt-1 block">⚠️ Too long!</span>
                     @elseif($descLength < 140 && $descLength > 0)
-                        <span class="text-warning text-xs mt-1">💡 Consider adding more details (140-155 recommended)</span>
+                        <span class="text-warning text-[10px] sm:text-xs mt-1 block break-words">💡 Add more
+                            (140-155)</span>
                     @elseif($descLength >= 140 && $descLength <= 155)
-                        <span class="text-success text-xs mt-1">✅ Perfect length for SEO!</span>
+                        <span class="text-success text-[10px] sm:text-xs mt-1 block">✅ Perfect!</span>
                     @endif
                 </span>
             </label>
         </div>
 
-        <div class="form-control">
-            <label class="label">
-                <span class="label-text font-semibold">Meta Keywords <span class="text-base-content/50 text-xs">(Optional)</span></span>
+        <div class="form-control w-full overflow-hidden">
+            <label class="label flex-wrap">
+                <span class="label-text font-semibold text-xs sm:text-sm">Meta Keywords <span
+                        class="text-base-content/50 text-xs">(Optional)</span></span>
             </label>
-            <x-textarea wire:model="metaKeywords" rows="3" placeholder="Comma-separated keywords (e.g., keyword1, keyword2, keyword3)" />
+            <x-textarea wire:model="metaKeywords" rows="3" placeholder="Keywords (comma-separated)"
+                class="w-full" />
             <label class="label">
-                <span class="label-text-alt">
-                    <div class="text-xs text-base-content/50 mt-1">
+                <span class="label-text-alt w-full block">
+                    <div class="text-[10px] sm:text-xs text-base-content/50 mt-1 break-words max-w-full">
                         <p class="font-semibold mb-1">ℹ️ Note:</p>
-                        <p>Google ignores meta keywords. This field is optional and mainly for internal reference.</p>
+                        <p class="break-words">Optional field for internal reference.</p>
                     </div>
                 </span>
             </label>
         </div>
-        
+
         <x-slot:actions>
-            <x-button label="Cancel" link="{{ route('admin.page-meta.index') }}" />
-            <x-button label="Save" class="btn-primary" type="submit" spinner="save" />
+            <x-button label="Cancel" link="{{ route('admin.page-meta.index') }}" class="btn-sm sm:btn-md" />
+            <x-button label="Save" class="btn-primary btn-sm sm:btn-md" type="submit" spinner="save" />
         </x-slot:actions>
     </x-form>
 </div>

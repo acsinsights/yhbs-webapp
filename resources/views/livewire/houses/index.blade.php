@@ -116,7 +116,7 @@ new class extends Component {
             @endscope
 
             @scope('cell_name', $house)
-                <x-badge :value="$house->name" class="badge-soft badge-primary" />
+                <x-badge :value="$house->name" class="badge-soft badge-primary whitespace-nowrap" />
             @endscope
 
             @scope('cell_house_number', $house)
