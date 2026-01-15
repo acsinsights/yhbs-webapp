@@ -74,9 +74,8 @@
                                             <div class="col-md-6 mb-3">
                                                 <label class="form-label">Phone Number *</label>
                                                 <input type="tel"
-                                                    class="form-control @error('guests.0.phone') is-invalid @enderror"
-                                                    name="guests[0][phone]" required value="{{ old('guests.0.phone') }}"
-                                                    placeholder="Enter guest phone">
+                                                    class="form-control guest-phone @error('guests.0.phone') is-invalid @enderror"
+                                                    name="guests[0][phone]" required value="{{ old('guests.0.phone') }}">
                                                 @error('guests.0.phone')
                                                     <div class="invalid-feedback">{{ $message }}</div>
                                                 @enderror

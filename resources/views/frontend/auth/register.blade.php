@@ -87,8 +87,7 @@
                                     <i class="bi bi-telephone me-2"></i>Phone Number
                                 </label>
                                 <input type="tel" class="form-control @error('phone') is-invalid @enderror"
-                                    id="phone" name="phone" placeholder="Enter your phone number"
-                                    value="{{ old('phone') }}" required>
+                                    id="phone" name="phone" value="{{ old('phone') }}" required>
                                 @error('phone')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror

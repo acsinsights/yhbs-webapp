@@ -110,8 +110,7 @@
                                     <div class="col-md-6">
                                         <div class="form-inner">
                                             <label>Phone Number <span class="text-danger">*</span></label>
-                                            <input type="text" name="phone" placeholder="+965 1808080"
-                                                value="{{ old('phone') }}" required>
+                                            <input type="tel" name="phone" value="{{ old('phone') }}" required>
                                             @error('phone')
                                                 <small class="text-danger">{{ $message }}</small>
                                             @enderror

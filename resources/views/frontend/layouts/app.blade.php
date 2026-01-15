@@ -41,6 +41,9 @@
     <link href="{{ asset('frontend/css/boxicons.min.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('frontend/css/style.css') }}">
 
+    <!-- International Phone Input -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/css/intlTelInput.css">
+
     <style>
         /* Hide Alpine elements until Alpine is loaded */
         [x-cloak] {

@@ -56,7 +56,7 @@ function initGuestManagement(oldGuests, maxGuests = 10) {
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Phone Number <small class="text-muted">(Optional)</small></label>
-                            <input type="tel" class="form-control"
+                            <input type="tel" class="form-control guest-phone"
                                 name="guests[${i}][phone]"
                                 value="${guest.phone || ''}"
                                 placeholder="Enter guest phone">
@@ -102,12 +102,19 @@ function initGuestManagement(oldGuests, maxGuests = 10) {
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Phone Number <small class="text-muted">(Optional)</small></label>
-                        <input type="tel" class="form-control" name="guests[${newGuestIndex}][phone]" placeholder="Enter guest phone">
+                        <input type="tel" class="form-control guest-phone" name="guests[${newGuestIndex}][phone]" placeholder="Enter guest phone">
                     </div>
                 </div>
             </div>
         `;
         container.insertAdjacentHTML('beforeend', guestHtml);
+
+        // Initialize phone input for the newly added guest
+        const newGuestPhone = container.querySelector(`input[name="guests[${newGuestIndex}][phone]"]`);
+        if (newGuestPhone && typeof window.initializePhoneInput === 'function') {
+            window.initializePhoneInput(newGuestPhone);
+        }
+
         updateAddButtonState();
     });
 
