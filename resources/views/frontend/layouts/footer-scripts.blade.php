@@ -25,6 +25,9 @@
 <!-- Customer Panel JS -->
 <script src="{{ asset('frontend/js/customer-panel.js') }}"></script>
 
+<!-- Alpine.js for interactive components -->
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
 <!-- International Phone Input -->
 <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/intlTelInput.min.js"></script>
 <script>

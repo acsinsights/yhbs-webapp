@@ -146,7 +146,7 @@ new class extends Component {
     </div>
 
     <!-- Notification Drawer -->
-    <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-300"
+    <div x-cloak x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-300"
         x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0"
         x-transition:leave="transition ease-in duration-300" x-transition:leave-start="translate-x-0"
         x-transition:leave-end="translate-x-full"
