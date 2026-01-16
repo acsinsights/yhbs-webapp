@@ -42,7 +42,7 @@
                             </div>
                         @endif
 
-                        <form action="{{ route('password.update') }}" method="POST" class="auth-form">
+                        <form action="{{ route('customer.password.update') }}" method="POST" class="auth-form">
                             @csrf
                             <input type="hidden" name="token" value="{{ $token ?? '' }}">
 

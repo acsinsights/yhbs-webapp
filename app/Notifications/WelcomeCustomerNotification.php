@@ -39,7 +39,7 @@ class WelcomeCustomerNotification extends Notification
         $token = Password::createToken($notifiable);
 
         // Build the reset URL - using customer password.reset route with email as query parameter
-        $resetUrl = url(route('password.reset', ['token' => $token], false) . '?email=' . urlencode($notifiable->getEmailForPasswordReset()));
+        $resetUrl = url(route('customer.password.reset', ['token' => $token], false) . '?email=' . urlencode($notifiable->getEmailForPasswordReset()));
 
         return (new MailMessage)
             ->subject('Welcome to ' . config('app.name'))
@@ -61,4 +61,3 @@ class WelcomeCustomerNotification extends Notification
         ];
     }
 }
-
