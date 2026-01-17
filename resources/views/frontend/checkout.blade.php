@@ -1,5 +1,85 @@
 @extends('frontend.layouts.app')
 @section('title', 'Checkout - YHBS')
+
+@section('styles')
+    <style>
+        /* Fix for intlTelInput country dropdown visibility */
+        .checkout-card .card-body {
+            padding-bottom: 80px;
+            overflow: visible !important;
+        }
+
+        .guest-detail-item {
+            overflow: visible !important;
+            padding-bottom: 0;
+        }
+
+        .iti {
+            width: 100%;
+            position: relative;
+            z-index: 10;
+        }
+
+        .iti__country-list {
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 1050 !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            position: absolute !important;
+        }
+
+        #guestDetailsContainer {
+            overflow: visible !important;
+        }
+
+        /* Mobile view fixes - make dropdown appear below input like desktop */
+        @media (max-width: 768px) {
+            .iti {
+                z-index: 50;
+                position: relative !important;
+            }
+
+            .iti__country-list {
+                position: absolute !important;
+                max-height: 250px;
+                width: 100% !important;
+                min-width: 250px;
+                left: 0 !important;
+                top: 100% !important;
+                transform: none !important;
+                z-index: 9999 !important;
+                background: white;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                margin-top: 5px;
+                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25) !important;
+            }
+
+            .checkout-card .card-body {
+                overflow: visible !important;
+                position: relative;
+            }
+
+            .col-md-6 {
+                overflow: visible !important;
+                position: relative;
+                z-index: 1;
+            }
+
+            .row {
+                overflow: visible !important;
+            }
+
+            /* Ensure parent containers don't hide dropdown */
+            .guest-detail-item,
+            .checkout-card,
+            .container {
+                overflow: visible !important;
+            }
+        }
+    </style>
+@endsection
+
 @section('content')
     <!-- Breadcrumb section Start-->
     <div class="breadcrumb-section"

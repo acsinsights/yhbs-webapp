@@ -25,9 +25,6 @@
 <!-- Customer Panel JS -->
 <script src="{{ asset('frontend/js/customer-panel.js') }}"></script>
 
-<!-- Alpine.js for interactive components -->
-<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
 <!-- International Phone Input -->
 <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/intlTelInput.min.js"></script>
 <script>
@@ -46,6 +43,7 @@
             autoPlaceholder: "aggressive",
             formatOnDisplay: true,
             nationalMode: false,
+            useFullscreenPopup: false, // Disable fullscreen popup on mobile
             customPlaceholder: function(selectedCountryPlaceholder, selectedCountryData) {
                 return selectedCountryPlaceholder.replace(/[0-9]/g, "X");
             }
@@ -148,14 +146,4 @@
             });
         }
     });
-</script>
-
-// Validate on blur
-input.addEventListener('blur', function() {
-if (input.value.trim() !== '' && !iti.isValidNumber()) {
-input.classList.add('is-invalid');
-}
-});
-});
-});
 </script>

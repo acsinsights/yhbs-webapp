@@ -41,8 +41,8 @@
                                 $mainImageUrl = asset('frontend/img/home2/houses/5.jpg');
                             }
                         @endphp
-                        <img id="mainRoomImage" src="{{ $mainImageUrl }}" alt="{{ $room->name }}"
-                            class="img-fluid rounded" style="width: 100%; height: 500px; object-fit: cover;">
+                        <img id="mainRoomImage" src="{{ $mainImageUrl }}" alt="{{ $room->name }}" class="img-fluid rounded"
+                            style="width: 100%; height: 500px; object-fit: cover;">
                     </div>
 
                     <!-- Additional Images / Thumbnails -->
@@ -183,7 +183,7 @@ $libraryImage = $imageArray['url'] ?? ($imageArray['path'] ?? null);
                                     <div class="col-md-4 mb-4">
                                         <div class="hotel-card">
                                             <div class="hotel-img-wrap">
-                                                <a href="{{ route('rooms.show', $similar->id) }}" class="hotel-img">
+                                                <a href="{{ route('rooms.show', $similar->slug) }}" class="hotel-img">
                                                     @if ($similar->image)
                                                         @if (str_starts_with($similar->image, '/default'))
                                                             <img src="{{ asset($similar->image) }}"
@@ -200,7 +200,7 @@ $libraryImage = $imageArray['url'] ?? ($imageArray['path'] ?? null);
                                             </div>
                                             <div class="hotel-content">
                                                 <h6><a
-                                                        href="{{ route('rooms.show', $similar->id) }}">{{ $similar->name }}</a>
+                                                        href="{{ route('rooms.show', $similar->slug) }}">{{ $similar->name }}</a>
                                                 </h6>
                                                 <div class="price-area">
                                                     <span>{{ currency_format($similar->price_per_night) }}</span>
