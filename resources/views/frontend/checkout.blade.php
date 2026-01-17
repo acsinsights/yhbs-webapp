@@ -26,6 +26,8 @@
             z-index: 1050 !important;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             position: absolute !important;
+            background-color: white !important;
+            opacity: 1 !important;
         }
 
         #guestDetailsContainer {
@@ -48,7 +50,9 @@
                 top: 100% !important;
                 transform: none !important;
                 z-index: 9999 !important;
-                background: white;
+                background: white !important;
+                background-color: white !important;
+                opacity: 1 !important;
                 border: 1px solid #ddd;
                 border-radius: 8px;
                 margin-top: 5px;
