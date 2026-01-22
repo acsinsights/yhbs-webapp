@@ -33,6 +33,9 @@ new class extends Component {
     public ?int $children = null;
     public ?int $number_of_rooms = null;
 
+    // Day unavailability
+    public ?array $unavailable_days = [];
+
     // Image library properties
     public array $files = [];
     public Collection $library;
@@ -68,6 +71,7 @@ new class extends Component {
         $this->adults = $house->adults;
         $this->children = $house->children;
         $this->number_of_rooms = $house->number_of_rooms;
+        $this->unavailable_days = $house->unavailable_days ?? [];
         $this->library = $house->library ?? new Collection();
     }
 
@@ -120,6 +124,8 @@ new class extends Component {
             'adults' => $this->adults,
             'children' => $this->children,
             'number_of_rooms' => $this->number_of_rooms,
+            'unavailable_days' => $this->unavailable_days,
+            'unavailable_days' => $this->unavailable_days,
         ]);
 
         // Sync media files and update library metadata
@@ -239,6 +245,18 @@ new class extends Component {
 
                 <x-textarea wire:model="meta_keywords" label="Meta Keywords" hint="Separated by commas"
                     rows="3" />
+
+                <x-choices-offline wire:model="unavailable_days" label="Unavailable Days" :options="[
+                    ['id' => 0, 'name' => 'Sunday'],
+                    ['id' => 1, 'name' => 'Monday'],
+                    ['id' => 2, 'name' => 'Tuesday'],
+                    ['id' => 3, 'name' => 'Wednesday'],
+                    ['id' => 4, 'name' => 'Thursday'],
+                    ['id' => 5, 'name' => 'Friday'],
+                    ['id' => 6, 'name' => 'Saturday'],
+                ]"
+                    icon="o-calendar-days" hint="Select days when this house is not available for booking" searchable
+                    clearable class="md:col-span-2" />
             </div>
 
             {{-- Description Editor --}}

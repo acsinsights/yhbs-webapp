@@ -9,6 +9,7 @@
     'checkOut' => 'check_out',
     'dateRangeModel' => 'date_range',
     'bookedDates' => [],
+    'unavailableDays' => [],
 ])
 
 <x-card class="bg-base-200">
@@ -22,6 +23,15 @@
         <x-icon name="o-calendar" class="w-8 h-8 text-primary/70" />
     </div>
     <div class="mt-6">
+        @php
+            $disableConfig = $bookedDates;
+            if (!empty($unavailableDays)) {
+                $disableConfig[] =
+                    'function(date) { const unavailableDays = ' .
+                    json_encode($unavailableDays) .
+                    '; return unavailableDays.includes(date.getDay()); }';
+            }
+        @endphp
         <x-datepicker label="Select Date Range ({{ $checkInLabel }} to {{ $checkOutLabel }})"
             wire:model.live="{{ $dateRangeModel }}" icon="o-calendar" :config="[
                 'mode' => 'range',
@@ -29,7 +39,7 @@
                 'altInput' => true,
                 'altFormat' => 'M d, Y',
                 'minDate' => 'today',
-                'disable' => $bookedDates,
+                'disable' => $disableConfig,
                 'conjunction' => ' to ',
                 'allowInput' => false,
                 'clickOpens' => true,

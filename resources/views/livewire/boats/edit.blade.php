@@ -60,6 +60,9 @@ new class extends Component {
     public bool $is_featured = false;
     public int $sort_order = 0;
 
+    // Day unavailability
+    public ?array $unavailable_days = [];
+
     // Image handling
     public ?UploadedFile $image = null;
     public ?string $existing_image = null;
@@ -112,6 +115,7 @@ new class extends Component {
         $this->existing_image = $boat->image;
         $this->image = null;
         $this->amenity_ids = $boat->amenities->pluck('id')->toArray();
+        $this->unavailable_days = $boat->unavailable_days ?? [];
         $this->library = $boat->library ?? new Collection();
     }
 
@@ -177,6 +181,7 @@ new class extends Component {
             'maintenance_note' => $this->maintenance_note,
             'is_featured' => $this->is_featured,
             'sort_order' => $this->sort_order,
+            'unavailable_days' => $this->unavailable_days,
         ]);
 
         // Sync media files and update library metadata
@@ -375,6 +380,18 @@ new class extends Component {
 
                 <x-textarea wire:model="meta_description" label="Meta Description" hint="Max 150 characters"
                     rows="3" class="md:col-span-2" />
+
+                <x-choices-offline wire:model="unavailable_days" label="Unavailable Days" :options="[
+                    ['id' => 0, 'name' => 'Sunday'],
+                    ['id' => 1, 'name' => 'Monday'],
+                    ['id' => 2, 'name' => 'Tuesday'],
+                    ['id' => 3, 'name' => 'Wednesday'],
+                    ['id' => 4, 'name' => 'Thursday'],
+                    ['id' => 5, 'name' => 'Friday'],
+                    ['id' => 6, 'name' => 'Saturday'],
+                ]"
+                    icon="o-calendar-days" hint="Select days when this boat is not available for booking" searchable
+                    clearable class="md:col-span-2" />
             </div>
 
             {{-- Description Editor --}}

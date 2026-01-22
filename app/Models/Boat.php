@@ -43,11 +43,13 @@ class Boat extends Model
         'booking_policy',
         'allows_same_day_booking',
         'requires_advance_booking',
-        'is_monthly_schedule', 
+        'is_monthly_schedule',
+        'unavailable_days',
     ];
 
     protected $casts = [
         'library' => AsCollection::class,
+        'unavailable_days' => 'array',
         'is_active' => 'boolean',
         'is_under_maintenance' => 'boolean',
         'is_featured' => 'boolean',

@@ -27,10 +27,12 @@ class House extends Model
         'children',
         'number_of_rooms',
         'library',
+        'unavailable_days',
     ];
 
     protected $casts = [
         'library' => AsCollection::class,
+        'unavailable_days' => 'array',
         'is_active' => 'boolean',
         'is_under_maintenance' => 'boolean',
     ];

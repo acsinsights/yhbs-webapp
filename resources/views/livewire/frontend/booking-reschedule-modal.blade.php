@@ -82,6 +82,16 @@ new class extends Component {
         };
     }
 
+    public function getBookableTypeName(): string
+    {
+        return match (true) {
+            $this->booking->bookingable instanceof House => 'house',
+            $this->booking->bookingable instanceof Room => 'room',
+            $this->booking->bookingable instanceof Boat => 'boat',
+            default => 'property',
+        };
+    }
+
     public function loadBookedDates(): void
     {
         if ($this->isBoatBooking || !$this->booking->check_out) {
@@ -281,6 +291,34 @@ new class extends Component {
         }
 
         $this->validate($rules);
+
+        // Check if the new date(s) fall on unavailable days
+        if ($this->booking->bookingable && $this->booking->bookingable->unavailable_days && is_array($this->booking->bookingable->unavailable_days)) {
+            $checkDate = Carbon::parse($this->newCheckIn);
+
+            if ($this->isBoatBooking) {
+                // For boats, check only the new check-in date
+                $dayOfWeek = $checkDate->dayOfWeek;
+                if (in_array($dayOfWeek, $this->booking->bookingable->unavailable_days)) {
+                    $dayName = $checkDate->format('l');
+                    $this->addError('newCheckIn', "This {$this->getBookableTypeName()} is not available for booking on {$dayName}s.");
+                    return;
+                }
+            } else {
+                // For houses/rooms, check all dates in the range
+                $endDate = Carbon::parse($this->newCheckOut);
+                $currentDate = $checkDate->copy();
+                while ($currentDate->lt($endDate)) {
+                    $dayOfWeek = $currentDate->dayOfWeek;
+                    if (in_array($dayOfWeek, $this->booking->bookingable->unavailable_days)) {
+                        $dayName = $currentDate->format('l');
+                        $this->addError('newCheckIn', "This {$this->getBookableTypeName()} is not available for booking on {$dayName}s.");
+                        return;
+                    }
+                    $currentDate->addDay();
+                }
+            }
+        }
 
         // Validate that the number of nights remains the same for non-boat bookings
         if (!$this->isBoatBooking && $this->newCheckIn && $this->newCheckOut) {
@@ -734,13 +772,22 @@ new class extends Component {
             }
 
             const bookedDates = @json($bookedDates);
+            const unavailableDays = @json($booking->bookingable->unavailable_days ?? []).map(day => parseInt(day));
             const minDate = '{{ $booking->check_out?->format('Y-m-d') ?? now()->format('Y-m-d') }}';
+
+            // Combine booked dates with unavailable days function
+            const disableConfig = [
+                ...bookedDates,
+                function(date) {
+                    return unavailableDays.includes(date.getDay());
+                }
+            ];
 
             flatpickr(picker, {
                 mode: isBoatBooking ? 'single' : 'range',
                 minDate: minDate,
                 dateFormat: 'Y-m-d',
-                disable: bookedDates,
+                disable: disableConfig,
                 onChange: function(selectedDates) {
                     if (isBoatBooking && selectedDates.length === 1) {
                         const checkIn = selectedDates[0].getFullYear() + '-' +

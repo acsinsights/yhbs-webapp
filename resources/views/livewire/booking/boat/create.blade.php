@@ -363,6 +363,17 @@ new class extends Component {
             $checkInDate = Carbon::parse($this->check_in);
             $now = Carbon::now();
 
+            // Check if the selected date falls on an unavailable day
+            if ($this->selectedBoat->unavailable_days && is_array($this->selectedBoat->unavailable_days)) {
+                $dayOfWeek = $checkInDate->dayOfWeek; // 0 = Sunday, 1 = Monday, etc.
+                if (in_array($dayOfWeek, $this->selectedBoat->unavailable_days)) {
+                    $dayName = $checkInDate->format('l'); // Get day name
+                    $this->addError('check_in', "This boat is not available for booking on {$dayName}s. Please select a different date.");
+                    $this->error("This boat is not available for booking on {$dayName}s. Please select a different date.");
+                    return;
+                }
+            }
+
             // Marina 1, 2, 4 - Must book by 11:59 PM day before
             if (in_array($this->selectedBoat->name, ['Marina 1', 'Marina 2', 'Marina 4'])) {
                 $cutoffTime = $checkInDate->copy()->subDay()->endOfDay();
@@ -709,7 +720,11 @@ new class extends Component {
                                         <div class="mt-6">
                                             <x-datepicker label="Booking Date *" icon="o-calendar"
                                                 wire:model.live="check_in" hint="Select date"
-                                                min="{{ now()->format('Y-m-d') }}" />
+                                                min="{{ now()->format('Y-m-d') }}" :config="[
+                                                    'disable' => [
+                                                        'function(date) { const unavailableDays = ' . json_encode($selectedBoat?->unavailable_days ?? []) . '; return unavailableDays.includes(date.getDay()); }',
+                                                    ],
+                                                ]" />
 
                                             {{-- Step 3: Time Slots based on duration --}}
                                             @if ($check_in && $this->availableTimeSlots->isNotEmpty())
@@ -829,7 +844,11 @@ new class extends Component {
                                         <div class="mt-6">
                                             <x-datepicker label="Booking Date *" icon="o-calendar"
                                                 wire:model.live="check_in" hint="Select date"
-                                                min="{{ now()->format('Y-m-d') }}" />
+                                                min="{{ now()->format('Y-m-d') }}" :config="[
+                                                    'disable' => [
+                                                        'function(date) { const unavailableDays = ' . json_encode($selectedBoat?->unavailable_days ?? []) . '; return unavailableDays.includes(date.getDay()); }',
+                                                    ],
+                                                ]" />
 
                                             {{-- Time Slots based on duration --}}
                                             @if ($check_in && $this->availableTimeSlots->isNotEmpty())
@@ -975,7 +994,11 @@ new class extends Component {
                                         <div class="mt-6">
                                             <x-datepicker label="Booking Date *" icon="o-calendar"
                                                 wire:model.live="check_in" hint="Select date"
-                                                min="{{ now()->format('Y-m-d') }}" />
+                                                min="{{ now()->format('Y-m-d') }}" :config="[
+                                                    'disable' => [
+                                                        'function(date) { const unavailableDays = ' . json_encode($selectedBoat?->unavailable_days ?? []) . '; return unavailableDays.includes(date.getDay()); }',
+                                                    ],
+                                                ]" />
 
                                             {{-- Step 3: Time Slots based on duration --}}
                                             @if ($check_in && $this->availableTimeSlots->isNotEmpty())
@@ -1118,7 +1141,11 @@ new class extends Component {
                                         <div class="mt-6">
                                             <x-datepicker label="Service Date *" icon="o-calendar"
                                                 wire:model.live="check_in" hint="Select date"
-                                                min="{{ now()->format('Y-m-d') }}" />
+                                                min="{{ now()->format('Y-m-d') }}" :config="[
+                                                    'disable' => [
+                                                        'function(date) { const unavailableDays = ' . json_encode($selectedBoat?->unavailable_days ?? []) . '; return unavailableDays.includes(date.getDay()); }',
+                                                    ],
+                                                ]" />
 
                                             {{-- Time Slots based on duration --}}
                                             @if ($check_in && $this->availableTimeSlots->isNotEmpty())
@@ -1294,24 +1321,24 @@ new class extends Component {
                                 </div>
                             @endif
                         </div>
-                            <x-card class="mt-4">
-                        <div class="space-y-2">
-                            <x-button label="Create Booking" type="submit" icon="o-check-circle"
-                                class="btn-primary w-full btn-lg" spinner="save" />
-                            <x-button label="Cancel" link="{{ route('admin.bookings.boat.index') }}" icon="o-x-mark"
-                                class="btn-ghost w-full" />
-                        </div>
-                    </x-card>
+                        <x-card class="mt-4">
+                            <div class="space-y-2">
+                                <x-button label="Create Booking" type="submit" icon="o-check-circle"
+                                    class="btn-primary w-full btn-lg" spinner="save" />
+                                <x-button label="Cancel" link="{{ route('admin.bookings.boat.index') }}"
+                                    icon="o-x-mark" class="btn-ghost w-full" />
+                            </div>
+                        </x-card>
 
-                    <x-card class="mt-4">
-                        <h4 class="text-sm font-semibold text-base-content mb-3">Information</h4>
-                        <div class="text-xs space-y-2 text-base-content/70">
-                            <p>• All fields marked with * are required</p>
-                            <p>• Booking will be created with confirmed status</p>
-                            <p>• Customer will receive confirmation email</p>
-                            <p>• You can modify booking details later</p>
-                        </div>
-                    </x-card>
+                        <x-card class="mt-4">
+                            <h4 class="text-sm font-semibold text-base-content mb-3">Information</h4>
+                            <div class="text-xs space-y-2 text-base-content/70">
+                                <p>• All fields marked with * are required</p>
+                                <p>• Booking will be created with confirmed status</p>
+                                <p>• Customer will receive confirmation email</p>
+                                <p>• You can modify booking details later</p>
+                            </div>
+                        </x-card>
                     </x-card>
                 </div>
             </div>

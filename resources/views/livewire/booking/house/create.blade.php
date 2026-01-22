@@ -388,14 +388,28 @@ new class extends Component {
         $checkIn = Carbon::parse($this->check_in);
         $checkOut = Carbon::parse($this->check_out);
 
+        // Check if any date in the booking range falls on an unavailable day
+        $house = House::findOrFail($this->house_id);
+        if ($house->unavailable_days && is_array($house->unavailable_days)) {
+            $currentDate = $checkIn->copy()->startOfDay();
+            $endDate = $checkOut->copy()->startOfDay();
+            while ($currentDate->lt($endDate)) {
+                $dayOfWeek = $currentDate->dayOfWeek; // 0 = Sunday, 1 = Monday, etc.
+                if (in_array($dayOfWeek, $house->unavailable_days)) {
+                    $dayName = $currentDate->format('l'); // Get day name
+                    $this->error("This house is not available for booking on {$dayName}s. Please select different dates.");
+                    return;
+                }
+                $currentDate->addDay();
+            }
+        }
+
         $availableHouses = House::available($checkIn, $checkOut)->where('id', $this->house_id)->exists();
 
         if (!$availableHouses) {
             $this->error('Selected house is not available for the chosen dates.');
             return;
         }
-
-        $house = House::findOrFail($this->house_id);
 
         // Create a single booking for the entire house
         // Filter out empty guest entries
@@ -556,7 +570,14 @@ new class extends Component {
                 <div class="grid gap-6 lg:grid-cols-3 lg:items-start">
                     <div class="space-y-6 lg:col-span-2">
                         {{-- Date Range Section --}}
-                        <x-booking.date-range-section stepNumber="1" :minCheckInDate="$minCheckInDate" dateRangeModel="date_range" />
+                        @php
+                            $selectedHouseForDates =
+                                $availableHouses->firstWhere('id', $house_id) ??
+                                ($house_id ? House::find($house_id) : null);
+                            $unavailableDays = $selectedHouseForDates?->unavailable_days ?? [];
+                        @endphp
+                        <x-booking.date-range-section stepNumber="1" :minCheckInDate="$minCheckInDate" dateRangeModel="date_range"
+                            :unavailableDays="$unavailableDays" />
 
                         {{-- Customer Section --}}
                         <x-booking.customer-section stepNumber="2" :customers="$customers" />

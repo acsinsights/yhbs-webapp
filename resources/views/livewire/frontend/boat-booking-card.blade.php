@@ -84,6 +84,7 @@ new class extends Component {
 
     public function updatedBookingDate(): void
     {
+        $this->errorMessage = ''; // Clear any previous errors
         if ($this->bookingDate && $this->shouldLoadTimeSlots()) {
             $this->loadTimeSlots();
         }
@@ -135,6 +136,16 @@ new class extends Component {
         $this->startTime = null;
 
         try {
+            // Check if the selected date falls on an unavailable day
+            if ($this->bookingDate && $this->boat->unavailable_days) {
+                $dayOfWeek = Carbon::parse($this->bookingDate)->dayOfWeek; // 0 = Sunday, 1 = Monday, etc.
+                if (in_array($dayOfWeek, $this->boat->unavailable_days)) {
+                    $this->errorMessage = 'This boat is not available for booking on the selected day.';
+                    $this->loadingTimeSlots = false;
+                    return;
+                }
+            }
+
             // Get duration in hours
             $durationHours = $this->getDurationInHours();
 
@@ -679,6 +690,7 @@ new class extends Component {
             }
 
             const minDate = '{{ $this->minDate() }}';
+            const unavailableDays = @json($boat->unavailable_days ?? []);
 
             flatpickr(picker, {
                 mode: 'single',
@@ -686,6 +698,12 @@ new class extends Component {
                 dateFormat: 'Y-m-d',
                 altInput: true,
                 altFormat: 'D, M j, Y',
+                disable: [
+                    function(date) {
+                        // Disable specific days of week (0=Sunday, 1=Monday, etc.)
+                        return unavailableDays.includes(date.getDay());
+                    }
+                ],
                 onChange: function(selectedDates) {
                     if (selectedDates.length === 1) {
                         const selectedDate = selectedDates[0].getFullYear() + '-' +

@@ -272,6 +272,21 @@ new class extends Component {
             return;
         }
 
+        // Check if any date in the booking range falls on an unavailable day
+        if ($this->bookable->unavailable_days && is_array($this->bookable->unavailable_days)) {
+            $currentDate = $checkIn->copy();
+            while ($currentDate->lt($checkOut)) {
+                $dayOfWeek = $currentDate->dayOfWeek; // 0 = Sunday, 1 = Monday, etc.
+                if (in_array($dayOfWeek, $this->bookable->unavailable_days)) {
+                    $dayName = $currentDate->format('l'); // Get day name
+                    $this->isAvailable = false;
+                    $this->availabilityMessage = "This property is not available for booking on {$dayName}s.";
+                    return;
+                }
+                $currentDate->addDay();
+            }
+        }
+
         // Generate range of dates to check
         // For same-day bookings (check-in = check-out), we check only the check-in date
         // For multi-day bookings, we check from check-in up to (but not including) check-out
@@ -536,12 +551,19 @@ new class extends Component {
                     const checkInInput = document.getElementById('checkInDate-{{ $bookable->id }}');
                     const checkOutInput = document.getElementById('checkOutDate-{{ $bookable->id }}');
                     const bookedDates = JSON.parse(picker.getAttribute('data-booked-dates') || '[]');
+                    const unavailableDays = @json($bookable->unavailable_days ?? []).map(day => parseInt(day));
 
                     flatpickr(picker, {
                         mode: 'range',
                         minDate: 'today',
                         dateFormat: 'Y-m-d',
-                        disable: bookedDates,
+                        disable: [
+                            ...bookedDates,
+                            function(date) {
+                                // Disable specific days of week (0=Sunday, 1=Monday, etc.)
+                                return unavailableDays.includes(date.getDay());
+                            }
+                        ],
                         onChange: function(selectedDates, dateStr, instance) {
                             if (selectedDates.length === 2) {
                                 const checkInTime = selectedDates[0].getTime();
