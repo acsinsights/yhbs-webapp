@@ -1,3 +1,48 @@
+<?php
+
+use Livewire\Volt\Component;
+use Livewire\WithPagination;
+use Livewire\Attributes\{Url, Title};
+use App\Models\PolicyPage;
+use Mary\Traits\Toast;
+
+new class extends Component {
+    use WithPagination, Toast;
+
+    #[Title('Policy Pages')]
+    #[Url]
+    public string $search = '';
+
+    public array $sortBy = ['column' => 'id', 'direction' => 'asc'];
+
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function sortByField(string $field): void
+    {
+        $direction = $this->sortBy['column'] === $field && $this->sortBy['direction'] === 'asc' ? 'desc' : 'asc';
+        $this->sortBy = ['column' => $field, 'direction' => $direction];
+    }
+
+    public function toggleStatus(int $id): void
+    {
+        $page = PolicyPage::findOrFail($id);
+        $page->update(['is_active' => !$page->is_active]);
+        $this->success('Status updated successfully.');
+    }
+
+    public function with(): array
+    {
+        $pages = PolicyPage::query()->when($this->search, fn($query) => $query->where('title', 'like', "%{$this->search}%")->orWhere('slug', 'like', "%{$this->search}%"))->orderBy(...array_values($this->sortBy))->paginate(10);
+
+        return ['pages' => $pages];
+    }
+};
+
+?>
+
 <div>
     <x-header title="Policy Pages" separator progress-indicator>
         <x-slot:middle class="!justify-end">
@@ -23,7 +68,6 @@
                             <td>{{ $page->id }}</td>
                             <td class="font-semibold">{{ $page->title }}</td>
                             <td><code class="text-sm">{{ $page->slug }}</code></td>
-                            <td>{{ $page->order }}</td>
                             <td>
                                 <x-toggle wire:click="toggleStatus({{ $page->id }})" :checked="$page->is_active" />
                             </td>

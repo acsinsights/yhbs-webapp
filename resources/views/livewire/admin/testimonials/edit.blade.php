@@ -1,3 +1,88 @@
+<?php
+
+use Livewire\Volt\Component;
+use Livewire\WithFileUploads;
+use Livewire\Attributes\{Locked, Title};
+use App\Models\Testimonial;
+use Mary\Traits\Toast;
+use Illuminate\Support\Facades\Storage;
+
+new class extends Component {
+    use WithFileUploads, Toast;
+
+    #[Locked]
+    public ?Testimonial $testimonial = null;
+
+    public string $customer_name = '';
+    public string $customer_designation = '';
+    public string $testimonial_text = '';
+    public $customer_image;
+    public ?string $existingImage = null;
+    public int $rating = 5;
+    public bool $is_active = true;
+    public int $order = 0;
+    public bool $isCreating = false;
+
+    public function mount(?int $id = null): void
+    {
+        if ($id) {
+            $this->testimonial = Testimonial::findOrFail($id);
+            $this->customer_name = $this->testimonial->customer_name;
+            $this->customer_designation = $this->testimonial->customer_designation ?? '';
+            $this->testimonial_text = $this->testimonial->testimonial;
+            $this->existingImage = $this->testimonial->customer_image;
+            $this->rating = $this->testimonial->rating;
+            $this->is_active = $this->testimonial->is_active;
+            $this->order = $this->testimonial->order;
+        } else {
+            $this->isCreating = true;
+        }
+    }
+
+    public function save(): void
+    {
+        $rules = [
+            'customer_name' => 'required|string|max:255',
+            'customer_designation' => 'nullable|string|max:255',
+            'testimonial_text' => 'required|string',
+            'rating' => 'required|integer|min:1|max:5',
+            'is_active' => 'boolean',
+            'order' => 'integer|min:0',
+            'customer_image' => 'nullable|image|max:2048',
+        ];
+
+        $this->validate($rules);
+
+        $data = [
+            'customer_name' => $this->customer_name,
+            'customer_designation' => $this->customer_designation,
+            'testimonial' => $this->testimonial_text,
+            'rating' => $this->rating,
+            'is_active' => $this->is_active,
+            'order' => $this->order,
+        ];
+
+        if ($this->customer_image) {
+            if (!$this->isCreating && $this->existingImage) {
+                Storage::disk('public')->delete($this->existingImage);
+            }
+            $data['customer_image'] = $this->customer_image->store('testimonials', 'public');
+        } elseif (!$this->isCreating && $this->existingImage) {
+            $data['customer_image'] = $this->existingImage;
+        }
+
+        if ($this->isCreating) {
+            Testimonial::create($data);
+            $this->success('Testimonial created successfully.', redirectTo: route('admin.testimonials.index'));
+        } else {
+            $this->testimonial->update($data);
+            $this->success('Testimonial updated successfully.', redirectTo: route('admin.testimonials.index'));
+        }
+    }
+};
+
+?>
+
 <div class="pb-4">
     <x-header :title="$isCreating ? 'Create Testimonial' : 'Edit Testimonial'" separator>
         <x-slot:actions>
@@ -36,7 +121,6 @@
                     hint="Display order (lower numbers first)" />
             </div>
 
-            {{-- Image Upload --}}
             <div class="mt-4">
                 <x-file wire:model="customer_image" label="Customer Image" accept="image/*"
                     hint="Upload customer photo (Max: 2MB, Recommended: Square image)">
@@ -54,7 +138,6 @@
                 </div>
             </div>
 
-            {{-- Form Actions --}}
             <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-6 md:mt-8 pt-4 md:pt-6 border-t">
                 <x-button icon="o-x-mark" label="Cancel" link="{{ route('admin.testimonials.index') }}"
                     class="btn-error btn-outline" responsive />

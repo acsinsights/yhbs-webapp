@@ -1,3 +1,66 @@
+<?php
+
+use Livewire\Volt\Component;
+use Livewire\WithFileUploads;
+use Livewire\Attributes\{Locked, Title};
+use App\Models\Statistic;
+use Mary\Traits\Toast;
+use Illuminate\Support\Facades\Storage;
+
+new class extends Component {
+    use WithFileUploads, Toast;
+
+    #[Locked]
+    public Statistic $statistic;
+
+    public string $title = '';
+    public string $count = '';
+    public ?string $icon = null;
+    public $new_icon;
+    public int $order = 0;
+    public bool $is_active = true;
+
+    public function mount(Statistic $statistic): void
+    {
+        $this->statistic = $statistic;
+        $this->title = $this->statistic->title;
+        $this->count = $this->statistic->count;
+        $this->icon = $this->statistic->icon;
+        $this->order = $this->statistic->order;
+        $this->is_active = $this->statistic->is_active;
+    }
+
+    public function save(): void
+    {
+        $this->validate([
+            'title' => 'required|string|max:255',
+            'count' => 'required|string|max:50',
+            'order' => 'required|integer|min:0',
+            'is_active' => 'boolean',
+            'new_icon' => 'nullable|image|max:2048',
+        ]);
+
+        $data = [
+            'title' => $this->title,
+            'count' => $this->count,
+            'order' => $this->order,
+            'is_active' => $this->is_active,
+        ];
+
+        if ($this->new_icon) {
+            if ($this->icon) {
+                Storage::disk('public')->delete($this->icon);
+            }
+            $data['icon'] = $this->new_icon->store('statistics', 'public');
+        }
+
+        $this->statistic->update($data);
+        $this->success('Statistic updated successfully.', redirectTo: route('admin.statistics.index'));
+    }
+};
+
+?>
+
 <div>
     <x-header title="Edit Statistic: {{ $statistic->title }}" separator progress-indicator>
         <x-slot:actions>
@@ -26,14 +89,6 @@
                         <img src="{{ $icon ? asset('storage/' . $icon) : 'https://placehold.co/100x100' }}"
                             alt="Statistic Icon" class="h-24 w-24 object-contain rounded p-2 border" />
                     </x-file>
-
-                    @if ($new_icon)
-                        <div class="mt-2">
-                            <p class="text-sm text-gray-500 mb-2">New Icon Preview:</p>
-                            <img src="{{ $new_icon->temporaryUrl() }}"
-                                class="h-16 w-16 object-contain border rounded p-2">
-                        </div>
-                    @endif
                 </div>
 
                 <div>
