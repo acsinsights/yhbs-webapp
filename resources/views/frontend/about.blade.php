@@ -183,8 +183,7 @@
                                         <div class="nav-link active" id="pills-one-tab" data-bs-toggle="pill"
                                             data-bs-target="#pills-one" role="tab" aria-controls="pills-one"
                                             aria-selected="true">
-                                            <img src="{{ asset('frontend/img/innerpages/2013.jpg') }}"
-                                                alt="" />
+                                            <img src="{{ asset('frontend/img/innerpages/2013.jpg') }}" alt="" />
                                             <h4>2013</h4>
                                         </div>
                                         <span class="dot"></span>
@@ -195,8 +194,7 @@
                                         <div class="nav-link" id="pills-two-tab" data-bs-toggle="pill"
                                             data-bs-target="#pills-two" role="tab" aria-controls="pills-two"
                                             aria-selected="true">
-                                            <img src="{{ asset('frontend/img/innerpages/2015.jpg') }}"
-                                                alt=""" />
+                                            <img src="{{ asset('frontend/img/innerpages/2015.jpg') }}" alt=""" />
                                             <h4>2015</h4>
                                         </div>
                                         <span class="dot"></span>
@@ -207,8 +205,7 @@
                                         <div class="nav-link" id="pills-three-tab" data-bs-toggle="pill"
                                             data-bs-target="#pills-three" role="tab" aria-controls="pills-three"
                                             aria-selected="true">
-                                            <img src="{{ asset('frontend/img/innerpages/2018.jpg') }}"
-                                                alt="" />
+                                            <img src="{{ asset('frontend/img/innerpages/2018.jpg') }}" alt="" />
                                             <h4>2018</h4>
                                         </div>
                                         <span class="dot"></span>
@@ -219,8 +216,7 @@
                                         <div class="nav-link" id="pills-four-tab" data-bs-toggle="pill"
                                             data-bs-target="#pills-four" role="tab" aria-controls="pills-four"
                                             aria-selected="true">
-                                            <img src="{{ asset('frontend/img/innerpages/2021.jpg') }}"
-                                                alt="" />
+                                            <img src="{{ asset('frontend/img/innerpages/2021.jpg') }}" alt="" />
                                             <h4>2021</h4>
                                         </div>
                                         <span class="dot"></span>
@@ -231,8 +227,7 @@
                                         <div class="nav-link" id="pills-five-tab" data-bs-toggle="pill"
                                             data-bs-target="#pills-five" role="tab" aria-controls="pills-five"
                                             aria-selected="true">
-                                            <img src="{{ asset('frontend/img/innerpages/2023.jpg') }}"
-                                                alt="" />
+                                            <img src="{{ asset('frontend/img/innerpages/2023.jpg') }}" alt="" />
                                             <h4>2023</h4>
                                         </div>
                                         <span class="dot"></span>
@@ -243,8 +238,7 @@
                                         <div class="nav-link" id="pills-six-tab" data-bs-toggle="pill"
                                             data-bs-target="#pills-six" role="tab" aria-controls="pills-six"
                                             aria-selected="true">
-                                            <img src="{{ asset('frontend/img/innerpages/2024.jpg') }}"
-                                                alt="" />
+                                            <img src="{{ asset('frontend/img/innerpages/2024.jpg') }}" alt="" />
                                             <h4>2024</h4>
                                         </div>
                                         <span class="dot"></span>
@@ -255,8 +249,7 @@
                                         <div class="nav-link" id="pills-seven-tab" data-bs-toggle="pill"
                                             data-bs-target="#pills-seven" role="tab" aria-controls="pills-seven"
                                             aria-selected="true">
-                                            <img src="{{ asset('frontend/img/innerpages/2025.jpg') }}"
-                                                alt="" />
+                                            <img src="{{ asset('frontend/img/innerpages/2025.jpg') }}" alt="" />
                                             <h4>2025</h4>
                                         </div>
                                         <span class="dot"></span>
@@ -357,8 +350,8 @@
                             </path>
                         </svg>
                         <h5>
-                           Expertly Managed  <br />
-                          Marine Tours
+                            Expertly Managed <br />
+                            Marine Tours
                         </h5>
                     </div>
                 </div>
@@ -376,7 +369,7 @@
                             </path>
                         </svg>
                         <h5>
-                           Flexible & Affordable<br />
+                            Flexible & Affordable<br />
                             Marine Packages
                         </h5>
                     </div>
@@ -409,7 +402,7 @@
                         </svg>
                         <h5>
                             Certified & <br />
-                           Experienced Crew
+                            Experienced Crew
                         </h5>
                     </div>
                 </div>
@@ -738,33 +731,6 @@
                     </div>
                 </div>
             </div>
-            <div class="review-wrap wow animate fadeInUp" data-wow-delay="200ms" data-wow-duration="1500ms">
-                <div class="tripadvisor-rating-area">
-                    <a href="https://www.tripadvisor.com/" class="tripadvisor-rating">
-                        <img src="assets/img/home1/icon/tripadvisor-logo.svg" alt="" />
-                        <div class="rating-area">
-                            <span>Reviews</span>
-                            <img src="assets/img/home1/icon/tripadvisor-start.svg" alt="" />
-                        </div>
-                    </a>
-                    <svg class="divider" width="6" height="52" viewbox="0 0 6 52"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path
-                            d="M3.5 5L5.88675 0H0.113249L2.5 5H3.5ZM2.5 47L0.113249 52H5.88675L3.5 47H2.5ZM2.5 4.5V47.5H3.5V4.5H2.5Z">
-                        </path>
-                    </svg>
-                </div>
-                <a href="http://trustpilot.com/" class="trustpilot-rating-area">
-                    <strong>4.5</strong>
-                    <div class="trustpilot-rating">
-                        <img src="assets/img/home1/icon/trustpilot-logo.svg" alt="" />
-                        <div class="rating-area">
-                            <img src="assets/img/home1/icon/trustpilot-star.svg" alt="" />
-                            <span>(2K reviews)</span>
-                        </div>
-                    </div>
-                </a>
-            </div>
         </div>
     </div>
     <!-- home1 testimonial Section End-->
@@ -817,7 +783,7 @@
                                 <div id="flush-collapseTwo" class="accordion-collapse collapse"
                                     aria-labelledby="flush-headingTwo" data-bs-parent="#accordionFlushExample">
                                     <div class="accordion-body">
-                                       IKARUS was established in 2013.
+                                        IKARUS was established in 2013.
                                     </div>
                                 </div>
                             </div>
@@ -827,13 +793,13 @@
                                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                                         data-bs-target="#flush-collapseThree" aria-expanded="false"
                                         aria-controls="flush-collapseThree">
-                                     How many marine vessels does IKARUS operate?
+                                        How many marine vessels does IKARUS operate?
                                     </button>
                                 </h5>
                                 <div id="flush-collapseThree" class="accordion-collapse collapse"
                                     aria-labelledby="flush-headingThree" data-bs-parent="#accordionFlushExample">
                                     <div class="accordion-body">
-                                       The company operates a fleet of 27+ vessels.
+                                        The company operates a fleet of 27+ vessels.
                                     </div>
                                 </div>
                             </div>
@@ -843,7 +809,7 @@
                                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                                         data-bs-target="#flush-collapseFour" aria-expanded="false"
                                         aria-controls="flush-collapseFour">
-                                      What facilities are available on Failaka Island?
+                                        What facilities are available on Failaka Island?
                                     </button>
                                 </h5>
                                 <div id="flush-collapseFour" class="accordion-collapse collapse"
@@ -859,13 +825,13 @@
                                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                                         data-bs-target="#flush-collapseFive" aria-expanded="false"
                                         aria-controls="flush-collapseFive">
-                                       How many staff members does IKARUS have?
+                                        How many staff members does IKARUS have?
                                     </button>
                                 </h5>
                                 <div id="flush-collapseFive" class="accordion-collapse collapse"
                                     aria-labelledby="flush-headingFive" data-bs-parent="#accordionFlushExample">
                                     <div class="accordion-body">
-                                       IKARUS employs 200+ trained staff members.
+                                        IKARUS employs 200+ trained staff members.
                                     </div>
                                 </div>
                             </div>
@@ -881,7 +847,8 @@
                                 <div id="flush-collapseSix" class="accordion-collapse collapse"
                                     aria-labelledby="flush-headingSix" data-bs-parent="#accordionFlushExample">
                                     <div class="accordion-body">
-                                        Delivering safe marine transport and premium tourism experiences with complete marine service solutions.
+                                        Delivering safe marine transport and premium tourism experiences with complete
+                                        marine service solutions.
                                     </div>
                                 </div>
                             </div>

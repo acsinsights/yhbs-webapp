@@ -157,6 +157,7 @@ Version: 1.0
 html {
     font-size: 100%;
     scroll-behavior: smooth;
+    overflow-x: hidden;
 }
 
 body {
@@ -167,6 +168,8 @@ body {
     font-size: 16px;
     font-weight: 400;
     line-height: 30px;
+    overflow-x: hidden;
+    max-width: 100%;
 }
 
 body.experience-01 {
@@ -16122,6 +16125,93 @@ header.style-3.two .main-menu > ul > li.active > a i {
     }
 }
 
+/* Mobile spacing for counter items */
+@media (max-width: 576px) {
+    .counter-section .divider {
+        padding: 5px 3px;
+        margin-bottom: 0px;
+    }
+}
+
+@media (max-width: 767px) {
+    .counter-section {
+        padding: 50px 0 100px !important;
+    }
+
+    .counter-section .row {
+        row-gap: 80px;
+    }
+
+    .counter-section .row > .col-lg-3,
+    .counter-section .row > .col-sm-6 {
+        flex: 0 0 50% !important;
+        max-width: 50% !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+
+    .counter-section .divider {
+        padding: 0 !important;
+        margin-bottom: 0 !important;
+        justify-content: center !important;
+    }
+
+    .counter-section .divider::before {
+        display: none !important;
+    }
+
+    .counter-section .single-counter {
+        flex-direction: column !important;
+        text-align: center;
+        gap: 6px !important;
+        align-items: center !important;
+    }
+
+    .counter-section .single-counter .icon svg {
+        width: 38px !important;
+        height: 38px !important;
+    }
+
+    .counter-section .single-counter .content {
+        width: 100%;
+    }
+
+    .counter-section .single-counter .content .number {
+        margin-bottom: 4px !important;
+        justify-content: center;
+    }
+
+    .counter-section .single-counter .content .number h2,
+    .counter-section .single-counter .content .number span {
+        font-size: 26px !important;
+    }
+
+    .counter-section .single-counter .content > span {
+        font-size: 11px !important;
+        line-height: 1.3 !important;
+        display: block;
+        max-width: 100%;
+        padding: 0 2px;
+        word-wrap: break-word;
+    }
+}
+
+@media (max-width: 400px) {
+    .counter-section .single-counter .icon svg {
+        width: 32px !important;
+        height: 32px !important;
+    }
+
+    .counter-section .single-counter .content .number h2,
+    .counter-section .single-counter .content .number span {
+        font-size: 22px !important;
+    }
+
+    .counter-section .single-counter .content > span {
+        font-size: 10px !important;
+    }
+}
+
 .counter-section .single-counter .icon svg {
     fill: var(--primary-color1);
 }
@@ -16170,7 +16260,7 @@ header.style-3.two .main-menu > ul > li.active > a i {
 @media (max-width: 576px) {
     .counter-section .single-counter .content .number h2,
     .counter-section .single-counter .content .number span {
-        font-size: 27px;
+        font-size: 24px;
     }
 }
 
@@ -16190,7 +16280,10 @@ header.style-3.two .main-menu > ul > li.active > a i {
 
 @media (max-width: 576px) {
     .counter-section .single-counter .content span {
-        font-size: 15px;
+        font-size: 13px;
+        line-height: 1.4;
+        display: block;
+        max-width: 100%;
     }
 }
 
@@ -16208,7 +16301,11 @@ header.style-3.two .main-menu > ul > li.active > a i {
 
 @media (max-width: 576px) {
     .counter-section.two {
-        padding: 45px 0;
+        padding: 50px 0;
+    }
+    .counter-section.two .divider {
+        padding: 30px 5px;
+        margin-bottom: 0;
     }
 }
 
@@ -20133,8 +20230,10 @@ header.style-3.two .main-menu > ul > li.active > a i {
 
 @media (max-width: 767px) {
     .home2-testimonial-section .review-and-slider-btn {
-        flex-direction: column;
-        gap: 24px;
+        flex-direction: row !important;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 12px;
     }
 }
 
@@ -20146,7 +20245,21 @@ header.style-3.two .main-menu > ul > li.active > a i {
 
 @media (max-width: 767px) {
     .home2-testimonial-section .review-and-slider-btn .single-rating {
+        flex: 0 0 calc(50% - 8px);
+        max-width: calc(50% - 8px);
+        gap: 8px;
+        flex-direction: column;
+        align-items: center;
         order: 2;
+    }
+
+    .home2-testimonial-section .review-and-slider-btn .slider-btn-grp {
+        flex: 0 0 100%;
+        order: 1;
+        margin-top: 0px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: center;
     }
 }
 
@@ -20161,7 +20274,7 @@ header.style-3.two .main-menu > ul > li.active > a i {
 
 @media (max-width: 576px) {
     .home2-testimonial-section .review-and-slider-btn .single-rating strong {
-        font-size: 22px;
+        font-size: 18px;
     }
 }
 
@@ -20177,6 +20290,25 @@ header.style-3.two .main-menu > ul > li.active > a i {
     margin-top: 5px;
 }
 
+@media (max-width: 767px) {
+    .home2-testimonial-section
+        .review-and-slider-btn
+        .single-rating
+        .trustpilot-rating
+        img {
+        max-width: 70px;
+    }
+
+    .home2-testimonial-section
+        .review-and-slider-btn
+        .single-rating
+        .trustpilot-rating
+        .rating-area {
+        gap: 4px;
+        margin-top: 3px;
+    }
+}
+
 .home2-testimonial-section
     .review-and-slider-btn
     .single-rating
@@ -20190,6 +20322,26 @@ header.style-3.two .main-menu > ul > li.active > a i {
     line-height: 1;
 }
 
+@media (max-width: 767px) {
+    .home2-testimonial-section
+        .review-and-slider-btn
+        .single-rating
+        .trustpilot-rating
+        .rating-area
+        span {
+        font-size: 11px;
+    }
+
+    .home2-testimonial-section
+        .review-and-slider-btn
+        .single-rating
+        .trustpilot-rating
+        .rating-area
+        img {
+        max-width: 50px;
+    }
+}
+
 .home2-testimonial-section
     .review-and-slider-btn
     .single-rating
@@ -20199,6 +20351,25 @@ header.style-3.two .main-menu > ul > li.active > a i {
     display: flex;
     align-items: center;
     gap: 10px;
+}
+
+@media (max-width: 767px) {
+    .home2-testimonial-section
+        .review-and-slider-btn
+        .single-rating
+        .tripadvisor-rating
+        img {
+        max-width: 70px;
+    }
+
+    .home2-testimonial-section
+        .review-and-slider-btn
+        .single-rating
+        .tripadvisor-rating
+        .rating-area {
+        gap: 4px;
+        padding-top: 3px;
+    }
 }
 
 .home2-testimonial-section
@@ -20214,13 +20385,35 @@ header.style-3.two .main-menu > ul > li.active > a i {
     line-height: 1;
 }
 
+@media (max-width: 767px) {
+    .home2-testimonial-section
+        .review-and-slider-btn
+        .single-rating
+        .tripadvisor-rating
+        .rating-area
+        span {
+        font-size: 11px;
+    }
+
+    .home2-testimonial-section
+        .review-and-slider-btn
+        .single-rating
+        .tripadvisor-rating
+        .rating-area
+        img {
+        max-width: 50px;
+    }
+}
+
 .home2-testimonial-section .review-and-slider-btn .slider-btn-grp {
     gap: 20px;
+    display: flex;
 }
 
 @media (max-width: 767px) {
     .home2-testimonial-section .review-and-slider-btn .slider-btn-grp {
         order: 1;
+        justify-content: center;
     }
 }
 
@@ -20381,6 +20574,12 @@ header.style-3.two .main-menu > ul > li.active > a i {
 @media (max-width: 576px) {
     .home2-gallery-section .gallery-img-grp .counter-area {
         gap: 15px;
+    }
+}
+
+@media (max-width: 767px) {
+    .home2-gallery-section .gallery-img-grp .counter-area {
+        display: none !important;
     }
 }
 
