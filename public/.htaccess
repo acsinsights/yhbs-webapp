@@ -5,6 +5,11 @@
 
     RewriteEngine On
 
+    # Block GET requests to Livewire endpoints (prevents crawler errors)
+    RewriteCond %{REQUEST_METHOD} ^GET$
+    RewriteCond %{REQUEST_URI} ^/livewire/(update|message|upload) [NC]
+    RewriteRule ^ - [F,L]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
