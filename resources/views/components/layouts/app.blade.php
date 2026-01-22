@@ -230,6 +230,8 @@
                     <x-menu-item title="Blogs" icon="o-document-text" link="{{ route('admin.blogs.index') }}" />
                     <x-menu-item title="Contact Submissions" icon="o-envelope"
                         link="{{ route('admin.contacts.index') }}" />
+                    <x-menu-item title="Career Applications" icon="o-briefcase"
+                        link="{{ route('admin.career-applications.index') }}" />
                     {{-- CMS Section --}}
                     <x-menu-separator title="CMS" />
 

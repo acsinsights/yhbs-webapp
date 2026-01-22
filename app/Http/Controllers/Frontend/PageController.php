@@ -11,6 +11,10 @@ use App\Models\Testimonial;
 use App\Models\Statistic;
 use App\Models\Blog;
 use App\Models\PolicyPage;
+use App\Models\CareerApplication;
+use App\Mail\CareerApplicationMail;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class PageController extends Controller
 {
@@ -37,6 +41,44 @@ class PageController extends Controller
     public function about()
     {
         return view('frontend.about');
+    }
+
+    /**
+     * Display the careers page.
+     */
+    public function careers()
+    {
+        return view('frontend.careers');
+    }
+
+    /**
+     * Store a career application.
+     */
+    public function storeCareerApplication(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'phone' => 'required|string|max:20',
+            'position' => 'required|string|max:255',
+            'experience' => 'nullable|string|max:255',
+            'resume' => 'required|file|mimes:pdf|max:5120', // 5MB max
+            'cover_letter' => 'nullable|string|max:2000',
+        ]);
+
+        // Store the resume file
+        if ($request->hasFile('resume')) {
+            $resumePath = $request->file('resume')->store('resumes', 'public');
+            $validated['resume'] = $resumePath;
+        }
+
+        // Create the application
+        $application = CareerApplication::create($validated);
+
+        // Send email notification
+        Mail::to(config('mail.from.address'))->send(new CareerApplicationMail($application));
+
+        return redirect()->route('careers')->with('success', 'Your application has been submitted successfully! We will review it and get back to you soon.');
     }
 
     /**

@@ -89,6 +89,7 @@
                               <li><a href="{{ route('rooms.index') }}">Rooms</a></li>
                               <li><a href="{{ route('houses.index') }}">Houses</a></li>
                               <li><a href="{{ route('boats.index') }}">Boats</a></li>
+                              <li><a href="{{ route('careers') }}">Careers</a></li>
                           </ul>
                       </div>
                   </div>

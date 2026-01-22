@@ -16,14 +16,20 @@ Route::get('/', [PageController::class, 'home'])->name('home');
 // About page
 Route::get('/about', [PageController::class, 'about'])->name('about');
 
+// Careers page
+Route::get('/careers', [PageController::class, 'careers'])->name('careers');
+
 // Contact page
 Route::get('/contact', [PageController::class, 'contact'])->name('contact');
 
 // Contact form submission
 Route::post('/contact', [App\Http\Controllers\Frontend\ContactController::class, 'store'])->name('contact.store');
 
+// Career application submission
+Route::post('/job-application', [PageController::class, 'storeCareerApplication'])->name('job-application');
+
 // Job application page
-Route::get('/job-application', [PageController::class, 'jobApplication'])->name('job-application');
+Route::get('/job-application', [PageController::class, 'jobApplication'])->name('job-application-page');
 
 // Dynamic policy pages route
 Route::get('/policy/{slug}', [PageController::class, 'policyPage'])->name('policy-pages.show');

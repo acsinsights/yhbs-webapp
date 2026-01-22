@@ -107,6 +107,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Volt::route('/{id}/show', 'admin.contacts.show')->name('contacts.show');
         });
 
+        // Career Applications routes
+        Route::group(['prefix' => 'career-applications'], function () {
+            Volt::route('/', 'admin.career-applications.index')->name('career-applications.index');
+            Volt::route('/{id}/show', 'admin.career-applications.show')->name('career-applications.show');
+        });
+
         // Customers routes
         Route::group(['prefix' => 'customers'], function () {
             Volt::route('/', 'admin.customers.index')->name('customers.index');
