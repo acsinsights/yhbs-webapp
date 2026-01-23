@@ -40,6 +40,9 @@
                                 </li>
                             </ul>
                         </li>
+                        <li class="{{ request()->is('blogs*') || request()->is('blog*') ? 'active' : '' }}">
+                            <a href="{{ route('blogs.index') }}">Blog</a>
+                        </li>
                         <li class="{{ request()->is('contact*') ? 'active' : '' }}">
                             <a href="{{ url('/contact') }}">Contact Us</a>
                         </li>
