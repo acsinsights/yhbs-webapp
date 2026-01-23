@@ -43,6 +43,12 @@ class WebsiteSettingSeeder extends Seeder
                 'value' => 'Kuwaiti Dinar',
                 'type' => 'text',
             ],
+            [
+                'name' => 'Map Location',
+                'key' => 'map_location',
+                'value' => 'Dayia Tower, Sharq, Kuwait',
+                'type' => 'text',
+            ],
         ];
 
         foreach ($settings as $setting) {

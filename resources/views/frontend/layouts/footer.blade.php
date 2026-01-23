@@ -19,35 +19,45 @@
                   </div>
               </div>
               <ul class="contact-area">
-                  <li class="single-contact">
-                      <div class="icon">
-                          <img src="{{ asset('frontend/img/home1/icon/whatsapp-icon2.svg') }}" alt="">
-                      </div>
-                      <div class="content">
-                          <span>WhatsApp</span>
-                          <a href="https://wa.me/+965 1808080">+965 1808080</a>
-                      </div>
-                  </li>
-                  <li class="single-contact">
-                      <div class="icon">
-                          <img src="{{ asset('frontend/img/home1/icon/mail-icon2.svg') }}" alt="">
-                      </div>
-                      <div class="content">
-                          <span>Mail Us</span>
-                          <a href="/cdn-cgi/l/email-protection#1871767e77587d60797568747d367b7775"><span
-                                  class="__cf_email__"
-                                  data-cfemail="aec7c0c8c1eecbd6cfc3dec2cb80cdc1c3">[email&#160;protected]</span></a>
-                      </div>
-                  </li>
-                  <li class="single-contact">
-                      <div class="icon">
-                          <img src="{{ asset('frontend/img/home1/icon/call-icon.svg') }}" alt="">
-                      </div>
-                      <div class="content">
-                          <span>Call Us</span>
-                          <a href="tel:+965 1808080">+965 1808080</a>
-                      </div>
-                  </li>
+                  @php
+                      $whatsapp = website_setting('whatsapp');
+                      $contact_email = website_setting('contact_email');
+                      $contact_phone = website_setting('contact_phone');
+                  @endphp
+                  @if ($whatsapp)
+                      <li class="single-contact">
+                          <div class="icon">
+                              <img src="{{ asset('frontend/img/home1/icon/whatsapp-icon2.svg') }}" alt="">
+                          </div>
+                          <div class="content">
+                              <span>WhatsApp</span>
+                              <a
+                                  href="https://wa.me/{{ str_replace([' ', '+'], '', $whatsapp) }}">{{ $whatsapp }}</a>
+                          </div>
+                      </li>
+                  @endif
+                  @if ($contact_email)
+                      <li class="single-contact">
+                          <div class="icon">
+                              <img src="{{ asset('frontend/img/home1/icon/mail-icon2.svg') }}" alt="">
+                          </div>
+                          <div class="content">
+                              <span>Mail Us</span>
+                              <a href="mailto:{{ $contact_email }}">{{ $contact_email }}</a>
+                          </div>
+                      </li>
+                  @endif
+                  @if ($contact_phone)
+                      <li class="single-contact">
+                          <div class="icon">
+                              <img src="{{ asset('frontend/img/home1/icon/call-icon.svg') }}" alt="">
+                          </div>
+                          <div class="content">
+                              <span>Call Us</span>
+                              <a href="tel:{{ str_replace(' ', '', $contact_phone) }}">{{ $contact_phone }}</a>
+                          </div>
+                      </li>
+                  @endif
               </ul>
           </div>
           <svg class="divider" width="1320" height="6" viewbox="0 0 1320 6" xmlns="http://www.w3.org/2000/svg">
@@ -67,11 +77,29 @@
                               </span>
                               <a href="#">Block 5, Dayia Tower, Sharq Kuwait City, Kuwait</a>
                           </div>
+                          @php
+                              $facebook = website_setting('facebook');
+                              $linkedin = website_setting('linkedin');
+                              $youtube = website_setting('youtube');
+                              $instagram = website_setting('instagram');
+                          @endphp
                           <ul class="social-list mb-3">
-                              <li><a href="https://www.facebook.com/"><i class="bx bxl-facebook"></i></a></li>
-                              <li><a href="https://www.linkedin.com/"><i class="bx bxl-linkedin"></i></a></li>
-                              <li><a href="https://www.youtube.com/"><i class="bx bxl-youtube"></i></a></li>
-                              <li><a href="https://www.instagram.com/"><i class="bx bxl-instagram-alt"></i></a></li>
+                              @if ($facebook)
+                                  <li><a href="{{ $facebook }}" target="_blank" rel="noopener noreferrer"><i
+                                              class="bx bxl-facebook"></i></a></li>
+                              @endif
+                              @if ($linkedin)
+                                  <li><a href="{{ $linkedin }}" target="_blank" rel="noopener noreferrer"><i
+                                              class="bx bxl-linkedin"></i></a></li>
+                              @endif
+                              @if ($youtube)
+                                  <li><a href="{{ $youtube }}" target="_blank" rel="noopener noreferrer"><i
+                                              class="bx bxl-youtube"></i></a></li>
+                              @endif
+                              @if ($instagram)
+                                  <li><a href="{{ $instagram }}" target="_blank" rel="noopener noreferrer"><i
+                                              class="bx bxl-instagram-alt"></i></a></li>
+                              @endif
                           </ul>
                           <div class="mb-3">
                               <div id="google_translate_element"></div>
@@ -89,7 +117,6 @@
                               <li><a href="{{ route('rooms.index') }}">Rooms</a></li>
                               <li><a href="{{ route('houses.index') }}">Houses</a></li>
                               <li><a href="{{ route('boats.index') }}">Boats</a></li>
-                              <li><a href="{{ route('careers') }}">Careers</a></li>
                           </ul>
                       </div>
                   </div>
@@ -100,6 +127,7 @@
                           </div>
                           <ul class="widget-list">
                               <li><a href="{{ route('blogs.index') }}">Blogs</a></li>
+                              <li><a href="{{ route('careers') }}">Careers</a></li>
                               @php
                                   $footerPolicyPages = \App\Models\PolicyPage::where('is_active', true)
                                       ->orderBy('id')
@@ -117,14 +145,29 @@
                           <div class="widget-title">
                               <h5>Contact</h5>
                           </div>
+                          @php
+                              $footer_contact_phone = website_setting('contact_phone');
+                              $footer_whatsapp = website_setting('whatsapp');
+                              $footer_contact_email = website_setting('contact_email');
+                              $footer_contact_address = website_setting('contact_address');
+                          @endphp
                           <ul class="widget-list">
-                              <li><a href="tel:+965 1808080">+965 1808080</a></li>
-                              <li><a href="https://wa.me/+965 1808080">+965 1808080 (WhatsApp)</a></li>
-                              <li><a href="/cdn-cgi/l/email-protection#1871767e77587d60797568747d367b7775"><span
-                                          class="__cf_email__"
-                                          data-cfemail="aec7c0c8c1eecbd6cfc3dec2cb80cdc1c3">[email&#160;protected]</span></a>
-                              </li>
-                              <li><a href="#">Block 5, Dayia Tower, Sharq Kuwait City, Kuwait</a></li>
+                              @if ($footer_contact_phone)
+                                  <li><a
+                                          href="tel:{{ str_replace(' ', '', $footer_contact_phone) }}">{{ $footer_contact_phone }}</a>
+                                  </li>
+                              @endif
+                              @if ($footer_whatsapp)
+                                  <li><a href="https://wa.me/{{ str_replace([' ', '+'], '', $footer_whatsapp) }}">{{ $footer_whatsapp }}
+                                          (WhatsApp)</a></li>
+                              @endif
+                              @if ($footer_contact_email)
+                                  <li><a href="mailto:{{ $footer_contact_email }}">{{ $footer_contact_email }}</a>
+                                  </li>
+                              @endif
+                              @if ($footer_contact_address)
+                                  <li><a href="#">{{ $footer_contact_address }}</a></li>
+                              @endif
                           </ul>
                       </div>
                   </div>

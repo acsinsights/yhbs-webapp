@@ -31,9 +31,10 @@
                                 </path>
                             </svg>
                         </div>
-                        <h4>Kuwait Head Office </h4>
-                        <h6><span>Contact :</span> <a href="#"> +965 1808080 </a></h6>
-                        <p>Kuwait City, Kuwait</p>
+                        <h4>Email Us</h4>
+                        <p style="margin-bottom: 8px;">Send us your queries anytime!</p>
+                        <p style="margin-bottom: 12px;">We'll respond promptly</p>
+                        <h6><a href="mailto:info@ikarusmarine.com" style="color: #136497;">info@ikarusmarine.com</a></h6>
                     </div>
                 </div>
                 <div class="col-lg-4 col-md-6">
@@ -48,9 +49,10 @@
                                 </path>
                             </svg>
                         </div>
-                        <h4>Failaka Island Office </h4>
-                        <h6><span>Contact :</span> <a href="#">+965 1808080 </a></h6>
-                        <p>Heritage Village, Failaka Island, Kuwait</p>
+                        <h4>Call Us</h4>
+                        <p style="margin-bottom: 8px;">Available during business hours</p>
+                        <p style="margin-bottom: 12px;">Mon-Fri: 8AM - 6PM</p>
+                        <h6><a href="tel:+96522022018" style="color: #136497;">+965 22022018 / 19 ext. 441</a></h6>
                     </div>
                 </div>
                 <div class="col-lg-4 col-md-6">
@@ -65,9 +67,10 @@
                                 </path>
                             </svg>
                         </div>
-                        <h4>Marine Operations Hub </h4>
-                        <h6><span>Contact :</span> <a href="#"> +965 1808080 </a></h6>
-                        <p>Docking & Maintenance Area, Kuwait</p>
+                        <h4>Visit Us</h4>
+                        <p style="margin-bottom: 8px;">Come visit our main office</p>
+                        <p style="margin-bottom: 12px;">Open during working hours</p>
+                        <h6 style="color: #136497; font-weight: 600;">Block 5, Sharq, Dayia Tower, 13th Floor</h6>
                     </div>
                 </div>
             </div>
@@ -183,9 +186,12 @@
 
     <!--Contact Map Section Start-->
     <div class="contact-map-section">
-        <iframe src="https://www.google.com/maps?q=Dayia%20Tower,%20Sharq,%20Kuwait&output=embed" width="100%"
-            height="100%" style="border:0;" allowfullscreen="" loading="lazy"
-            referrerpolicy="no-referrer-when-downgrade">
+        @php
+            $mapLocation = website_setting('map_location', 'Dayia Tower, Sharq, Kuwait');
+            $mapUrl = 'https://www.google.com/maps?q=' . urlencode($mapLocation) . '&output=embed';
+        @endphp
+        <iframe src="{{ $mapUrl }}" width="100%" height="100%" style="border:0;" allowfullscreen=""
+            loading="lazy" referrerpolicy="no-referrer-when-downgrade">
         </iframe>
     </div>
     <!--Contact Map Section End-->

@@ -22,6 +22,7 @@ new class extends Component {
     public string $contact_phone = '';
     public string $contact_address = '';
     public string $whatsapp = '';
+    public string $map_location = '';
 
     // Maintenance Mode
     public bool $maintenance_mode = false;
@@ -34,7 +35,7 @@ new class extends Component {
 
     private function loadSettings(): void
     {
-        $settings = WebsiteSetting::whereIn('key', ['facebook', 'twitter', 'instagram', 'linkedin', 'youtube', 'contact_email', 'contact_phone', 'contact_address', 'whatsapp', 'maintenance_mode', 'maintenance_message'])
+        $settings = WebsiteSetting::whereIn('key', ['facebook', 'twitter', 'instagram', 'linkedin', 'youtube', 'contact_email', 'contact_phone', 'contact_address', 'whatsapp', 'map_location', 'maintenance_mode', 'maintenance_message'])
             ->pluck('value', 'key')
             ->toArray();
 
@@ -47,6 +48,7 @@ new class extends Component {
         $this->contact_phone = $settings['contact_phone'] ?? '';
         $this->contact_address = $settings['contact_address'] ?? '';
         $this->whatsapp = $settings['whatsapp'] ?? '';
+        $this->map_location = $settings['map_location'] ?? '';
         $this->maintenance_mode = filter_var($settings['maintenance_mode'] ?? false, FILTER_VALIDATE_BOOLEAN);
         $this->maintenance_message = $settings['maintenance_message'] ?? '';
     }
@@ -63,6 +65,7 @@ new class extends Component {
             'contact_phone' => 'nullable|string|max:20',
             'contact_address' => 'nullable|string|max:500',
             'whatsapp' => 'nullable|string|max:20',
+            'map_location' => 'nullable|string|max:255',
             'maintenance_mode' => 'boolean',
             'maintenance_message' => 'nullable|string|max:500',
         ]);
@@ -77,6 +80,7 @@ new class extends Component {
             'contact_phone' => ['name' => 'Contact Phone', 'key' => 'contact_phone', 'value' => $this->contact_phone, 'type' => 'text'],
             'contact_address' => ['name' => 'Contact Address', 'key' => 'contact_address', 'value' => $this->contact_address, 'type' => 'textarea'],
             'whatsapp' => ['name' => 'WhatsApp Number', 'key' => 'whatsapp', 'value' => $this->whatsapp, 'type' => 'text'],
+            'map_location' => ['name' => 'Map Location', 'key' => 'map_location', 'value' => $this->map_location, 'type' => 'text'],
             'maintenance_mode' => ['name' => 'Maintenance Mode', 'key' => 'maintenance_mode', 'value' => $this->maintenance_mode ? '1' : '0', 'type' => 'toggle'],
             'maintenance_message' => ['name' => 'Maintenance Message', 'key' => 'maintenance_message', 'value' => $this->maintenance_message, 'type' => 'textarea'],
         ];
@@ -131,6 +135,11 @@ new class extends Component {
             <div class="mt-4">
                 <x-textarea wire:model="contact_address" label="Contact Address" placeholder="Enter full address"
                     rows="3" />
+            </div>
+
+            <div class="mt-4">
+                <x-input wire:model="map_location" label="Map Location" placeholder="e.g., Dayia Tower, Sharq, Kuwait"
+                    icon="o-map-pin" hint="This location will be displayed on the contact page map" />
             </div>
         </x-card>
 

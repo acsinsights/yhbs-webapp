@@ -322,32 +322,10 @@
                                         <label for="position"
                                             style="font-size: 14px; font-weight: 600; color: #1a1a1a; margin-bottom: 8px; display: block;">Position
                                             *</label>
-                                        <select id="position" name="position" required
-                                            style="width: 100%; padding: 12px 16px; border: 1px solid #e0e0e0; border-radius: 10px; font-size: 14px; transition: all 0.3s ease; background: white;">
-                                            <option value="">Select Position</option>
-                                            <option value="Marine Operations Manager"
-                                                {{ old('position') == 'Marine Operations Manager' ? 'selected' : '' }}>
-                                                Marine Operations Manager</option>
-                                            <option value="Guest Experience Coordinator"
-                                                {{ old('position') == 'Guest Experience Coordinator' ? 'selected' : '' }}>
-                                                Guest Experience Coordinator</option>
-                                            <option value="Marine Technician"
-                                                {{ old('position') == 'Marine Technician' ? 'selected' : '' }}>Marine
-                                                Technician</option>
-                                            <option value="Digital Marketing Specialist"
-                                                {{ old('position') == 'Digital Marketing Specialist' ? 'selected' : '' }}>
-                                                Digital Marketing Specialist</option>
-                                            <option value="Boat Captain"
-                                                {{ old('position') == 'Boat Captain' ? 'selected' : '' }}>Boat Captain
-                                            </option>
-                                            <option value="Chef" {{ old('position') == 'Chef' ? 'selected' : '' }}>Chef
-                                            </option>
-                                            <option value="Receptionist"
-                                                {{ old('position') == 'Receptionist' ? 'selected' : '' }}>Receptionist
-                                            </option>
-                                            <option value="Other" {{ old('position') == 'Other' ? 'selected' : '' }}>
-                                                Other</option>
-                                        </select>
+                                        <input type="text" id="position" name="position"
+                                            placeholder="e.g. Marine Operations Manager" value="{{ old('position') }}"
+                                            required
+                                            style="width: 100%; padding: 12px 16px; border: 1px solid #e0e0e0; border-radius: 10px; font-size: 14px; transition: all 0.3s ease;">
                                         @error('position')
                                             <span class="text-danger" style="font-size: 13px;">{{ $message }}</span>
                                         @enderror
