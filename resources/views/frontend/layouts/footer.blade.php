@@ -75,7 +75,11 @@
                           <div class="address-area">
                               <span>IKARUS United Marine Services
                               </span>
-                              <a href="#">Block 5, Dayia Tower, Sharq Kuwait City, Kuwait</a>
+                              <p>
+                                  Ikarus is Kuwait’s leading tourism and marine services company. Our diverse activities
+                                  engage in a broad scope of industry from hotel stays, heritage villa rentals, to sea
+                                  cruises, and marine services.
+                              </p>
                           </div>
                           @php
                               $facebook = website_setting('facebook');
