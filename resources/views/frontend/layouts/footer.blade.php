@@ -20,7 +20,7 @@
               </div>
               <ul class="contact-area">
                   @php
-                      $whatsapp = website_setting('whatsapp');
+                      $whatsapp = website_setting('whatsapp_number');
                       $contact_email = website_setting('contact_email');
                       $contact_phone = website_setting('contact_phone');
                   @endphp
@@ -147,7 +147,7 @@
                           </div>
                           @php
                               $footer_contact_phone = website_setting('contact_phone');
-                              $footer_whatsapp = website_setting('whatsapp');
+                              $footer_whatsapp = website_setting('whatsapp_number');
                               $footer_contact_email = website_setting('contact_email');
                               $footer_contact_address = website_setting('contact_address');
                           @endphp

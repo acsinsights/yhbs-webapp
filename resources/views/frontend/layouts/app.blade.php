@@ -136,10 +136,16 @@
     </div> --}}
 
     <!-- WhatsApp Floating Button -->
-    <a href="https://wa.me/96518080" target="_blank" class="whatsapp-float"
-        style="position: fixed; bottom: 90px; right: 30px; background: #25D366; color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; box-shadow: 2px 2px 10px rgba(0,0,0,0.3); z-index: 1000; text-decoration: none; transition: all 0.3s ease;">
-        <i class="bx bxl-whatsapp"></i>
-    </a>
+    @php
+        $floatingWhatsapp = website_setting('whatsapp_number');
+    @endphp
+    @if ($floatingWhatsapp)
+        <a href="https://wa.me/{{ str_replace([' ', '+'], '', $floatingWhatsapp) }}" target="_blank"
+            class="whatsapp-float"
+            style="position: fixed; bottom: 90px; right: 30px; background: #25D366; color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; box-shadow: 2px 2px 10px rgba(0,0,0,0.3); z-index: 1000; text-decoration: none; transition: all 0.3s ease;">
+            <i class="bx bxl-whatsapp"></i>
+        </a>
+    @endif
 
     <!-- Back To Top -->
     <div class="progress-wrap">

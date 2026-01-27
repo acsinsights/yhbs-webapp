@@ -17,10 +17,13 @@ class CheckMaintenanceMode
     public function handle(Request $request, Closure $next): Response
     {
         // Check if maintenance mode is enabled
-        $maintenanceMode = website_setting('maintenance_mode', false);
+        $maintenanceMode = website_setting('maintenance_mode', 'off');
+
+        // Convert string value to boolean
+        $isMaintenanceEnabled = $maintenanceMode === 'on' || $maintenanceMode === '1' || $maintenanceMode === true;
 
         // Allow admin users to bypass maintenance mode
-        if ($maintenanceMode && !$this->isAdminRoute($request) && !$this->isAdminUser()) {
+        if ($isMaintenanceEnabled && !$this->isAdminRoute($request) && !$this->isAdminUser()) {
             $message = website_setting('maintenance_message', 'We are currently performing scheduled maintenance. We\'ll be back soon!');
 
             return response()->view('maintenance', [

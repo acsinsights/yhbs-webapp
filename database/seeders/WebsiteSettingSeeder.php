@@ -27,27 +27,69 @@ class WebsiteSettingSeeder extends Seeder
             ],
             [
                 'name' => 'Maintenance Mode',
-                'key' => 'maintenance',
+                'key' => 'maintenance_mode',
                 'value' => 'off',
                 'type' => 'toggle',
             ],
             [
-                'name' => 'Currency Symbol',
-                'key' => 'currency_symbol',
-                'value' => 'KWD',
-                'type' => 'text',
-            ],
-            [
-                'name' => 'Currency Name',
-                'key' => 'currency_name',
-                'value' => 'Kuwaiti Dinar',
-                'type' => 'text',
-            ],
-            [
                 'name' => 'Map Location',
                 'key' => 'map_location',
-                'value' => 'Dayia Tower, Sharq, Kuwait',
+                'value' => 'Block 5, Sharq, Dayia Tower, 13th Floor.',
                 'type' => 'text',
+            ], 
+            [
+                'name' => 'Facebook URL',
+                'key' => 'facebook_url',
+                'value' => 'https://facebook.com/',
+                'type' => 'url',
+            ],
+            [
+                'name' => 'Twitter URL',
+                'key' => 'twitter_url',
+                'value' => 'https://twitter.com/',
+                'type' => 'url',
+            ],
+            [
+                'name' => 'Instagram URL',
+                'key' => 'instagram_url',
+                'value' => 'https://instagram.com/',
+                'type' => 'url',
+            ],
+            [
+                'name' => 'LinkedIn URL',
+                'key' => 'linkedin_url',
+                'value' => 'https://linkedin.com/',
+                'type' => 'url',
+            ],
+            [
+                'name' => 'YouTube URL',
+                'key' => 'youtube_url',
+                'value' => 'https://youtube.com/',
+                'type' => 'url',
+            ],
+            [
+                'name' => 'WhatsApp Number',
+                'key' => 'whatsapp_number',
+                'value' => '+965 XXXX XXXX',
+                'type' => 'text',
+            ],
+            [
+                'name' => 'Contact Email',
+                'key' => 'contact_email',
+                'value' => 'info@ikarusmarine.com',
+                'type' => 'email',
+            ],
+            [
+                'name' => 'Contact Phone',
+                'key' => 'contact_phone',
+                'value' => '+965 22022018',
+                'type' => 'text',
+            ],
+            [
+                'name' => 'Contact Address',
+                'key' => 'contact_address',
+                'value' => 'Enter full address',
+                'type' => 'textarea',
             ],
         ];
 
